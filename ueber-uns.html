@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Über uns – ODOJ | Wer steckt hinter One Day One Job?</title>
+<meta name="description" content="ODOJ ist ein Vorarlberger Startup für flexible Tagesjobvermittlung. Erfahre mehr über unsere Mission, Werte und das Team dahinter.">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── MISSION ── */
+.mission { background: var(--white); }
+.mission-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.mission-quote {
+  background: var(--navy);
+  border-radius: var(--r-lg);
+  padding: 52px 44px;
+  position: relative;
+  overflow: hidden;
+}
+.mission-quote-glow {
+  position: absolute; top: -60px; right: -60px;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(74,143,193,.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+.mission-quote blockquote {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.35;
+  letter-spacing: -.3px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 24px;
+}
+.mission-quote blockquote::before {
+  content: '"';
+  font-size: 72px;
+  color: var(--accent);
+  line-height: .5;
+  display: block;
+  margin-bottom: 18px;
+  font-family: Georgia, serif;
+}
+.mission-quote cite {
+  font-size: 13px;
+  color: rgba(255,255,255,.4);
+  font-style: normal;
+  font-weight: 300;
+  position: relative; z-index: 1;
+}
+.mission-text p {
+  font-size: 17px;
+  color: var(--text-mid);
+  line-height: 1.75;
+  font-weight: 300;
+  margin-bottom: 20px;
+}
+.mission-text p:last-child { margin-bottom: 0; }
+
+/* ── WERTE ── */
+.werte { background: var(--off); }
+.werte-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 52px; }
+.wert {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 34px;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.wert:hover { border-color: var(--sky-lt); box-shadow: var(--sh-sm); transform: translateY(-2px); }
+.wert-dot { width: 11px; height: 11px; background: var(--accent); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.wert h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.wert p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
+
+/* ── TIMELINE ── */
+.timeline-section { background: var(--white); }
+.timeline { margin-top: 52px; padding-left: 44px; position: relative; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px; top: 8px; bottom: 8px;
+  width: 2px;
+  background: var(--gray-lt);
+}
+.tl-item { position: relative; margin-bottom: 40px; }
+.tl-item:last-child { margin-bottom: 0; }
+.tl-dot {
+  position: absolute;
+  left: -42px; top: 4px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 2px solid var(--gray-lt);
+  transition: border-color .2s, background .2s;
+}
+.tl-item:hover .tl-dot { border-color: var(--accent); background: var(--accent); }
+.tl-item.future .tl-dot { border-style: dashed; }
+.tl-date {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: block;
+}
+.tl-item.future .tl-date { color: var(--gray); }
+.tl-item h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.tl-item.future h3 { color: var(--gray); }
+.tl-item p { font-size: 14px; color: var(--text-lt); line-height: 1.65; font-weight: 300; max-width: 560px; }
+
+/* ── TEAM ── */
+.team { background: var(--off); }
+.team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 52px; }
+.team-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 34px;
+  text-align: center;
+  transition: box-shadow .2s, transform .2s;
+}
+.team-card:hover { box-shadow: var(--sh-md); transform: translateY(-3px); }
+.team-avatar {
+  width: 68px; height: 68px;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+  color: var(--white); margin: 0 auto 16px;
+}
+.team-card h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+.team-role { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 12px; letter-spacing: .3px; text-transform: uppercase; }
+.team-bio { font-size: 13px; color: var(--text-lt); line-height: 1.6; font-weight: 300; }
+.team-placeholder {
+  background: var(--off);
+  border: 2px dashed var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 200px;
+  gap: 10px;
+}
+.team-placeholder span { font-size: 28px; }
+.team-placeholder p { font-size: 13px; color: var(--text-lt); font-weight: 300; max-width: 180px; }
+
+/* ── REGION ── */
+.region { background: var(--navy); }
+.region-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; margin-top: 52px; }
+.region-box {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--r-lg);
+  padding: 44px;
+  text-align: center;
+}
+.region-box-icon { font-size: 52px; margin-bottom: 14px; display: block; }
+.region-box h3 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--white); margin-bottom: 8px; }
+.region-box p { font-size: 13px; color: rgba(255,255,255,.4); font-weight: 300; margin-bottom: 20px; }
+.orte { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.ort {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: rgba(255,255,255,.65);
+  font-weight: 300;
+}
+.region-text p { font-size: 16px; color: rgba(255,255,255,.6); line-height: 1.75; font-weight: 300; margin-bottom: 20px; }
+.region-text p:last-child { margin-bottom: 0; }
+
+/* ── MITMACHEN CTA ── */
+.mitmachen { background: var(--off); }
+.mitmachen-inner {
+  background: var(--navy);
+  border-radius: var(--r-xl);
+  padding: 72px;
+  text-align: center;
+}
+.mitmachen-inner h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 18px;
+}
+.mitmachen-inner h2 em { font-style: normal; color: var(--accent); }
+.mitmachen-inner p {
+  font-size: 17px;
+  color: rgba(255,255,255,.5);
+  max-width: 460px;
+  margin: 0 auto 40px;
+  font-weight: 300;
+  line-height: 1.65;
+}
+.mitmachen-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .mission-layout, .region-layout { grid-template-columns: 1fr; gap: 40px; }
+  .werte-grid { grid-template-columns: 1fr; }
+  .team-grid { grid-template-columns: 1fr; }
+  .mitmachen-inner { padding: 48px 24px; border-radius: var(--r-lg); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html" class="active">Über uns</a></li>
+    <li><a href="jobs.html" class="nav-cta">Jetzt bewerben</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html" class="active">Über uns</a>
+  <a href="jobs.html" style="color:var(--accent);font-weight:600">Jetzt bewerben →</a>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Über ODOJ</span>
+    <h1>Ein Tag.<br>Ein Job.<br><em>Eine Idee.</em></h1>
+    <p>ODOJ entstand aus der Überzeugung, dass flexible Arbeit fairer und einfacher sein kann. Wir bauen die Brücke zwischen Menschen und Betrieben in Vorarlberg.</p>
+  </div>
+</div>
+
+<!-- MISSION -->
+<section class="mission">
+  <div class="mission-layout">
+    <div class="mission-quote fade-in">
+      <div class="mission-quote-glow"></div>
+      <blockquote>Arbeit soll sich dem Leben anpassen – nicht umgekehrt.</blockquote>
+      <cite>Die Idee hinter ODOJ</cite>
+    </div>
+    <div class="fade-in">
+      <span class="section-label">Unsere Mission</span>
+      <h2 class="section-title">Warum ODOJ?</h2>
+      <div class="mission-text">
+        <p>Es gibt in Vorarlberg täglich Betriebe, die dringend kurzfristige Arbeitskräfte brauchen. Und es gibt Menschen, die gerne flexibel arbeiten würden – aber nie wissen, wo sie anfangen sollen.</p>
+        <p>ODOJ schließt diese Lücke. Wir schaffen einen Ort, an dem Angebot und Nachfrage für Tagesjobs schnell, fair und unkompliziert zusammenkommen.</p>
+        <p>Wir sind noch am Anfang. Aber mit klarer Idee, regionalem Fokus und echtem Engagement für faire Arbeit.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WERTE -->
+<section class="werte">
+  <div class="fade-in">
+    <span class="section-label">Was uns leitet</span>
+    <h2 class="section-title">Unsere Werte</h2>
+    <p class="section-sub">Vier Grundsätze, nach denen wir handeln – gegenüber Jobbern und Betrieben.</p>
+  </div>
+  <div class="werte-grid">
+    <div class="wert fade-in"><div class="wert-dot"></div><div><h3>Flexibilität</h3><p>Wir glauben, dass Arbeit sich dem Leben anpassen soll. ODOJ macht flexible Jobs zur echten, verlässlichen Option – nicht zum Notbehelf.</p></div></div>
+    <div class="wert fade-in"><div class="wert-dot"></div><div><h3>Fairness</h3><p>Faire Löhne für Jobber. Fairer Service für Betriebe. Kein Gewinner auf Kosten des anderen – das ist die Grundlage, auf der wir arbeiten.</p></div></div>
+    <div class="wert fade-in"><div class="wert-dot"></div><div><h3>Transparenz</h3><p>Kein Kleingedrucktes. Lohn, Zeiten und Aufgaben sind immer klar kommuniziert – bevor jemand zusagt.</p></div></div>
+    <div class="wert fade-in"><div class="wert-dot"></div><div><h3>Regionalität</h3><p>Wir sind aus Vorarlberg und bleiben in Vorarlberg. Wir kennen die Region, die Betriebe und die Menschen – das macht den Unterschied.</p></div></div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="timeline-section">
+  <div class="fade-in">
+    <span class="section-label">Unsere Geschichte</span>
+    <h2 class="section-title">Von der Idee<br>zur Plattform</h2>
+    <p class="section-sub">ODOJ ist jung – aber die Idee dahinter ist klar und der Weg vorgezeichnet.</p>
+  </div>
+  <div class="timeline">
+    <div class="tl-item fade-in">
+      <div class="tl-dot"></div>
+      <span class="tl-date">Anfang 2025</span>
+      <h3>Die Idee entsteht</h3>
+      <p>Ein Gespräch über Jobvermittlung, Frustration mit langen Bewerbungsprozessen – und die Frage: Warum gibt es das nicht einfacher?</p>
+    </div>
+    <div class="tl-item fade-in">
+      <div class="tl-dot"></div>
+      <span class="tl-date">Frühjahr 2025</span>
+      <h3>Konzept &amp; erste Gespräche</h3>
+      <p>Erste Gespräche mit Betrieben aus Gastronomie und Bau. Das Feedback ist eindeutig: Der Bedarf ist real und dringend.</p>
+    </div>
+    <div class="tl-item fade-in">
+      <div class="tl-dot"></div>
+      <span class="tl-date">2025</span>
+      <h3>Launch der Webseite</h3>
+      <p>ODOJ geht online. Die ersten Jobber registrieren sich, die ersten Betriebe melden Interesse. Der Aufbau beginnt.</p>
+    </div>
+    <div class="tl-item future fade-in">
+      <div class="tl-dot"></div>
+      <span class="tl-date">Nächste Schritte</span>
+      <h3>Erste echte Einsätze &amp; Wachstum</h3>
+      <p>Wir vermitteln die ersten Tagesjobs, hören zu, lernen – und bauen ODOJ gemeinsam mit der Community weiter aus.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section class="team">
+  <div class="fade-in">
+    <span class="section-label">Das Team</span>
+    <h2 class="section-title">Wer hinter ODOJ steckt</h2>
+    <p class="section-sub">Kleine Crew, große Idee. Wir sind aus Vorarlberg und bauen ODOJ mit echtem Engagement auf.</p>
+  </div>
+  <div class="team-grid">
+    <div class="team-card fade-in">
+      <div class="team-avatar" style="background:var(--navy)">GR</div>
+      <h3>Gründer/in</h3>
+      <div class="team-role">CEO &amp; Strategie</div>
+      <p class="team-bio">Trag hier deinen Namen und deine Kurzbiografie ein. Was bringst du mit? Was treibt dich an?</p>
+    </div>
+    <div class="team-placeholder fade-in">
+      <span>👋</span>
+      <p>Wir suchen Mitstreiter! Lust, ODOJ mitzugestalten?</p>
+    </div>
+    <div class="team-placeholder fade-in">
+      <span>🤝</span>
+      <p>Partner &amp; Netzwerk in Vorarlberg willkommen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- REGION -->
+<section class="region">
+  <div class="fade-in">
+    <span class="section-label">Unser Zuhause</span>
+    <h2 class="section-title section-title-white">Verwurzelt in<br>Vorarlberg</h2>
+  </div>
+  <div class="region-layout">
+    <div class="region-box fade-in">
+      <span class="region-box-icon">🗺</span>
+      <h3>Vorarlberg</h3>
+      <p>Und die angrenzende Region</p>
+      <div class="orte">
+        <span class="ort">Dornbirn</span><span class="ort">Bregenz</span>
+        <span class="ort">Feldkirch</span><span class="ort">Bludenz</span>
+        <span class="ort">Hohenems</span><span class="ort">Lustenau</span>
+        <span class="ort">Hard</span><span class="ort">Rankweil</span>
+      </div>
+    </div>
+    <div class="region-text fade-in">
+      <p>Vorarlberg ist klein – und genau das ist unsere Stärke. Wir kennen die lokale Wirtschaft, die saisonalen Spitzen in Tourismus und Gastronomie, die Bauprojekte und die Eventlandschaft.</p>
+      <p>Dieser regionale Fokus erlaubt es uns, schnell zu handeln, persönlich zu vermitteln und Qualität über Quantität zu stellen.</p>
+      <p>Langfristig denken wir auch an die Bodenseeregion – aber immer mit demselben lokalen Ansatz: zuerst verstehen, dann wachsen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- MITMACHEN CTA -->
+<section class="mitmachen">
+  <div class="mitmachen-inner fade-in">
+    <h2>Werde Teil von <em>ODOJ</em></h2>
+    <p>Ob als Jobber, Betrieb oder Partner – wir freuen uns über alle, die ODOJ von Anfang an mitgestalten wollen.</p>
+    <div class="mitmachen-btns">
+      <a href="jobs.html#bewerben" class="btn btn-accent">Als Jobber registrieren</a>
+      <a href="arbeitgeber.html#anfrage" class="btn btn-outline">Als Betrieb mitmachen</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
+    </div>
+    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li><li><a href="jobs.html#bewerben">Registrieren</a></li></ul></div>
+    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="arbeitgeber.html">Personal anfragen</a></li></ul></div>
+    <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job.</span>
+    <div class="footer-legal"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="agb.html">AGB</a></div>
+  </div>
+</footer>
+
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

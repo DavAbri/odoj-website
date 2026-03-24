@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Für Arbeitgeber – ODOJ | Flexibles Personal in Vorarlberg</title>
+<meta name="description" content="Als Betrieb in Vorarlberg schnell und einfach qualifiziertes Tagespersonal anfragen. ODOJ übernimmt die Vermittlung.">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── VORTEILE ── */
+.vorteile { background: var(--white); }
+.vorteile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 52px; }
+.vorteil {
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 34px;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.vorteil:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-3px); }
+.vorteil-ico {
+  width: 50px; height: 50px;
+  background: var(--navy);
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 18px;
+}
+.vorteil h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+.vorteil p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
+
+/* ── ABLAUF ── */
+.ablauf { background: var(--off); }
+.ablauf-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 52px; }
+.ablauf-step {
+  background: var(--white);
+  padding: 36px 30px;
+  position: relative;
+  transition: transform .2s, box-shadow .2s;
+}
+.ablauf-step:first-child { border-radius: var(--r-lg) 0 0 var(--r-lg); }
+.ablauf-step:last-child  { border-radius: 0 var(--r-lg) var(--r-lg) 0; }
+.ablauf-step:hover { transform: translateY(-3px); box-shadow: var(--sh-md); z-index: 1; }
+.ablauf-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+  display: block;
+}
+.ablauf-step h4 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.ablauf-step p  { font-size: 13px; color: var(--text-lt); line-height: 1.6; font-weight: 300; }
+.ablauf-line {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s;
+}
+.ablauf-step:hover .ablauf-line { transform: scaleX(1); }
+
+/* ── MODELLE ── */
+.modelle { background: var(--white); }
+.modelle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 52px; }
+.modell {
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-lg);
+  padding: 38px 34px;
+  position: relative;
+  transition: transform .2s, box-shadow .2s;
+}
+.modell:hover { transform: translateY(-4px); box-shadow: var(--sh-md); }
+.modell.featured {
+  background: var(--navy);
+  border-color: var(--navy);
+  transform: scale(1.02);
+}
+.modell.featured:hover { transform: scale(1.02) translateY(-4px); }
+.modell-badge {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: var(--navy);
+  font-size: 11px; font-weight: 800;
+  padding: 4px 14px; border-radius: 100px;
+  letter-spacing: .5px; text-transform: uppercase; white-space: nowrap;
+}
+.modell-cat { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; display: block; }
+.modell-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px; font-weight: 800;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.modell.featured .modell-title { color: var(--white); }
+.modell-sub { font-size: 14px; color: var(--text-lt); font-weight: 300; margin-bottom: 24px; }
+.modell.featured .modell-sub { color: rgba(255,255,255,.5); }
+.modell-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 28px; }
+.modell-feat {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--text-mid); font-weight: 300; line-height: 1.5;
+}
+.modell.featured .modell-feat { color: rgba(255,255,255,.65); }
+.modell-feat::before { content: '✓'; color: var(--accent); font-weight: 800; flex-shrink: 0; }
+.modell-cta {
+  display: block; text-align: center; padding: 12px;
+  border-radius: var(--r-sm);
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  text-decoration: none; transition: all .2s;
+  border: 2px solid var(--navy); color: var(--navy);
+}
+.modell-cta:hover { background: var(--navy); color: var(--white); }
+.modell.featured .modell-cta { background: var(--accent); border-color: var(--accent); color: var(--navy); }
+.modell.featured .modell-cta:hover { background: var(--accent-lt); }
+
+/* ── ANFRAGE FORM ── */
+.anfrage { background: var(--navy); }
+.anfrage-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: start; margin-top: 52px; }
+.anfrage-card {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--r-lg);
+  padding: 44px;
+}
+.anfrage-card h3 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--white); margin-bottom: 6px; }
+.anfrage-card > p { font-size: 14px; color: rgba(255,255,255,.45); font-weight: 300; margin-bottom: 28px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-field { margin-bottom: 10px; }
+.form-field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: rgba(255,255,255,.38); margin-bottom: 6px; }
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: var(--r-sm);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 12px 15px;
+  outline: none;
+  transition: border-color .2s;
+}
+.form-field input::placeholder,
+.form-field textarea::placeholder { color: rgba(255,255,255,.25); }
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); }
+.form-field select option { background: var(--navy-mid); color: var(--white); }
+.form-field textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+.btn-submit {
+  width: 100%; background: var(--accent); color: var(--navy);
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+  padding: 16px; border-radius: var(--r-sm); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .2s, transform .15s; margin-top: 12px;
+}
+.btn-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
+
+.anfrage-side { padding-top: 8px; }
+.guarantee {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--r-md);
+  padding: 28px; margin-top: 32px;
+}
+.guarantee h4 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 16px; }
+.guarantee-item {
+  display: flex; gap: 12px; margin-bottom: 11px;
+  font-size: 14px; color: rgba(255,255,255,.55); font-weight: 300; line-height: 1.5;
+}
+.guarantee-item:last-child { margin-bottom: 0; }
+.guarantee-item span:first-child { color: var(--accent); font-weight: 800; flex-shrink: 0; }
+.contact-list { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; }
+.contact-item { display: flex; align-items: center; gap: 14px; }
+.ci-icon { width: 42px; height: 42px; background: rgba(255,255,255,.07); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.ci-main { font-size: 14px; font-weight: 500; color: var(--white); }
+.ci-sub  { font-size: 12px; color: rgba(255,255,255,.35); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .vorteile-grid, .modelle-grid { grid-template-columns: 1fr; }
+  .modell.featured { transform: scale(1); }
+  .ablauf-steps { grid-template-columns: 1fr 1fr; }
+  .ablauf-step:first-child { border-radius: var(--r-lg) 0 0 0; }
+  .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) 0; }
+  .anfrage-layout { grid-template-columns: 1fr; gap: 36px; }
+  .form-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 540px) {
+  .ablauf-steps { grid-template-columns: 1fr; }
+  .ablauf-step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html" class="active">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li><a href="#anfrage" class="nav-cta">Personal anfragen</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html" class="active">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <a href="#anfrage" style="color:var(--accent);font-weight:600">Personal anfragen →</a>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Für Arbeitgeber</span>
+    <h1>Personal auf Abruf.<br><em>Ohne Aufwand.</em></h1>
+    <p>Kurzfristiger Ausfall? Saisonspitze? ODOJ liefert qualifiziertes Personal genau dann, wenn Sie es brauchen – rechtssicher und unkompliziert.</p>
+    <div style="margin-top:32px;display:flex;gap:12px;flex-wrap:wrap">
+      <a href="#anfrage" class="btn btn-accent">Jetzt Personal anfragen</a>
+      <a href="#ablauf" class="btn btn-outline">Wie es funktioniert</a>
+    </div>
+  </div>
+</div>
+
+<!-- VORTEILE -->
+<section class="vorteile" id="vorteile">
+  <div class="fade-in">
+    <span class="section-label">Warum ODOJ?</span>
+    <h2 class="section-title">Alles, was Betriebe<br>wirklich brauchen</h2>
+    <p class="section-sub">Kein Headhunter-Aufwand, keine langen Vertragslaufzeiten. Verlässliches Personal, wann immer Sie es brauchen.</p>
+  </div>
+  <div class="vorteile-grid">
+    <div class="vorteil fade-in"><div class="vorteil-ico">⚡</div><h3>Kurzfristig verfügbar</h3><p>Anfrage heute, Mitarbeiter morgen. Für Notfälle auch am selben Tag – auch an Wochenenden und Feiertagen.</p></div>
+    <div class="vorteil fade-in"><div class="vorteil-ico">✅</div><h3>Geprüfte Profile</h3><p>Alle Bewerber werden vorab überprüft – Erfahrungen, Zuverlässigkeit, Referenzen. Nur verlässliche Arbeitskräfte.</p></div>
+    <div class="vorteil fade-in"><div class="vorteil-ico">📄</div><h3>Rechtssicher &amp; einfach</h3><p>Wir übernehmen Verträge, Abrechnung und Anmeldung – konform mit österreichischem Arbeitsrecht. Nur bezahlen für geleistete Stunden.</p></div>
+    <div class="vorteil fade-in"><div class="vorteil-ico">🔁</div><h3>Stammkräfte aufbauen</h3><p>Bewährte Mitarbeiter jederzeit wieder anfragen. Schritt für Schritt ein verlässliches Kurzzeit-Team aufbauen.</p></div>
+    <div class="vorteil fade-in"><div class="vorteil-ico">🗺</div><h3>Regional vernetzt</h3><p>ODOJ ist in Vorarlberg zu Hause. Wir kennen die lokalen Betriebe, die regionalen Besonderheiten und die Menschen dahinter.</p></div>
+    <div class="vorteil fade-in"><div class="vorteil-ico">💬</div><h3>Persönliche Betreuung</h3><p>Kein Ticketsystem. Bei uns haben Sie einen persönlichen Ansprechpartner – per Telefon, WhatsApp oder E-Mail.</p></div>
+  </div>
+</section>
+
+<!-- ABLAUF -->
+<section class="ablauf" id="ablauf">
+  <div class="fade-in">
+    <span class="section-label">Ablauf</span>
+    <h2 class="section-title">Von der Anfrage bis<br>zum ersten Arbeitstag</h2>
+    <p class="section-sub">In unter 24 Stunden – von der Anfrage bis zum einsatzbereiten Mitarbeiter.</p>
+  </div>
+  <div class="ablauf-steps">
+    <div class="ablauf-step fade-in">
+      <span class="ablauf-num">SCHRITT 01</span>
+      <h4>Anfrage stellen</h4>
+      <p>Online-Formular ausfüllen oder anrufen. Branche, Anzahl Personen, Datum und Aufgaben angeben.</p>
+      <div class="ablauf-line"></div>
+    </div>
+    <div class="ablauf-step fade-in">
+      <span class="ablauf-num">SCHRITT 02</span>
+      <h4>Rückmeldung in 2h</h4>
+      <p>Wir bestätigen die Verfügbarkeit und schicken passende Profile zur Auswahl.</p>
+      <div class="ablauf-line"></div>
+    </div>
+    <div class="ablauf-step fade-in">
+      <span class="ablauf-num">SCHRITT 03</span>
+      <h4>Einsatz bestätigen</h4>
+      <p>Sie geben grünes Licht – wir kümmern uns um Briefing, Vertrag und Anfahrt.</p>
+      <div class="ablauf-line"></div>
+    </div>
+    <div class="ablauf-step fade-in">
+      <span class="ablauf-num">SCHRITT 04</span>
+      <h4>Personal erscheint</h4>
+      <p>Der Mitarbeiter kommt vorbereitet. Nach dem Einsatz erfolgt die Abrechnung direkt über ODOJ.</p>
+      <div class="ablauf-line"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODELLE -->
+<section class="modelle">
+  <div class="fade-in">
+    <span class="section-label">Buchungsmodelle</span>
+    <h2 class="section-title">Flexibel wie Ihr Bedarf</h2>
+    <p class="section-sub">Egal ob einmaliger Notfall oder regelmäßiger Bedarf – wir haben das passende Modell.</p>
+  </div>
+  <div class="modelle-grid">
+    <div class="modell fade-in">
+      <span class="modell-cat">Einmalig</span>
+      <div class="modell-title">Tagesbuchung</div>
+      <div class="modell-sub">Für kurzfristige Ausfälle &amp; Einzelevents</div>
+      <ul class="modell-features">
+        <li class="modell-feat">Buchung ab 1 Tag möglich</li>
+        <li class="modell-feat">Kurzfristig bis 24h vorher</li>
+        <li class="modell-feat">Kein Abo nötig</li>
+        <li class="modell-feat">Stundengenaue Abrechnung</li>
+      </ul>
+      <a href="#anfrage" class="modell-cta">Anfragen</a>
+    </div>
+    <div class="modell featured fade-in">
+      <div class="modell-badge">Beliebt</div>
+      <span class="modell-cat">Regelmäßig</span>
+      <div class="modell-title">Monatskontingent</div>
+      <div class="modell-sub">Für Betriebe mit wiederkehrendem Bedarf</div>
+      <ul class="modell-features">
+        <li class="modell-feat">Priorisierte Verfügbarkeit</li>
+        <li class="modell-feat">Feste Stammkräfte buchbar</li>
+        <li class="modell-feat">Persönlicher Ansprechpartner</li>
+        <li class="modell-feat">Günstigerer Stundensatz</li>
+        <li class="modell-feat">Flexibel kündbar</li>
+      </ul>
+      <a href="#anfrage" class="modell-cta">Anfragen</a>
+    </div>
+    <div class="modell fade-in">
+      <span class="modell-cat">Saisonal</span>
+      <div class="modell-title">Eventpaket</div>
+      <div class="modell-sub">Für Messen, Festivals &amp; Großveranstaltungen</div>
+      <ul class="modell-features">
+        <li class="modell-feat">Auch große Gruppen (10–50)</li>
+        <li class="modell-feat">Koordination &amp; Briefing inklusive</li>
+        <li class="modell-feat">Vor-Ort-Support möglich</li>
+        <li class="modell-feat">Individuelles Angebot</li>
+      </ul>
+      <a href="#anfrage" class="modell-cta">Anfragen</a>
+    </div>
+  </div>
+</section>
+
+<!-- ANFRAGE FORM -->
+<section class="anfrage" id="anfrage">
+  <span class="section-label">Kontakt</span>
+  <h2 class="section-title section-title-white">Personal anfragen</h2>
+  <p class="section-sub section-sub-white">Füllen Sie das Formular aus – wir melden uns innerhalb von 2 Stunden.</p>
+
+  <div class="anfrage-layout">
+    <div class="anfrage-card fade-in">
+      <h3>Anfrage senden</h3>
+      <p>Alle Felder mit * sind Pflichtfelder.</p>
+      <form onsubmit="submitAnfrage(event)">
+        <div class="form-row">
+          <div class="form-field"><label>Firmenname *</label><input type="text" placeholder="Ihr Unternehmen" required></div>
+          <div class="form-field"><label>Ansprechperson *</label><input type="text" placeholder="Vor- und Nachname" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>E-Mail *</label><input type="email" placeholder="firma@beispiel.at" required></div>
+          <div class="form-field"><label>Telefon</label><input type="tel" placeholder="+43 ..."></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Branche *</label>
+            <select required>
+              <option value="" disabled selected>Bitte wählen</option>
+              <option>Gastronomie &amp; Hotel</option>
+              <option>Bau &amp; Handwerk</option>
+              <option>Lager &amp; Logistik</option>
+              <option>Veranstaltungen &amp; Events</option>
+              <option>Sonstiges</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Anzahl Personen</label>
+            <select>
+              <option value="" disabled selected>Bitte wählen</option>
+              <option>1 Person</option>
+              <option>2–3 Personen</option>
+              <option>4–10 Personen</option>
+              <option>Mehr als 10</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Datum</label><input type="date"></div>
+          <div class="form-field"><label>Uhrzeit</label><input type="text" placeholder="z.B. 08:00 – 17:00 Uhr"></div>
+        </div>
+        <div class="form-field"><label>Einsatzort</label><input type="text" placeholder="Adresse oder Stadt"></div>
+        <div class="form-field"><label>Aufgabenbeschreibung</label><textarea placeholder="Was muss gemacht werden? Besondere Anforderungen?"></textarea></div>
+        <button type="submit" class="btn-submit" id="anfBtn">
+          Anfrage absenden
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <div class="anfrage-side fade-in">
+      <span class="section-label">Direktkontakt</span>
+      <h3 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--white);margin-bottom:10px;letter-spacing:-.5px">Lieber persönlich?</h3>
+      <p style="color:rgba(255,255,255,.5);font-size:15px;font-weight:300;line-height:1.65;max-width:360px">Rufen Sie uns an oder schreiben Sie eine E-Mail. Wir sind für Sie da.</p>
+      <div class="contact-list">
+        <div class="contact-item"><div class="ci-icon">📞</div><div><div class="ci-main">+43 (0) 5572 – ODOJ</div><div class="ci-sub">Mo – Fr, 08:00 – 18:00 Uhr</div></div></div>
+        <div class="contact-item"><div class="ci-icon">✉️</div><div><div class="ci-main">betriebe@odoj.at</div><div class="ci-sub">Antwort innerhalb von 2 Stunden</div></div></div>
+      </div>
+      <div class="guarantee">
+        <h4>Unsere Versprechen</h4>
+        <div class="guarantee-item"><span>✓</span><span>Rückmeldung innerhalb von 2 Stunden</span></div>
+        <div class="guarantee-item"><span>✓</span><span>Nur geprüfte, zuverlässige Mitarbeitende</span></div>
+        <div class="guarantee-item"><span>✓</span><span>Faire, transparente Abrechnung</span></div>
+        <div class="guarantee-item"><span>✓</span><span>Persönlicher Ansprechpartner für Ihr Unternehmen</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
+    </div>
+    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li><li><a href="jobs.html#bewerben">Registrieren</a></li></ul></div>
+    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="#anfrage">Personal anfragen</a></li><li><a href="#vorteile">Unsere Leistungen</a></li><li><a href="#ablauf">Ablauf</a></li></ul></div>
+    <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job.</span>
+    <div class="footer-legal"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="agb.html">AGB</a></div>
+  </div>
+</footer>
+
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+function submitAnfrage(e) {
+  e.preventDefault();
+  const btn = document.getElementById('anfBtn');
+  btn.textContent = '✓ Anfrage erhalten! Wir melden uns.';
+  btn.style.background = '#1a8c5c';
+  btn.disabled = true;
+}
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

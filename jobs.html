@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobs finden – ODOJ | Tagesjobs in Vorarlberg</title>
+<meta name="description" content="Aktuelle Tagesjobs in Vorarlberg – Gastronomie, Bau, Lager, Events. Jetzt kostenlos bewerben bei ODOJ.">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── FILTER BAR ── */
+.filter-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-lt);
+  padding: 16px 60px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 50;
+  box-shadow: var(--sh-sm);
+}
+.filter-lbl { font-size: 12px; font-weight: 600; color: var(--text-lt); letter-spacing: .5px; text-transform: uppercase; margin-right: 4px; }
+.fbtn {
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1.5px solid var(--gray-lt);
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.fbtn:hover, .fbtn.on { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.filter-count { margin-left: auto; font-size: 13px; color: var(--text-lt); font-weight: 300; }
+
+/* ── JOBS GRID ── */
+.jobs-body { background: var(--off); padding: 48px 60px 80px; }
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+/* ── JOB CARD ── */
+.job-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 26px;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  display: flex;
+  flex-direction: column;
+}
+.job-card:hover {
+  border-color: var(--sky-lt);
+  box-shadow: var(--sh-md);
+  transform: translateY(-3px);
+}
+.job-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.job-date { font-size: 12px; color: var(--text-lt); font-weight: 300; }
+.job-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.job-company { font-size: 13px; color: var(--text-lt); margin-bottom: 14px; font-weight: 300; }
+.job-metas { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.job-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-mid);
+  font-weight: 300;
+}
+.job-meta svg { opacity: .5; flex-shrink: 0; }
+.job-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-lt);
+  margin-top: auto;
+}
+.job-pay { font-family: 'Syne', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy); }
+.job-pay span { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 300; color: var(--text-lt); }
+.job-spots { font-size: 12px; color: var(--accent); font-weight: 600; }
+.job-apply {
+  background: var(--navy);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--r-sm);
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background .2s, transform .15s;
+  text-decoration: none;
+  display: inline-block;
+}
+.job-apply:hover { background: var(--navy-soft); transform: translateY(-1px); }
+.job-urgent {
+  display: inline-block;
+  background: #fff0f0;
+  color: #c0392b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  vertical-align: middle;
+}
+
+/* ── BEWERBEN SECTION ── */
+.bewerben { background: var(--navy); }
+.bewerben-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: start;
+  margin-top: 52px;
+}
+.bew-card {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--r-lg);
+  padding: 44px;
+}
+.bew-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+.bew-card > p { font-size: 14px; color: rgba(255,255,255,.45); font-weight: 300; margin-bottom: 28px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-field { margin-bottom: 10px; }
+.form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.38);
+  margin-bottom: 6px;
+}
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: var(--r-sm);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 12px 15px;
+  outline: none;
+  transition: border-color .2s;
+}
+.form-field input::placeholder,
+.form-field textarea::placeholder { color: rgba(255,255,255,.25); }
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus { border-color: var(--accent); }
+.form-field select option { background: var(--navy-mid); color: var(--white); }
+.form-field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+.check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255,255,255,.65);
+  cursor: pointer;
+  font-weight: 300;
+}
+.check-item input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.btn-submit {
+  width: 100%;
+  background: var(--accent);
+  color: var(--navy);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 16px;
+  border-radius: var(--r-sm);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .2s, transform .15s;
+  margin-top: 14px;
+}
+.btn-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
+
+/* Side info */
+.bew-side { padding-top: 8px; }
+.contact-list { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; }
+.contact-item { display: flex; align-items: center; gap: 14px; }
+.ci-icon {
+  width: 42px; height: 42px;
+  background: rgba(255,255,255,.07);
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.ci-main { font-size: 14px; font-weight: 500; color: var(--white); }
+.ci-sub  { font-size: 12px; color: rgba(255,255,255,.35); }
+.early-box {
+  margin-top: 32px;
+  background: rgba(232,160,32,.1);
+  border: 1px solid rgba(232,160,32,.22);
+  border-radius: var(--r-md);
+  padding: 24px;
+}
+.early-box-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.early-box p { font-size: 14px; color: rgba(255,255,255,.5); font-weight: 300; line-height: 1.6; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .filter-bar { padding: 14px 24px; }
+  .jobs-body { padding: 32px 24px 60px; }
+  .bewerben-layout { grid-template-columns: 1fr; gap: 36px; }
+  .form-row, .check-grid { grid-template-columns: 1fr; }
+}
+.page-hero-label { font-size: 16px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html" class="active">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li><a href="#bewerben" class="nav-cta">Jetzt bewerben</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html" class="active">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <a href="#bewerben" style="color:var(--accent);font-weight:600">Jetzt bewerben →</a>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Stellenbörse</span>
+    <h1>Aktuelle Jobs<br>in <em>Vorarlberg</em></h1>
+    <p>Alle Stellen sofort verfügbar. Bewirb dich direkt online – kostenlos und unkompliziert.</p>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-lbl">Branche:</span>
+  <button class="fbtn on" onclick="filter('alle', this)">Alle</button>
+  <button class="fbtn" onclick="filter('gastro', this)">🍽 Gastronomie</button>
+  <button class="fbtn" onclick="filter('bau', this)">🏗 Bau &amp; Handwerk</button>
+  <button class="fbtn" onclick="filter('lager', this)">📦 Lager &amp; Logistik</button>
+  <button class="fbtn" onclick="filter('events', this)">🎤 Events</button>
+  <span class="filter-count" id="jobCount">6 Jobs gefunden</span>
+</div>
+
+<!-- JOBS GRID -->
+<div class="jobs-body">
+  <div class="jobs-grid" id="jobsGrid">
+
+    <div class="job-card fade-in" data-b="gastro">
+      <div class="job-card-top">
+        <span class="tag tag-gastro">🍽 Gastronomie</span>
+        <span class="job-date">Morgen · Dornbirn</span>
+      </div>
+      <h3>Servicekraft (m/w/d) <span class="job-urgent">Dringend</span></h3>
+      <div class="job-company">Hotel Bergkristall, Dornbirn</div>
+      <div class="job-metas">
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>08:00 – 16:00</span>
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Dornbirn</span>
+      </div>
+      <div class="job-footer">
+        <div><div class="job-pay">€ 14,50 <span>/ Std.</span></div><div class="job-spots">3 Plätze frei</div></div>
+        <a href="#bewerben" class="job-apply" onclick="setJob('Servicekraft – Hotel Bergkristall')">Bewerben</a>
+      </div>
+    </div>
+
+    <div class="job-card fade-in" data-b="bau">
+      <div class="job-card-top">
+        <span class="tag tag-bau">🏗 Bau &amp; Handwerk</span>
+        <span class="job-date">Di, 25. März · Feldkirch</span>
+      </div>
+      <h3>Hilfsarbeiter Baustelle</h3>
+      <div class="job-company">Baukraft Vorarlberg GmbH</div>
+      <div class="job-metas">
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>07:00 – 17:00</span>
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Feldkirch</span>
+      </div>
+      <div class="job-footer">
+        <div><div class="job-pay">€ 16,00 <span>/ Std.</span></div><div class="job-spots">5 Plätze frei</div></div>
+        <a href="#bewerben" class="job-apply" onclick="setJob('Hilfsarbeiter – Baukraft Vorarlberg')">Bewerben</a>
+      </div>
+    </div>
+
+    <div class="job-card fade-in" data-b="lager">
+      <div class="job-card-top">
+        <span class="tag tag-lager">📦 Lager &amp; Logistik</span>
+        <span class="job-date">Übermorgen · Bregenz</span>
+      </div>
+      <h3>Lagermitarbeiter Kommissionierung</h3>
+      <div class="job-company">LogiCenter Bregenz</div>
+      <div class="job-metas">
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>06:00 – 14:00</span>
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Bregenz</span>
+      </div>
+      <div class="job-footer">
+        <div><div class="job-pay">€ 13,80 <span>/ Std.</span></div><div class="job-spots">8 Plätze frei</div></div>
+        <a href="#bewerben" class="job-apply" onclick="setJob('Lagermitarbeiter – LogiCenter Bregenz')">Bewerben</a>
+      </div>
+    </div>
+
+    <div class="job-card fade-in" data-b="events">
+      <div class="job-card-top">
+        <span class="tag tag-events">🎤 Events</span>
+        <span class="job-date">Sa, 29. März · Bregenz</span>
+      </div>
+      <h3>Eventhelfer/in</h3>
+      <div class="job-company">Bregenzer Festspiele</div>
+      <div class="job-metas">
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>16:00 – 24:00</span>
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Bregenz</span>
+      </div>
+      <div class="job-footer">
+        <div><div class="job-pay">€ 15,50 <span>/ Std.</span></div><div class="job-spots">12 Plätze frei</div></div>
+        <a href="#bewerben" class="job-apply" onclick="setJob('Eventhelfer/in – Bregenzer Festspiele')">Bewerben</a>
+      </div>
+    </div>
+
+    <div class="job-card fade-in" data-b="gastro">
+      <div class="job-card-top">
+        <span class="tag tag-gastro">🍽 Gastronomie</span>
+        <span class="job-date">Fr, 28. März · Bludenz</span>
+      </div>
+      <h3>Barista / Thekenkraft</h3>
+      <div class="job-company">Café am See, Bludenz</div>
+      <div class="job-metas">
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>09:00 – 18:00</span>
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Bludenz</span>
+      </div>
+      <div class="job-footer">
+        <div><div class="job-pay">€ 14,00 <span>/ Std.</span></div><div class="job-spots">2 Plätze frei</div></div>
+        <a href="#bewerben" class="job-apply" onclick="setJob('Barista – Café am See Bludenz')">Bewerben</a>
+      </div>
+    </div>
+
+    <div class="job-card fade-in" data-b="bau">
+      <div class="job-card-top">
+        <span class="tag tag-bau">🏗 Bau &amp; Handwerk</span>
+        <span class="job-date">Mo, 24. März · Hohenems</span>
+      </div>
+      <h3>Maler / Anstreicher</h3>
+      <div class="job-company">Malerbetrieb Senn, Hohenems</div>
+      <div class="job-metas">
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>07:30 – 16:30</span>
+        <span class="job-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Hohenems</span>
+      </div>
+      <div class="job-footer">
+        <div><div class="job-pay">€ 17,20 <span>/ Std.</span></div><div class="job-spots">1 Platz frei</div></div>
+        <a href="#bewerben" class="job-apply" onclick="setJob('Maler – Malerbetrieb Senn Hohenems')">Bewerben</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BEWERBEN -->
+<section class="bewerben" id="bewerben">
+  <span class="section-label">Kostenlos &amp; unverbindlich</span>
+  <h2 class="section-title section-title-white">Jetzt registrieren</h2>
+  <p class="section-sub section-sub-white">Einmal anmelden – dann bringen wir die Jobs zu dir.</p>
+
+  <div class="bewerben-layout">
+    <div class="bew-card fade-in">
+      <h3>Profil erstellen</h3>
+      <p>Nur 2 Minuten – und du bist dabei.</p>
+      <form id="bewForm" onsubmit="submitBew(event)">
+        <div class="form-row">
+          <div class="form-field"><label>Vorname</label><input type="text" name="vorname" placeholder="Max" required></div>
+          <div class="form-field"><label>Nachname</label><input type="text" name="nachname" placeholder="Mustermann" required></div>
+        </div>
+        <div class="form-field"><label>E-Mail</label><input type="email" name="email" placeholder="max@beispiel.at" required></div>
+        <div class="form-field"><label>Handynummer</label><input type="tel" name="telefon" placeholder="+43 660 ..."></div>
+        <div class="form-field"><label>Wohnort / PLZ</label><input type="text" name="wohnort" placeholder="z.B. Dornbirn, 6850"></div>
+        <div class="form-field">
+          <label>Bevorzugte Branchen</label>
+          <div class="check-grid">
+            <label class="check-item"><input type="checkbox" name="branchen" value="Gastronomie"> 🍽 Gastronomie</label>
+            <label class="check-item"><input type="checkbox" name="branchen" value="Bau"> 🏗 Bau &amp; Handwerk</label>
+            <label class="check-item"><input type="checkbox" name="branchen" value="Lager"> 📦 Lager &amp; Logistik</label>
+            <label class="check-item"><input type="checkbox" name="branchen" value="Events"> 🎤 Events</label>
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Verfügbarkeit</label>
+          <select name="verfuegbarkeit">
+            <option value="" disabled selected>Wann kannst du arbeiten?</option>
+            <option>Flexibel (wann immer)</option>
+            <option>Nur Wochentage</option>
+            <option>Nur Wochenende</option>
+            <option>Nur Frühdienst</option>
+            <option>Nur Spätdienst</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Interesse an Job (optional)</label>
+          <input type="text" id="jobInterest" name="job_interesse" placeholder="Wird automatisch ausgefüllt">
+        </div>
+        <div class="form-field">
+          <label>Kurz über dich</label>
+          <textarea name="beschreibung" placeholder="Erfahrungen, Führerschein, Sprachen..."></textarea>
+        </div>
+        <button type="submit" class="btn-submit" id="bewBtn">
+          Kostenlos registrieren
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <div class="bew-side fade-in">
+      <span class="section-label">Direkter Kontakt</span>
+      <h3 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--white);margin-bottom:10px;letter-spacing:-.5px">Fragen? Ruf uns an.</h3>
+      <p style="color:rgba(255,255,255,.5);font-size:15px;font-weight:300;line-height:1.65;max-width:360px">Wir sind in der Aufbauphase und freuen uns über jedes Gespräch.</p>
+      <div class="contact-list">
+        <div class="contact-item">
+          <div class="ci-icon">📞</div>
+          <div><div class="ci-main">+43 (0) 5572 – ODOJ</div><div class="ci-sub">Mo – Fr, 08:00 – 18:00 Uhr</div></div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon">✉️</div>
+          <div><div class="ci-main">hallo@odoj.at</div><div class="ci-sub">Antwort innerhalb von 24 Stunden</div></div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon">📍</div>
+          <div><div class="ci-main">Vorarlberg, Österreich</div><div class="ci-sub">Lokal verwurzelt, regional vernetzt</div></div>
+        </div>
+      </div>
+      <div class="early-box">
+        <div class="early-box-title">🚀 Frühbucher-Vorteil</div>
+        <p>Die ersten 50 registrierten Jobber erhalten bevorzugte Job-Benachrichtigungen und persönliche Betreuung durch unser Team.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
+    </div>
+    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li><li><a href="#bewerben">Registrieren</a></li></ul></div>
+    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="arbeitgeber.html">Personal anfragen</a></li></ul></div>
+    <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job.</span>
+    <div class="footer-legal"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="agb.html">AGB</a></div>
+  </div>
+</footer>
+
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+// Filter
+function filter(b, btn) {
+  document.querySelectorAll('.fbtn').forEach(x => x.classList.remove('on'));
+  btn.classList.add('on');
+  let n = 0;
+  document.querySelectorAll('.job-card').forEach(c => {
+    const show = b === 'alle' || c.dataset.b === b;
+    c.style.display = show ? 'flex' : 'none';
+    if (show) n++;
+  });
+  document.getElementById('jobCount').textContent = n + ' Job' + (n !== 1 ? 's' : '') + ' gefunden';
+}
+
+// Pre-fill from URL param
+const p = new URLSearchParams(location.search).get('b');
+if (p) { const btn = document.querySelector(`.fbtn[onclick*="${p}"]`); if (btn) filter(p, btn); }
+
+// Auto-fill job interest
+function setJob(name) { setTimeout(() => { document.getElementById('jobInterest').value = name; }, 100); }
+
+// Submit
+function submitBew(e) {
+  e.preventDefault();
+  const btn = document.getElementById('bewBtn');
+  btn.textContent = '✓ Angemeldet! Wir melden uns bald.';
+  btn.style.background = '#1a8c5c';
+  btn.disabled = true;
+}
+
+// Fade-in
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 70); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

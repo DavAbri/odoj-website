@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ODOJ – One Day One Job | Tagesjobs in Vorarlberg</title>
+<meta name="description" content="ODOJ vermittelt flexible Tagesjobs in Gastronomie, Bau, Lager und Events in Vorarlberg. Schnell bewerben, sofort arbeiten.">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: calc(var(--nav-h) + 60px) 60px 120px;
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 80% at 55% 45%, black, transparent);
+  pointer-events: none;
+}
+.hero-glow-a {
+  position: absolute;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(74,143,193,.16) 0%, transparent 70%);
+  top: -120px; right: -160px;
+  pointer-events: none;
+}
+.hero-glow-b {
+  position: absolute;
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(232,160,32,.1) 0%, transparent 70%);
+  bottom: 80px; left: 180px;
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(232,160,32,.13);
+  border: 1px solid rgba(232,160,32,.28);
+  color: var(--accent-lt);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 100px;
+  margin-bottom: 30px;
+  letter-spacing: .3px;
+}
+.hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: blink 2.2s infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .4; transform: scale(1.4); }
+}
+.hero h1 {
+  font-size: clamp(52px, 7.5vw, 88px);
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.0;
+  letter-spacing: -3px;
+  margin-bottom: 28px;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-sub {
+  font-size: 19px;
+  color: rgba(255,255,255,.62);
+  max-width: 540px;
+  margin-bottom: 48px;
+  line-height: 1.65;
+  font-weight: 300;
+}
+.hero-btns {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.hero-stats {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 2;
+  display: flex;
+  gap: 0;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.hero-stat {
+  flex: 1;
+  padding: 28px 40px;
+  border-right: 1px solid rgba(255,255,255,.07);
+}
+.hero-stat:last-child { border-right: none; }
+.hero-stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1;
+}
+.hero-stat-num sup { font-size: 18px; color: var(--accent); vertical-align: super; }
+.hero-stat-lbl {
+  font-size: 13px;
+  color: var(--gray);
+  margin-top: 5px;
+  font-weight: 300;
+}
+
+/* ── TEASER STRIP ── */
+.teasers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--gray-lt);
+}
+.teaser {
+  padding: 48px 44px;
+  background: var(--white);
+  border-right: 1px solid var(--gray-lt);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  transition: background .2s;
+}
+.teaser:last-child { border-right: none; }
+.teaser:hover { background: var(--off); }
+.teaser-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s;
+}
+.teaser:hover .teaser-bar { transform: scaleX(1); }
+.teaser-icon { font-size: 30px; margin-bottom: 18px; display: block; }
+.teaser h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.teaser p {
+  font-size: 14px;
+  color: var(--text-lt);
+  line-height: 1.65;
+  font-weight: 300;
+  margin-bottom: 18px;
+}
+.teaser-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: gap .2s;
+}
+.teaser:hover .teaser-link { gap: 10px; }
+
+/* ── HOW IT WORKS ── */
+.how { background: var(--off); }
+.how-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 52px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+.step {
+  background: var(--white);
+  padding: 44px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.step:first-child { border-radius: var(--r-lg) 0 0 var(--r-lg); }
+.step:last-child  { border-radius: 0 var(--r-lg) var(--r-lg) 0; }
+.step:hover { transform: translateY(-4px); box-shadow: var(--sh-md); z-index: 1; }
+.step-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 68px;
+  font-weight: 800;
+  color: var(--gray-lt);
+  line-height: 1;
+  margin-bottom: 20px;
+  display: block;
+  user-select: none;
+}
+.step-ico {
+  width: 46px; height: 46px;
+  background: var(--accent-pale);
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 18px;
+}
+.step h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.step p {
+  font-size: 14px;
+  color: var(--text-lt);
+  line-height: 1.65;
+  font-weight: 300;
+}
+.step-line {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s;
+}
+.step:hover .step-line { transform: scaleX(1); }
+
+/* ── BRANCHEN PREVIEW ── */
+.branchen { background: var(--navy); }
+.branchen-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 52px;
+}
+.branche-pill {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--r-md);
+  padding: 30px 26px;
+  text-decoration: none;
+  transition: background .2s, border-color .2s, transform .2s;
+  display: block;
+}
+.branche-pill:hover {
+  background: rgba(255,255,255,.09);
+  border-color: rgba(255,255,255,.18);
+  transform: translateY(-3px);
+}
+.branche-pill-icon { font-size: 28px; margin-bottom: 14px; display: block; }
+.branche-pill h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+.branche-pill p { font-size: 13px; color: rgba(255,255,255,.4); font-weight: 300; }
+
+/* ── CTA BAND ── */
+.cta-band {
+  background: var(--accent);
+  padding: 72px 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.cta-band h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800;
+  color: var(--navy);
+  max-width: 520px;
+  line-height: 1.1;
+  letter-spacing: -.8px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero { padding: calc(var(--nav-h) + 40px) 24px 100px; }
+  .hero h1 { letter-spacing: -2px; }
+  .hero-stats { position: static; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,.07); margin-top: 48px; }
+  .hero-stat { flex: 0 0 calc(50% - 0px); border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); padding: 20px 24px; }
+  .teasers { grid-template-columns: 1fr; }
+  .teaser { border-right: none; border-bottom: 1px solid var(--gray-lt); }
+  .teaser:last-child { border-bottom: none; }
+  .steps { grid-template-columns: 1fr; gap: 3px; }
+  .step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+  .branchen-grid { grid-template-columns: 1fr 1fr; }
+  .cta-band { padding: 56px 24px; flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 540px) {
+  .branchen-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li><a href="jobs.html" class="nav-cta">Jetzt bewerben</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <a href="jobs.html" style="color:var(--accent);font-weight:600">Jetzt bewerben →</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow-a"></div>
+  <div class="hero-glow-b"></div>
+
+  <div class="hero-inner">
+    <div class="hero-badge">Vorarlberg &amp; Region – Jobs ab morgen</div>
+    <h1>Dein Tag.<br><em>Dein Job.</em><br>Sofort.</h1>
+    <p class="hero-sub">ODOJ vermittelt flexible Tagesjobs in Gastronomie, Bau, Lager und Events – schnell, unkompliziert und fair bezahlt.</p>
+    <div class="hero-btns">
+      <a href="jobs.html" class="btn btn-accent">
+        Jobs ansehen
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="arbeitgeber.html" class="btn btn-outline">Ich bin Arbeitgeber</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">4<sup>+</sup></div>
+      <div class="hero-stat-lbl">Branchen abgedeckt</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">100<sup>%</sup></div>
+      <div class="hero-stat-lbl">Faire Bezahlung</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">1 <sup style="font-size:14px">Tag</sup></div>
+      <div class="hero-stat-lbl">Bis zum ersten Einsatz</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">0</div>
+      <div class="hero-stat-lbl">Versteckte Kosten</div>
+    </div>
+  </div>
+</section>
+
+<!-- TEASER CARDS -->
+<div class="teasers">
+  <a href="jobs.html" class="teaser fade-in">
+    <div class="teaser-bar"></div>
+    <span class="teaser-icon">🔍</span>
+    <h3>Jobs finden</h3>
+    <p>Tagesjobs in Vorarlberg durchstöbern und in einem Klick bewerben.</p>
+    <div class="teaser-link">Zur Stellenbörse <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+  </a>
+  <a href="arbeitgeber.html" class="teaser fade-in">
+    <div class="teaser-bar"></div>
+    <span class="teaser-icon">🏢</span>
+    <h3>Personal anfragen</h3>
+    <p>Kurzfristig qualifiziertes Personal für Tageseinsätze anfragen – ohne Aufwand.</p>
+    <div class="teaser-link">Für Arbeitgeber <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+  </a>
+  <a href="ueber-uns.html" class="teaser fade-in">
+    <div class="teaser-bar"></div>
+    <span class="teaser-icon">💡</span>
+    <h3>Wer ist ODOJ?</h3>
+    <p>Ein junges Unternehmen aus Vorarlberg mit der Mission, flexible Arbeit fair zu machen.</p>
+    <div class="teaser-link">Mehr erfahren <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+  </a>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="how-header fade-in">
+    <div>
+      <span class="section-label">So einfach geht's</span>
+      <h2 class="section-title">In 3 Schritten<br>zum Tagesjob</h2>
+      <p class="section-sub">Einmal registrieren – dann bringen wir die Jobs zu dir.</p>
+    </div>
+    <a href="jobs.html" class="btn btn-outline-dark">Alle Jobs ansehen</a>
+  </div>
+
+  <div class="steps">
+    <div class="step fade-in">
+      <span class="step-num">01</span>
+      <div class="step-ico">📋</div>
+      <h3>Profil erstellen</h3>
+      <p>Fähigkeiten, Verfügbarkeit und bevorzugte Branchen angeben – dauert 5 Minuten.</p>
+      <div class="step-line"></div>
+    </div>
+    <div class="step fade-in">
+      <span class="step-num">02</span>
+      <div class="step-ico">🎯</div>
+      <h3>Passende Jobs erhalten</h3>
+      <p>Wir matchen dich mit offenen Stellen in deiner Region. Du entscheidest, was dir zusagt.</p>
+      <div class="step-line"></div>
+    </div>
+    <div class="step fade-in">
+      <span class="step-num">03</span>
+      <div class="step-ico">✅</div>
+      <h3>Loslegen &amp; verdienen</h3>
+      <p>Einsatz bestätigen, hingehen, arbeiten – Lohn wird direkt danach abgerechnet.</p>
+      <div class="step-line"></div>
+    </div>
+  </div>
+</section>
+
+<!-- BRANCHEN PREVIEW -->
+<section class="branchen">
+  <div class="fade-in">
+    <span class="section-label">Unsere Bereiche</span>
+    <h2 class="section-title section-title-white">Vier Branchen.<br>Unzählige Möglichkeiten.</h2>
+    <p class="section-sub section-sub-white">ODOJ vermittelt dort, wo flexible Arbeitskräfte täglich gebraucht werden.</p>
+  </div>
+  <div class="branchen-grid">
+    <a href="jobs.html?b=gastro" class="branche-pill fade-in">
+      <span class="branche-pill-icon">🍽</span>
+      <h4>Gastronomie &amp; Hotel</h4>
+      <p>Service, Küche, Reinigung</p>
+    </a>
+    <a href="jobs.html?b=bau" class="branche-pill fade-in">
+      <span class="branche-pill-icon">🏗</span>
+      <h4>Bau &amp; Handwerk</h4>
+      <p>Hilfsarbeiter, Maler, Montage</p>
+    </a>
+    <a href="jobs.html?b=lager" class="branche-pill fade-in">
+      <span class="branche-pill-icon">📦</span>
+      <h4>Lager &amp; Logistik</h4>
+      <p>Kommissionierung, Versand</p>
+    </a>
+    <a href="jobs.html?b=events" class="branche-pill fade-in">
+      <span class="branche-pill-icon">🎤</span>
+      <h4>Veranstaltungen &amp; Events</h4>
+      <p>Konzerte, Messen, Festivals</p>
+    </a>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<div class="cta-band fade-in">
+  <h2>Bereit für deinen ersten Tagesjob in Vorarlberg?</h2>
+  <a href="jobs.html" class="btn btn-navy">Alle Jobs ansehen →</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg. Fair, schnell, unkompliziert.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Für Jobsuchende</h4>
+      <ul>
+        <li><a href="jobs.html">Jobs ansehen</a></li>
+        <li><a href="jobs.html#bewerben">Registrieren</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Für Unternehmen</h4>
+      <ul>
+        <li><a href="arbeitgeber.html">Personal anfragen</a></li>
+        <li><a href="arbeitgeber.html#ablauf">Wie es funktioniert</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Rechtliches</h4>
+      <ul>
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+        <li><a href="agb.html">AGB</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job. Alle Rechte vorbehalten.</span>
+    <div class="footer-legal">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+function toggleMenu() {
+  document.getElementById('navMobile').classList.toggle('open');
+}
+// Fade-in on scroll
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80);
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
