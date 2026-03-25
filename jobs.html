@@ -252,6 +252,49 @@
   .form-row, .check-grid { grid-template-columns: 1fr; }
 }
 .page-hero-label { font-size: 16px; }
+
+/* ── JOBS LOCK BANNER ── */
+.jobs-lock-banner {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 52px 32px;
+  background: var(--white);
+  border: 2px dashed var(--gray-lt);
+  border-radius: var(--r-lg);
+  margin-top: 8px;
+}
+.jobs-lock-banner .lock-icon-wrap {
+  width: 72px; height: 72px;
+  background: var(--off);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin-bottom: 18px;
+}
+.jobs-lock-banner h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+.jobs-lock-banner > p {
+  font-size: 15px;
+  color: var(--text-lt);
+  max-width: 360px;
+  line-height: 1.65;
+  margin-bottom: 22px;
+}
+.lock-hint {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-lt);
+}
+.lock-hint a { color: var(--accent); font-weight: 600; text-decoration: none; }
 </style>
 </head>
 <body>
@@ -263,7 +306,7 @@
     <li><a href="jobs.html" class="active">Jobs finden</a></li>
     <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
     <li><a href="ueber-uns.html">Über uns</a></li>
-    <li><a href="#bewerben" class="nav-cta">Jetzt bewerben</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
   </ul>
   <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
     <span></span><span></span><span></span>
@@ -273,7 +316,7 @@
   <a href="jobs.html" class="active">Jobs finden</a>
   <a href="arbeitgeber.html">Für Arbeitgeber</a>
   <a href="ueber-uns.html">Über uns</a>
-  <a href="#bewerben" style="color:var(--accent);font-weight:600">Jetzt bewerben →</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
 </div>
 
 <!-- PAGE HERO -->
@@ -353,7 +396,7 @@
       </div>
     </div>
 
-    <div class="job-card fade-in" data-b="events">
+    <div class="job-card fade-in" data-b="events" data-locked="true">
       <div class="job-card-top">
         <span class="tag tag-events">🎤 Events</span>
         <span class="job-date">Sa, 29. März · Bregenz</span>
@@ -370,7 +413,7 @@
       </div>
     </div>
 
-    <div class="job-card fade-in" data-b="gastro">
+    <div class="job-card fade-in" data-b="gastro" data-locked="true">
       <div class="job-card-top">
         <span class="tag tag-gastro">🍽 Gastronomie</span>
         <span class="job-date">Fr, 28. März · Bludenz</span>
@@ -387,7 +430,7 @@
       </div>
     </div>
 
-    <div class="job-card fade-in" data-b="bau">
+    <div class="job-card fade-in" data-b="bau" data-locked="true">
       <div class="job-card-top">
         <span class="tag tag-bau">🏗 Bau &amp; Handwerk</span>
         <span class="job-date">Mo, 24. März · Hohenems</span>
@@ -404,6 +447,18 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- LOCK BANNER (erscheint wenn nicht eingeloggt) -->
+  <div id="jobs-lock-banner" class="jobs-lock-banner">
+    <div class="lock-icon-wrap">🔒</div>
+    <h3>Alle Jobs freischalten</h3>
+    <p>Melde dich an, um alle verfügbaren Stellen in Vorarlberg zu sehen und dich direkt zu bewerben – kostenlos.</p>
+    <a href="login.html" class="btn btn-accent">
+      Jetzt anmelden
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <p class="lock-hint">Noch kein Konto? <a href="login.html">Kostenlos registrieren →</a></p>
   </div>
 </div>
 
@@ -503,25 +558,35 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
-// Filter
+// Unlock-Status (wird nach Auth-Check gesetzt)
+window._odojJobsUnlocked = false;
+
+// Filter – respektiert Lock-Status
 function filter(b, btn) {
   document.querySelectorAll('.fbtn').forEach(x => x.classList.remove('on'));
   btn.classList.add('on');
   let n = 0;
   document.querySelectorAll('.job-card').forEach(c => {
-    const show = b === 'alle' || c.dataset.b === b;
-    c.style.display = show ? 'flex' : 'none';
-    if (show) n++;
+    const locked = c.dataset.locked === 'true' && !window._odojJobsUnlocked;
+    if (locked) {
+      c.style.display = 'none';
+    } else {
+      const show = b === 'alle' || c.dataset.b === b;
+      c.style.display = show ? 'flex' : 'none';
+      if (show) n++;
+    }
   });
   document.getElementById('jobCount').textContent = n + ' Job' + (n !== 1 ? 's' : '') + ' gefunden';
 }
 
 // Pre-fill from URL param
 const p = new URLSearchParams(location.search).get('b');
-if (p) { const btn = document.querySelector(`.fbtn[onclick*="${p}"]`); if (btn) filter(p, btn); }
+if (p) { const btn = document.querySelector('.fbtn[onclick*="' + p + '"]'); if (btn) filter(p, btn); }
 
 // Auto-fill job interest
 function setJob(name) { setTimeout(() => { document.getElementById('jobInterest').value = name; }, 100); }
@@ -540,6 +605,42 @@ const obs = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 70); });
 }, { threshold: 0.08 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+// ── AUTH CHECK ──
+async function checkJobsAuth() {
+  const session = await odojGetSession();
+
+  if (session) {
+    const rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+    localStorage.setItem('odoj_rolle', rolle);
+
+    if (rolle === 'arbeitgeber') {
+      // Arbeitgeber hat hier nichts zu suchen
+      window.location.href = 'login.html?msg=ag_on_jobs';
+      return;
+    }
+
+    // Jobber: alle Jobs freischalten
+    window._odojJobsUnlocked = true;
+    document.getElementById('jobs-lock-banner').style.display = 'none';
+    // Filter neu ausführen um gesperrte Karten zu zeigen
+    const activeBtn = document.querySelector('.fbtn.on');
+    if (activeBtn) {
+      const m = activeBtn.getAttribute('onclick').match(/filter\('(\w+)'/);
+      if (m) filter(m[1], activeBtn);
+    }
+  } else {
+    // Nicht eingeloggt: gesperrte Jobs ausblenden + Banner zeigen
+    window._odojJobsUnlocked = false;
+    const activeBtn = document.querySelector('.fbtn.on');
+    if (activeBtn) {
+      const m = activeBtn.getAttribute('onclick').match(/filter\('(\w+)'/);
+      if (m) filter(m[1], activeBtn);
+    }
+    document.getElementById('jobs-lock-banner').style.display = 'flex';
+  }
+}
+checkJobsAuth();
 </script>
 </body>
 </html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anmelden – ODOJ | Tagesjobs in Vorarlberg</title>
+<meta name="description" content="Jetzt bei ODOJ anmelden oder registrieren – als Jobber oder Arbeitgeber.">
+<link rel="stylesheet" href="shared.css">
+<style>
+.login-bg {
+  min-height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 72px;
+  position: relative;
+  overflow: hidden;
+}
+.login-bg-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+  pointer-events: none;
+}
+.login-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(232,160,32,.12) 0%, transparent 70%);
+  top: -80px; right: -80px;
+  pointer-events: none;
+}
+.login-card {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  padding: 44px 44px 36px;
+  width: 100%;
+  max-width: 460px;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 24px 80px rgba(0,0,0,.32);
+}
+.login-logo-wrap { text-align: center; margin-bottom: 6px; }
+.login-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--navy);
+  text-decoration: none;
+  letter-spacing: -.5px;
+}
+.login-logo span { color: var(--accent); }
+.login-tagline {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-lt);
+  font-weight: 300;
+  margin-bottom: 28px;
+}
+.login-msg {
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  text-align: center;
+  line-height: 1.5;
+}
+.login-msg.info { background: #EBF5FF; color: #1A5FA0; border: 1px solid #A8CBE5; }
+.login-msg.warn { background: #FFF4E0; color: #A05000; border: 1px solid #F5BE5A; }
+
+/* Role tabs */
+.role-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 24px;
+  background: var(--off);
+  border-radius: var(--r-sm);
+  padding: 4px;
+}
+.role-tab {
+  padding: 11px 8px;
+  border: none;
+  border-radius: calc(var(--r-sm) - 2px);
+  background: transparent;
+  color: var(--text-lt);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: center;
+  line-height: 1.3;
+}
+.role-tab.active {
+  background: var(--navy);
+  color: var(--white);
+  box-shadow: var(--sh-sm);
+}
+
+/* Auth mode tabs */
+.auth-mode-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--gray-lt);
+  margin-bottom: 24px;
+}
+.auth-mode-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-lt);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all .2s;
+}
+.auth-mode-tab.active {
+  color: var(--navy);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+/* Form */
+.lf-field { margin-bottom: 14px; }
+.lf-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-lt);
+  margin-bottom: 6px;
+}
+.lf-field input {
+  width: 100%;
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  padding: 13px 14px;
+  outline: none;
+  transition: border-color .2s, background .2s;
+}
+.lf-field input:focus { border-color: var(--accent); background: var(--white); }
+.form-error {
+  background: #FFF0F0;
+  border: 1px solid #FFBBBB;
+  color: #C0392B;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.lf-btn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--navy);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 15px;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+  margin-top: 6px;
+}
+.lf-btn:hover { background: var(--accent-lt); transform: translateY(-1px); }
+.lf-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+/* Success state */
+.auth-success {
+  text-align: center;
+  padding: 16px 0 8px;
+}
+.auth-success-icon {
+  width: 60px; height: 60px;
+  background: #E6F5EE;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 26px;
+}
+.auth-success h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+.auth-success p { font-size: 14px; color: var(--text-lt); line-height: 1.6; }
+
+.back-link {
+  display: block;
+  text-align: center;
+  margin-top: 22px;
+  font-size: 13px;
+  color: var(--text-lt);
+}
+.back-link a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.back-link a:hover { text-decoration: underline; }
+
+@media (max-width: 540px) {
+  .login-card { padding: 32px 24px 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+</div>
+
+<!-- LOGIN AREA -->
+<div class="login-bg">
+  <div class="login-bg-grid"></div>
+  <div class="login-glow"></div>
+
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-logo-wrap">
+      <a href="index.html" class="login-logo">O<span>D</span>OJ</a>
+    </div>
+    <p class="login-tagline">Dein Tagesjob in Vorarlberg</p>
+
+    <!-- Message banner -->
+    <div id="login-msg" class="login-msg" style="display:none"></div>
+
+    <!-- Role Tabs -->
+    <div class="role-tabs">
+      <button class="role-tab active" id="tab-jobber" onclick="setRole('jobber')">
+        👤 Ich bin Jobber
+      </button>
+      <button class="role-tab" id="tab-arbeitgeber" onclick="setRole('arbeitgeber')">
+        🏢 Ich bin Arbeitgeber
+      </button>
+    </div>
+
+    <!-- Auth Mode Tabs -->
+    <div class="auth-mode-tabs">
+      <button class="auth-mode-tab active" id="mode-login" onclick="setMode('login')">Anmelden</button>
+      <button class="auth-mode-tab" id="mode-register" onclick="setMode('register')">Registrieren</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="form-login" onsubmit="doLogin(event)">
+      <div class="lf-field">
+        <label>E-Mail</label>
+        <input type="email" id="login-email" placeholder="deine@email.at" required autocomplete="email">
+      </div>
+      <div class="lf-field">
+        <label>Passwort</label>
+        <input type="password" id="login-pw" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <div id="login-error" class="form-error" style="display:none"></div>
+      <button type="submit" class="lf-btn" id="login-btn">Anmelden</button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="form-register" onsubmit="doRegister(event)" style="display:none">
+      <div class="lf-field">
+        <label>Name</label>
+        <input type="text" id="reg-name" placeholder="Vor- und Nachname" required autocomplete="name">
+      </div>
+      <div class="lf-field">
+        <label>E-Mail</label>
+        <input type="email" id="reg-email" placeholder="deine@email.at" required autocomplete="email">
+      </div>
+      <div class="lf-field">
+        <label>Passwort</label>
+        <input type="password" id="reg-pw" placeholder="Mindestens 6 Zeichen" required minlength="6" autocomplete="new-password">
+      </div>
+      <div id="reg-error" class="form-error" style="display:none"></div>
+      <button type="submit" class="lf-btn" id="reg-btn">Konto erstellen</button>
+    </form>
+
+    <!-- Success -->
+    <div id="auth-success" class="auth-success" style="display:none">
+      <div class="auth-success-icon">✓</div>
+      <h3>Fast geschafft!</h3>
+      <p id="auth-success-msg"></p>
+    </div>
+
+    <p class="back-link"><a href="index.html">← Zurück zur Startseite</a></p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg. Fair, schnell, unkompliziert.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Für Jobsuchende</h4>
+      <ul><li><a href="jobs.html">Jobs ansehen</a></li></ul>
+    </div>
+    <div class="footer-col">
+      <h4>Für Unternehmen</h4>
+      <ul><li><a href="arbeitgeber.html">Personal anfragen</a></li></ul>
+    </div>
+    <div class="footer-col">
+      <h4>Rechtliches</h4>
+      <ul>
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job.</span>
+    <div class="footer-legal">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const _loginSb = supabase.createClient(
+  'https://vixarulzbsfwnbfucbih.supabase.co',
+  'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
+);
+
+let _currentRole = 'jobber';
+
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+function setRole(rolle) {
+  _currentRole = rolle;
+  document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + rolle).classList.add('active');
+}
+
+function setMode(mode) {
+  document.querySelectorAll('.auth-mode-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('mode-' + mode).classList.add('active');
+  document.getElementById('form-login').style.display   = mode === 'login'    ? 'block' : 'none';
+  document.getElementById('form-register').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-success').style.display = 'none';
+}
+
+function redirectAfterAuth(rolle) {
+  const params = new URLSearchParams(location.search);
+  const redirect = params.get('redirect');
+  if (rolle === 'arbeitgeber') {
+    window.location.href = 'arbeitgeber.html';
+  } else {
+    window.location.href = redirect === 'jobs' ? 'jobs.html' : 'jobs.html';
+  }
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  btn.textContent = 'Anmelden…';
+  btn.disabled = true;
+
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+
+  const { data, error } = await _loginSb.auth.signInWithPassword({ email, password: pw });
+
+  if (error) {
+    errEl.textContent = (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('credentials'))
+      ? 'E-Mail oder Passwort falsch. Bitte erneut versuchen.'
+      : error.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Anmelden';
+    btn.disabled = false;
+    return;
+  }
+
+  const rolle = data.user.user_metadata?.rolle || 'jobber';
+  localStorage.setItem('odoj_rolle', rolle);
+  redirectAfterAuth(rolle);
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('reg-btn');
+  const errEl = document.getElementById('reg-error');
+  errEl.style.display = 'none';
+  btn.textContent = 'Registrieren…';
+  btn.disabled = true;
+
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pw    = document.getElementById('reg-pw').value;
+
+  const { data, error } = await _loginSb.auth.signUp({
+    email,
+    password: pw,
+    options: { data: { name, rolle: _currentRole } }
+  });
+
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Konto erstellen';
+    btn.disabled = false;
+    return;
+  }
+
+  localStorage.setItem('odoj_rolle', _currentRole);
+
+  if (data.session) {
+    // E-Mail auto-bestätigt
+    redirectAfterAuth(_currentRole);
+  } else {
+    // E-Mail-Bestätigung nötig
+    document.getElementById('form-register').style.display = 'none';
+    document.getElementById('auth-success').style.display = 'block';
+    document.getElementById('auth-success-msg').textContent =
+      'Wir haben dir eine Bestätigungs-E-Mail geschickt. Bitte klick auf den Link, dann kannst du dich anmelden.';
+  }
+}
+
+// URL-Parameter auswerten
+(function() {
+  const params = new URLSearchParams(location.search);
+  const msg = params.get('msg');
+  const msgEl = document.getElementById('login-msg');
+
+  if (msg === 'ag_on_jobs') {
+    msgEl.textContent = 'Du bist als Arbeitgeber angemeldet. Die Stellenbörse ist für Jobsuchende. Bitte melde dich als Arbeitgeber an.';
+    msgEl.className = 'login-msg warn';
+    msgEl.style.display = 'block';
+    setRole('arbeitgeber');
+  } else if (msg === 'restricted') {
+    msgEl.textContent = 'Diese Seite ist nur für Arbeitgeber. Bitte melde dich mit einem Arbeitgeber-Konto an.';
+    msgEl.className = 'login-msg info';
+    msgEl.style.display = 'block';
+    setRole('arbeitgeber');
+  }
+})();
+
+// Bereits eingeloggt? → weiterleiten
+_loginSb.auth.getSession().then(({ data }) => {
+  if (data.session) {
+    const params = new URLSearchParams(location.search);
+    if (!params.get('msg')) {
+      const rolle = data.session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+      redirectAfterAuth(rolle);
+    }
+  }
+});
+</script>
+</body>
+</html>

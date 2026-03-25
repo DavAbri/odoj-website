@@ -196,7 +196,7 @@
     <li><a href="jobs.html">Jobs finden</a></li>
     <li><a href="arbeitgeber.html" class="active">Für Arbeitgeber</a></li>
     <li><a href="ueber-uns.html">Über uns</a></li>
-    <li><a href="#anfrage" class="nav-cta">Personal anfragen</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
   </ul>
   <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
     <span></span><span></span><span></span>
@@ -206,7 +206,7 @@
   <a href="jobs.html">Jobs finden</a>
   <a href="arbeitgeber.html" class="active">Für Arbeitgeber</a>
   <a href="ueber-uns.html">Über uns</a>
-  <a href="#anfrage" style="color:var(--accent);font-weight:600">Personal anfragen →</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
 </div>
 
 <!-- PAGE HERO -->
@@ -416,8 +416,29 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+// ── AUTH GUARD: nur Arbeitgeber dürfen diese Seite sehen ──
+(async function checkArbeitgeberAuth() {
+  const session = await odojGetSession();
+
+  if (!session) {
+    window.location.href = 'login.html?msg=restricted&redirect=arbeitgeber';
+    return;
+  }
+
+  const rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle');
+  if (rolle !== 'arbeitgeber') {
+    window.location.href = 'login.html?msg=restricted&redirect=arbeitgeber';
+    return;
+  }
+
+  localStorage.setItem('odoj_rolle', 'arbeitgeber');
+})();
+
 function submitAnfrage(e) {
   e.preventDefault();
   const btn = document.getElementById('anfBtn');

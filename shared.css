@@ -384,6 +384,45 @@ footer {
 }
 .footer-legal a:hover { color: rgba(255,255,255,.6); }
 
+/* ── NAV AUTH AREA ── */
+#nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-user-name {
+  color: rgba(255,255,255,.72);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.nav-logout-btn {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.8);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background .2s;
+  white-space: nowrap;
+}
+.nav-logout-btn:hover { background: rgba(255,255,255,.2); }
+.nav-user-name-mobile {
+  color: rgba(255,255,255,.5);
+  font-size: 13px;
+  display: block;
+  padding: 10px 0 6px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-weight: 400;
+}
+.nav-logout-mobile {
+  color: #e74c3c !important;
+  font-weight: 600 !important;
+}
+
 /* ── FADE-IN ANIMATION ── */
 .fade-in {
   opacity: 0;
