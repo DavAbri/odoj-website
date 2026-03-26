@@ -253,6 +253,38 @@
 }
 .page-hero-label { font-size: 16px; }
 
+/* ── ARBEITGEBER INFO BANNER ── */
+.ag-info-banner {
+  display: none;
+  background: #FFF8E8;
+  border: 1.5px solid #F5BE5A;
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  margin: 20px 60px 0;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.ag-info-banner p {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #7A4A00;
+  margin: 0;
+}
+.ag-info-banner a {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  background: var(--accent);
+  padding: 8px 16px;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ag-info-banner a:hover { background: var(--accent-lt); }
+@media (max-width: 768px) { .ag-info-banner { margin: 12px 24px 0; } }
+
 /* ── JOBS LOCK BANNER ── */
 .jobs-lock-banner {
   display: none;
@@ -339,6 +371,12 @@
   <button class="fbtn" onclick="filter('lager', this)">📦 Lager &amp; Logistik</button>
   <button class="fbtn" onclick="filter('events', this)">🎤 Events</button>
   <span class="filter-count" id="jobCount">6 Jobs gefunden</span>
+</div>
+
+<!-- ARBEITGEBER INFO BANNER (wird per JS eingeblendet) -->
+<div id="ag-info-banner" class="ag-info-banner">
+  <p>🏢 Du bist als Arbeitgeber eingeloggt – hier findest du keine Stellen für dein Unternehmen.</p>
+  <a href="arbeitgeber.html">Zur Arbeitgeber-Seite &rarr;</a>
 </div>
 
 <!-- JOBS GRID -->
@@ -611,33 +649,37 @@ async function checkJobsAuth() {
   const session = await odojGetSession();
 
   if (session) {
-    const rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
-    localStorage.setItem('odoj_rolle', rolle);
+    // Rolle aus profile-Tabelle laden
+    let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+    try {
+      const { data: profile } = await odojSb
+        .from('profile').select('rolle').eq('user_id', session.user.id).single();
+      if (profile?.rolle) rolle = profile.rolle;
+    } catch (_) {}
+    odojSaveRolle(rolle);
 
     if (rolle === 'arbeitgeber') {
-      // Arbeitgeber hat hier nichts zu suchen
-      window.location.href = 'login.html?msg=ag_on_jobs';
-      return;
-    }
-
-    // Jobber: alle Jobs freischalten
-    window._odojJobsUnlocked = true;
-    document.getElementById('jobs-lock-banner').style.display = 'none';
-    // Filter neu ausführen um gesperrte Karten zu zeigen
-    const activeBtn = document.querySelector('.fbtn.on');
-    if (activeBtn) {
-      const m = activeBtn.getAttribute('onclick').match(/filter\('(\w+)'/);
-      if (m) filter(m[1], activeBtn);
+      // Arbeitgeber: Info-Banner zeigen, Jobs gesperrt lassen
+      document.getElementById('ag-info-banner').style.display = 'flex';
+      document.getElementById('jobs-lock-banner').style.display = 'none';
+      window._odojJobsUnlocked = false;
+    } else {
+      // Jobber: alle Jobs freischalten
+      window._odojJobsUnlocked = true;
+      document.getElementById('jobs-lock-banner').style.display = 'none';
+      document.getElementById('ag-info-banner').style.display   = 'none';
     }
   } else {
     // Nicht eingeloggt: gesperrte Jobs ausblenden + Banner zeigen
     window._odojJobsUnlocked = false;
-    const activeBtn = document.querySelector('.fbtn.on');
-    if (activeBtn) {
-      const m = activeBtn.getAttribute('onclick').match(/filter\('(\w+)'/);
-      if (m) filter(m[1], activeBtn);
-    }
     document.getElementById('jobs-lock-banner').style.display = 'flex';
+  }
+
+  // Filter nach Auth-Status neu ausführen
+  const activeBtn = document.querySelector('.fbtn.on');
+  if (activeBtn) {
+    const m = activeBtn.getAttribute('onclick').match(/filter\('(\w+)'/);
+    if (m) filter(m[1], activeBtn);
   }
 }
 checkJobsAuth();

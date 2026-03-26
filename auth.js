@@ -14,6 +14,17 @@ function odojSaveRolle(rolle) {
   if (rolle) localStorage.setItem('odoj_rolle', rolle);
 }
 
+async function odojGetProfile(userId) {
+  try {
+    const { data } = await odojSb
+      .from('profile')
+      .select('vorname, nachname, firmenname, rolle')
+      .eq('user_id', userId)
+      .single();
+    return data;
+  } catch (_) { return null; }
+}
+
 async function odojLogout() {
   await odojSb.auth.signOut();
   localStorage.removeItem('odoj_rolle');
@@ -26,19 +37,29 @@ async function odojInitNav() {
   const mobileEl = document.getElementById('nav-mobile-auth');
 
   if (session) {
-    const rolle = session.user.user_metadata?.rolle
-                  || localStorage.getItem('odoj_rolle')
-                  || 'jobber';
-    localStorage.setItem('odoj_rolle', rolle);
-    let name = session.user.user_metadata?.name || session.user.email;
-    if (name.length > 20) name = name.substring(0, 18) + '\u2026';
+    // Rolle ermitteln
+    const profile = await odojGetProfile(session.user.id);
+    const rolle   = profile?.rolle
+                    || session.user.user_metadata?.rolle
+                    || localStorage.getItem('odoj_rolle')
+                    || 'jobber';
+    odojSaveRolle(rolle);
+
+    // Anzeigename: Jobber → Vorname, Arbeitgeber → Firmenname
+    let displayName = session.user.email;
+    if (profile) {
+      displayName = (rolle === 'arbeitgeber' && profile.firmenname)
+        ? profile.firmenname
+        : (profile.vorname || session.user.email);
+    }
+    if (displayName.length > 20) displayName = displayName.substring(0, 18) + '\u2026';
 
     if (authEl) authEl.innerHTML =
-      '<span class="nav-user-name">' + name + '</span>' +
+      '<span class="nav-user-name">' + displayName + '</span>' +
       '<button onclick="odojLogout()" class="nav-logout-btn">Logout</button>';
 
     if (mobileEl) mobileEl.innerHTML =
-      '<span class="nav-user-name-mobile">\u2713 ' + name + '</span>' +
+      '<span class="nav-user-name-mobile">\u2713 ' + displayName + '</span>' +
       '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen \u2192</a>';
   } else {
     if (authEl) authEl.innerHTML = '<a href="login.html" class="nav-cta">Anmelden</a>';
@@ -46,5 +67,5 @@ async function odojInitNav() {
   }
 }
 
-// Auto-initialisierung Nav auf allen Seiten
+// Auto-Initialisierung Nav auf allen Seiten
 odojInitNav();

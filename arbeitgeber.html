@@ -170,6 +170,43 @@
 .ci-main { font-size: 14px; font-weight: 500; color: var(--white); }
 .ci-sub  { font-size: 12px; color: rgba(255,255,255,.35); }
 
+/* ── FALSCHER ROLE HINWEIS ── */
+.wrong-role-banner {
+  display: none;
+  background: var(--navy);
+  min-height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+.wrong-role-card {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  padding: 48px 44px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,.32);
+}
+.wrong-role-icon {
+  width: 64px; height: 64px;
+  background: #FFF4E0;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 20px;
+}
+.wrong-role-card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px; font-weight: 800;
+  color: var(--navy); margin-bottom: 10px;
+}
+.wrong-role-card p {
+  font-size: 14px; color: var(--text-lt);
+  line-height: 1.6; margin-bottom: 28px;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .vorteile-grid, .modelle-grid { grid-template-columns: 1fr; }
@@ -207,6 +244,16 @@
   <a href="arbeitgeber.html" class="active">Für Arbeitgeber</a>
   <a href="ueber-uns.html">Über uns</a>
   <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- FALSCHER ROLE: Hinweis für Jobber (wird per JS eingeblendet) -->
+<div id="ag-wrong-role-banner" class="wrong-role-banner">
+  <div class="wrong-role-card">
+    <div class="wrong-role-icon">🔒</div>
+    <h2>Nur für Arbeitgeber</h2>
+    <p>Diese Seite ist ausschließlich für registrierte Arbeitgeber zugänglich. Dein Konto ist als Jobber registriert.</p>
+    <a href="jobs.html" class="btn btn-accent" style="display:inline-block;text-decoration:none">Zur Jobsuche</a>
+  </div>
 </div>
 
 <!-- PAGE HERO -->
@@ -421,26 +468,37 @@
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
-// ── AUTH GUARD: nur Arbeitgeber dürfen diese Seite sehen ──
+// ── AUTH GUARD: nur Arbeitgeber dürfen diese Seite vollständig sehen ──
 (function checkArbeitgeberAuth() {
   let handled = false;
 
-  function doRedirect() {
-    setTimeout(() => {
-      window.location.href = 'login.html?msg=restricted&redirect=arbeitgeber';
-    }, 500);
-  }
-
-  function checkRolle(session) {
+  async function checkRolle(session) {
     if (handled) return;
     handled = true;
 
-    if (!session) { doRedirect(); return; }
+    // Nicht eingeloggt → zu Login weiterleiten
+    if (!session) {
+      setTimeout(() => { window.location.href = 'login.html?msg=restricted'; }, 500);
+      return;
+    }
 
-    const rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle');
-    if (rolle !== 'arbeitgeber') { doRedirect(); return; }
+    // Rolle aus profile-Tabelle laden
+    let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+    try {
+      const { data: profile } = await odojSb
+        .from('profile').select('rolle').eq('user_id', session.user.id).single();
+      if (profile?.rolle) rolle = profile.rolle;
+    } catch (_) {}
 
-    odojSaveRolle('arbeitgeber');
+    odojSaveRolle(rolle);
+
+    if (rolle !== 'arbeitgeber') {
+      // Jobber: Hinweis-Banner zeigen, Seite ausblenden
+      document.querySelector('.page-hero').style.display    = 'none';
+      document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+      document.getElementById('ag-wrong-role-banner').style.display = 'flex';
+    }
+    // Arbeitgeber: Seite bleibt sichtbar, nichts zu tun
   }
 
   const { data: { subscription } } = odojSb.auth.onAuthStateChange((event, session) => {
