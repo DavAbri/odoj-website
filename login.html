@@ -346,6 +346,7 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <script>
 const _loginSb = supabase.createClient(
   'https://vixarulzbsfwnbfucbih.supabase.co',
@@ -403,8 +404,8 @@ async function doLogin(e) {
     return;
   }
 
-  const rolle = data.user.user_metadata?.rolle || 'jobber';
-  localStorage.setItem('odoj_rolle', rolle);
+  const rolle = data.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || _currentRole || 'jobber';
+  odojSaveRolle(rolle);
   redirectAfterAuth(rolle);
 }
 
@@ -434,7 +435,7 @@ async function doRegister(e) {
     return;
   }
 
-  localStorage.setItem('odoj_rolle', _currentRole);
+  odojSaveRolle(_currentRole);
 
   if (data.session) {
     // E-Mail auto-bestätigt

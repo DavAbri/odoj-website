@@ -422,21 +422,41 @@
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
 // ── AUTH GUARD: nur Arbeitgeber dürfen diese Seite sehen ──
-(async function checkArbeitgeberAuth() {
-  const session = await odojGetSession();
+(function checkArbeitgeberAuth() {
+  let handled = false;
 
-  if (!session) {
-    window.location.href = 'login.html?msg=restricted&redirect=arbeitgeber';
-    return;
+  function doRedirect() {
+    setTimeout(() => {
+      window.location.href = 'login.html?msg=restricted&redirect=arbeitgeber';
+    }, 500);
   }
 
-  const rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle');
-  if (rolle !== 'arbeitgeber') {
-    window.location.href = 'login.html?msg=restricted&redirect=arbeitgeber';
-    return;
+  function checkRolle(session) {
+    if (handled) return;
+    handled = true;
+
+    if (!session) { doRedirect(); return; }
+
+    const rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle');
+    if (rolle !== 'arbeitgeber') { doRedirect(); return; }
+
+    odojSaveRolle('arbeitgeber');
   }
 
-  localStorage.setItem('odoj_rolle', 'arbeitgeber');
+  const { data: { subscription } } = _odojSb.auth.onAuthStateChange((event, session) => {
+    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      subscription.unsubscribe();
+      checkRolle(session);
+    }
+  });
+
+  // Fallback: falls onAuthStateChange nicht feuert
+  setTimeout(async () => {
+    if (handled) return;
+    subscription.unsubscribe();
+    const s = await odojGetSession();
+    checkRolle(s);
+  }, 3000);
 })();
 
 function submitAnfrage(e) {

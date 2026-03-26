@@ -9,6 +9,10 @@ async function odojGetSession() {
   return data.session;
 }
 
+function odojSaveRolle(rolle) {
+  if (rolle) localStorage.setItem('odoj_rolle', rolle);
+}
+
 async function odojLogout() {
   await _odojSb.auth.signOut();
   localStorage.removeItem('odoj_rolle');
