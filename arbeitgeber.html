@@ -379,6 +379,10 @@
               <label>Anzahl Plätze *</label>
               <input type="number" id="ins-plaetze" min="1" placeholder="z.B. 2" required>
             </div>
+            <div class="if-field">
+              <label>Mindestalter *</label>
+              <input type="number" id="ins-mindestalter" min="15" max="65" value="18" required>
+            </div>
           </div>
           <div class="if-row">
             <div class="if-field">
@@ -608,6 +612,7 @@ function renderInseratCard(j) {
         <span class="inserat-meta">🕐 ${j.uhrzeit_von || '–'} – ${j.uhrzeit_bis || '–'}</span>
         <span class="inserat-meta">📍 ${j.ort || '–'}</span>
         <span class="inserat-meta">👥 ${j.plaetze || '–'} Platz/Plätze</span>
+        <span class="inserat-meta">🔞 Ab ${j.mindestalter || 18} Jahren</span>
       </div>
       <div class="inserat-footer">
         <div>
@@ -656,7 +661,8 @@ async function submitInserat(e) {
   const gehalt  = parseFloat(document.getElementById('ins-gehalt').value);
   const adresse = document.getElementById('ins-adresse').value.trim();
   const ort     = document.getElementById('ins-ort').value.trim();
-  const plaetze = parseInt(document.getElementById('ins-plaetze').value, 10);
+  const plaetze      = parseInt(document.getElementById('ins-plaetze').value, 10);
+  const mindestalter = parseInt(document.getElementById('ins-mindestalter').value, 10) || 18;
   const beschr  = document.getElementById('ins-beschr').value.trim();
 
   if (!titel || !branche || !datum || !von || !bis || !gehalt || !adresse || !ort || plaetze < 1) {
@@ -676,7 +682,7 @@ async function submitInserat(e) {
     uhrzeit_bis:   bis,
     stundenanzahl: stunden,
     tagesgehalt:   gehalt,
-    adresse, ort, plaetze,
+    adresse, ort, plaetze, mindestalter,
     beschreibung:  beschr,
     status:        'aktiv'
   });
