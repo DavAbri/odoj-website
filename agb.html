@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGB – ODOJ</title>
+<meta name="description" content="Allgemeine Geschäftsbedingungen der ODOJ OG für Arbeitgeber und Arbeitskräfte.">
+<link rel="stylesheet" href="shared.css">
+<style>
+.legal-body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 72px 60px 100px;
+}
+.agb-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 48px;
+  border-bottom: 2px solid var(--gray-lt);
+  padding-bottom: 0;
+}
+.agb-tab {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-lt);
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color .2s, border-color .2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.agb-tab:hover { color: var(--text); }
+.agb-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.agb-panel { display: none; }
+.agb-panel.active { display: block; }
+
+.legal-section {
+  margin-bottom: 40px;
+}
+.legal-section h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.legal-section h2 .sec-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--accent);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+}
+.legal-section p {
+  font-size: 15px;
+  color: var(--text-mid);
+  line-height: 1.75;
+  margin-bottom: 10px;
+  font-weight: 300;
+}
+.legal-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 10px;
+}
+.legal-section ul li {
+  font-size: 15px;
+  color: var(--text-mid);
+  font-weight: 300;
+  line-height: 1.75;
+  padding: 4px 0 4px 20px;
+  position: relative;
+}
+.legal-section ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 13px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.legal-section ol {
+  padding-left: 20px;
+  margin: 8px 0 10px;
+}
+.legal-section ol li {
+  font-size: 15px;
+  color: var(--text-mid);
+  font-weight: 300;
+  line-height: 1.75;
+  padding: 3px 0;
+}
+.highlight-box {
+  background: var(--accent-pale);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.highlight-box p {
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 0;
+}
+@media (max-width: 900px) {
+  .legal-body { padding: 48px 24px 72px; }
+  .agb-tab { padding: 10px 16px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Rechtliches</span>
+    <h1>Allgemeine Geschäfts&shy;bedingungen</h1>
+    <p>AGB der ODOJ OG für Arbeitgeber und Arbeitskräfte auf der Plattform odoj.at.</p>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="legal-body">
+
+  <!-- TABS -->
+  <div class="agb-tabs">
+    <button class="agb-tab active" onclick="switchTab('arbeitgeber', this)">Für Arbeitgeber</button>
+    <button class="agb-tab" onclick="switchTab('arbeitskraft', this)">Für Arbeitskräfte</button>
+  </div>
+
+  <!-- PANEL: ARBEITGEBER -->
+  <div class="agb-panel active" id="panel-arbeitgeber">
+
+    <div class="legal-section">
+      <h2><span class="sec-num">1</span>Geltungsbereich</h2>
+      <p>Diese Allgemeinen Geschäftsbedingungen gelten für die Nutzung der Plattform „odoj" (odoj.at), betrieben von der ODOJ OG, Rheinfähre 22, 6845 Hohenems (nachfolgend „Plattform"), durch Unternehmen (nachfolgend „Arbeitgeber").</p>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">2</span>Leistungsbeschreibung</h2>
+      <p>Die Plattform dient der Vermittlung von Arbeitskräften für kurzfristige Einsätze („Tagesjobs").</p>
+      <p>Die ODOJ OG stellt ausschließlich die technische Plattform und den Kontakt zwischen Arbeitgebern und Arbeitskräften bereit.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">3</span>Kein Arbeitsverhältnis</h2>
+      <ul>
+        <li>Ein Arbeitsverhältnis entsteht ausschließlich zwischen Arbeitgeber und Arbeitskraft</li>
+        <li>Die ODOJ OG ist nicht Arbeitgeber</li>
+        <li>Es bestehen keinerlei arbeitsrechtliche Ansprüche gegenüber der ODOJ OG</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">4</span>Verantwortung des Arbeitgebers</h2>
+      <p>Der Arbeitgeber ist insbesondere verantwortlich für:</p>
+      <ul>
+        <li>Einhaltung aller arbeits- und sozialversicherungsrechtlichen Vorschriften</li>
+        <li>Anmeldung bei der Sozialversicherung</li>
+        <li>Korrekte Entlohnung</li>
+        <li>Einhaltung gesetzlicher Bestimmungen und Kollektivverträge</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">5</span>Ablauf der Vermittlung</h2>
+      <ol>
+        <li>Arbeitgeber erstellt ein Jobangebot</li>
+        <li>Arbeitskräfte bewerben sich</li>
+        <li>Arbeitgeber wählt eine Arbeitskraft aus</li>
+        <li>Arbeit wird durchgeführt</li>
+        <li>Arbeitgeber bestätigt den Einsatz über die Plattform</li>
+      </ol>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">6</span>Vermittlungsprovision</h2>
+      <div class="highlight-box">
+        <p>Für jeden erfolgreich durchgeführten Einsatz fällt eine <strong>Provision von 15 €</strong> an. Die Abrechnung erfolgt monatlich gesammelt.</p>
+      </div>
+      <ul>
+        <li>Ein Einsatz gilt als erfolgreich, wenn die Arbeitsleistung erbracht wurde</li>
+        <li>Die Abrechnung erfolgt monatlich gesammelt</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">7</span>Zahlungsbedingungen</h2>
+      <ul>
+        <li>Rechnungen sind innerhalb von 14 Tagen ab Rechnungsdatum zu bezahlen</li>
+        <li>Bei Zahlungsverzug können Mahngebühren verrechnet werden</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">8</span>Zahlungsabwicklung zwischen Arbeitgeber und Arbeitskraft</h2>
+      <ul>
+        <li>Die Bezahlung der Arbeitskraft erfolgt ausschließlich direkt durch den Arbeitgeber</li>
+        <li>Die Plattform ist nicht in Zahlungsflüsse involviert</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">9</span>Kommunikation</h2>
+      <p>Die Kommunikation zwischen Arbeitgeber und Arbeitskraft erfolgt über das integrierte Chat-System der Plattform.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">10</span>Nutzerkonten</h2>
+      <ul>
+        <li>Nutzer müssen sich registrieren und ihre E-Mail-Adresse bestätigen</li>
+        <li>Angaben müssen wahrheitsgemäß sein</li>
+        <li>Zugangsdaten sind vertraulich zu behandeln</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">11</span>Benachrichtigungen</h2>
+      <p>Die Plattform kann E-Mail-Benachrichtigungen versenden, insbesondere bei:</p>
+      <ul>
+        <li>Annahme eines Jobs</li>
+        <li>Bestätigung eines Einsatzes</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">12</span>Bewertungen</h2>
+      <p>Arbeitgeber und Arbeitskräfte können sich gegenseitig bewerten.</p>
+      <ul>
+        <li>Bewertungen müssen sachlich und wahrheitsgemäß sein</li>
+        <li>Missbrauch kann zur Sperrung führen</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">13</span>Haftung</h2>
+      <p>Die ODOJ OG haftet nicht für:</p>
+      <ul>
+        <li>Qualität oder Durchführung der Arbeitsleistung</li>
+        <li>Schäden durch Arbeitskräfte</li>
+        <li>Ausfälle oder Nichterscheinen</li>
+        <li>Falsche Angaben von Nutzern</li>
+      </ul>
+      <p>Die Haftung ist auf Vorsatz und grobe Fahrlässigkeit beschränkt.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">14</span>Plattformverfügbarkeit</h2>
+      <p>Es besteht kein Anspruch auf durchgehende Verfügbarkeit der Plattform.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">15</span>Sperrung von Nutzern</h2>
+      <p>Die ODOJ OG behält sich vor, Nutzer bei Verstößen gegen diese AGB zu sperren.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">16</span>Schlussbestimmungen</h2>
+      <ul>
+        <li>Es gilt österreichisches Recht</li>
+        <li>Gerichtsstand ist der Sitz der ODOJ OG</li>
+      </ul>
+    </div>
+
+  </div><!-- /panel-arbeitgeber -->
+
+  <!-- PANEL: ARBEITSKRÄFTE -->
+  <div class="agb-panel" id="panel-arbeitskraft">
+
+    <div class="legal-section">
+      <h2><span class="sec-num">1</span>Nutzung der Plattform</h2>
+      <p>Die Plattform ermöglicht es Arbeitskräften, sich auf Tagesjobs zu bewerben.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">2</span>Kein Arbeitsverhältnis</h2>
+      <ul>
+        <li>Die ODOJ OG ist nicht Arbeitgeber</li>
+        <li>Arbeitsverhältnisse entstehen ausschließlich mit dem jeweiligen Unternehmen</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">3</span>Verantwortung der Arbeitskraft</h2>
+      <p>Die Arbeitskraft ist verantwortlich für:</p>
+      <ul>
+        <li>Korrekte Angaben im Profil</li>
+        <li>Einhaltung von Vereinbarungen mit dem Arbeitgeber</li>
+        <li>Rechtzeitiges Erscheinen</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">4</span>Bezahlung</h2>
+      <ul>
+        <li>Die Bezahlung erfolgt direkt durch den Arbeitgeber</li>
+        <li>Die ODOJ OG übernimmt keine Garantie für Zahlung oder Höhe der Entlohnung</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">5</span>Bewertungen</h2>
+      <ul>
+        <li>Arbeitgeber dürfen Arbeitskräfte bewerten</li>
+        <li>Bewertungen müssen sachlich bleiben</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">6</span>Haftung</h2>
+      <p>Die ODOJ OG haftet nicht für:</p>
+      <ul>
+        <li>Nichtzahlung durch Arbeitgeber</li>
+        <li>Arbeitsbedingungen</li>
+        <li>Schäden im Zusammenhang mit dem Einsatz</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">7</span>Nutzerkonto</h2>
+      <ul>
+        <li>Registrierung mit gültiger E-Mail</li>
+        <li>Wahrheitsgemäße Angaben verpflichtend</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2><span class="sec-num">8</span>Schlussbestimmungen</h2>
+      <ul>
+        <li>Es gilt österreichisches Recht</li>
+      </ul>
+    </div>
+
+  </div><!-- /panel-arbeitskraft -->
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg. Fair, schnell, unkompliziert.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Für Jobsuchende</h4>
+      <ul>
+        <li><a href="jobs.html">Jobs ansehen</a></li>
+        <li><a href="jobs.html#bewerben">Registrieren</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Für Unternehmen</h4>
+      <ul>
+        <li><a href="arbeitgeber.html">Personal anfragen</a></li>
+        <li><a href="arbeitgeber.html#ablauf">Wie es funktioniert</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Rechtliches</h4>
+      <ul>
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+        <li><a href="agb.html">AGB</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job. Alle Rechte vorbehalten.</span>
+    <div class="footer-legal">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() {
+  document.getElementById('navMobile').classList.toggle('open');
+}
+function switchTab(name, btn) {
+  document.querySelectorAll('.agb-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.agb-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>
