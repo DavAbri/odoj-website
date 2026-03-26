@@ -7,161 +7,249 @@
 <meta name="description" content="Als Betrieb in Vorarlberg schnell und einfach qualifiziertes Tagespersonal anfragen. ODOJ übernimmt die Vermittlung.">
 <link rel="stylesheet" href="shared.css">
 <style>
-/* ── VORTEILE ── */
-.vorteile { background: var(--white); }
-.vorteile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 52px; }
-.vorteil {
+
+/* ── DASHBOARD BEREICH ── */
+.dash-area {
+  background: var(--off);
+  min-height: calc(100vh - var(--nav-h));
+  padding-top: var(--nav-h);
+}
+.dash-tabs-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-lt);
+  padding: 14px 60px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 50;
+  box-shadow: var(--sh-sm);
+}
+.dash-tab {
+  padding: 9px 22px;
+  border-radius: 100px;
+  border: 1.5px solid var(--gray-lt);
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 14px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.dash-tab:hover, .dash-tab.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+.dash-panel { display: none; padding: 40px 60px 80px; }
+.dash-panel.active { display: block; }
+
+/* ── INSERATE ── */
+.inserate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.inserate-header h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--navy);
+}
+.inserate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+.inserat-card {
+  background: var(--white);
   border: 1.5px solid var(--gray-lt);
   border-radius: var(--r-md);
-  padding: 34px;
-  transition: border-color .2s, box-shadow .2s, transform .2s;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .2s, box-shadow .2s;
 }
-.vorteil:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-3px); }
-.vorteil-ico {
-  width: 50px; height: 50px;
-  background: var(--navy);
-  border-radius: var(--r-sm);
+.inserat-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); }
+.inserat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.inserat-titel {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.inserat-firma { font-size: 13px; color: var(--text-lt); font-weight: 300; }
+.status-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: .3px; white-space: nowrap;
+}
+.status-aktiv   { background: #E6F5EE; color: #1A7A50; }
+.status-inaktiv { background: #F5F5F5; color: #888; }
+.inserat-metas {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin: 10px 0 12px;
+}
+.inserat-meta {
+  font-size: 13px; color: var(--text-mid);
+  display: flex; align-items: center; gap: 4px;
+}
+.inserat-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--gray-lt); padding-top: 14px; margin-top: auto;
+}
+.inserat-gehalt {
+  font-family: 'Syne', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy);
+}
+.inserat-gehalt span { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 300; color: var(--text-lt); }
+.inserat-stunden { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
+.btn-del {
+  background: transparent; border: 1.5px solid #FFBBBB;
+  color: #C0392B; font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: var(--r-sm);
+  cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .2s;
+}
+.btn-del:hover { background: #FFF0F0; }
+
+.empty-state {
+  text-align: center; padding: 72px 32px; color: var(--text-lt);
+  grid-column: 1 / -1;
+}
+.empty-state-icon { font-size: 52px; margin-bottom: 18px; }
+.empty-state h3 {
+  font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800;
+  color: var(--navy); margin-bottom: 8px;
+}
+.empty-state p { font-size: 14px; line-height: 1.6; max-width: 340px; margin: 0 auto 24px; }
+.dash-loading { text-align: center; padding: 60px; color: var(--text-lt); font-size: 15px; }
+
+/* ── INSERT FORM ── */
+.insert-wrap {
+  max-width: 700px;
+}
+.insert-card {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  padding: 44px;
+  box-shadow: var(--sh-sm);
+}
+.insert-card h2 {
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+  color: var(--navy); margin-bottom: 6px;
+}
+.insert-card > p { font-size: 14px; color: var(--text-lt); margin-bottom: 28px; }
+.if-field { margin-bottom: 14px; }
+.if-field label {
+  display: block; font-size: 11px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase;
+  color: var(--text-lt); margin-bottom: 6px;
+}
+.if-field input,
+.if-field select,
+.if-field textarea {
+  width: 100%; background: var(--off);
+  border: 1.5px solid var(--gray-lt); border-radius: var(--r-sm);
+  color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 14px; padding: 12px 14px; outline: none;
+  transition: border-color .2s, background .2s; box-sizing: border-box;
+}
+.if-field input:focus,
+.if-field select:focus,
+.if-field textarea:focus { border-color: var(--accent); background: var(--white); }
+.if-field textarea { resize: vertical; min-height: 88px; }
+.if-row   { display: grid; grid-template-columns: 1fr 1fr;     gap: 12px; }
+.if-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.if-hint  { font-size: 12px; color: var(--text-lt); margin-top: 4px; }
+.if-submit {
+  width: 100%; background: var(--accent); color: var(--navy);
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+  padding: 15px; border: none; border-radius: var(--r-sm);
+  cursor: pointer; margin-top: 8px; transition: background .2s, transform .15s;
+}
+.if-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
+.if-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.if-error {
+  background: #FFF0F0; border: 1px solid #FFBBBB; color: #C0392B;
+  font-size: 13px; padding: 10px 14px; border-radius: var(--r-sm); margin-bottom: 12px;
+}
+.if-success {
+  background: #E6F5EE; border: 1px solid #A3D9BB; color: #1A7A50;
+  font-size: 14px; font-weight: 500; padding: 12px 16px;
+  border-radius: var(--r-sm); margin-bottom: 12px; text-align: center;
+}
+
+/* ── FALSCHER ROLE HINWEIS ── */
+.wrong-role-banner {
+  display: none; background: var(--navy);
+  min-height: calc(100vh - var(--nav-h)); margin-top: var(--nav-h);
+  align-items: center; justify-content: center; padding: 48px 24px;
+}
+.wrong-role-card {
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 48px 44px; max-width: 480px; width: 100%;
+  text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.32);
+}
+.wrong-role-icon {
+  width: 64px; height: 64px; background: #FFF4E0; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; margin-bottom: 18px;
+  font-size: 28px; margin: 0 auto 20px;
 }
+.wrong-role-card h2 {
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+  color: var(--navy); margin-bottom: 10px;
+}
+.wrong-role-card p { font-size: 14px; color: var(--text-lt); line-height: 1.6; margin-bottom: 28px; }
+
+/* ── MARKETING SECTIONS (für nicht eingeloggte Besucher) ── */
+.vorteile { background: var(--white); }
+.vorteile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 52px; }
+.vorteil { border: 1.5px solid var(--gray-lt); border-radius: var(--r-md); padding: 34px; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.vorteil:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-3px); }
+.vorteil-ico { width: 50px; height: 50px; background: var(--navy); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 18px; }
 .vorteil h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
 .vorteil p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
-
-/* ── ABLAUF ── */
 .ablauf { background: var(--off); }
 .ablauf-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 52px; }
-.ablauf-step {
-  background: var(--white);
-  padding: 36px 30px;
-  position: relative;
-  transition: transform .2s, box-shadow .2s;
-}
+.ablauf-step { background: var(--white); padding: 36px 30px; position: relative; transition: transform .2s, box-shadow .2s; }
 .ablauf-step:first-child { border-radius: var(--r-lg) 0 0 var(--r-lg); }
 .ablauf-step:last-child  { border-radius: 0 var(--r-lg) var(--r-lg) 0; }
 .ablauf-step:hover { transform: translateY(-3px); box-shadow: var(--sh-md); z-index: 1; }
-.ablauf-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--accent);
-  letter-spacing: 1px;
-  margin-bottom: 14px;
-  display: block;
-}
+.ablauf-num { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 14px; display: block; }
 .ablauf-step h4 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 .ablauf-step p  { font-size: 13px; color: var(--text-lt); line-height: 1.6; font-weight: 300; }
-.ablauf-line {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-  background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s;
-}
+.ablauf-line { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
 .ablauf-step:hover .ablauf-line { transform: scaleX(1); }
-
-/* ── MODELLE ── */
-.modelle { background: var(--white); }
-.modelle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 52px; }
-.modell {
-  border: 1.5px solid var(--gray-lt);
-  border-radius: var(--r-lg);
-  padding: 38px 34px;
-  position: relative;
-  transition: transform .2s, box-shadow .2s;
-}
-.modell:hover { transform: translateY(-4px); box-shadow: var(--sh-md); }
-.modell.featured {
-  background: var(--navy);
-  border-color: var(--navy);
-  transform: scale(1.02);
-}
-.modell.featured:hover { transform: scale(1.02) translateY(-4px); }
-.modell-badge {
-  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
-  background: var(--accent); color: var(--navy);
-  font-size: 11px; font-weight: 800;
-  padding: 4px 14px; border-radius: 100px;
-  letter-spacing: .5px; text-transform: uppercase; white-space: nowrap;
-}
-.modell-cat { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; display: block; }
-.modell-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 24px; font-weight: 800;
-  margin-bottom: 6px;
-  color: var(--text);
-}
-.modell.featured .modell-title { color: var(--white); }
-.modell-sub { font-size: 14px; color: var(--text-lt); font-weight: 300; margin-bottom: 24px; }
-.modell.featured .modell-sub { color: rgba(255,255,255,.5); }
-.modell-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 28px; }
-.modell-feat {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: 13px; color: var(--text-mid); font-weight: 300; line-height: 1.5;
-}
-.modell.featured .modell-feat { color: rgba(255,255,255,.65); }
-.modell-feat::before { content: '✓'; color: var(--accent); font-weight: 800; flex-shrink: 0; }
-.modell-cta {
-  display: block; text-align: center; padding: 12px;
-  border-radius: var(--r-sm);
-  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
-  text-decoration: none; transition: all .2s;
-  border: 2px solid var(--navy); color: var(--navy);
-}
-.modell-cta:hover { background: var(--navy); color: var(--white); }
-.modell.featured .modell-cta { background: var(--accent); border-color: var(--accent); color: var(--navy); }
-.modell.featured .modell-cta:hover { background: var(--accent-lt); }
-
-/* ── ANFRAGE FORM ── */
 .anfrage { background: var(--navy); }
 .anfrage-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: start; margin-top: 52px; }
-.anfrage-card {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: var(--r-lg);
-  padding: 44px;
-}
+.anfrage-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: var(--r-lg); padding: 44px; }
 .anfrage-card h3 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--white); margin-bottom: 6px; }
 .anfrage-card > p { font-size: 14px; color: rgba(255,255,255,.45); font-weight: 300; margin-bottom: 28px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-field { margin-bottom: 10px; }
 .form-field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: rgba(255,255,255,.38); margin-bottom: 6px; }
-.form-field input,
-.form-field select,
-.form-field textarea {
-  width: 100%;
-  background: rgba(255,255,255,.07);
-  border: 1.5px solid rgba(255,255,255,.1);
-  border-radius: var(--r-sm);
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  padding: 12px 15px;
-  outline: none;
-  transition: border-color .2s;
-}
-.form-field input::placeholder,
-.form-field textarea::placeholder { color: rgba(255,255,255,.25); }
+.form-field input, .form-field select, .form-field textarea { width: 100%; background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.1); border-radius: var(--r-sm); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 12px 15px; outline: none; transition: border-color .2s; box-sizing: border-box; }
+.form-field input::placeholder, .form-field textarea::placeholder { color: rgba(255,255,255,.25); }
 .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); }
 .form-field select option { background: var(--navy-mid); color: var(--white); }
 .form-field textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
-.btn-submit {
-  width: 100%; background: var(--accent); color: var(--navy);
-  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
-  padding: 16px; border-radius: var(--r-sm); border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: background .2s, transform .15s; margin-top: 12px;
-}
+.btn-submit { width: 100%; background: var(--accent); color: var(--navy); font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; padding: 16px; border-radius: var(--r-sm); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .2s, transform .15s; margin-top: 12px; }
 .btn-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
-
 .anfrage-side { padding-top: 8px; }
-.guarantee {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: var(--r-md);
-  padding: 28px; margin-top: 32px;
-}
+.guarantee { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: var(--r-md); padding: 28px; margin-top: 32px; }
 .guarantee h4 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 16px; }
-.guarantee-item {
-  display: flex; gap: 12px; margin-bottom: 11px;
-  font-size: 14px; color: rgba(255,255,255,.55); font-weight: 300; line-height: 1.5;
-}
+.guarantee-item { display: flex; gap: 12px; margin-bottom: 11px; font-size: 14px; color: rgba(255,255,255,.55); font-weight: 300; line-height: 1.5; }
 .guarantee-item:last-child { margin-bottom: 0; }
 .guarantee-item span:first-child { color: var(--accent); font-weight: 800; flex-shrink: 0; }
 .contact-list { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; }
@@ -170,52 +258,19 @@
 .ci-main { font-size: 14px; font-weight: 500; color: var(--white); }
 .ci-sub  { font-size: 12px; color: rgba(255,255,255,.35); }
 
-/* ── FALSCHER ROLE HINWEIS ── */
-.wrong-role-banner {
-  display: none;
-  background: var(--navy);
-  min-height: calc(100vh - var(--nav-h));
-  margin-top: var(--nav-h);
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-}
-.wrong-role-card {
-  background: var(--white);
-  border-radius: var(--r-lg);
-  padding: 48px 44px;
-  max-width: 480px;
-  width: 100%;
-  text-align: center;
-  box-shadow: 0 24px 80px rgba(0,0,0,.32);
-}
-.wrong-role-icon {
-  width: 64px; height: 64px;
-  background: #FFF4E0;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px;
-  margin: 0 auto 20px;
-}
-.wrong-role-card h2 {
-  font-family: 'Syne', sans-serif;
-  font-size: 22px; font-weight: 800;
-  color: var(--navy); margin-bottom: 10px;
-}
-.wrong-role-card p {
-  font-size: 14px; color: var(--text-lt);
-  line-height: 1.6; margin-bottom: 28px;
-}
-
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
-  .vorteile-grid, .modelle-grid { grid-template-columns: 1fr; }
-  .modell.featured { transform: scale(1); }
+  .vorteile-grid { grid-template-columns: 1fr; }
   .ablauf-steps { grid-template-columns: 1fr 1fr; }
   .ablauf-step:first-child { border-radius: var(--r-lg) 0 0 0; }
   .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) 0; }
   .anfrage-layout { grid-template-columns: 1fr; gap: 36px; }
   .form-row { grid-template-columns: 1fr; }
+  .dash-tabs-bar { padding: 12px 24px; }
+  .dash-panel { padding: 28px 24px 60px; }
+  .if-row, .if-row-3 { grid-template-columns: 1fr; }
+  .insert-card { padding: 28px 24px; }
+  .inserate-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 540px) {
   .ablauf-steps { grid-template-columns: 1fr; }
@@ -246,7 +301,109 @@
   <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
 </div>
 
-<!-- FALSCHER ROLE: Hinweis für Jobber (wird per JS eingeblendet) -->
+<!-- ───────────────────────────────────────────────
+     DASHBOARD (nur für eingeloggte Arbeitgeber)
+─────────────────────────────────────────────── -->
+<div id="ag-dashboard" class="dash-area" style="display:none">
+
+  <!-- Tab-Leiste -->
+  <div class="dash-tabs-bar">
+    <button class="dash-tab active" data-tab="inserate" onclick="showTab('inserate')">📋 Meine Inserate</button>
+    <button class="dash-tab"        data-tab="inserieren" onclick="showTab('inserieren')">➕ Job inserieren</button>
+  </div>
+
+  <!-- Panel: Meine Inserate -->
+  <div id="panel-inserate" class="dash-panel active">
+    <div class="inserate-header">
+      <h2>Meine Inserate</h2>
+      <button class="dash-tab" style="background:var(--navy);border-color:var(--navy);color:var(--white)" onclick="showTab('inserieren')">+ Neuer Job</button>
+    </div>
+    <div class="inserate-grid" id="inserate-grid">
+      <div class="dash-loading">Lade Inserate…</div>
+    </div>
+  </div>
+
+  <!-- Panel: Job inserieren -->
+  <div id="panel-inserieren" class="dash-panel">
+    <div class="insert-wrap">
+      <div class="insert-card">
+        <h2>Job inserieren</h2>
+        <p>Fülle das Formular aus – dein Inserat erscheint sofort in der Jobsuche.</p>
+
+        <div id="ins-success" class="if-success" style="display:none">✓ Job erfolgreich gespeichert!</div>
+        <div id="ins-error"   class="if-error"   style="display:none"></div>
+
+        <form id="ins-form" onsubmit="submitInserat(event)">
+          <div class="if-field">
+            <label>Jobtitel *</label>
+            <input type="text" id="ins-titel" placeholder="z.B. Servicekraft, Lagerhelfer…" required>
+          </div>
+          <div class="if-row">
+            <div class="if-field">
+              <label>Branche *</label>
+              <select id="ins-branche" required>
+                <option value="" disabled selected>Bitte wählen</option>
+                <option value="gastro">Gastronomie &amp; Hotel</option>
+                <option value="bau">Bau &amp; Handwerk</option>
+                <option value="lager">Lager &amp; Logistik</option>
+                <option value="events">Veranstaltungen &amp; Events</option>
+              </select>
+            </div>
+            <div class="if-field">
+              <label>Datum *</label>
+              <input type="date" id="ins-datum" required>
+            </div>
+          </div>
+          <div class="if-row-3">
+            <div class="if-field">
+              <label>Uhrzeit von *</label>
+              <input type="time" id="ins-von" required onchange="calcStunden()">
+            </div>
+            <div class="if-field">
+              <label>Uhrzeit bis *</label>
+              <input type="time" id="ins-bis" required onchange="calcStunden()">
+            </div>
+            <div class="if-field">
+              <label>Stundenanzahl</label>
+              <input type="number" id="ins-stunden" step="0.5" min="0" placeholder="Auto">
+              <div class="if-hint">Wird automatisch berechnet</div>
+            </div>
+          </div>
+          <div class="if-row">
+            <div class="if-field">
+              <label>Tagesgehalt in € *</label>
+              <input type="number" id="ins-gehalt" min="0" step="0.01" placeholder="z.B. 120" required>
+              <div class="if-hint">Gesamtlohn für den ganzen Tag</div>
+            </div>
+            <div class="if-field">
+              <label>Anzahl Plätze *</label>
+              <input type="number" id="ins-plaetze" min="1" placeholder="z.B. 2" required>
+            </div>
+          </div>
+          <div class="if-row">
+            <div class="if-field">
+              <label>Adresse / Straße *</label>
+              <input type="text" id="ins-adresse" placeholder="Musterstraße 12" required>
+            </div>
+            <div class="if-field">
+              <label>Ort *</label>
+              <input type="text" id="ins-ort" placeholder="z.B. Dornbirn" required>
+            </div>
+          </div>
+          <div class="if-field">
+            <label>Beschreibung (optional)</label>
+            <textarea id="ins-beschr" placeholder="Aufgaben, Anforderungen, besondere Hinweise…"></textarea>
+          </div>
+          <button type="submit" class="if-submit" id="ins-btn">Job speichern</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────
+     FALSCHER ROLE: Hinweis für Jobber
+─────────────────────────────────────────────── -->
 <div id="ag-wrong-role-banner" class="wrong-role-banner">
   <div class="wrong-role-card">
     <div class="wrong-role-icon">🔒</div>
@@ -255,6 +412,11 @@
     <a href="jobs.html" class="btn btn-accent" style="display:inline-block;text-decoration:none">Zur Jobsuche</a>
   </div>
 </div>
+
+<!-- ───────────────────────────────────────────────
+     MARKETING (für nicht eingeloggte Besucher)
+─────────────────────────────────────────────── -->
+<div id="ag-marketing">
 
 <!-- PAGE HERO -->
 <div class="page-hero">
@@ -265,7 +427,7 @@
     <h1>Personal auf Abruf.<br><em>Ohne Aufwand.</em></h1>
     <p>Kurzfristiger Ausfall? Saisonspitze? ODOJ liefert qualifiziertes Personal genau dann, wenn Sie es brauchen – rechtssicher und unkompliziert.</p>
     <div style="margin-top:32px;display:flex;gap:12px;flex-wrap:wrap">
-      <a href="#anfrage" class="btn btn-accent">Jetzt Personal anfragen</a>
+      <a href="login.html" class="btn btn-accent">Jetzt anmelden &amp; inserieren</a>
       <a href="#ablauf" class="btn btn-outline">Wie es funktioniert</a>
     </div>
   </div>
@@ -296,88 +458,18 @@
     <p class="section-sub">In unter 24 Stunden – von der Anfrage bis zum einsatzbereiten Mitarbeiter.</p>
   </div>
   <div class="ablauf-steps">
-    <div class="ablauf-step fade-in">
-      <span class="ablauf-num">SCHRITT 01</span>
-      <h4>Anfrage stellen</h4>
-      <p>Online-Formular ausfüllen oder anrufen. Branche, Anzahl Personen, Datum und Aufgaben angeben.</p>
-      <div class="ablauf-line"></div>
-    </div>
-    <div class="ablauf-step fade-in">
-      <span class="ablauf-num">SCHRITT 02</span>
-      <h4>Rückmeldung in 2h</h4>
-      <p>Wir bestätigen die Verfügbarkeit und schicken passende Profile zur Auswahl.</p>
-      <div class="ablauf-line"></div>
-    </div>
-    <div class="ablauf-step fade-in">
-      <span class="ablauf-num">SCHRITT 03</span>
-      <h4>Einsatz bestätigen</h4>
-      <p>Sie geben grünes Licht – wir kümmern uns um Briefing, Vertrag und Anfahrt.</p>
-      <div class="ablauf-line"></div>
-    </div>
-    <div class="ablauf-step fade-in">
-      <span class="ablauf-num">SCHRITT 04</span>
-      <h4>Personal erscheint</h4>
-      <p>Der Mitarbeiter kommt vorbereitet. Nach dem Einsatz erfolgt die Abrechnung direkt über ODOJ.</p>
-      <div class="ablauf-line"></div>
-    </div>
-  </div>
-</section>
-
-<!-- MODELLE -->
-<section class="modelle">
-  <div class="fade-in">
-    <span class="section-label">Buchungsmodelle</span>
-    <h2 class="section-title">Flexibel wie Ihr Bedarf</h2>
-    <p class="section-sub">Egal ob einmaliger Notfall oder regelmäßiger Bedarf – wir haben das passende Modell.</p>
-  </div>
-  <div class="modelle-grid">
-    <div class="modell fade-in">
-      <span class="modell-cat">Einmalig</span>
-      <div class="modell-title">Tagesbuchung</div>
-      <div class="modell-sub">Für kurzfristige Ausfälle &amp; Einzelevents</div>
-      <ul class="modell-features">
-        <li class="modell-feat">Buchung ab 1 Tag möglich</li>
-        <li class="modell-feat">Kurzfristig bis 24h vorher</li>
-        <li class="modell-feat">Kein Abo nötig</li>
-        <li class="modell-feat">Stundengenaue Abrechnung</li>
-      </ul>
-      <a href="#anfrage" class="modell-cta">Anfragen</a>
-    </div>
-    <div class="modell featured fade-in">
-      <div class="modell-badge">Beliebt</div>
-      <span class="modell-cat">Regelmäßig</span>
-      <div class="modell-title">Monatskontingent</div>
-      <div class="modell-sub">Für Betriebe mit wiederkehrendem Bedarf</div>
-      <ul class="modell-features">
-        <li class="modell-feat">Priorisierte Verfügbarkeit</li>
-        <li class="modell-feat">Feste Stammkräfte buchbar</li>
-        <li class="modell-feat">Persönlicher Ansprechpartner</li>
-        <li class="modell-feat">Günstigerer Stundensatz</li>
-        <li class="modell-feat">Flexibel kündbar</li>
-      </ul>
-      <a href="#anfrage" class="modell-cta">Anfragen</a>
-    </div>
-    <div class="modell fade-in">
-      <span class="modell-cat">Saisonal</span>
-      <div class="modell-title">Eventpaket</div>
-      <div class="modell-sub">Für Messen, Festivals &amp; Großveranstaltungen</div>
-      <ul class="modell-features">
-        <li class="modell-feat">Auch große Gruppen (10–50)</li>
-        <li class="modell-feat">Koordination &amp; Briefing inklusive</li>
-        <li class="modell-feat">Vor-Ort-Support möglich</li>
-        <li class="modell-feat">Individuelles Angebot</li>
-      </ul>
-      <a href="#anfrage" class="modell-cta">Anfragen</a>
-    </div>
+    <div class="ablauf-step fade-in"><span class="ablauf-num">SCHRITT 01</span><h4>Konto erstellen</h4><p>Registriere dich als Arbeitgeber – kostenlos und in 2 Minuten.</p><div class="ablauf-line"></div></div>
+    <div class="ablauf-step fade-in"><span class="ablauf-num">SCHRITT 02</span><h4>Job inserieren</h4><p>Datum, Uhrzeit, Branche und Gehalt angeben – fertig.</p><div class="ablauf-line"></div></div>
+    <div class="ablauf-step fade-in"><span class="ablauf-num">SCHRITT 03</span><h4>Bewerbungen erhalten</h4><p>Jobber aus Vorarlberg sehen dein Inserat und bewerben sich.</p><div class="ablauf-line"></div></div>
+    <div class="ablauf-step fade-in"><span class="ablauf-num">SCHRITT 04</span><h4>Personal erscheint</h4><p>Der Mitarbeiter kommt vorbereitet. Abrechnung direkt über ODOJ.</p><div class="ablauf-line"></div></div>
   </div>
 </section>
 
 <!-- ANFRAGE FORM -->
 <section class="anfrage" id="anfrage">
   <span class="section-label">Kontakt</span>
-  <h2 class="section-title section-title-white">Personal anfragen</h2>
-  <p class="section-sub section-sub-white">Füllen Sie das Formular aus – wir melden uns innerhalb von 2 Stunden.</p>
-
+  <h2 class="section-title section-title-white">Persönlich anfragen</h2>
+  <p class="section-sub section-sub-white">Lieber direkt? Füllen Sie das Formular aus – wir melden uns innerhalb von 2 Stunden.</p>
   <div class="anfrage-layout">
     <div class="anfrage-card fade-in">
       <h3>Anfrage senden</h3>
@@ -391,42 +483,13 @@
           <div class="form-field"><label>E-Mail *</label><input type="email" placeholder="firma@beispiel.at" required></div>
           <div class="form-field"><label>Telefon</label><input type="tel" placeholder="+43 ..."></div>
         </div>
-        <div class="form-row">
-          <div class="form-field">
-            <label>Branche *</label>
-            <select required>
-              <option value="" disabled selected>Bitte wählen</option>
-              <option>Gastronomie &amp; Hotel</option>
-              <option>Bau &amp; Handwerk</option>
-              <option>Lager &amp; Logistik</option>
-              <option>Veranstaltungen &amp; Events</option>
-              <option>Sonstiges</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label>Anzahl Personen</label>
-            <select>
-              <option value="" disabled selected>Bitte wählen</option>
-              <option>1 Person</option>
-              <option>2–3 Personen</option>
-              <option>4–10 Personen</option>
-              <option>Mehr als 10</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-field"><label>Datum</label><input type="date"></div>
-          <div class="form-field"><label>Uhrzeit</label><input type="text" placeholder="z.B. 08:00 – 17:00 Uhr"></div>
-        </div>
-        <div class="form-field"><label>Einsatzort</label><input type="text" placeholder="Adresse oder Stadt"></div>
-        <div class="form-field"><label>Aufgabenbeschreibung</label><textarea placeholder="Was muss gemacht werden? Besondere Anforderungen?"></textarea></div>
+        <div class="form-field"><label>Ihre Anfrage</label><textarea placeholder="Was können wir für Sie tun?"></textarea></div>
         <button type="submit" class="btn-submit" id="anfBtn">
           Anfrage absenden
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </form>
     </div>
-
     <div class="anfrage-side fade-in">
       <span class="section-label">Direktkontakt</span>
       <h3 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--white);margin-bottom:10px;letter-spacing:-.5px">Lieber persönlich?</h3>
@@ -446,6 +509,8 @@
   </div>
 </section>
 
+</div><!-- /ag-marketing -->
+
 <!-- FOOTER -->
 <footer>
   <div class="footer-grid">
@@ -453,8 +518,8 @@
       <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
       <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
     </div>
-    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li><li><a href="jobs.html#bewerben">Registrieren</a></li></ul></div>
-    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="#anfrage">Personal anfragen</a></li><li><a href="#vorteile">Unsere Leistungen</a></li><li><a href="#ablauf">Ablauf</a></li></ul></div>
+    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li></ul></div>
+    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="arbeitgeber.html">Inserat erstellen</a></li></ul></div>
     <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
   </div>
   <div class="footer-bottom">
@@ -468,7 +533,172 @@
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
-// ── AUTH GUARD: nur Arbeitgeber dürfen diese Seite vollständig sehen ──
+// ── GLOBALER STATE ──
+let _agSession   = null;
+let _agFirmenname = '';
+
+// ── TAB WECHSEL ──
+function showTab(tab) {
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+  document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'inserate') loadInserate();
+}
+
+// ── BRANCHE → Label + Tag-Klasse ──
+const BRANCHEN = {
+  gastro: { label: '🍽 Gastronomie',       cls: 'tag-gastro' },
+  bau:    { label: '🏗 Bau & Handwerk',    cls: 'tag-bau'    },
+  lager:  { label: '📦 Lager & Logistik',  cls: 'tag-lager'  },
+  events: { label: '🎤 Events',            cls: 'tag-events' },
+};
+
+// ── INSERATE LADEN ──
+async function loadInserate() {
+  const grid = document.getElementById('inserate-grid');
+  grid.innerHTML = '<div class="dash-loading">Lade Inserate…</div>';
+
+  const { data: jobs, error } = await odojSb
+    .from('jobs')
+    .select('*')
+    .eq('arbeitgeber_id', _agSession.user.id)
+    .order('erstellt_am', { ascending: false });
+
+  if (error) {
+    grid.innerHTML = '<div class="dash-loading" style="color:#c0392b">Fehler beim Laden: ' + error.message + '</div>';
+    return;
+  }
+
+  if (!jobs || jobs.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <h3>Noch keine Inserate</h3>
+        <p>Erstelle deinen ersten Job und finde passende Mitarbeitende in ganz Vorarlberg.</p>
+        <button class="btn btn-accent" onclick="showTab('inserieren')">Jetzt Job inserieren</button>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = jobs.map(renderInseratCard).join('');
+}
+
+function renderInseratCard(j) {
+  const b = BRANCHEN[j.branche] || { label: j.branche, cls: '' };
+  const datum = j.datum
+    ? new Date(j.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '–';
+  const statusCls = j.status === 'aktiv' ? 'status-aktiv' : 'status-inaktiv';
+  const stunden   = j.stundenanzahl ? j.stundenanzahl + ' Std.' : '';
+  const gehalt    = Number(j.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+  return `
+    <div class="inserat-card">
+      <div class="inserat-top">
+        <div>
+          <div class="inserat-titel">${j.titel}</div>
+          <div class="inserat-firma">${j.firmenname || ''}</div>
+        </div>
+        <span class="status-badge ${statusCls}">${j.status || 'aktiv'}</span>
+      </div>
+      <span class="tag ${b.cls}" style="display:inline-block;margin-bottom:8px">${b.label}</span>
+      <div class="inserat-metas">
+        <span class="inserat-meta">📅 ${datum}</span>
+        <span class="inserat-meta">🕐 ${j.uhrzeit_von || '–'} – ${j.uhrzeit_bis || '–'}</span>
+        <span class="inserat-meta">📍 ${j.ort || '–'}</span>
+        <span class="inserat-meta">👥 ${j.plaetze || '–'} Platz/Plätze</span>
+      </div>
+      <div class="inserat-footer">
+        <div>
+          <div class="inserat-gehalt">€ ${gehalt} <span>/ Tag</span></div>
+          <div class="inserat-stunden">${stunden}</div>
+        </div>
+        <button class="btn-del" onclick="deleteInserat('${j.id}')">Löschen</button>
+      </div>
+    </div>`;
+}
+
+async function deleteInserat(id) {
+  if (!confirm('Inserat wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+  const { error } = await odojSb.from('jobs').delete().eq('id', id);
+  if (error) { alert('Fehler beim Löschen: ' + error.message); return; }
+  loadInserate();
+}
+
+// ── STUNDEN AUTO-BERECHNUNG ──
+function calcStunden() {
+  const von = document.getElementById('ins-von').value;
+  const bis = document.getElementById('ins-bis').value;
+  if (!von || !bis) return;
+  const [h1, m1] = von.split(':').map(Number);
+  const [h2, m2] = bis.split(':').map(Number);
+  let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (mins < 0) mins += 24 * 60; // Nachtschicht
+  document.getElementById('ins-stunden').value = Math.round(mins / 60 * 10) / 10;
+}
+
+// ── JOB SPEICHERN ──
+async function submitInserat(e) {
+  e.preventDefault();
+  const btn       = document.getElementById('ins-btn');
+  const errEl     = document.getElementById('ins-error');
+  const successEl = document.getElementById('ins-success');
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  const titel   = document.getElementById('ins-titel').value.trim();
+  const branche = document.getElementById('ins-branche').value;
+  const datum   = document.getElementById('ins-datum').value;
+  const von     = document.getElementById('ins-von').value;
+  const bis     = document.getElementById('ins-bis').value;
+  const stunden = parseFloat(document.getElementById('ins-stunden').value) || null;
+  const gehalt  = parseFloat(document.getElementById('ins-gehalt').value);
+  const adresse = document.getElementById('ins-adresse').value.trim();
+  const ort     = document.getElementById('ins-ort').value.trim();
+  const plaetze = parseInt(document.getElementById('ins-plaetze').value, 10);
+  const beschr  = document.getElementById('ins-beschr').value.trim();
+
+  if (!titel || !branche || !datum || !von || !bis || !gehalt || !adresse || !ort || plaetze < 1) {
+    errEl.textContent = 'Bitte alle Pflichtfelder ausfüllen.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Speichern…';
+  btn.disabled    = true;
+
+  const { error } = await odojSb.from('jobs').insert({
+    arbeitgeber_id: _agSession.user.id,
+    firmenname:     _agFirmenname,
+    titel, branche, datum,
+    uhrzeit_von:   von,
+    uhrzeit_bis:   bis,
+    stundenanzahl: stunden,
+    tagesgehalt:   gehalt,
+    adresse, ort, plaetze,
+    beschreibung:  beschr,
+    status:        'aktiv'
+  });
+
+  btn.textContent = 'Job speichern';
+  btn.disabled    = false;
+
+  if (error) {
+    errEl.textContent = 'Fehler: ' + error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('ins-form').reset();
+  successEl.style.display = 'block';
+  setTimeout(() => {
+    successEl.style.display = 'none';
+    showTab('inserate');
+  }, 1500);
+}
+
+// ── AUTH GUARD ──
 (function checkArbeitgeberAuth() {
   let handled = false;
 
@@ -476,29 +706,38 @@ function toggleMenu() { document.getElementById('navMobile').classList.toggle('o
     if (handled) return;
     handled = true;
 
-    // Nicht eingeloggt → zu Login weiterleiten
     if (!session) {
-      setTimeout(() => { window.location.href = 'login.html?msg=restricted'; }, 500);
+      // Nicht eingeloggt → Marketing zeigen (kein Redirect)
       return;
     }
 
-    // Rolle aus profile-Tabelle laden
+    // Rolle + Firmenname aus profile laden
     let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+    let firmenname = '';
     try {
       const { data: profile } = await odojSb
-        .from('profile').select('rolle').eq('user_id', session.user.id).single();
-      if (profile?.rolle) rolle = profile.rolle;
+        .from('profile')
+        .select('rolle, firmenname')
+        .eq('user_id', session.user.id)
+        .single();
+      if (profile?.rolle)      rolle      = profile.rolle;
+      if (profile?.firmenname) firmenname = profile.firmenname;
     } catch (_) {}
 
     odojSaveRolle(rolle);
 
-    if (rolle !== 'arbeitgeber') {
-      // Jobber: Hinweis-Banner zeigen, Seite ausblenden
-      document.querySelector('.page-hero').style.display    = 'none';
-      document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+    if (rolle === 'arbeitgeber') {
+      // Dashboard einblenden, Marketing ausblenden
+      _agSession    = session;
+      _agFirmenname = firmenname;
+      document.getElementById('ag-marketing').style.display  = 'none';
+      document.getElementById('ag-dashboard').style.display  = 'block';
+      loadInserate();
+    } else {
+      // Jobber: Hinweis-Banner zeigen
+      document.getElementById('ag-marketing').style.display       = 'none';
       document.getElementById('ag-wrong-role-banner').style.display = 'flex';
     }
-    // Arbeitgeber: Seite bleibt sichtbar, nichts zu tun
   }
 
   const { data: { subscription } } = odojSb.auth.onAuthStateChange((event, session) => {
@@ -508,7 +747,6 @@ function toggleMenu() { document.getElementById('navMobile').classList.toggle('o
     }
   });
 
-  // Fallback: falls onAuthStateChange nicht feuert
   setTimeout(async () => {
     if (handled) return;
     subscription.unsubscribe();
@@ -524,6 +762,7 @@ function submitAnfrage(e) {
   btn.style.background = '#1a8c5c';
   btn.disabled = true;
 }
+
 const obs = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80); });
 }, { threshold: 0.08 });
