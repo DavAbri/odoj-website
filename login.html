@@ -348,11 +348,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
 <script>
-const _loginSb = supabase.createClient(
-  'https://vixarulzbsfwnbfucbih.supabase.co',
-  'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
-);
-
+// odojSb kommt aus auth.js (bereits geladen)
 let _currentRole = 'jobber';
 
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
@@ -392,7 +388,7 @@ async function doLogin(e) {
   const email = document.getElementById('login-email').value.trim();
   const pw    = document.getElementById('login-pw').value;
 
-  const { data, error } = await _loginSb.auth.signInWithPassword({ email, password: pw });
+  const { data, error } = await odojSb.auth.signInWithPassword({ email, password: pw });
 
   if (error) {
     errEl.textContent = (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('credentials'))
@@ -421,7 +417,7 @@ async function doRegister(e) {
   const email = document.getElementById('reg-email').value.trim();
   const pw    = document.getElementById('reg-pw').value;
 
-  const { data, error } = await _loginSb.auth.signUp({
+  const { data, error } = await odojSb.auth.signUp({
     email,
     password: pw,
     options: { data: { name, rolle: _currentRole } }
@@ -469,7 +465,7 @@ async function doRegister(e) {
 })();
 
 // Bereits eingeloggt? → weiterleiten
-_loginSb.auth.getSession().then(({ data }) => {
+odojSb.auth.getSession().then(({ data }) => {
   if (data.session) {
     const params = new URLSearchParams(location.search);
     if (!params.get('msg')) {

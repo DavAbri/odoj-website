@@ -1,11 +1,12 @@
 // ── ODOJ Auth – Supabase v2 ──────────────────────────
-const _odojSb = supabase.createClient(
+// Supabase CDN muss VOR diesem Script geladen sein.
+window.odojSb = supabase.createClient(
   'https://vixarulzbsfwnbfucbih.supabase.co',
   'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
 );
 
 async function odojGetSession() {
-  const { data } = await _odojSb.auth.getSession();
+  const { data } = await odojSb.auth.getSession();
   return data.session;
 }
 
@@ -14,7 +15,7 @@ function odojSaveRolle(rolle) {
 }
 
 async function odojLogout() {
-  await _odojSb.auth.signOut();
+  await odojSb.auth.signOut();
   localStorage.removeItem('odoj_rolle');
   window.location.href = 'index.html';
 }

@@ -443,7 +443,7 @@ function toggleMenu() { document.getElementById('navMobile').classList.toggle('o
     odojSaveRolle('arbeitgeber');
   }
 
-  const { data: { subscription } } = _odojSb.auth.onAuthStateChange((event, session) => {
+  const { data: { subscription } } = odojSb.auth.onAuthStateChange((event, session) => {
     if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
       subscription.unsubscribe();
       checkRolle(session);
