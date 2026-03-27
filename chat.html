@@ -357,10 +357,10 @@ async function loadConversations() {
   // Alle Bewerbungen die mich betreffen
   let bewerbungen = [];
   if (_chatRolle === 'arbeitgeber') {
-    const { data } = await odojSb.from('bewerbungen').select('*').eq('arbeitgeber_id', _chatSession.user.id).order('created_at', { ascending: false });
+    const { data } = await odojSb.from('bewerbungen').select('*').eq('arbeitgeber_id', _chatSession.user.id).order('erstellt_am', { ascending: false });
     bewerbungen = data || [];
   } else {
-    const { data } = await odojSb.from('bewerbungen').select('*').eq('jobber_id', _chatSession.user.id).order('created_at', { ascending: false });
+    const { data } = await odojSb.from('bewerbungen').select('*').eq('jobber_id', _chatSession.user.id).order('erstellt_am', { ascending: false });
     bewerbungen = data || [];
   }
 
@@ -381,9 +381,9 @@ async function loadConversations() {
   const bewIds = bewerbungen.map(b => b.id);
   const { data: msgs } = await odojSb
     .from('nachrichten')
-    .select('bewerbung_id, gelesen, sender_id, nachricht, created_at')
+    .select('bewerbung_id, gelesen, sender_id, nachricht, erstellt_am')
     .in('bewerbung_id', bewIds)
-    .order('created_at', { ascending: false });
+    .order('erstellt_am', { ascending: false });
 
   const msgLatest = {};
   const msgUnread = {};
@@ -413,7 +413,7 @@ async function loadConversations() {
     const name     = _chatRolle === 'arbeitgeber' ? b.jobber_name || 'Unbekannt' : (job?.firmenname || 'Arbeitgeber');
     const sub      = job?.titel || '–';
     const preview  = lastMsg ? lastMsg.nachricht : 'Noch keine Nachrichten';
-    const time     = lastMsg ? formatConvTime(lastMsg.created_at) : '';
+    const time     = lastMsg ? formatConvTime(lastMsg.erstellt_am) : '';
     const stCls    = b.status === 'angenommen' ? 'cs-angenommen' : b.status === 'abgelehnt' ? 'cs-abgelehnt' : 'cs-ausstehend';
     const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
 
@@ -508,7 +508,7 @@ async function loadMessages(silent) {
     .from('nachrichten')
     .select('*')
     .eq('bewerbung_id', _activeBewId)
-    .order('created_at', { ascending: true });
+    .order('erstellt_am', { ascending: true });
 
   const area = document.getElementById('messages-area');
   const wasAtBottom = area.scrollHeight - area.clientHeight <= area.scrollTop + 60;
@@ -521,7 +521,7 @@ async function loadMessages(silent) {
   let html = '';
   let lastDate = '';
   msgs.forEach(m => {
-    const d = new Date(m.created_at);
+    const d = new Date(m.erstellt_am);
     const dateKey = d.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
     if (dateKey !== lastDate) {
       html += `<div class="msg-date-sep">${dateKey}</div>`;

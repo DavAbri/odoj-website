@@ -253,7 +253,7 @@ async function loadMeineJobs() {
     .from('bewerbungen')
     .select('*')
     .eq('jobber_id', session.user.id)
-    .order('created_at', { ascending: false });
+    .order('erstellt_am', { ascending: false });
 
   if (error) {
     grid.innerHTML = `<p style="grid-column:1/-1;color:#c0392b;padding:24px">Fehler: ${error.message}</p>`;
@@ -291,8 +291,8 @@ async function loadMeineJobs() {
 
   grid.innerHTML = bewerbungen.map(b => {
     const job    = jobMap[b.job_id];
-    const bewDat = b.created_at
-      ? new Date(b.created_at).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+    const bewDat = b.erstellt_am
+      ? new Date(b.erstellt_am).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
       : '–';
     const jobDat = job?.datum
       ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday:'short', day:'numeric', month:'long' })
