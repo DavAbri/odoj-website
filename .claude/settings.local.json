@@ -4,7 +4,8 @@
       "Bash(node -e \"require\\(''mammoth''\\)\")",
       "Bash(npm install:*)",
       "Bash(node -e \":*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(ls *.html)"
     ]
   }
 }

@@ -423,6 +423,42 @@ footer {
   font-weight: 600 !important;
 }
 
+/* ── UNREAD DOT ── */
+.odoj-unread-dot {
+  position: absolute;
+  top: -3px;
+  right: -10px;
+  width: 7px;
+  height: 7px;
+  background: #e74c3c;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* ── TOAST NOTIFICATION ── */
+.odoj-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  color: var(--white);
+  padding: 12px 28px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--sh-lg);
+  max-width: 90vw;
+  text-align: center;
+  transition: opacity .4s;
+  pointer-events: none;
+}
+.odoj-toast.toast-warn    { background: var(--accent); color: var(--navy); }
+.odoj-toast.toast-success { background: #1a7a50; }
+.odoj-toast.toast-error   { background: #c0392b; }
+
 /* ── FADE-IN ANIMATION ── */
 .fade-in {
   opacity: 0;

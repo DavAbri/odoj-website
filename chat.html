@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nachrichten – ODOJ</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── LAYOUT ── */
+.chat-wrapper {
+  display: flex;
+  height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+.chat-sidebar {
+  width: 300px;
+  min-width: 260px;
+  border-right: 1px solid var(--gray-lt);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.chat-sidebar-hd {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--gray-lt);
+  background: var(--white);
+}
+.chat-sidebar-hd h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--navy);
+}
+.chat-sidebar-hd p {
+  font-size: 12px;
+  color: var(--text-lt);
+  margin-top: 3px;
+  font-weight: 300;
+}
+#conv-list { overflow-y: auto; flex: 1; }
+
+/* Konversations-Item */
+.conv-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gray-lt);
+  cursor: pointer;
+  transition: background .15s;
+  position: relative;
+  text-decoration: none;
+  display: block;
+}
+.conv-item:hover { background: var(--off); }
+.conv-item.active {
+  background: var(--accent-pale);
+  border-left: 3px solid var(--accent);
+  padding-left: 15px;
+}
+.conv-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 40px;
+}
+.conv-item-sub  { font-size: 12px; color: var(--text-lt); margin-top: 2px; font-weight: 300; }
+.conv-item-time {
+  font-size: 11px; color: var(--text-lt);
+  position: absolute; top: 14px; right: 14px;
+}
+.conv-unread-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  background: #e74c3c; border-radius: 50%;
+  flex-shrink: 0;
+}
+.conv-item-preview {
+  font-size: 12px; color: var(--text-lt);
+  margin-top: 3px; font-weight: 300;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 210px;
+}
+.conv-status-pill {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: .3px;
+  margin-top: 4px;
+}
+.cs-ausstehend { background: #FFF8E8; color: #A05000; }
+.cs-angenommen { background: #E6F5EE; color: #1A7A50; }
+.cs-abgelehnt  { background: #FFF0F0; color: #C0392B; }
+
+/* ── MAIN CHAT AREA ── */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--off);
+  overflow: hidden;
+}
+
+/* Empty State */
+.chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px;
+  color: var(--text-lt);
+}
+.chat-empty-icon {
+  font-size: 52px;
+  margin-bottom: 18px;
+}
+.chat-empty h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+.chat-empty p { font-size: 14px; line-height: 1.6; max-width: 320px; }
+
+/* Chat window */
+#chat-window {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.chat-win-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-lt);
+  padding: 14px 24px;
+  flex-shrink: 0;
+}
+.chat-win-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.chat-win-sub { font-size: 13px; color: var(--text-lt); margin-top: 2px; }
+
+/* Messages */
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.msg-bubble {
+  max-width: 68%;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.msg-mine {
+  align-self: flex-end;
+  background: var(--navy);
+  color: var(--white);
+  border-radius: 14px 14px 2px 14px;
+}
+.msg-theirs {
+  align-self: flex-start;
+  background: var(--white);
+  color: var(--text);
+  border: 1px solid var(--gray-lt);
+  border-radius: 14px 14px 14px 2px;
+  box-shadow: var(--sh-sm);
+}
+.msg-time {
+  font-size: 10px;
+  opacity: .45;
+  margin-top: 4px;
+  text-align: right;
+}
+.msg-theirs .msg-time { text-align: left; }
+
+/* Input bar */
+.chat-input-bar {
+  background: var(--white);
+  border-top: 1px solid var(--gray-lt);
+  padding: 12px 16px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+.chat-input-bar textarea {
+  flex: 1;
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  transition: border-color .2s;
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+.chat-input-bar textarea:focus { border-color: var(--accent); }
+.chat-send-btn {
+  background: var(--accent);
+  color: var(--navy);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s, transform .15s;
+  flex-shrink: 0;
+}
+.chat-send-btn:hover { background: var(--accent-lt); transform: translateY(-1px); }
+
+/* Date separator */
+.msg-date-sep {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-lt);
+  margin: 8px 0;
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 700px) {
+  .chat-sidebar { width: 100%; }
+  .chat-wrapper { flex-direction: column; }
+  .chat-sidebar { height: 240px; min-width: unset; border-right: none; border-bottom: 1px solid var(--gray-lt); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- CHAT -->
+<div class="chat-wrapper">
+
+  <!-- Sidebar: Konversationsliste -->
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-hd">
+      <h2>Nachrichten</h2>
+      <p id="conv-role-hint">Alle Chats</p>
+    </div>
+    <div id="conv-list">
+      <div style="padding:24px;text-align:center;color:var(--text-lt);font-size:13px">Laden…</div>
+    </div>
+  </div>
+
+  <!-- Hauptbereich -->
+  <div class="chat-main">
+    <!-- Leer-State -->
+    <div class="chat-empty" id="chat-empty">
+      <div class="chat-empty-icon">💬</div>
+      <h3>Keine Konversation ausgewählt</h3>
+      <p>Wähle links einen Chat aus oder starte ein Gespräch über eine Bewerbung.</p>
+    </div>
+
+    <!-- Chat Fenster -->
+    <div id="chat-window">
+      <div class="chat-win-header" id="chat-win-header">
+        <div class="chat-win-name" id="chat-win-name">–</div>
+        <div class="chat-win-sub"  id="chat-win-sub">–</div>
+      </div>
+      <div class="messages-area" id="messages-area">
+      </div>
+      <div class="chat-input-bar">
+        <textarea id="msg-input" rows="1" placeholder="Nachricht schreiben…"
+          oninput="autoResizeInput(this)"
+          onkeydown="handleEnterKey(event)"></textarea>
+        <button class="chat-send-btn" onclick="sendMessage()">
+          Senden
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-left:4px"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+// ── STATE ──
+let _chatSession  = null;
+let _chatRolle    = null;
+let _activeBewId  = null;
+let _activeBew    = null;
+let _pollInterval = null;
+let _allConvs     = [];
+
+// ── INIT ──
+async function initChat() {
+  _chatSession = await odojGetSession();
+  if (!_chatSession) { window.location.href = 'login.html'; return; }
+
+  const profile = await odojGetProfile(_chatSession.user.id);
+  _chatRolle = profile?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+
+  document.getElementById('conv-role-hint').textContent =
+    _chatRolle === 'arbeitgeber' ? 'Als Arbeitgeber' : 'Als Jobber';
+
+  await loadConversations();
+
+  const urlBewId = new URLSearchParams(location.search).get('bew');
+  if (urlBewId) {
+    await openConversation(urlBewId);
+  } else if (_allConvs.length > 0) {
+    await openConversation(_allConvs[0].id);
+  }
+}
+
+// ── KONVERSATIONEN LADEN ──
+async function loadConversations() {
+  const listEl = document.getElementById('conv-list');
+
+  // Alle Bewerbungen die mich betreffen
+  let bewerbungen = [];
+  if (_chatRolle === 'arbeitgeber') {
+    const { data } = await odojSb.from('bewerbungen').select('*').eq('arbeitgeber_id', _chatSession.user.id).order('created_at', { ascending: false });
+    bewerbungen = data || [];
+  } else {
+    const { data } = await odojSb.from('bewerbungen').select('*').eq('jobber_id', _chatSession.user.id).order('created_at', { ascending: false });
+    bewerbungen = data || [];
+  }
+
+  if (!bewerbungen.length) {
+    listEl.innerHTML = '<div style="padding:28px 20px;text-align:center;color:var(--text-lt);font-size:13px;line-height:1.6">Noch keine Chats.<br>Bewerbungen erscheinen hier sobald du Nachrichten sendest.</div>';
+    return;
+  }
+
+  // Job-Titel laden
+  const jobIds = [...new Set(bewerbungen.map(b => b.job_id).filter(Boolean))];
+  let jobMap = {};
+  if (jobIds.length) {
+    const { data: jobs } = await odojSb.from('jobs').select('id,titel,firmenname').in('id', jobIds);
+    jobs?.forEach(j => { jobMap[j.id] = j; });
+  }
+
+  // Nachrichten-Info laden (latest + unread)
+  const bewIds = bewerbungen.map(b => b.id);
+  const { data: msgs } = await odojSb
+    .from('nachrichten')
+    .select('bewerbung_id, gelesen, sender_id, nachricht, created_at')
+    .in('bewerbung_id', bewIds)
+    .order('created_at', { ascending: false });
+
+  const msgLatest = {};
+  const msgUnread = {};
+  msgs?.forEach(m => {
+    if (!msgLatest[m.bewerbung_id]) msgLatest[m.bewerbung_id] = m;
+    if (!m.gelesen && m.sender_id !== _chatSession.user.id) msgUnread[m.bewerbung_id] = true;
+  });
+
+  // URL-Param hinzufügen auch ohne Nachrichten
+  const urlBewId = new URLSearchParams(location.search).get('bew');
+  const activeBewIds = new Set([
+    ...bewerbungen.filter(b => msgLatest[b.id]).map(b => b.id),
+    ...(urlBewId ? [urlBewId] : [])
+  ]);
+
+  _allConvs = bewerbungen.filter(b => activeBewIds.has(b.id));
+
+  if (!_allConvs.length) {
+    listEl.innerHTML = '<div style="padding:28px 20px;text-align:center;color:var(--text-lt);font-size:13px;line-height:1.6">Noch keine Nachrichten.<br>Starte ein Gespräch über eine Bewerbung.</div>';
+    return;
+  }
+
+  listEl.innerHTML = _allConvs.map(b => {
+    const job      = jobMap[b.job_id];
+    const lastMsg  = msgLatest[b.id];
+    const hasUnread = msgUnread[b.id];
+    const name     = _chatRolle === 'arbeitgeber' ? b.jobber_name || 'Unbekannt' : (job?.firmenname || 'Arbeitgeber');
+    const sub      = job?.titel || '–';
+    const preview  = lastMsg ? lastMsg.nachricht : 'Noch keine Nachrichten';
+    const time     = lastMsg ? formatConvTime(lastMsg.created_at) : '';
+    const stCls    = b.status === 'angenommen' ? 'cs-angenommen' : b.status === 'abgelehnt' ? 'cs-abgelehnt' : 'cs-ausstehend';
+    const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
+
+    return `
+      <div class="conv-item${_activeBewId === b.id ? ' active' : ''}" id="conv-${b.id}" onclick="openConversation('${b.id}')">
+        <div class="conv-item-name">
+          ${escHtml(name)}
+          ${hasUnread ? '<span class="conv-unread-dot"></span>' : ''}
+        </div>
+        <div class="conv-item-sub">${escHtml(sub)}</div>
+        <div class="conv-item-preview">${escHtml(preview)}</div>
+        <span class="conv-status-pill ${stCls}">${stLbl}</span>
+        ${time ? `<div class="conv-item-time">${time}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── KONVERSATION ÖFFNEN ──
+async function openConversation(bewId) {
+  _activeBewId = bewId;
+
+  // Sidebar highlight
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+  const convEl = document.getElementById('conv-' + bewId);
+  if (convEl) convEl.classList.add('active');
+
+  // Bewerbung laden
+  const { data: bew } = await odojSb.from('bewerbungen').select('*').eq('id', bewId).single();
+  _activeBew = bew;
+  if (!bew) return;
+
+  // Job laden
+  let job = null;
+  if (bew.job_id) {
+    const { data } = await odojSb.from('jobs').select('id,titel,firmenname').eq('id', bew.job_id).single();
+    job = data;
+  }
+
+  // Header setzen
+  const name = _chatRolle === 'arbeitgeber' ? bew.jobber_name || 'Unbekannt' : (job?.firmenname || 'Arbeitgeber');
+  document.getElementById('chat-win-name').textContent = name;
+  document.getElementById('chat-win-sub').textContent  = job?.titel || '–';
+
+  // Status-Badge in Header
+  const stCls  = bew.status === 'angenommen' ? '#1A7A50' : bew.status === 'abgelehnt' ? '#C0392B' : '#A05000';
+  const stLbl  = bew.status === 'angenommen' ? 'Angenommen' : bew.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
+  const existingBadge = document.getElementById('chat-win-badge');
+  if (existingBadge) existingBadge.remove();
+  const badge = document.createElement('span');
+  badge.id = 'chat-win-badge';
+  badge.style.cssText = `display:inline-block;font-size:10px;font-weight:700;padding:2px 10px;border-radius:100px;background:${stCls}22;color:${stCls};text-transform:uppercase;letter-spacing:.3px;margin-top:4px`;
+  badge.textContent = stLbl;
+  document.getElementById('chat-win-sub').after(badge);
+
+  // Fenster einblenden
+  document.getElementById('chat-empty').style.display  = 'none';
+  document.getElementById('chat-window').style.display = 'flex';
+
+  await loadMessages();
+
+  // Als gelesen markieren
+  await odojSb.from('nachrichten')
+    .update({ gelesen: true })
+    .eq('bewerbung_id', bewId)
+    .eq('empfaenger_id', _chatSession.user.id)
+    .eq('gelesen', false);
+
+  // Unread-Dot entfernen
+  if (convEl) {
+    const dot = convEl.querySelector('.conv-unread-dot');
+    if (dot) dot.remove();
+  }
+
+  // Polling starten
+  if (_pollInterval) clearInterval(_pollInterval);
+  _pollInterval = setInterval(async () => {
+    await loadMessages(true);
+    // Nachrichten als gelesen markieren
+    await odojSb.from('nachrichten')
+      .update({ gelesen: true })
+      .eq('bewerbung_id', bewId)
+      .eq('empfaenger_id', _chatSession.user.id)
+      .eq('gelesen', false);
+  }, 5000);
+}
+
+// ── NACHRICHTEN LADEN ──
+async function loadMessages(silent) {
+  if (!_activeBewId) return;
+
+  const { data: msgs } = await odojSb
+    .from('nachrichten')
+    .select('*')
+    .eq('bewerbung_id', _activeBewId)
+    .order('created_at', { ascending: true });
+
+  const area = document.getElementById('messages-area');
+  const wasAtBottom = area.scrollHeight - area.clientHeight <= area.scrollTop + 60;
+
+  if (!msgs || msgs.length === 0) {
+    area.innerHTML = '<div style="margin:auto;text-align:center;color:var(--text-lt);font-size:14px;padding:32px">Noch keine Nachrichten.<br>Schreibe als Erster!</div>';
+    return;
+  }
+
+  let html = '';
+  let lastDate = '';
+  msgs.forEach(m => {
+    const d = new Date(m.created_at);
+    const dateKey = d.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (dateKey !== lastDate) {
+      html += `<div class="msg-date-sep">${dateKey}</div>`;
+      lastDate = dateKey;
+    }
+    const isMine = m.sender_id === _chatSession.user.id;
+    const time   = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+    html += `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">
+      ${escHtml(m.nachricht)}
+      <div class="msg-time">${time}</div>
+    </div>`;
+  });
+  area.innerHTML = html;
+
+  if (!silent || wasAtBottom) area.scrollTop = area.scrollHeight;
+}
+
+// ── NACHRICHT SENDEN ──
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text  = input.value.trim();
+  if (!text || !_activeBewId || !_activeBew) return;
+
+  const empfaengerId = _chatRolle === 'arbeitgeber'
+    ? _activeBew.jobber_id
+    : _activeBew.arbeitgeber_id;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  const { error } = await odojSb.from('nachrichten').insert({
+    bewerbung_id:  _activeBewId,
+    sender_id:     _chatSession.user.id,
+    empfaenger_id: empfaengerId,
+    nachricht:     text,
+    gelesen:       false
+  });
+
+  if (error) { alert('Fehler beim Senden: ' + error.message); return; }
+  await loadMessages();
+
+  // Konversationsliste aktualisieren (Preview)
+  const convEl = document.getElementById('conv-' + _activeBewId);
+  if (convEl) {
+    const preview = convEl.querySelector('.conv-item-preview');
+    if (preview) preview.textContent = text;
+    const timeEl = convEl.querySelector('.conv-item-time');
+    if (timeEl) timeEl.textContent = formatConvTime(new Date().toISOString());
+  }
+}
+
+// ── HELPERS ──
+function handleEnterKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResizeInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function formatConvTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString('de-AT', { hour:'2-digit', minute:'2-digit' });
+  }
+  return d.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' });
+}
+
+// Start
+initChat();
+</script>
+</body>
+</html>

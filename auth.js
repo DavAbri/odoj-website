@@ -31,13 +31,53 @@ async function odojLogout() {
   window.location.href = 'index.html';
 }
 
+// Ungelesene Nachrichten zählen
+async function odojCountUnread(userId) {
+  try {
+    const { count } = await odojSb
+      .from('nachrichten')
+      .select('id', { count: 'exact', head: true })
+      .eq('empfaenger_id', userId)
+      .eq('gelesen', false);
+    return count || 0;
+  } catch (_) { return 0; }
+}
+
+// Unread-Dot aktualisieren
+function odojUpdateUnreadDot(hasUnread) {
+  const link = document.querySelector('#nav-nachrichten a');
+  if (link) {
+    let dot = link.querySelector('.odoj-unread-dot');
+    if (hasUnread && !dot) {
+      dot = document.createElement('span');
+      dot.className = 'odoj-unread-dot';
+      link.appendChild(dot);
+    } else if (!hasUnread && dot) {
+      dot.remove();
+    }
+  }
+  const mLink = document.getElementById('nav-mobile-nachrichten');
+  if (mLink) {
+    const base = 'Nachrichten';
+    const dot = mLink.querySelector('.odoj-unread-dot-mobile');
+    if (hasUnread && !dot) {
+      const s = document.createElement('span');
+      s.className = 'odoj-unread-dot-mobile';
+      s.style.cssText = 'display:inline-block;width:7px;height:7px;background:#e74c3c;border-radius:50%;margin-left:6px;vertical-align:middle';
+      mLink.appendChild(s);
+    } else if (!hasUnread && dot) {
+      dot.remove();
+    }
+  }
+}
+
 async function odojInitNav() {
   const session = await odojGetSession();
   const authEl   = document.getElementById('nav-auth');
   const mobileEl = document.getElementById('nav-mobile-auth');
 
   if (session) {
-    // Rolle ermitteln
+    // Profil laden
     const profile = await odojGetProfile(session.user.id);
     const rolle   = profile?.rolle
                     || session.user.user_metadata?.rolle
@@ -45,7 +85,7 @@ async function odojInitNav() {
                     || 'jobber';
     odojSaveRolle(rolle);
 
-    // Anzeigename: Jobber → Vorname, Arbeitgeber → Firmenname
+    // Anzeigename
     let displayName = session.user.email;
     if (profile) {
       displayName = (rolle === 'arbeitgeber' && profile.firmenname)
@@ -54,6 +94,7 @@ async function odojInitNav() {
     }
     if (displayName.length > 20) displayName = displayName.substring(0, 18) + '\u2026';
 
+    // Nav Auth Element
     if (authEl) authEl.innerHTML =
       '<span class="nav-user-name">' + displayName + '</span>' +
       '<button onclick="odojLogout()" class="nav-logout-btn">Logout</button>';
@@ -61,6 +102,58 @@ async function odojInitNav() {
     if (mobileEl) mobileEl.innerHTML =
       '<span class="nav-user-name-mobile">\u2713 ' + displayName + '</span>' +
       '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen \u2192</a>';
+
+    // Unread-Count
+    const unreadCount = await odojCountUnread(session.user.id);
+    const hasUnread   = unreadCount > 0;
+
+    // ── Desktop: Links vor #nav-auth einfügen ──
+    const navAuthLi = document.getElementById('nav-auth');
+    if (navAuthLi && navAuthLi.parentElement && !document.getElementById('nav-nachrichten')) {
+      // Jobber: "Meine Bewerbungen"
+      if (rolle === 'jobber' && !document.getElementById('nav-meine-jobs')) {
+        const mjLi = document.createElement('li');
+        mjLi.id = 'nav-meine-jobs';
+        mjLi.innerHTML = '<a href="meine-jobs.html">Meine Bewerbungen</a>';
+        navAuthLi.parentElement.insertBefore(mjLi, navAuthLi);
+      }
+      // Nachrichten
+      const msgLi = document.createElement('li');
+      msgLi.id = 'nav-nachrichten';
+      msgLi.innerHTML = '<a href="chat.html" style="position:relative">Nachrichten' +
+        (hasUnread ? '<span class="odoj-unread-dot"></span>' : '') + '</a>';
+      navAuthLi.parentElement.insertBefore(msgLi, navAuthLi);
+    }
+
+    // ── Mobile: Links vor #nav-mobile-auth einfügen ──
+    const navMobile = document.getElementById('navMobile');
+    if (navMobile && mobileEl && !document.getElementById('nav-mobile-nachrichten')) {
+      if (rolle === 'jobber' && !document.getElementById('nav-mobile-meine-jobs')) {
+        const mjA = document.createElement('a');
+        mjA.href = 'meine-jobs.html';
+        mjA.id   = 'nav-mobile-meine-jobs';
+        mjA.textContent = 'Meine Bewerbungen';
+        navMobile.insertBefore(mjA, mobileEl);
+      }
+      const msgA = document.createElement('a');
+      msgA.href        = 'chat.html';
+      msgA.id          = 'nav-mobile-nachrichten';
+      msgA.textContent = 'Nachrichten';
+      navMobile.insertBefore(msgA, mobileEl);
+      if (hasUnread) {
+        const dot = document.createElement('span');
+        dot.className = 'odoj-unread-dot-mobile';
+        dot.style.cssText = 'display:inline-block;width:7px;height:7px;background:#e74c3c;border-radius:50%;margin-left:6px;vertical-align:middle';
+        msgA.appendChild(dot);
+      }
+    }
+
+    // Alle 30s ungelesene prüfen
+    setInterval(async () => {
+      const cnt = await odojCountUnread(session.user.id);
+      odojUpdateUnreadDot(cnt > 0);
+    }, 30000);
+
   } else {
     if (authEl) authEl.innerHTML = '<a href="login.html" class="nav-cta">Anmelden</a>';
     if (mobileEl) mobileEl.innerHTML = '<a href="login.html" style="color:var(--accent);font-weight:600">Anmelden \u2192</a>';

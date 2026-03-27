@@ -277,6 +277,104 @@
   .ablauf-step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
 }
+
+/* ── BEWERBUNGEN OVERLAY ── */
+.bew-overlay {
+  position: fixed; inset: 0;
+  background: rgba(11,31,58,.72);
+  z-index: 500;
+  overflow-y: auto;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: none;
+}
+.bew-overlay-box {
+  max-width: 720px;
+  margin: 56px auto 56px;
+  background: var(--white);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--sh-lg);
+}
+.bew-overlay-head {
+  background: var(--navy);
+  padding: 22px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.bew-overlay-label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 5px; display: block;
+}
+.bew-overlay-titel {
+  font-family: 'Syne', sans-serif; font-size: 19px;
+  font-weight: 700; color: var(--white); margin: 0;
+}
+.bew-close-btn {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.8);
+  font-size: 13px; font-weight: 600;
+  padding: 8px 18px; border-radius: var(--r-sm);
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background .2s;
+}
+.bew-close-btn:hover { background: rgba(255,255,255,.2); }
+.bew-overlay-body { padding: 24px 32px; min-height: 180px; }
+
+/* Einzelne Bewerbungs-Card im Overlay */
+.bew-item {
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  margin-bottom: 14px;
+  transition: border-color .2s;
+}
+.bew-item:hover { border-color: var(--sky-lt); }
+.bew-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.bew-item-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+.bew-item-email { font-size: 13px; color: var(--text-lt); margin-top: 2px; }
+.bew-item-date  { font-size: 12px; color: var(--text-lt); font-weight: 300; margin-top: 3px; }
+.bew-st-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: .3px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.bew-st-ausstehend { background: #FFF8E8; color: #A05000; }
+.bew-st-angenommen { background: #E6F5EE; color: #1A7A50; }
+.bew-st-abgelehnt  { background: #FFF0F0; color: #C0392B; }
+.bew-item-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.bew-btn {
+  font-size: 13px; font-weight: 600;
+  padding: 8px 16px; border-radius: var(--r-sm);
+  border: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .2s; text-decoration: none; display: inline-block;
+}
+.bew-btn-accept { background: #E6F5EE; color: #1A7A50; }
+.bew-btn-accept:hover { background: #1A7A50; color: white; }
+.bew-btn-reject { background: #FFF0F0; color: #C0392B; }
+.bew-btn-reject:hover { background: #C0392B; color: white; }
+.bew-btn-chat { background: var(--navy); color: white; }
+.bew-btn-chat:hover { background: var(--navy-soft); }
+
+/* Badge auf Inserat-Card */
+.bew-count-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--accent-pale); color: var(--accent);
+  border: 1px solid rgba(232,160,32,.3);
+  font-size: 12px; font-weight: 700;
+  padding: 4px 12px; border-radius: 100px;
+  cursor: pointer; transition: all .2s; border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.bew-count-badge:hover { background: var(--accent); color: var(--navy); }
+.inserat-card-footer-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 </style>
 </head>
 <body>
@@ -515,6 +613,22 @@
 
 </div><!-- /ag-marketing -->
 
+<!-- ── BEWERBUNGEN OVERLAY ── -->
+<div class="bew-overlay" id="bew-overlay" onclick="overlayBgClick(event)">
+  <div class="bew-overlay-box">
+    <div class="bew-overlay-head">
+      <div>
+        <span class="bew-overlay-label">Eingehende Bewerbungen</span>
+        <h3 class="bew-overlay-titel" id="bew-overlay-titel">–</h3>
+      </div>
+      <button class="bew-close-btn" onclick="closeBewOverlay()">✕ Schließen</button>
+    </div>
+    <div class="bew-overlay-body" id="bew-overlay-body">
+      <div style="text-align:center;padding:40px;color:var(--text-lt)">Lade…</div>
+    </div>
+  </div>
+</div>
+
 <!-- FOOTER -->
 <footer>
   <div class="footer-grid">
@@ -585,10 +699,17 @@ async function loadInserate() {
     return;
   }
 
-  grid.innerHTML = jobs.map(renderInseratCard).join('');
+  // Bewerbungs-Anzahl pro Job laden
+  const jobIds = jobs.map(j => j.id);
+  const { data: bews } = await odojSb.from('bewerbungen').select('job_id').in('job_id', jobIds);
+  const countMap = {};
+  bews?.forEach(b => { countMap[b.job_id] = (countMap[b.job_id] || 0) + 1; });
+
+  grid.innerHTML = jobs.map(j => renderInseratCard(j, countMap[j.id] || 0)).join('');
 }
 
-function renderInseratCard(j) {
+function renderInseratCard(j, bewCount) {
+  bewCount = bewCount || 0;
   const b = BRANCHEN[j.branche] || { label: j.branche, cls: '' };
   const datum = j.datum
     ? new Date(j.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -596,6 +717,7 @@ function renderInseratCard(j) {
   const statusCls = j.status === 'aktiv' ? 'status-aktiv' : 'status-inaktiv';
   const stunden   = j.stundenanzahl ? j.stundenanzahl + ' Std.' : '';
   const gehalt    = Number(j.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const titelEsc  = (j.titel || '').replace(/"/g, '&quot;');
 
   return `
     <div class="inserat-card">
@@ -619,9 +741,106 @@ function renderInseratCard(j) {
           <div class="inserat-gehalt">€ ${gehalt} <span>/ Tag</span></div>
           <div class="inserat-stunden">${stunden}</div>
         </div>
-        <button class="btn-del" onclick="deleteInserat('${j.id}')">Löschen</button>
+        <div class="inserat-card-footer-actions">
+          <button class="bew-count-badge"
+            data-job-id="${j.id}" data-job-titel="${titelEsc}"
+            onclick="openBewerbungen(this.dataset.jobId, this.dataset.jobTitel)">
+            👤 ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
+          </button>
+          <button class="btn-del" onclick="deleteInserat('${j.id}')">Löschen</button>
+        </div>
       </div>
     </div>`;
+}
+
+// ── BEWERBUNGEN OVERLAY ──
+async function openBewerbungen(jobId, jobTitel) {
+  document.getElementById('bew-overlay-titel').textContent = jobTitel;
+  document.getElementById('bew-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+
+  const bodyEl = document.getElementById('bew-overlay-body');
+  bodyEl.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-lt)">Lade Bewerbungen…</div>';
+
+  const { data: bewerbungen, error } = await odojSb
+    .from('bewerbungen')
+    .select('*')
+    .eq('job_id', jobId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    bodyEl.innerHTML = '<p style="color:#c0392b;padding:24px">Fehler: ' + error.message + '</p>';
+    return;
+  }
+  if (!bewerbungen || bewerbungen.length === 0) {
+    bodyEl.innerHTML = `
+      <div style="text-align:center;padding:56px 32px;color:var(--text-lt)">
+        <div style="font-size:42px;margin-bottom:14px">📭</div>
+        <p style="font-size:15px">Noch keine Bewerbungen für dieses Inserat.</p>
+      </div>`;
+    return;
+  }
+  bodyEl.innerHTML = bewerbungen.map(renderBewItem).join('');
+}
+
+function renderBewItem(b) {
+  const dateStr = b.created_at
+    ? new Date(b.created_at).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    : '–';
+  const stCls   = b.status === 'angenommen' ? 'bew-st-angenommen'
+                : b.status === 'abgelehnt'  ? 'bew-st-abgelehnt'
+                : 'bew-st-ausstehend';
+  const stLabel = b.status === 'angenommen' ? 'Angenommen'
+                : b.status === 'abgelehnt'  ? 'Abgelehnt'
+                : 'Ausstehend';
+  const acceptBtn = b.status !== 'angenommen'
+    ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${b.id}','angenommen')">✓ Annehmen</button>` : '';
+  const rejectBtn = b.status !== 'abgelehnt'
+    ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">✕ Ablehnen</button>` : '';
+
+  return `
+    <div class="bew-item" id="bew-item-${b.id}">
+      <div class="bew-item-header">
+        <div>
+          <div class="bew-item-name">${b.jobber_name || 'Unbekannt'}</div>
+          <div class="bew-item-email">${b.jobber_email || ''}</div>
+          <div class="bew-item-date">Beworben am ${dateStr}</div>
+        </div>
+        <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
+      </div>
+      <div class="bew-item-actions" id="bew-actions-${b.id}">
+        ${acceptBtn}${rejectBtn}
+        <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')">💬 Nachricht senden</button>
+      </div>
+    </div>`;
+}
+
+async function updateBewStatus(bewId, newStatus) {
+  const { error } = await odojSb.from('bewerbungen').update({ status: newStatus }).eq('id', bewId);
+  if (error) { alert('Fehler: ' + error.message); return; }
+  const badge = document.getElementById('bew-badge-' + bewId);
+  if (badge) {
+    badge.className = 'bew-st-badge ' + (newStatus === 'angenommen' ? 'bew-st-angenommen' : 'bew-st-abgelehnt');
+    badge.textContent = newStatus === 'angenommen' ? 'Angenommen' : 'Abgelehnt';
+  }
+  const actEl = document.getElementById('bew-actions-' + bewId);
+  if (actEl) {
+    actEl.innerHTML =
+      (newStatus !== 'angenommen' ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${bewId}','angenommen')">✓ Annehmen</button>` : '') +
+      (newStatus !== 'abgelehnt'  ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">✕ Ablehnen</button>` : '') +
+      `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')">💬 Nachricht senden</button>`;
+  }
+  loadInserate();
+}
+
+function startChat(bewId) { window.location.href = 'chat.html?bew=' + bewId; }
+
+function closeBewOverlay() {
+  document.getElementById('bew-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function overlayBgClick(e) {
+  if (e.target === document.getElementById('bew-overlay')) closeBewOverlay();
 }
 
 async function deleteInserat(id) {
