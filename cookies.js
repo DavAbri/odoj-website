@@ -64,7 +64,7 @@
   border-radius: 18px;
   box-shadow: 0 8px 48px rgba(11,31,58,.20), 0 2px 8px rgba(11,31,58,.10);
   padding: 22px 26px 20px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   animation: ckBannerIn .38s cubic-bezier(.34,1.3,.64,1);
 }
 @keyframes ckBannerIn {
@@ -74,7 +74,7 @@
 .ck-b-top { display:flex; gap:14px; margin-bottom:14px; align-items:flex-start; }
 .ck-b-icon { font-size:26px; line-height:1; flex-shrink:0; margin-top:2px; }
 .ck-b-title {
-  font-family: 'Syne', sans-serif; font-size:16px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size:16px;
   font-weight:800; color:#0B1F3A; margin-bottom:5px;
 }
 .ck-b-text { font-size:13px; color:#7A8FA8; line-height:1.65; font-weight:300; }
@@ -85,21 +85,21 @@
 /* Banner-Buttons */
 .ck-btn-accept {
   background:#E8A020; color:#0B1F3A;
-  font-family:'Syne',sans-serif; font-size:14px; font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700;
   padding:10px 22px; border-radius:8px; border:none;
   cursor:pointer; transition:background .2s, transform .15s; white-space:nowrap;
 }
 .ck-btn-accept:hover { background:#F5BE5A; transform:translateY(-1px); }
 .ck-btn-necessary {
   background:transparent; color:#0B1F3A;
-  font-family:'Syne',sans-serif; font-size:14px; font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700;
   padding:10px 22px; border-radius:8px; border:1.5px solid #E8EDF5;
   cursor:pointer; transition:all .2s; white-space:nowrap;
 }
 .ck-btn-necessary:hover { border-color:#0B1F3A; background:#F4F7FB; }
 .ck-btn-settings-link {
   background:none; border:none; color:#8A9AB5;
-  font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:500;
   cursor:pointer; padding:8px 2px; text-decoration:underline;
   transition:color .2s; white-space:nowrap;
 }
@@ -119,7 +119,7 @@
 #odoj-ck-fab-tip {
   position:fixed; bottom:80px; left:24px;
   background:#0B1F3A; color:#fff;
-  font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:500;
   padding:6px 12px; border-radius:6px; white-space:nowrap;
   opacity:0; pointer-events:none; transition:opacity .2s; z-index:999;
 }
@@ -149,7 +149,7 @@
   border-radius:20px 20px 0 0; gap:16px;
 }
 .ck-m-head-title {
-  font-family:'Syne',sans-serif; font-size:18px;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:18px;
   font-weight:800; color:#fff;
 }
 .ck-m-close {
@@ -180,7 +180,7 @@
   gap:12px; margin-bottom:7px;
 }
 .ck-cat-name {
-  font-family:'Syne',sans-serif; font-size:13px; font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700;
   color:#0B1F3A; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
 }
 .ck-always-badge {
@@ -221,14 +221,14 @@
 }
 .ck-btn-save {
   background:#0B1F3A; color:#fff;
-  font-family:'Syne',sans-serif; font-size:14px; font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700;
   padding:11px 24px; border-radius:8px; border:none;
   cursor:pointer; transition:background .2s, transform .15s;
 }
 .ck-btn-save:hover { background:#243F6E; transform:translateY(-1px); }
 .ck-btn-accept-all-m {
   background:#E8A020; color:#0B1F3A;
-  font-family:'Syne',sans-serif; font-size:14px; font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700;
   padding:11px 24px; border-radius:8px; border:none;
   cursor:pointer; transition:background .2s, transform .15s;
 }

@@ -4,7 +4,7 @@
 ══════════════════════════════════════════ */
 
 /* ── FONTS ── */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 /* ── RESET & VARS ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,14 +39,14 @@
 html { scroll-behavior: smooth; font-size: 16px; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--white);
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, .logo { font-family: 'Syne', sans-serif; }
+h1, h2, h3, h4, .logo { font-family: 'Plus Jakarta Sans', sans-serif; }
 img { display: block; max-width: 100%; }
 a { text-decoration: none; }
 
@@ -67,7 +67,7 @@ nav {
 }
 
 .nav-logo {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--white);
@@ -213,7 +213,7 @@ nav {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 15px;
   font-weight: 700;
   padding: 15px 30px;
@@ -280,7 +280,7 @@ section { padding: 88px 60px; }
   display: block;
 }
 .section-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: clamp(30px, 3.5vw, 44px);
   font-weight: 800;
   line-height: 1.08;
@@ -330,7 +330,7 @@ footer {
   margin-bottom: 52px;
 }
 .footer-logo {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: var(--white);
@@ -348,7 +348,7 @@ footer {
   margin-bottom: 20px;
 }
 .footer-col h4 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--white);
@@ -405,7 +405,7 @@ footer {
   padding: 7px 16px;
   border-radius: var(--r-sm);
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   transition: background .2s;
   white-space: nowrap;
 }
