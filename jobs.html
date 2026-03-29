@@ -127,135 +127,86 @@
   vertical-align: middle;
 }
 
-/* ── BEWERBEN SECTION ── */
-.bewerben { background: var(--navy); }
-.bewerben-layout {
+/* ── SO GEHT'S SECTION ── */
+.how-jobs { background: var(--off); }
+.how-jobs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 52px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.steps {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 64px;
-  align-items: start;
-  margin-top: 52px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
 }
-.bew-card {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: var(--r-lg);
-  padding: 44px;
+.step {
+  background: var(--white);
+  padding: 44px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
 }
-.bew-card h3 {
+.step:first-child { border-radius: var(--r-lg) 0 0 var(--r-lg); }
+.step:last-child  { border-radius: 0 var(--r-lg) var(--r-lg) 0; }
+.step:hover { transform: translateY(-4px); box-shadow: var(--sh-md); z-index: 1; }
+.step-num {
   font-family: 'Syne', sans-serif;
-  font-size: 22px;
+  font-size: 68px;
   font-weight: 800;
-  color: var(--white);
-  margin-bottom: 6px;
-}
-.bew-card > p { font-size: 14px; color: rgba(255,255,255,.45); font-weight: 300; margin-bottom: 28px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.form-field { margin-bottom: 10px; }
-.form-field label {
+  color: var(--gray-lt);
+  line-height: 1;
+  margin-bottom: 20px;
   display: block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.38);
-  margin-bottom: 6px;
+  user-select: none;
 }
-.form-field input,
-.form-field select,
-.form-field textarea {
-  width: 100%;
-  background: rgba(255,255,255,.07);
-  border: 1.5px solid rgba(255,255,255,.1);
+.step-ico {
+  width: 46px; height: 46px;
+  background: var(--accent-pale);
   border-radius: var(--r-sm);
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  padding: 12px 15px;
-  outline: none;
-  transition: border-color .2s;
-}
-.form-field input::placeholder,
-.form-field textarea::placeholder { color: rgba(255,255,255,.25); }
-.form-field input:focus,
-.form-field select:focus,
-.form-field textarea:focus { border-color: var(--accent); }
-.form-field select option { background: var(--navy-mid); color: var(--white); }
-.form-field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
-.check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-.check-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 18px;
+}
+.step h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.step p {
   font-size: 14px;
-  color: rgba(255,255,255,.65);
-  cursor: pointer;
+  color: var(--text-lt);
+  line-height: 1.65;
   font-weight: 300;
 }
-.check-item input[type="checkbox"] {
-  width: 16px; height: 16px;
-  accent-color: var(--accent);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.btn-submit {
-  width: 100%;
+.step-line {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
   background: var(--accent);
-  color: var(--navy);
-  font-family: 'Syne', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  padding: 16px;
-  border-radius: var(--r-sm);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background .2s, transform .15s;
-  margin-top: 14px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s;
 }
-.btn-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
-
-/* Side info */
-.bew-side { padding-top: 8px; }
-.contact-list { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; }
-.contact-item { display: flex; align-items: center; gap: 14px; }
-.ci-icon {
-  width: 42px; height: 42px;
-  background: rgba(255,255,255,.07);
-  border-radius: var(--r-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  flex-shrink: 0;
+.step:hover .step-line { transform: scaleX(1); }
+.how-jobs-cta {
+  text-align: center;
+  margin-top: 48px;
 }
-.ci-main { font-size: 14px; font-weight: 500; color: var(--white); }
-.ci-sub  { font-size: 12px; color: rgba(255,255,255,.35); }
-.early-box {
-  margin-top: 32px;
-  background: rgba(232,160,32,.1);
-  border: 1px solid rgba(232,160,32,.22);
-  border-radius: var(--r-md);
-  padding: 24px;
-}
-.early-box-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-.early-box p { font-size: 14px; color: rgba(255,255,255,.5); font-weight: 300; line-height: 1.6; }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .filter-bar { padding: 14px 24px; }
   .jobs-body { padding: 32px 24px 60px; }
-  .bewerben-layout { grid-template-columns: 1fr; gap: 36px; }
-  .form-row, .check-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; gap: 3px; }
+  .step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
 }
 .page-hero-label { font-size: 16px; }
 
@@ -404,82 +355,44 @@
   </div>
 </div>
 
-<!-- BEWERBEN -->
-<section class="bewerben" id="bewerben">
-  <span class="section-label">Kostenlos &amp; unverbindlich</span>
-  <h2 class="section-title section-title-white">Jetzt registrieren</h2>
-  <p class="section-sub section-sub-white">Einmal anmelden – dann bringen wir die Jobs zu dir.</p>
-
-  <div class="bewerben-layout">
-    <div class="bew-card fade-in">
-      <h3>Profil erstellen</h3>
-      <p>Nur 2 Minuten – und du bist dabei.</p>
-      <form id="bewForm" onsubmit="submitBew(event)">
-        <div class="form-row">
-          <div class="form-field"><label>Vorname</label><input type="text" name="vorname" placeholder="Max" required></div>
-          <div class="form-field"><label>Nachname</label><input type="text" name="nachname" placeholder="Mustermann" required></div>
-        </div>
-        <div class="form-field"><label>E-Mail</label><input type="email" name="email" placeholder="max@beispiel.at" required></div>
-        <div class="form-field"><label>Handynummer</label><input type="tel" name="telefon" placeholder="+43 660 ..."></div>
-        <div class="form-field"><label>Wohnort / PLZ</label><input type="text" name="wohnort" placeholder="z.B. Dornbirn, 6850"></div>
-        <div class="form-field">
-          <label>Bevorzugte Branchen</label>
-          <div class="check-grid">
-            <label class="check-item"><input type="checkbox" name="branchen" value="Gastronomie"> 🍽 Gastronomie</label>
-            <label class="check-item"><input type="checkbox" name="branchen" value="Bau"> 🏗 Bau &amp; Handwerk</label>
-            <label class="check-item"><input type="checkbox" name="branchen" value="Lager"> 📦 Lager &amp; Logistik</label>
-            <label class="check-item"><input type="checkbox" name="branchen" value="Events"> 🎤 Events</label>
-          </div>
-        </div>
-        <div class="form-field">
-          <label>Verfügbarkeit</label>
-          <select name="verfuegbarkeit">
-            <option value="" disabled selected>Wann kannst du arbeiten?</option>
-            <option>Flexibel (wann immer)</option>
-            <option>Nur Wochentage</option>
-            <option>Nur Wochenende</option>
-            <option>Nur Frühdienst</option>
-            <option>Nur Spätdienst</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Interesse an Job (optional)</label>
-          <input type="text" id="jobInterest" name="job_interesse" placeholder="Wird automatisch ausgefüllt">
-        </div>
-        <div class="form-field">
-          <label>Kurz über dich</label>
-          <textarea name="beschreibung" placeholder="Erfahrungen, Führerschein, Sprachen..."></textarea>
-        </div>
-        <button type="submit" class="btn-submit" id="bewBtn">
-          Kostenlos registrieren
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-      </form>
+<!-- SO GEHT'S -->
+<section class="how-jobs" id="so-gehts">
+  <div class="how-jobs-header fade-in">
+    <div>
+      <span class="section-label">So einfach geht's</span>
+      <h2 class="section-title">In 3 Schritten<br>zum Tagesjob</h2>
     </div>
+  </div>
 
-    <div class="bew-side fade-in">
-      <span class="section-label">Direkter Kontakt</span>
-      <h3 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--white);margin-bottom:10px;letter-spacing:-.5px">Fragen? Ruf uns an.</h3>
-      <p style="color:rgba(255,255,255,.5);font-size:15px;font-weight:300;line-height:1.65;max-width:360px">Wir sind in der Aufbauphase und freuen uns über jedes Gespräch.</p>
-      <div class="contact-list">
-        <div class="contact-item">
-          <div class="ci-icon">📞</div>
-          <div><div class="ci-main">+43 (0) 5572 – ODOJ</div><div class="ci-sub">Mo – Fr, 08:00 – 18:00 Uhr</div></div>
-        </div>
-        <div class="contact-item">
-          <div class="ci-icon">✉️</div>
-          <div><div class="ci-main">hallo@odoj.at</div><div class="ci-sub">Antwort innerhalb von 24 Stunden</div></div>
-        </div>
-        <div class="contact-item">
-          <div class="ci-icon">📍</div>
-          <div><div class="ci-main">Vorarlberg, Österreich</div><div class="ci-sub">Lokal verwurzelt, regional vernetzt</div></div>
-        </div>
-      </div>
-      <div class="early-box">
-        <div class="early-box-title">🚀 Frühbucher-Vorteil</div>
-        <p>Die ersten 50 registrierten Jobber erhalten bevorzugte Job-Benachrichtigungen und persönliche Betreuung durch unser Team.</p>
-      </div>
+  <div class="steps">
+    <div class="step fade-in">
+      <span class="step-num">01</span>
+      <div class="step-ico">📋</div>
+      <h3>Konto erstellen</h3>
+      <p>Registriere dich kostenlos in wenigen Minuten. Nur Name, E-Mail und Passwort nötig.</p>
+      <div class="step-line"></div>
     </div>
+    <div class="step fade-in">
+      <span class="step-num">02</span>
+      <div class="step-ico">🎯</div>
+      <h3>Job aussuchen</h3>
+      <p>Durchstöbere alle Tagesjobs in Vorarlberg und filtere nach deiner Wunschbranche.</p>
+      <div class="step-line"></div>
+    </div>
+    <div class="step fade-in">
+      <span class="step-num">03</span>
+      <div class="step-ico">✅</div>
+      <h3>Bewerben &amp; loslegen</h3>
+      <p>Mit einem Klick bewerben – der Arbeitgeber meldet sich direkt bei dir.</p>
+      <div class="step-line"></div>
+    </div>
+  </div>
+
+  <div class="how-jobs-cta" id="cta-register">
+    <a href="login.html" class="btn btn-accent">
+      Jetzt kostenlos registrieren
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
   </div>
 </section>
 
@@ -490,7 +403,7 @@
       <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
       <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
     </div>
-    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li><li><a href="#bewerben">Registrieren</a></li></ul></div>
+    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li><li><a href="login.html">Registrieren</a></li></ul></div>
     <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="arbeitgeber.html">Personal anfragen</a></li></ul></div>
     <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
   </div>
@@ -683,16 +596,6 @@ function renderJobs(jobs, unlocked) {
 const p = new URLSearchParams(location.search).get('b');
 if (p) { const btn = document.querySelector('.fbtn[onclick*="' + p + '"]'); if (btn) filter(p, btn); }
 
-function setJob(name) { setTimeout(() => { document.getElementById('jobInterest').value = name; }, 100); }
-
-function submitBew(e) {
-  e.preventDefault();
-  const btn = document.getElementById('bewBtn');
-  btn.textContent = '✓ Angemeldet! Wir melden uns bald.';
-  btn.style.background = '#1a8c5c';
-  btn.disabled = true;
-}
-
 // Fade-in observer
 const obs = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 70); });
@@ -711,6 +614,9 @@ async function checkJobsAuth() {
   _odojJobsSession = session;
 
   if (session) {
+    const ctaEl = document.getElementById('cta-register');
+    if (ctaEl) ctaEl.style.display = 'none';
+
     let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
     try {
       const { data: profile } = await odojSb
