@@ -188,6 +188,18 @@
   text-align: right;
 }
 .msg-theirs .msg-time { text-align: left; }
+.msg-system {
+  align-self: stretch;
+  background: #E6F5EE;
+  color: #1A5C3A;
+  border: 1.5px solid #A8D9BE;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: break-word;
+}
+.msg-system .msg-time { text-align: left; opacity: .5; margin-top: 6px; }
 
 /* Input bar */
 .chat-input-bar {
@@ -527,9 +539,11 @@ async function loadMessages(silent) {
       html += `<div class="msg-date-sep">${dateKey}</div>`;
       lastDate = dateKey;
     }
-    const isMine = m.sender_id === _chatSession.user.id;
-    const time   = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
-    html += `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">
+    const isMine    = m.sender_id === _chatSession.user.id;
+    const isSystem  = m.nachricht && m.nachricht.startsWith('✅ Einsatz erfolgreich');
+    const time      = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+    const cls       = isSystem ? 'msg-system' : (isMine ? 'msg-mine' : 'msg-theirs');
+    html += `<div class="msg-bubble ${cls}">
       ${escHtml(m.nachricht)}
       <div class="msg-time">${time}</div>
     </div>`;

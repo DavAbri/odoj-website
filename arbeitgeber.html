@@ -854,6 +854,18 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     datum:          today
   });
 
+  // Automatische Bestätigungsnachricht im Chat
+  const systemMsg = `✅ Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben! 🙌\n\n– Team ODOJ`;
+  const { error: msgErr } = await odojSb.from('nachrichten').insert({
+    bewerbung_id:  bewId,
+    sender_id:     agId,
+    empfaenger_id: jobberId,
+    nachricht:     systemMsg,
+    gelesen:       false,
+    erstellt_am:   new Date().toISOString()
+  });
+  if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
+
   if (btn) {
     btn.textContent = '✓ Anwesenheit bestätigt';
     btn.className = 'bew-btn bew-btn-presence-done';
