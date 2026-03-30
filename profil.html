@@ -421,8 +421,9 @@ async function saveAgProfil(userId) {
   const vorname  = document.getElementById('ag-edit-vorname').value.trim();
   const nachname = document.getElementById('ag-edit-nachname').value.trim();
 
-  const { error } = await odojSb.from('Profile')
-    .upsert({ user_id: userId, firmenname: firma, vorname, nachname }, { onConflict: 'user_id' })
+  const { data, error } = await odojSb.from('Profile')
+    .update({ firmenname: firma, vorname, nachname })
+    .eq('user_id', userId)
     .select();
 
   if (error) { alert('Fehler: ' + error.message); console.error('AG profil save error:', error); return; }
@@ -595,9 +596,11 @@ async function saveSvn(userId) {
   if (digits.length !== 10) { alert('Bitte eine gültige 10-stellige Sozialversicherungsnummer eingeben.'); return; }
 
   const { data, error } = await odojSb.from('Profile')
-    .upsert({ user_id: userId, svnummer: svn }, { onConflict: 'user_id' })
+    .update({ svnummer: svn })
+    .eq('user_id', userId)
     .select();
   if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('SVN save error:', error); return; }
+  if (!data || data.length === 0) { alert('Kein Profil-Eintrag gefunden. Bitte wende dich an den Support.'); return; }
 
   document.getElementById('svn-display').textContent = svn;
   toggleSvnEdit(false);
@@ -614,9 +617,11 @@ async function saveAddr(userId) {
   if (!strasse || !plz || !ort) { alert('Bitte alle Adressfelder ausfüllen.'); return; }
 
   const { data, error } = await odojSb.from('Profile')
-    .upsert({ user_id: userId, adresse: strasse, adresse_plz: plz, adresse_ort: ort }, { onConflict: 'user_id' })
+    .update({ adresse: strasse, adresse_plz: plz, adresse_ort: ort })
+    .eq('user_id', userId)
     .select();
   if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('Addr save error:', error); return; }
+  if (!data || data.length === 0) { alert('Kein Profil-Eintrag gefunden. Bitte wende dich an den Support.'); return; }
 
   document.getElementById('addr-display').textContent = `${strasse}, ${plz} ${ort}`;
   toggleAddrEdit(false);
@@ -632,8 +637,8 @@ async function checkProfilVollstaendig(userId) {
     .eq('user_id', userId).single();
   const vollstaendig = !!(p?.svnummer && p?.adresse && p?.adresse_plz && p?.adresse_ort);
   await odojSb.from('Profile')
-    .upsert({ user_id: userId, profil_vollstaendig: vollstaendig }, { onConflict: 'user_id' })
-    .select();
+    .update({ profil_vollstaendig: vollstaendig })
+    .eq('user_id', userId);
 }
 
 // ─────────────────────────────────────────
