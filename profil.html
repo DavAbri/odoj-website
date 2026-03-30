@@ -106,7 +106,7 @@
 }
 .profil-field input:focus { border-color: var(--accent); }
 .profil-field small { font-size: 12px; color: var(--text-lt); }
-.profil-addr-row { display: grid; grid-template-columns: 1fr 120px 1fr; gap: 10px; }
+.profil-addr-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; }
 
 /* ── Buttons ── */
 .btn-save {
@@ -422,10 +422,10 @@ async function saveAgProfil(userId) {
   const nachname = document.getElementById('ag-edit-nachname').value.trim();
 
   const { error } = await odojSb.from('Profile')
-    .update({ firmenname: firma, vorname, nachname })
-    .eq('user_id', userId);
+    .upsert({ user_id: userId, firmenname: firma, vorname, nachname }, { onConflict: 'user_id' })
+    .select();
 
-  if (error) { alert('Fehler: ' + error.message); return; }
+  if (error) { alert('Fehler: ' + error.message); console.error('AG profil save error:', error); return; }
 
   document.getElementById('ag-info-firma').textContent  = firma || '–';
   document.getElementById('ag-info-person').textContent = [vorname, nachname].filter(Boolean).join(' ') || '–';
@@ -563,10 +563,6 @@ function renderJobber(session, profile) {
               </div>
               <div class="profil-addr-row">
                 <div class="profil-field">
-                  <label>Straße</label>
-                  <input type="text" id="addr-strasse2" value="${escH(strasse)}" placeholder="Musterstraße 12" style="display:none">
-                </div>
-                <div class="profil-field">
                   <label>PLZ</label>
                   <input type="text" id="addr-plz" value="${escH(plz)}" placeholder="6850" maxlength="10">
                 </div>
@@ -594,20 +590,19 @@ function toggleAddrEdit(show) {
 }
 
 async function saveSvn(userId) {
-  const svn = document.getElementById('svn-input').value.trim().replace(/\s/g, ' ');
+  const svn = document.getElementById('svn-input').value.trim();
   const digits = svn.replace(/\D/g, '');
   if (digits.length !== 10) { alert('Bitte eine gültige 10-stellige Sozialversicherungsnummer eingeben.'); return; }
 
-  const { error } = await odojSb.from('Profile')
-    .update({ svnummer: svn })
-    .eq('user_id', userId);
-  if (error) { alert('Fehler: ' + error.message); return; }
+  const { data, error } = await odojSb.from('Profile')
+    .upsert({ user_id: userId, svnummer: svn }, { onConflict: 'user_id' })
+    .select();
+  if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('SVN save error:', error); return; }
 
   document.getElementById('svn-display').textContent = svn;
   toggleSvnEdit(false);
   showToast('✓ SV-Nummer gespeichert');
   await checkProfilVollstaendig(userId);
-  // Pflicht-Badge entfernen falls vorhanden
   const badge = document.querySelector('#svn-group .pflicht-badge');
   if (badge) badge.remove();
 }
@@ -618,10 +613,10 @@ async function saveAddr(userId) {
   const ort     = document.getElementById('addr-ort').value.trim();
   if (!strasse || !plz || !ort) { alert('Bitte alle Adressfelder ausfüllen.'); return; }
 
-  const { error } = await odojSb.from('Profile')
-    .update({ adresse: strasse, adresse_plz: plz, adresse_ort: ort })
-    .eq('user_id', userId);
-  if (error) { alert('Fehler: ' + error.message); return; }
+  const { data, error } = await odojSb.from('Profile')
+    .upsert({ user_id: userId, adresse: strasse, adresse_plz: plz, adresse_ort: ort }, { onConflict: 'user_id' })
+    .select();
+  if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('Addr save error:', error); return; }
 
   document.getElementById('addr-display').textContent = `${strasse}, ${plz} ${ort}`;
   toggleAddrEdit(false);
@@ -632,9 +627,13 @@ async function saveAddr(userId) {
 }
 
 async function checkProfilVollstaendig(userId) {
-  const { data: p } = await odojSb.from('Profile').select('svnummer, adresse, adresse_plz, adresse_ort').eq('user_id', userId).single();
+  const { data: p } = await odojSb.from('Profile')
+    .select('svnummer, adresse, adresse_plz, adresse_ort')
+    .eq('user_id', userId).single();
   const vollstaendig = !!(p?.svnummer && p?.adresse && p?.adresse_plz && p?.adresse_ort);
-  await odojSb.from('Profile').update({ profil_vollstaendig: vollstaendig }).eq('user_id', userId);
+  await odojSb.from('Profile')
+    .upsert({ user_id: userId, profil_vollstaendig: vollstaendig }, { onConflict: 'user_id' })
+    .select();
 }
 
 // ─────────────────────────────────────────
