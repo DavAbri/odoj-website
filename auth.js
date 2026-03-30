@@ -17,7 +17,7 @@ function odojSaveRolle(rolle) {
 async function odojGetProfile(userId) {
   try {
     const { data } = await odojSb
-      .from('profile')
+      .from('Profile')
       .select('vorname, nachname, firmenname, rolle')
       .eq('user_id', userId)
       .single();
@@ -96,11 +96,14 @@ async function odojInitNav() {
 
     // Nav Auth Element
     if (authEl) authEl.innerHTML =
-      '<span class="nav-user-name">' + displayName + '</span>' +
+      '<a href="profil.html" class="nav-profil-btn">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>' +
+        '<span>' + displayName + '</span>' +
+      '</a>' +
       '<button onclick="odojLogout()" class="nav-logout-btn">Logout</button>';
 
     if (mobileEl) mobileEl.innerHTML =
-      '<span class="nav-user-name-mobile">\u2713 ' + displayName + '</span>' +
+      '<a href="profil.html" class="nav-user-name-mobile">\u2713 ' + displayName + '</a>' +
       '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen \u2192</a>';
 
     // Unread-Count

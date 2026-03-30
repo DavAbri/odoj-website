@@ -436,7 +436,7 @@ async function doLogin(e) {
   let rolle = data.user.user_metadata?.rolle || 'jobber';
   try {
     const { data: profile } = await odojSb
-      .from('profile').select('rolle').eq('user_id', data.user.id).single();
+      .from('Profile').select('rolle').eq('user_id', data.user.id).single();
     if (profile?.rolle) rolle = profile.rolle;
   } catch (_) {}
 
@@ -495,7 +495,7 @@ async function doRegister(e) {
 
   // 2. Profil in Tabelle einfügen
   if (data.user) {
-    const { error: pe } = await odojSb.from('profile').insert({
+    const { error: pe } = await odojSb.from('Profile').insert({
       user_id: data.user.id,
       ...profileData
     });
@@ -537,7 +537,7 @@ odojSb.auth.getSession().then(async ({ data }) => {
       let rolle = data.session.user.user_metadata?.rolle || 'jobber';
       try {
         const { data: profile } = await odojSb
-          .from('profile').select('rolle').eq('user_id', data.session.user.id).single();
+          .from('Profile').select('rolle').eq('user_id', data.session.user.id).single();
         if (profile?.rolle) rolle = profile.rolle;
       } catch (_) {}
       odojSaveRolle(rolle);

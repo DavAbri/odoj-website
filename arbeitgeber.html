@@ -362,6 +362,9 @@
 .bew-btn-reject:hover { background: #C0392B; color: white; }
 .bew-btn-chat { background: var(--navy); color: white; }
 .bew-btn-chat:hover { background: var(--navy-soft); }
+.bew-btn-presence { background: #E6F5EE; color: #1A7A50; }
+.bew-btn-presence:hover { background: #1A7A50; color: white; }
+.bew-btn-presence-done { background: #1A7A50 !important; color: white !important; cursor: default !important; }
 
 /* Badge auf Inserat-Card */
 .bew-count-badge {
@@ -798,6 +801,12 @@ function renderBewItem(b) {
   const rejectBtn = b.status !== 'abgelehnt'
     ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">✕ Ablehnen</button>` : '';
 
+  const presenceBtn = b.status === 'angenommen'
+    ? (b.anwesenheit_bestaetigt
+        ? `<button class="bew-btn bew-btn-presence-done" disabled>✓ Anwesenheit bestätigt</button>`
+        : `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${(b.jobber_name || '').replace(/'/g,"\\'")}')">Anwesenheit bestätigen ✓</button>`)
+    : '';
+
   return `
     <div class="bew-item" id="bew-item-${b.id}">
       <div class="bew-item-header">
@@ -811,8 +820,45 @@ function renderBewItem(b) {
       <div class="bew-item-actions" id="bew-actions-${b.id}">
         ${acceptBtn}${rejectBtn}
         <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')">💬 Nachricht senden</button>
+        ${presenceBtn}
       </div>
     </div>`;
+}
+
+async function confirmPresence(bewId, jobberId, agId, jobberName) {
+  const btn = document.getElementById('pres-btn-' + bewId);
+  if (btn) { btn.disabled = true; btn.textContent = 'Speichern…'; }
+
+  const now = new Date().toISOString();
+  const { error: bewErr } = await odojSb.from('bewerbungen')
+    .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now })
+    .eq('id', bewId);
+  if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen ✓'; } return; }
+
+  // Job-Titel für Rechnung laden
+  const { data: bewData } = await odojSb.from('bewerbungen').select('job_id').eq('id', bewId).single();
+  let jobTitel = 'Tagesjob';
+  if (bewData?.job_id) {
+    const { data: jobData } = await odojSb.from('jobs').select('titel').eq('id', bewData.job_id).single();
+    if (jobData?.titel) jobTitel = jobData.titel;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  await odojSb.from('rechnungen').insert({
+    arbeitgeber_id: agId,
+    jobber_id:      jobberId,
+    bewerbung_id:   bewId,
+    job_titel:      jobTitel,
+    jobber_name:    jobberName,
+    betrag:         15,
+    datum:          today
+  });
+
+  if (btn) {
+    btn.textContent = '✓ Anwesenheit bestätigt';
+    btn.className = 'bew-btn bew-btn-presence-done';
+    btn.disabled = true;
+  }
 }
 
 async function updateBewStatus(bewId, newStatus) {
@@ -941,7 +987,7 @@ async function submitInserat(e) {
     let firmenname = '';
     try {
       const { data: profile } = await odojSb
-        .from('profile')
+        .from('Profile')
         .select('rolle, firmenname')
         .eq('user_id', session.user.id)
         .single();

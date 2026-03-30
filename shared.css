@@ -396,6 +396,21 @@ footer {
   font-weight: 500;
   white-space: nowrap;
 }
+.nav-profil-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--navy-soft);
+  color: rgba(255,255,255,.9) !important;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 100px;
+  white-space: nowrap;
+  transition: background .2s, color .2s;
+  text-decoration: none;
+}
+.nav-profil-btn:hover { background: var(--accent); color: var(--navy) !important; }
 .nav-logout-btn {
   background: rgba(255,255,255,.1);
   border: 1px solid rgba(255,255,255,.15);

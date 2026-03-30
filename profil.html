@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mein Profil – ODOJ</title>
+<meta name="description" content="Dein ODOJ-Profil – Daten verwalten, Rechnungen einsehen.">
+<link rel="stylesheet" href="shared.css">
+<style>
+.profil-body {
+  background: var(--off);
+  min-height: calc(100vh - var(--nav-h) - 200px);
+  padding: 48px 60px 80px;
+}
+
+/* ── Profil-Card ── */
+.profil-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-lg);
+  padding: 36px 40px;
+  margin-bottom: 28px;
+}
+.profil-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.profil-card-head h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--navy);
+}
+.profil-avatar {
+  width: 64px; height: 64px;
+  background: var(--navy);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  color: var(--white);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+.profil-name { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+.profil-email { font-size: 14px; color: var(--text-lt); margin-bottom: 20px; }
+
+.profil-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.profil-info-item label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--text-lt);
+  margin-bottom: 4px;
+}
+.profil-info-item span {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* ── Pflicht-Badge ── */
+.pflicht-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFF0F0;
+  color: #C0392B;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+}
+
+/* ── Eingabefelder ── */
+.profil-form { display: flex; flex-direction: column; gap: 14px; }
+.profil-field { display: flex; flex-direction: column; gap: 6px; }
+.profil-field label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--text-lt);
+}
+.profil-field input {
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+.profil-field input:focus { border-color: var(--accent); }
+.profil-field small { font-size: 12px; color: var(--text-lt); }
+.profil-addr-row { display: grid; grid-template-columns: 1fr 120px 1fr; gap: 10px; }
+
+/* ── Buttons ── */
+.btn-save {
+  background: var(--navy);
+  color: var(--white);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 28px;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.btn-save:hover { background: var(--navy-soft); transform: translateY(-1px); }
+.btn-edit {
+  background: transparent;
+  border: 1.5px solid var(--gray-lt);
+  color: var(--text-mid);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-edit:hover { border-color: var(--navy); color: var(--navy); }
+
+/* ── Section-Trennlinie ── */
+.profil-section-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--gray-lt);
+}
+.profil-field-group {
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.profil-field-group-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+.profil-field-group-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.profil-field-value {
+  font-size: 15px;
+  color: var(--text-mid);
+  font-weight: 400;
+}
+.profil-field-form { margin-top: 14px; }
+
+/* ── Rechnungstabelle ── */
+.rechnung-table-wrap { overflow-x: auto; }
+.rechnung-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.rechnung-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--off);
+  color: var(--text-lt);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  border-bottom: 1.5px solid var(--gray-lt);
+}
+.rechnung-table td {
+  padding: 14px;
+  border-bottom: 1px solid var(--gray-lt);
+  color: var(--text);
+  vertical-align: middle;
+}
+.rechnung-table tr:last-child td { border-bottom: none; }
+.rechnung-table tr:hover td { background: var(--off); }
+.rechnung-betrag { font-weight: 700; color: var(--navy); }
+.rechnung-status {
+  display: inline-block;
+  background: #E6F5EE; color: #1A7A50;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  text-transform: uppercase;
+}
+.rechnung-summe {
+  text-align: right;
+  margin-top: 16px;
+  font-size: 15px;
+  color: var(--text-lt);
+}
+.rechnung-summe strong { font-size: 20px; color: var(--navy); }
+.btn-download {
+  background: transparent;
+  border: 1.5px solid var(--gray-lt);
+  color: var(--text-mid);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn-download:hover { border-color: var(--navy); color: var(--navy); }
+
+/* ── Empty / Loading ── */
+.profil-empty { text-align: center; padding: 52px 32px; color: var(--text-lt); }
+.profil-loading { text-align: center; padding: 48px; color: var(--text-lt); }
+
+/* ── Erfolgs-Toast ── */
+.profil-toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: #1A7A50; color: #fff;
+  font-size: 14px; font-weight: 600;
+  padding: 12px 28px; border-radius: 100px;
+  box-shadow: var(--sh-md); z-index: 9999;
+  opacity: 0; transition: opacity .3s;
+  pointer-events: none; white-space: nowrap;
+}
+.profil-toast.show { opacity: 1; }
+
+@media (max-width: 900px) {
+  .profil-body { padding: 32px 20px 60px; }
+  .profil-card { padding: 24px 20px; }
+  .profil-addr-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Mein Bereich</span>
+    <h1>Mein<br><em>Profil</em></h1>
+    <p>Verwalte deine Daten und behalte den Überblick.</p>
+  </div>
+</div>
+
+<!-- INHALT -->
+<div class="profil-body" id="profil-body">
+  <div class="profil-loading">Lade Profil…</div>
+</div>
+
+<!-- Toast -->
+<div class="profil-toast" id="profil-toast"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg. Fair, schnell, unkompliziert.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Für Jobsuchende</h4>
+      <ul>
+        <li><a href="jobs.html">Jobs ansehen</a></li>
+        <li><a href="meine-jobs.html">Meine Bewerbungen</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Für Unternehmen</h4>
+      <ul>
+        <li><a href="arbeitgeber.html">Personal anfragen</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Rechtliches</h4>
+      <ul>
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+        <li><a href="agb.html">AGB</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job. Alle Rechte vorbehalten.</span>
+    <div class="footer-legal">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+function showToast(msg) {
+  const t = document.getElementById('profil-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─────────────────────────────────────────
+// ARBEITGEBER PROFIL
+// ─────────────────────────────────────────
+function renderArbeitgeber(session, profile) {
+  const body = document.getElementById('profil-body');
+  const displayName = profile?.firmenname || profile?.vorname || session.user.email;
+  const ansprechperson = profile?.vorname && profile?.nachname
+    ? profile.vorname + ' ' + profile.nachname : (profile?.vorname || '–');
+
+  body.innerHTML = `
+    <!-- Profilkarte -->
+    <div class="profil-card">
+      <div class="profil-avatar">${displayName.charAt(0).toUpperCase()}</div>
+      <div class="profil-name">${escH(displayName)}</div>
+      <div class="profil-email">${escH(session.user.email)}</div>
+
+      <div id="ag-profil-view">
+        <div class="profil-info-grid">
+          <div class="profil-info-item">
+            <label>Firmenname</label>
+            <span id="ag-info-firma">${escH(profile?.firmenname || '–')}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>Ansprechperson</label>
+            <span id="ag-info-person">${escH(ansprechperson)}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>E-Mail</label>
+            <span>${escH(session.user.email)}</span>
+          </div>
+        </div>
+        <button class="btn-edit" onclick="toggleAgEdit(true)">Profil bearbeiten</button>
+      </div>
+
+      <div id="ag-profil-edit" style="display:none">
+        <div class="profil-form">
+          <div class="profil-field">
+            <label>Firmenname</label>
+            <input type="text" id="ag-edit-firma" value="${escH(profile?.firmenname || '')}" placeholder="Firmenname">
+          </div>
+          <div class="profil-field">
+            <label>Vorname Ansprechperson</label>
+            <input type="text" id="ag-edit-vorname" value="${escH(profile?.vorname || '')}" placeholder="Vorname">
+          </div>
+          <div class="profil-field">
+            <label>Nachname Ansprechperson</label>
+            <input type="text" id="ag-edit-nachname" value="${escH(profile?.nachname || '')}" placeholder="Nachname">
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-save" onclick="saveAgProfil('${session.user.id}')">Speichern</button>
+            <button class="btn-edit" onclick="toggleAgEdit(false)">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rechnungen -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Meine Rechnungen</h2>
+      <div id="rechnungen-body">
+        <div class="profil-loading">Lade Rechnungen…</div>
+      </div>
+    </div>`;
+
+  loadRechnungen(session.user.id);
+}
+
+function toggleAgEdit(show) {
+  document.getElementById('ag-profil-view').style.display = show ? 'none' : 'block';
+  document.getElementById('ag-profil-edit').style.display = show ? 'block' : 'none';
+}
+
+async function saveAgProfil(userId) {
+  const firma    = document.getElementById('ag-edit-firma').value.trim();
+  const vorname  = document.getElementById('ag-edit-vorname').value.trim();
+  const nachname = document.getElementById('ag-edit-nachname').value.trim();
+
+  const { error } = await odojSb.from('Profile')
+    .update({ firmenname: firma, vorname, nachname })
+    .eq('user_id', userId);
+
+  if (error) { alert('Fehler: ' + error.message); return; }
+
+  document.getElementById('ag-info-firma').textContent  = firma || '–';
+  document.getElementById('ag-info-person').textContent = [vorname, nachname].filter(Boolean).join(' ') || '–';
+  toggleAgEdit(false);
+  showToast('✓ Profil gespeichert');
+}
+
+async function loadRechnungen(agId) {
+  const bodyEl = document.getElementById('rechnungen-body');
+  const { data: rechnungen, error } = await odojSb
+    .from('rechnungen')
+    .select('*')
+    .eq('arbeitgeber_id', agId)
+    .order('datum', { ascending: false });
+
+  if (error) { bodyEl.innerHTML = `<p style="color:#c0392b;padding:16px">Fehler: ${error.message}</p>`; return; }
+
+  if (!rechnungen || rechnungen.length === 0) {
+    bodyEl.innerHTML = `<div class="profil-empty">
+      <div style="font-size:42px;margin-bottom:14px">🧾</div>
+      <p>Noch keine Rechnungen vorhanden.</p>
+    </div>`;
+    return;
+  }
+
+  const summe = rechnungen.reduce((s, r) => s + Number(r.betrag || 0), 0);
+
+  bodyEl.innerHTML = `
+    <div class="rechnung-table-wrap">
+      <table class="rechnung-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Job-Titel</th>
+            <th>Arbeitskraft</th>
+            <th>Betrag</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rechnungen.map(r => {
+            const dat = r.datum
+              ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+              : '–';
+            const betrag = Number(r.betrag || 0).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+            return `<tr>
+              <td>${dat}</td>
+              <td>${escH(r.job_titel || '–')}</td>
+              <td>${escH(r.jobber_name || '–')}</td>
+              <td class="rechnung-betrag">€ ${betrag}</td>
+              <td><span class="rechnung-status">Bezahlt</span></td>
+              <td><button class="btn-download" onclick='printRechnung(${JSON.stringify(r)})'>⬇ Herunterladen</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="rechnung-summe">
+      Gesamt: <strong>€ ${summe.toLocaleString('de-AT', { minimumFractionDigits: 2 })}</strong>
+    </div>`;
+}
+
+// ─────────────────────────────────────────
+// JOBBER PROFIL
+// ─────────────────────────────────────────
+function renderJobber(session, profile) {
+  const body = document.getElementById('profil-body');
+  const vorname  = profile?.vorname || '';
+  const nachname = profile?.nachname || '';
+  const fullName = [vorname, nachname].filter(Boolean).join(' ') || session.user.email;
+
+  const svn      = profile?.svnummer || '';
+  const strasse  = profile?.adresse || '';
+  const plz      = profile?.adresse_plz || '';
+  const ort      = profile?.adresse_ort || '';
+  const addrFull = strasse ? `${strasse}, ${plz} ${ort}`.trim() : '';
+
+  body.innerHTML = `
+    <!-- Profilkarte -->
+    <div class="profil-card">
+      <div class="profil-avatar">${fullName.charAt(0).toUpperCase()}</div>
+      <div class="profil-name">${escH(fullName)}</div>
+      <div class="profil-email">${escH(session.user.email)}</div>
+    </div>
+
+    <!-- SVNummer -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Sozialversicherungsnummer</h2>
+      <div id="svn-group">
+        ${!svn ? '<div class="pflicht-badge">⚠ Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
+        <div class="profil-field-group">
+          <div class="profil-field-group-head">
+            <div>
+              <div class="profil-field-group-title">SV-Nummer</div>
+              <div class="profil-field-value" id="svn-display">${svn ? escH(svn) : '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>'}</div>
+            </div>
+            <button class="btn-edit" onclick="toggleSvnEdit(true)">Bearbeiten</button>
+          </div>
+          <div id="svn-edit-form" style="display:none" class="profil-field-form">
+            <div class="profil-form">
+              <div class="profil-field">
+                <label>Sozialversicherungsnummer</label>
+                <input type="text" id="svn-input" value="${escH(svn)}" placeholder="1234 010190" maxlength="15">
+                <small>10 Ziffern, z.B. 1234 010190</small>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn-save" onclick="saveSvn('${session.user.id}')">Speichern</button>
+                <button class="btn-edit" onclick="toggleSvnEdit(false)">Abbrechen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Adresse -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Wohnadresse</h2>
+      <div id="addr-group">
+        ${!addrFull ? '<div class="pflicht-badge">⚠ Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
+        <div class="profil-field-group">
+          <div class="profil-field-group-head">
+            <div>
+              <div class="profil-field-group-title">Adresse</div>
+              <div class="profil-field-value" id="addr-display">${addrFull ? escH(addrFull) : '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>'}</div>
+            </div>
+            <button class="btn-edit" onclick="toggleAddrEdit(true)">Bearbeiten</button>
+          </div>
+          <div id="addr-edit-form" style="display:none" class="profil-field-form">
+            <div class="profil-form">
+              <div class="profil-field">
+                <label>Straße + Hausnummer</label>
+                <input type="text" id="addr-strasse" value="${escH(strasse)}" placeholder="Musterstraße 12">
+              </div>
+              <div class="profil-addr-row">
+                <div class="profil-field">
+                  <label>Straße</label>
+                  <input type="text" id="addr-strasse2" value="${escH(strasse)}" placeholder="Musterstraße 12" style="display:none">
+                </div>
+                <div class="profil-field">
+                  <label>PLZ</label>
+                  <input type="text" id="addr-plz" value="${escH(plz)}" placeholder="6850" maxlength="10">
+                </div>
+                <div class="profil-field">
+                  <label>Ort</label>
+                  <input type="text" id="addr-ort" value="${escH(ort)}" placeholder="Dornbirn">
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn-save" onclick="saveAddr('${session.user.id}')">Speichern</button>
+                <button class="btn-edit" onclick="toggleAddrEdit(false)">Abbrechen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleSvnEdit(show) {
+  document.getElementById('svn-edit-form').style.display = show ? 'block' : 'none';
+}
+function toggleAddrEdit(show) {
+  document.getElementById('addr-edit-form').style.display = show ? 'block' : 'none';
+}
+
+async function saveSvn(userId) {
+  const svn = document.getElementById('svn-input').value.trim().replace(/\s/g, ' ');
+  const digits = svn.replace(/\D/g, '');
+  if (digits.length !== 10) { alert('Bitte eine gültige 10-stellige Sozialversicherungsnummer eingeben.'); return; }
+
+  const { error } = await odojSb.from('Profile')
+    .update({ svnummer: svn })
+    .eq('user_id', userId);
+  if (error) { alert('Fehler: ' + error.message); return; }
+
+  document.getElementById('svn-display').textContent = svn;
+  toggleSvnEdit(false);
+  showToast('✓ SV-Nummer gespeichert');
+  await checkProfilVollstaendig(userId);
+  // Pflicht-Badge entfernen falls vorhanden
+  const badge = document.querySelector('#svn-group .pflicht-badge');
+  if (badge) badge.remove();
+}
+
+async function saveAddr(userId) {
+  const strasse = document.getElementById('addr-strasse').value.trim();
+  const plz     = document.getElementById('addr-plz').value.trim();
+  const ort     = document.getElementById('addr-ort').value.trim();
+  if (!strasse || !plz || !ort) { alert('Bitte alle Adressfelder ausfüllen.'); return; }
+
+  const { error } = await odojSb.from('Profile')
+    .update({ adresse: strasse, adresse_plz: plz, adresse_ort: ort })
+    .eq('user_id', userId);
+  if (error) { alert('Fehler: ' + error.message); return; }
+
+  document.getElementById('addr-display').textContent = `${strasse}, ${plz} ${ort}`;
+  toggleAddrEdit(false);
+  showToast('✓ Adresse gespeichert');
+  await checkProfilVollstaendig(userId);
+  const badge = document.querySelector('#addr-group .pflicht-badge');
+  if (badge) badge.remove();
+}
+
+async function checkProfilVollstaendig(userId) {
+  const { data: p } = await odojSb.from('Profile').select('svnummer, adresse, adresse_plz, adresse_ort').eq('user_id', userId).single();
+  const vollstaendig = !!(p?.svnummer && p?.adresse && p?.adresse_plz && p?.adresse_ort);
+  await odojSb.from('Profile').update({ profil_vollstaendig: vollstaendig }).eq('user_id', userId);
+}
+
+// ─────────────────────────────────────────
+// DRUCKANSICHT RECHNUNG
+// ─────────────────────────────────────────
+async function printRechnung(r) {
+  // Firmenname des Arbeitgebers laden
+  let agFirma = '';
+  if (r.arbeitgeber_id) {
+    const { data: agProfile } = await odojSb.from('Profile').select('firmenname, vorname, nachname').eq('user_id', r.arbeitgeber_id).single();
+    agFirma = agProfile?.firmenname || [agProfile?.vorname, agProfile?.nachname].filter(Boolean).join(' ') || '';
+  }
+
+  const datum = r.datum
+    ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+    : new Date().toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const betrag = Number(r.betrag || 15).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+  const rechnungsNr = 'ODOJ-' + String(r.id || 0).padStart(5, '0');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Rechnung ${rechnungsNr}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0B1F3A; padding: 60px; max-width: 800px; margin: 0 auto; }
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+  .logo { font-size: 28px; font-weight: 800; color: #0B1F3A; letter-spacing: -1px; margin-bottom: 40px; }
+  .logo span { color: #E8A020; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; }
+  .rechnung-title { font-size: 32px; font-weight: 800; }
+  .meta { font-size: 13px; color: #7A8FA8; line-height: 1.8; }
+  .meta strong { color: #0B1F3A; }
+  .section { margin-bottom: 32px; }
+  .section label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #7A8FA8; display: block; margin-bottom: 4px; }
+  .section p { font-size: 15px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  th { text-align: left; padding: 10px 14px; background: #F4F7FB; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #7A8FA8; }
+  td { padding: 14px; border-bottom: 1px solid #E8EDF5; font-size: 14px; }
+  .total-row td { font-size: 17px; font-weight: 700; color: #0B1F3A; border-bottom: none; padding-top: 18px; }
+  .divider { border: none; border-top: 2px solid #E8EDF5; margin: 32px 0; }
+  .footer-note { font-size: 12px; color: #7A8FA8; line-height: 1.7; }
+  .btn-print { background: #0B1F3A; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 40px; font-family: inherit; }
+  .btn-print:hover { background: #E8A020; color: #0B1F3A; }
+  @media print { .btn-print { display: none; } body { padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="logo">O<span>D</span>OJ</div>
+    <div class="meta">
+      <strong>ODOJ OG</strong><br>
+      Vorarlberg, Österreich<br>
+      hallo@odoj.at
+    </div>
+  </div>
+  <div style="text-align:right">
+    <div class="rechnung-title">Rechnung</div>
+    <div class="meta" style="margin-top:8px">
+      <strong>Rechnungsnummer:</strong> ${rechnungsNr}<br>
+      <strong>Datum:</strong> ${datum}
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <label>Rechnungsempfänger</label>
+  <p><strong>${agFirma || 'Arbeitgeber'}</strong></p>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Beschreibung</th>
+      <th style="text-align:right">Betrag</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Vermittlungsgebühr – ${escH(r.job_titel || 'Tagesjob')} – ${escH(r.jobber_name || '–')} – ${datum}</td>
+      <td style="text-align:right">€ ${betrag}</td>
+    </tr>
+    <tr class="total-row">
+      <td>Gesamt</td>
+      <td style="text-align:right">€ ${betrag}</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr class="divider">
+<div class="footer-note">
+  Zahlbar innerhalb von 14 Tagen. Vielen Dank für die Zusammenarbeit mit ODOJ!<br>
+  Bei Fragen: hallo@odoj.at
+</div>
+
+<button class="btn-print" onclick="window.print()">🖨 Drucken / Speichern als PDF</button>
+</body>
+</html>`);
+  win.document.close();
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+function escH(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function initProfil() {
+  const session = await odojGetSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  const { data: profile } = await odojSb
+    .from('Profile')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .single();
+
+  const rolle = profile?.rolle
+    || session.user.user_metadata?.rolle
+    || localStorage.getItem('odoj_rolle')
+    || 'jobber';
+  odojSaveRolle(rolle);
+
+  if (rolle === 'arbeitgeber') {
+    renderArbeitgeber(session, profile);
+  } else {
+    renderJobber(session, profile);
+  }
+}
+
+initProfil();
+</script>
+<script src="cookies.js"></script>
+</body>
+</html>

@@ -437,7 +437,7 @@ const JOB_BRANCHEN = {
 function showJobsToast(msg, type) {
   const t = document.createElement('div');
   t.className = 'odoj-toast' + (type ? ' toast-' + type : '');
-  t.textContent = msg;
+  t.innerHTML = msg;
   document.body.appendChild(t);
   setTimeout(() => { t.style.opacity = '0'; }, 2500);
   setTimeout(() => t.remove(), 3000);
@@ -479,6 +479,17 @@ async function applyForJob(jobId, agId, btnEl) {
   }
   // Bereits beworben
   if (_appliedJobIds.has(jobId)) return;
+
+  // Profil-Vollständigkeitsprüfung
+  const { data: profCheck } = await odojSb
+    .from('Profile')
+    .select('profil_vollstaendig')
+    .eq('user_id', _odojJobsSession.user.id)
+    .single();
+  if (!profCheck?.profil_vollstaendig) {
+    showJobsToast('Bitte vervollständige zuerst dein Profil (SV-Nummer + Adresse) → <a href="profil.html" style="color:#fff;text-decoration:underline">Zum Profil</a>', 'warn');
+    return;
+  }
 
   btnEl.disabled = true;
   btnEl.textContent = 'Speichern…';
@@ -620,7 +631,7 @@ async function checkJobsAuth() {
     let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
     try {
       const { data: profile } = await odojSb
-        .from('profile').select('rolle, vorname, nachname').eq('user_id', session.user.id).single();
+        .from('Profile').select('rolle, vorname, nachname').eq('user_id', session.user.id).single();
       if (profile?.rolle) rolle = profile.rolle;
       _odojJobsProfile = profile;
     } catch (_) {}
