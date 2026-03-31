@@ -590,20 +590,86 @@ function toggleAddrEdit(show) {
   document.getElementById('addr-edit-form').style.display = show ? 'block' : 'none';
 }
 
+// ── Hilfsfunktion: Profile-Row für userId laden (gibt null zurück wenn nicht gefunden) ──
+async function _loadProfileRow(userId) {
+  console.log('[Profile] SELECT für user_id:', userId);
+  const { data, error } = await odojSb
+    .from('Profile')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  console.log('[Profile] SELECT Ergebnis → data:', data, '| error:', error);
+  if (error) console.error('[Profile] SELECT Fehler:', error);
+  return data;
+}
+
+// ── Hilfsfunktion: Felder in Profile schreiben (INSERT oder UPDATE je nach Existenz) ──
+async function _saveProfileFields(userId, fields) {
+  // Prüfen ob odojSb korrekt initialisiert ist
+  if (!window.odojSb) {
+    console.error('[Profile] FEHLER: odojSb ist nicht initialisiert!');
+    return { error: { message: 'Datenbankverbindung nicht verfügbar.' } };
+  }
+
+  console.log('[Profile] Speichere Felder für user_id:', userId, '| Felder:', fields);
+
+  // Erst prüfen ob ein Row existiert
+  const existing = await _loadProfileRow(userId);
+
+  let result;
+  if (existing) {
+    // UPDATE
+    console.log('[Profile] Row gefunden (id=' + existing.id + ') → UPDATE');
+    result = await odojSb
+      .from('Profile')
+      .update(fields)
+      .eq('user_id', userId)
+      .select();
+  } else {
+    // INSERT
+    console.log('[Profile] Kein Row gefunden → INSERT');
+    result = await odojSb
+      .from('Profile')
+      .insert({ user_id: userId, ...fields })
+      .select();
+  }
+
+  console.log('[Profile] Speichern Ergebnis → data:', result.data, '| error:', result.error);
+
+  if (result.error) {
+    console.error('[Profile] Speichern FEHLER:', result.error);
+  } else if (!result.data || result.data.length === 0) {
+    console.warn('[Profile] Speichern: kein Fehler aber 0 betroffene Rows – möglicherweise RLS-Policy fehlt!');
+    console.warn('[Profile] Lösung: In Supabase → Table Editor → Profile → RLS → UPDATE-Policy für auth.uid() = user_id anlegen');
+  } else {
+    console.log('[Profile] Speichern erfolgreich ✓', result.data[0]);
+  }
+
+  return result;
+}
+
 async function saveSvn(userId) {
   const svn = document.getElementById('svn-input').value.trim();
   const digits = svn.replace(/\D/g, '');
-  if (digits.length !== 10) { alert('Bitte eine gültige 10-stellige Sozialversicherungsnummer eingeben.'); return; }
+  if (digits.length !== 10) {
+    alert('Bitte eine gültige 10-stellige Sozialversicherungsnummer eingeben (Beispiel: 1234 010190).');
+    return;
+  }
 
-  const { data, error } = await odojSb.from('Profile')
-    .update({ svnummer: svn })
-    .eq('user_id', userId)
-    .select();
-  if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('SVN save error:', error); return; }
+  const { data, error } = await _saveProfileFields(userId, { svnummer: svn });
+
+  if (error) {
+    alert('Fehler beim Speichern der SV-Nummer:\n' + error.message);
+    return;
+  }
+  if (!data || data.length === 0) {
+    alert('Die SV-Nummer konnte nicht gespeichert werden.\n\nMögliche Ursache: Fehlende Schreibberechtigung (RLS-Policy).\nBitte wende dich an den Administrator.');
+    return;
+  }
 
   document.getElementById('svn-display').textContent = svn;
   toggleSvnEdit(false);
-  showToast('✓ SV-Nummer gespeichert');
+  showToast('✓ SV-Nummer erfolgreich gespeichert');
   await checkProfilVollstaendig(userId);
   const badge = document.querySelector('#svn-group .pflicht-badge');
   if (badge) badge.remove();
@@ -613,27 +679,36 @@ async function saveAddr(userId) {
   const strasse = document.getElementById('addr-strasse').value.trim();
   const plz     = document.getElementById('addr-plz').value.trim();
   const ort     = document.getElementById('addr-ort').value.trim();
-  if (!strasse || !plz || !ort) { alert('Bitte alle Adressfelder ausfüllen.'); return; }
+  if (!strasse || !plz || !ort) {
+    alert('Bitte alle Felder ausfüllen: Straße, PLZ und Ort.');
+    return;
+  }
 
-  const { data, error } = await odojSb.from('Profile')
-    .update({ adresse: strasse, adresse_plz: plz, adresse_ort: ort })
-    .eq('user_id', userId)
-    .select();
-  if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('Addr save error:', error); return; }
+  const { data, error } = await _saveProfileFields(userId, {
+    adresse: strasse, adresse_plz: plz, adresse_ort: ort
+  });
+
+  if (error) {
+    alert('Fehler beim Speichern der Adresse:\n' + error.message);
+    return;
+  }
+  if (!data || data.length === 0) {
+    alert('Die Adresse konnte nicht gespeichert werden.\n\nMögliche Ursache: Fehlende Schreibberechtigung (RLS-Policy).\nBitte wende dich an den Administrator.');
+    return;
+  }
 
   document.getElementById('addr-display').textContent = `${strasse}, ${plz} ${ort}`;
   toggleAddrEdit(false);
-  showToast('✓ Adresse gespeichert');
+  showToast('✓ Adresse erfolgreich gespeichert');
   await checkProfilVollstaendig(userId);
   const badge = document.querySelector('#addr-group .pflicht-badge');
   if (badge) badge.remove();
 }
 
 async function checkProfilVollstaendig(userId) {
-  const { data: p } = await odojSb.from('Profile')
-    .select('svnummer, adresse, adresse_plz, adresse_ort')
-    .eq('user_id', userId).single();
+  const p = await _loadProfileRow(userId);
   const vollstaendig = !!(p?.svnummer && p?.adresse && p?.adresse_plz && p?.adresse_ort);
+  console.log('[Profile] profil_vollstaendig =', vollstaendig);
   await odojSb.from('Profile')
     .update({ profil_vollstaendig: vollstaendig })
     .eq('user_id', userId);
@@ -753,17 +828,29 @@ async function initProfil() {
   const session = await odojGetSession();
   if (!session) { window.location.href = 'login.html'; return; }
 
-  const { data: profile } = await odojSb
+  console.log('[Profile] Eingeloggter User:', session.user.id, session.user.email);
+
+  // Tabellen-Struktur debuggen: ersten Row laden um Spaltennamen zu sehen
+  const { data: sampleRow, error: sampleErr } = await odojSb
+    .from('Profile').select('*').limit(1);
+  console.log('[Profile] Tabellen-Struktur (1 Row):', sampleRow, '| Fehler:', sampleErr);
+  if (sampleRow && sampleRow[0]) {
+    console.log('[Profile] Vorhandene Spalten:', Object.keys(sampleRow[0]));
+  }
+
+  const { data: profile, error: profileErr } = await odojSb
     .from('Profile')
     .select('*')
     .eq('user_id', session.user.id)
-    .single();
+    .maybeSingle();
+  console.log('[Profile] Eigenes Profil:', profile, '| Fehler:', profileErr);
 
   const rolle = profile?.rolle
     || session.user.user_metadata?.rolle
     || localStorage.getItem('odoj_rolle')
     || 'jobber';
   odojSaveRolle(rolle);
+  console.log('[Profile] Rolle:', rolle);
 
   if (rolle === 'arbeitgeber') {
     renderArbeitgeber(session, profile);
