@@ -600,7 +600,6 @@ async function saveSvn(userId) {
     .eq('user_id', userId)
     .select();
   if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('SVN save error:', error); return; }
-  if (!data || data.length === 0) { alert('Kein Profil-Eintrag gefunden. Bitte wende dich an den Support.'); return; }
 
   document.getElementById('svn-display').textContent = svn;
   toggleSvnEdit(false);
@@ -621,7 +620,6 @@ async function saveAddr(userId) {
     .eq('user_id', userId)
     .select();
   if (error) { alert('Fehler beim Speichern: ' + error.message); console.error('Addr save error:', error); return; }
-  if (!data || data.length === 0) { alert('Kein Profil-Eintrag gefunden. Bitte wende dich an den Support.'); return; }
 
   document.getElementById('addr-display').textContent = `${strasse}, ${plz} ${ort}`;
   toggleAddrEdit(false);
