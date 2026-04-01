@@ -298,8 +298,9 @@
           <input type="text" id="reg-nachname" placeholder="Nachname" autocomplete="family-name">
         </div>
         <div class="lf-field">
-          <label>Alter</label>
-          <input type="number" id="reg-alter" placeholder="z.B. 20" min="15" max="99">
+          <label>Geburtsdatum</label>
+          <input type="date" id="reg-geburtsdatum" autocomplete="bday">
+          <small style="font-size:12px;color:var(--text-lt);margin-top:4px;display:block">Mindestens 15 Jahre alt</small>
         </div>
       </div>
 
@@ -323,6 +324,10 @@
       <div class="lf-field">
         <label>Passwort</label>
         <input type="password" id="reg-pw" placeholder="Mindestens 8 Zeichen" required minlength="8" autocomplete="new-password">
+      </div>
+      <div class="lf-field">
+        <label>Passwort bestätigen</label>
+        <input type="password" id="reg-pw2" placeholder="Passwort wiederholen" required autocomplete="new-password">
       </div>
       <div id="reg-error" class="form-error" style="display:none"></div>
       <button type="submit" class="lf-btn" id="reg-btn">Konto erstellen</button>
@@ -453,8 +458,10 @@ async function doRegister(e) {
 
   const email = document.getElementById('reg-email').value.trim();
   const pw    = document.getElementById('reg-pw').value;
+  const pw2   = document.getElementById('reg-pw2').value;
 
   if (pw.length < 8) { showRegError('Passwort muss mindestens 8 Zeichen haben.'); return; }
+  if (pw !== pw2)    { showRegError('Passwörter stimmen nicht überein.'); return; }
 
   // Rollenspezifische Felder validieren + Profildaten sammeln
   const profileData = { rolle: _currentRole, email };
@@ -462,13 +469,20 @@ async function doRegister(e) {
   if (_currentRole === 'jobber') {
     const vorname  = document.getElementById('reg-vorname').value.trim();
     const nachname = document.getElementById('reg-nachname').value.trim();
-    const alter    = parseInt(document.getElementById('reg-alter').value, 10);
-    if (!vorname)             { showRegError('Bitte Vorname eingeben.'); return; }
-    if (!nachname)            { showRegError('Bitte Nachname eingeben.'); return; }
-    if (!alter || alter < 15) { showRegError('Bitte gültiges Alter eingeben (mindestens 15 Jahre).'); return; }
-    profileData.vorname  = vorname;
-    profileData.nachname = nachname;
-    profileData.alter    = alter;
+    const gebDat   = document.getElementById('reg-geburtsdatum').value;
+    if (!vorname)  { showRegError('Bitte Vorname eingeben.'); return; }
+    if (!nachname) { showRegError('Bitte Nachname eingeben.'); return; }
+    if (!gebDat)   { showRegError('Bitte Geburtsdatum eingeben.'); return; }
+    // Mindestalter 15 prüfen
+    const heute = new Date();
+    const geb   = new Date(gebDat);
+    let alter = heute.getFullYear() - geb.getFullYear();
+    const mDiff = heute.getMonth() - geb.getMonth();
+    if (mDiff < 0 || (mDiff === 0 && heute.getDate() < geb.getDate())) alter--;
+    if (alter < 15) { showRegError('Du musst mindestens 15 Jahre alt sein.'); return; }
+    profileData.vorname      = vorname;
+    profileData.nachname     = nachname;
+    profileData.geburtsdatum = gebDat;
   } else {
     const firmenname     = document.getElementById('reg-firmenname').value.trim();
     const ansprechperson = document.getElementById('reg-ansprechperson').value.trim();
@@ -515,6 +529,14 @@ async function doRegister(e) {
       'Wir haben dir eine Bestätigungs-E-Mail geschickt. Bitte klick auf den Link, dann kannst du dich anmelden.';
   }
 }
+
+// Maximales Geburtsdatum setzen (heute - 15 Jahre)
+(function() {
+  const maxDate = new Date();
+  maxDate.setFullYear(maxDate.getFullYear() - 15);
+  const el = document.getElementById('reg-geburtsdatum');
+  if (el) el.max = maxDate.toISOString().split('T')[0];
+})();
 
 // URL-Parameter auswerten
 (function() {

@@ -406,7 +406,10 @@ function renderArbeitgeber(session, profile) {
       <div id="rechnungen-body">
         <div class="profil-loading">Lade Rechnungen…</div>
       </div>
-    </div>`;
+    </div>
+
+    <!-- Passwort ändern -->
+    ${renderPasswortCard()}`;
 
   loadRechnungen(session.user.id);
 }
@@ -580,7 +583,46 @@ function renderJobber(session, profile) {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Passwort ändern -->
+    ${renderPasswortCard()}`;
+}
+
+function renderPasswortCard() {
+  return `
+    <div class="profil-card">
+      <h2 class="profil-section-title">Passwort ändern</h2>
+      <div class="profil-form" style="max-width:420px">
+        <div class="profil-field">
+          <label>Neues Passwort</label>
+          <input type="password" id="pw-new" placeholder="Mindestens 8 Zeichen" autocomplete="new-password">
+        </div>
+        <div class="profil-field">
+          <label>Neues Passwort bestätigen</label>
+          <input type="password" id="pw-new2" placeholder="Passwort wiederholen" autocomplete="new-password">
+        </div>
+        <div id="pw-error" style="display:none;color:#C0392B;font-size:13px;font-weight:600;padding:4px 0"></div>
+        <button class="btn-save" onclick="changePassword()">Passwort ändern</button>
+      </div>
     </div>`;
+}
+
+async function changePassword() {
+  const newPw  = document.getElementById('pw-new').value;
+  const newPw2 = document.getElementById('pw-new2').value;
+  const errEl  = document.getElementById('pw-error');
+  errEl.style.display = 'none';
+
+  if (newPw.length < 8)  { errEl.textContent = 'Neues Passwort muss mindestens 8 Zeichen haben.'; errEl.style.display = 'block'; return; }
+  if (newPw !== newPw2)  { errEl.textContent = 'Passwörter stimmen nicht überein.'; errEl.style.display = 'block'; return; }
+
+  const { error } = await odojSb.auth.updateUser({ password: newPw });
+  if (error) { errEl.textContent = 'Fehler: ' + error.message; errEl.style.display = 'block'; return; }
+
+  document.getElementById('pw-new').value  = '';
+  document.getElementById('pw-new2').value = '';
+  showToast('✓ Passwort erfolgreich geändert');
 }
 
 function toggleSvnEdit(show) {

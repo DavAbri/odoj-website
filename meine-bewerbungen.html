@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meine Bewerbungen – ODOJ</title>
+<meta name="description" content="Alle deine Bewerbungen auf ODOJ – Status, Nachrichten und mehr.">
+<link rel="stylesheet" href="shared.css">
+<style>
+.mj-body {
+  background: var(--off);
+  min-height: calc(100vh - var(--nav-h) - 200px);
+  padding: 48px 60px 80px;
+}
+.mj-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.mj-header h2 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--navy);
+}
+.mj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+/* Bewerbungs-Card */
+.mj-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.mj-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-2px); }
+.mj-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.mj-titel {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.mj-firma { font-size: 13px; color: var(--text-lt); font-weight: 300; }
+
+/* Status Badges */
+.mj-status {
+  font-size: 11px; font-weight: 700;
+  padding: 5px 13px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: .3px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.mj-st-ausstehend { background: #FFF8E8; color: #A05000; }
+.mj-st-angenommen { background: #E6F5EE; color: #1A7A50; }
+.mj-st-abgelehnt  { background: #FFF0F0; color: #C0392B; }
+
+.mj-metas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.mj-meta {
+  font-size: 13px;
+  color: var(--text-mid);
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mj-footer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--gray-lt);
+  margin-top: auto;
+}
+.mj-btn-chat {
+  background: var(--navy);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .2s;
+}
+.mj-btn-chat:hover { background: var(--navy-soft); }
+.mj-btn-jobs {
+  background: transparent;
+  border: 1.5px solid var(--gray-lt);
+  color: var(--text-mid);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .2s;
+}
+.mj-btn-jobs:hover { border-color: var(--navy); color: var(--navy); }
+
+/* Empty + Loading */
+.mj-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 72px 32px;
+  color: var(--text-lt);
+}
+.mj-empty-icon { font-size: 52px; margin-bottom: 18px; }
+.mj-empty h3 {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px;
+  font-weight: 800; color: var(--navy); margin-bottom: 10px;
+}
+.mj-empty p { font-size: 15px; line-height: 1.6; max-width: 340px; margin: 0 auto 24px; }
+.mj-loading { text-align: center; padding: 64px; color: var(--text-lt); grid-column: 1/-1; }
+
+@media (max-width: 900px) {
+  .mj-body { padding: 32px 24px 60px; }
+  .mj-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Mein Bereich</span>
+    <h1>Meine<br><em>Bewerbungen</em></h1>
+    <p>Hier siehst du alle deine Bewerbungen – mit aktuellem Status und direktem Zugang zum Chat.</p>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="mj-body">
+  <div class="mj-header">
+    <h2 id="mj-title">Bewerbungen</h2>
+    <a href="jobs.html" class="mj-btn-jobs">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Weitere Jobs finden
+    </a>
+  </div>
+  <div class="mj-grid" id="mj-grid">
+    <div class="mj-loading">Lade Bewerbungen…</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg. Fair, schnell, unkompliziert.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Für Jobsuchende</h4>
+      <ul>
+        <li><a href="jobs.html">Jobs ansehen</a></li>
+        <li><a href="meine-bewerbungen.html">Meine Bewerbungen</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Für Unternehmen</h4>
+      <ul>
+        <li><a href="arbeitgeber.html">Personal anfragen</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Rechtliches</h4>
+      <ul>
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+        <li><a href="agb.html">AGB</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job. Alle Rechte vorbehalten.</span>
+    <div class="footer-legal">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+async function loadMeineBewerbungen() {
+  const session = await odojGetSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  const profile = await odojGetProfile(session.user.id);
+  const rolle   = profile?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+  odojSaveRolle(rolle);
+
+  if (rolle !== 'jobber') {
+    window.location.href = 'arbeitgeber.html';
+    return;
+  }
+
+  const grid = document.getElementById('mj-grid');
+
+  const { data: bewerbungen, error } = await odojSb
+    .from('bewerbungen')
+    .select('*')
+    .eq('jobber_id', session.user.id)
+    .order('erstellt_am', { ascending: false });
+
+  if (error) {
+    grid.innerHTML = `<p style="grid-column:1/-1;color:#c0392b;padding:24px">Fehler: ${error.message}</p>`;
+    return;
+  }
+
+  if (!bewerbungen || bewerbungen.length === 0) {
+    grid.innerHTML = `
+      <div class="mj-empty">
+        <div class="mj-empty-icon">📭</div>
+        <h3>Noch keine Bewerbungen</h3>
+        <p>Du hast dich noch auf keinen Job beworben. Finde jetzt passende Stellen in Vorarlberg.</p>
+        <a href="jobs.html" class="btn btn-accent">Jobs ansehen →</a>
+      </div>`;
+    document.getElementById('mj-title').textContent = '0 Bewerbungen';
+    return;
+  }
+
+  document.getElementById('mj-title').textContent =
+    bewerbungen.length + ' Bewerbung' + (bewerbungen.length !== 1 ? 'en' : '');
+
+  // Job-Details laden
+  const jobIds = [...new Set(bewerbungen.map(b => b.job_id).filter(Boolean))];
+  let jobMap = {};
+  if (jobIds.length) {
+    const { data: jobs } = await odojSb
+      .from('jobs').select('id,titel,firmenname,datum,ort,branche').in('id', jobIds);
+    jobs?.forEach(j => { jobMap[j.id] = j; });
+  }
+
+  const BRANCHEN = {
+    gastro: '🍽 Gastronomie', bau: '🏗 Bau & Handwerk',
+    lager: '📦 Lager & Logistik', events: '🎤 Events'
+  };
+
+  grid.innerHTML = bewerbungen.map(b => {
+    const job    = jobMap[b.job_id];
+    const bewDat = b.erstellt_am
+      ? new Date(b.erstellt_am).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+      : '–';
+    const jobDat = job?.datum
+      ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday:'short', day:'numeric', month:'long' })
+      : null;
+
+    const stCls  = b.status === 'angenommen' ? 'mj-st-angenommen'
+                 : b.status === 'abgelehnt'  ? 'mj-st-abgelehnt'
+                 : 'mj-st-ausstehend';
+    const stLbl  = b.status === 'angenommen' ? '✓ Angenommen'
+                 : b.status === 'abgelehnt'  ? '✕ Abgelehnt'
+                 : '⏳ Ausstehend';
+
+    const branche = job?.branche ? (BRANCHEN[job.branche] || job.branche) : null;
+
+    return `
+      <div class="mj-card fade-in">
+        <div class="mj-card-top">
+          <div>
+            <div class="mj-titel">${job?.titel || 'Unbekannter Job'}</div>
+            <div class="mj-firma">${job?.firmenname || '–'}</div>
+          </div>
+          <span class="mj-status ${stCls}">${stLbl}</span>
+        </div>
+        <div class="mj-metas">
+          ${jobDat  ? `<span class="mj-meta">📅 ${jobDat}</span>` : ''}
+          ${job?.ort ? `<span class="mj-meta">📍 ${job.ort}</span>` : ''}
+          ${branche  ? `<span class="mj-meta">${branche}</span>` : ''}
+          <span class="mj-meta">🕐 Beworben am ${bewDat}</span>
+        </div>
+        <div class="mj-footer">
+          ${b.status === 'angenommen' ? `
+            <a href="chat.html?bew=${b.id}" class="mj-btn-chat">
+              💬 Nachricht
+            </a>` : `
+            <span style="font-size:13px;color:var(--text-lt);align-self:center">
+              ${b.status === 'abgelehnt' ? 'Bewerbung nicht angenommen.' : 'Warte auf Rückmeldung des Arbeitgebers.'}
+            </span>`}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Fade-in
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 60); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.mj-card.fade-in').forEach(el => obs.observe(el));
+}
+
+loadMeineBewerbungen();
+</script>
+<script src="cookies.js"></script>
+</body>
+</html>

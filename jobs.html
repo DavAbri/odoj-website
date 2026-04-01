@@ -423,7 +423,18 @@ window._odojJobsUnlocked = false;
 let _odojJobsSession  = null;
 let _odojJobsRolle    = null;
 let _odojJobsProfile  = null;
+let _jobberAlter      = null;   // berechnetes Alter aus geburtsdatum
 const _appliedJobIds  = new Set();
+
+function _berechneAlter(geburtsdatum) {
+  if (!geburtsdatum) return null;
+  const heute = new Date();
+  const geb   = new Date(geburtsdatum);
+  let alter = heute.getFullYear() - geb.getFullYear();
+  const mDiff = heute.getMonth() - geb.getMonth();
+  if (mDiff < 0 || (mDiff === 0 && heute.getDate() < geb.getDate())) alter--;
+  return alter;
+}
 
 // ── BRANCHE MAP ──
 const JOB_BRANCHEN = {
@@ -587,7 +598,13 @@ function renderJobs(jobs, unlocked) {
     return;
   }
 
-  grid.innerHTML = jobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
+  // Mindestalter-Filter: nur für eingeloggte Jobber
+  let filteredJobs = jobs;
+  if (_jobberAlter !== null) {
+    filteredJobs = jobs.filter(job => !job.mindestalter || job.mindestalter <= _jobberAlter);
+  }
+
+  grid.innerHTML = filteredJobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
 
   // Filter anwenden
   const activeBtn = document.querySelector('.fbtn.on');
@@ -631,9 +648,10 @@ async function checkJobsAuth() {
     let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
     try {
       const { data: profile } = await odojSb
-        .from('Profile').select('rolle, vorname, nachname').eq('user_id', session.user.id).single();
+        .from('Profile').select('rolle, vorname, nachname, geburtsdatum').eq('user_id', session.user.id).single();
       if (profile?.rolle) rolle = profile.rolle;
       _odojJobsProfile = profile;
+      if (profile?.geburtsdatum) _jobberAlter = _berechneAlter(profile.geburtsdatum);
     } catch (_) {}
     _odojJobsRolle = rolle;
     odojSaveRolle(rolle);

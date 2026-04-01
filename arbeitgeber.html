@@ -876,6 +876,35 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
 async function updateBewStatus(bewId, newStatus) {
   const { error } = await odojSb.from('bewerbungen').update({ status: newStatus }).eq('id', bewId);
   if (error) { alert('Fehler: ' + error.message); return; }
+
+  // Bewerbungsdaten für automatische Nachricht laden
+  const { data: bew } = await odojSb.from('bewerbungen')
+    .select('jobber_id, job_id')
+    .eq('id', bewId).single();
+
+  if (bew?.jobber_id && bew?.job_id) {
+    const { data: job } = await odojSb.from('jobs').select('titel').eq('id', bew.job_id).single();
+    const jobTitel = job?.titel || 'den Job';
+    const firma    = _agFirmenname || 'uns';
+    const agId     = _agSession?.user?.id;
+
+    const nachricht = newStatus === 'angenommen'
+      ? `🎉 Herzlichen Glückwunsch! Deine Bewerbung für ${jobTitel} bei ${firma} wurde angenommen! Wir freuen uns auf deinen Einsatz. Bei Fragen kannst du uns hier direkt schreiben. Bis bald! 👋`
+      : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche! 🍀`;
+
+    if (agId) {
+      const { error: msgErr } = await odojSb.from('nachrichten').insert({
+        bewerbung_id:  bewId,
+        sender_id:     agId,
+        empfaenger_id: bew.jobber_id,
+        nachricht,
+        gelesen:       false,
+        erstellt_am:   new Date().toISOString()
+      });
+      if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
+    }
+  }
+
   const badge = document.getElementById('bew-badge-' + bewId);
   if (badge) {
     badge.className = 'bew-st-badge ' + (newStatus === 'angenommen' ? 'bew-st-angenommen' : 'bew-st-abgelehnt');

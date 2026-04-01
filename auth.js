@@ -110,34 +110,71 @@ async function odojInitNav() {
     const unreadCount = await odojCountUnread(session.user.id);
     const hasUnread   = unreadCount > 0;
 
-    // ── Desktop: Links vor #nav-auth einfügen ──
+    // ── Desktop: Statische Links anpassen und rollenspezifische einfügen ──
     const navAuthLi = document.getElementById('nav-auth');
+
+    // Statische Links nach Rolle ein-/ausblenden
+    if (navAuthLi && navAuthLi.parentElement) {
+      navAuthLi.parentElement.querySelectorAll('li a').forEach(a => {
+        const href = a.getAttribute('href');
+        if (rolle === 'jobber') {
+          // Jobber sieht "Jobs finden", aber nicht "Für Arbeitgeber" und "Über uns"
+          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
+            a.parentElement.style.display = 'none';
+          }
+        } else if (rolle === 'arbeitgeber') {
+          // Arbeitgeber sieht weder "Jobs finden" noch "Für Arbeitgeber" noch "Über uns"
+          if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
+            a.parentElement.style.display = 'none';
+          }
+        }
+      });
+    }
+
     if (navAuthLi && navAuthLi.parentElement && !document.getElementById('nav-nachrichten')) {
-      // Jobber: "Meine Bewerbungen"
-      if (rolle === 'jobber' && !document.getElementById('nav-meine-jobs')) {
-        const mjLi = document.createElement('li');
-        mjLi.id = 'nav-meine-jobs';
-        mjLi.innerHTML = '<a href="meine-jobs.html">Meine Bewerbungen</a>';
-        navAuthLi.parentElement.insertBefore(mjLi, navAuthLi);
-      }
       // Nachrichten
       const msgLi = document.createElement('li');
       msgLi.id = 'nav-nachrichten';
       msgLi.innerHTML = '<a href="chat.html" style="position:relative">Nachrichten' +
         (hasUnread ? '<span class="odoj-unread-dot"></span>' : '') + '</a>';
       navAuthLi.parentElement.insertBefore(msgLi, navAuthLi);
+
+      // Jobber: "Meine Bewerbungen" vor Nachrichten
+      if (rolle === 'jobber' && !document.getElementById('nav-meine-bew')) {
+        const mjLi = document.createElement('li');
+        mjLi.id = 'nav-meine-bew';
+        mjLi.innerHTML = '<a href="meine-bewerbungen.html">Meine Bewerbungen</a>';
+        navAuthLi.parentElement.insertBefore(mjLi, msgLi);
+      }
+      // Arbeitgeber: "Meine Inserate" vor Nachrichten
+      if (rolle === 'arbeitgeber' && !document.getElementById('nav-meine-inserate')) {
+        const miLi = document.createElement('li');
+        miLi.id = 'nav-meine-inserate';
+        miLi.innerHTML = '<a href="arbeitgeber.html">Meine Inserate</a>';
+        navAuthLi.parentElement.insertBefore(miLi, msgLi);
+      }
     }
 
-    // ── Mobile: Links vor #nav-mobile-auth einfügen ──
+    // ── Mobile: Statische Links anpassen und rollenspezifische einfügen ──
     const navMobile = document.getElementById('navMobile');
+
+    // Statische Mobile-Links nach Rolle ein-/ausblenden
+    if (navMobile) {
+      navMobile.querySelectorAll('a').forEach(a => {
+        const href = a.getAttribute('href');
+        if (rolle === 'jobber') {
+          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
+            a.style.display = 'none';
+          }
+        } else if (rolle === 'arbeitgeber') {
+          if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
+            a.style.display = 'none';
+          }
+        }
+      });
+    }
+
     if (navMobile && mobileEl && !document.getElementById('nav-mobile-nachrichten')) {
-      if (rolle === 'jobber' && !document.getElementById('nav-mobile-meine-jobs')) {
-        const mjA = document.createElement('a');
-        mjA.href = 'meine-jobs.html';
-        mjA.id   = 'nav-mobile-meine-jobs';
-        mjA.textContent = 'Meine Bewerbungen';
-        navMobile.insertBefore(mjA, mobileEl);
-      }
       const msgA = document.createElement('a');
       msgA.href        = 'chat.html';
       msgA.id          = 'nav-mobile-nachrichten';
@@ -148,6 +185,21 @@ async function odojInitNav() {
         dot.className = 'odoj-unread-dot-mobile';
         dot.style.cssText = 'display:inline-block;width:7px;height:7px;background:#e74c3c;border-radius:50%;margin-left:6px;vertical-align:middle';
         msgA.appendChild(dot);
+      }
+
+      if (rolle === 'jobber' && !document.getElementById('nav-mobile-meine-bew')) {
+        const mjA = document.createElement('a');
+        mjA.href = 'meine-bewerbungen.html';
+        mjA.id   = 'nav-mobile-meine-bew';
+        mjA.textContent = 'Meine Bewerbungen';
+        navMobile.insertBefore(mjA, msgA);
+      }
+      if (rolle === 'arbeitgeber' && !document.getElementById('nav-mobile-meine-inserate')) {
+        const miA = document.createElement('a');
+        miA.href = 'arbeitgeber.html';
+        miA.id   = 'nav-mobile-meine-inserate';
+        miA.textContent = 'Meine Inserate';
+        navMobile.insertBefore(miA, msgA);
       }
     }
 
