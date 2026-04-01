@@ -55,12 +55,20 @@
   transition: border-color .2s, box-shadow .2s, transform .2s;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 }
 .job-card:hover {
   border-color: var(--sky-lt);
   box-shadow: var(--sh-md);
   transform: translateY(-3px);
 }
+.job-details-link {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-lt); text-decoration: none;
+  transition: color .2s; white-space: nowrap;
+  align-self: center;
+}
+.job-details-link:hover { color: var(--navy); }
 .job-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
 .job-date { font-size: 12px; color: var(--text-lt); font-weight: 300; }
 .job-card h3 {
@@ -415,6 +423,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
+<script src="modal.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
@@ -472,9 +481,28 @@ function filter(b, btn) {
   document.getElementById('jobCount').textContent = n + ' Job' + (n !== 1 ? 's' : '') + ' gefunden';
 }
 
+// ── CARD KLICK → DETAIL-SEITE ──
+function goToJobDetail(jobId, cardEl) {
+  if (cardEl.dataset.locked === 'true') {
+    window.location.href = 'login.html';
+    return;
+  }
+  window.location.href = 'job-detail.html?id=' + jobId;
+}
+
 // ── BEWERBEN KLICK ──
 function handleApplyClick(btn) {
-  applyForJob(btn.dataset.jobId, btn.dataset.agId, btn);
+  const jobId = btn.dataset.jobId;
+  const agId  = btn.dataset.agId;
+  const titel  = btn.dataset.titel  || '';
+  const firma  = btn.dataset.firma  || '';
+  const datum  = btn.dataset.datum  || '';
+  const gehalt = btn.dataset.gehalt || '';
+
+  showBewerbungsModal({
+    titel, firma, datum, gehalt,
+    onConfirm: () => applyForJob(jobId, agId, btn)
+  });
 }
 
 async function applyForJob(jobId, agId, btnEl) {
@@ -546,15 +574,15 @@ function renderJobCard(job, locked) {
 
   let applyHtml;
   if (locked) {
-    applyHtml = '<a href="login.html" class="job-apply">Bewerben</a>';
+    applyHtml = '<a href="login.html" class="job-apply" onclick="event.stopPropagation()">Bewerben</a>';
   } else if (_appliedJobIds.has(job.id)) {
-    applyHtml = '<button class="job-apply job-applied" style="background:#1a7a50;cursor:default" disabled>Beworben ✓</button>';
+    applyHtml = '<button class="job-apply job-applied" style="background:#1a7a50;cursor:default" disabled onclick="event.stopPropagation()">Beworben ✓</button>';
   } else {
-    applyHtml = `<button class="job-apply" data-job-id="${job.id}" data-ag-id="${job.arbeitgeber_id || ''}" onclick="handleApplyClick(this)">Bewerben</button>`;
+    applyHtml = `<button class="job-apply" data-job-id="${job.id}" data-ag-id="${job.arbeitgeber_id || ''}" data-titel="${job.titel}" data-firma="${job.firmenname || ''}" data-datum="${datum}" data-gehalt="${job.tagesgehalt || ''}" onclick="event.stopPropagation();handleApplyClick(this)">Bewerben</button>`;
   }
 
   return `
-    <div class="job-card fade-in" data-b="${job.branche}"${lockedAttr}>
+    <div class="job-card fade-in" data-b="${job.branche}"${lockedAttr} onclick="goToJobDetail('${job.id}', this)">
       <div class="job-card-top">
         <span class="tag ${b.cls}">${b.label}</span>
         <span class="job-date">${datum} · ${job.ort}</span>
@@ -576,9 +604,10 @@ function renderJobCard(job, locked) {
         </span>
       </div>
       <div class="job-footer">
-        <div>
+        <div style="display:flex;flex-direction:column;gap:4px">
           <div class="job-pay">€ ${gehalt} <span>/ Tag</span></div>
           <div class="job-spots">${plaetze}</div>
+          <a href="job-detail.html?id=${job.id}" class="job-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
         </div>
         ${applyHtml}
       </div>
