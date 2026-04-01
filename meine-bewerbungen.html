@@ -41,8 +41,15 @@
   display: flex;
   flex-direction: column;
   transition: border-color .2s, box-shadow .2s, transform .2s;
+  cursor: pointer;
 }
 .mj-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-3px); }
+.mj-details-link {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-lt); text-decoration: none;
+  transition: color .2s; white-space: nowrap; align-self: center;
+}
+.mj-details-link:hover { color: var(--navy); }
 .mj-card-top {
   display: flex;
   justify-content: space-between;
@@ -325,8 +332,10 @@ async function loadMeineBewerbungen() {
       : null;
     const plaetze = job?.plaetze === 1 ? '1 Platz frei' : ((job?.plaetze || 0) + ' Plätze frei');
 
+    const jobDetailHref = job?.id ? `job-detail.html?id=${job.id}` : null;
+
     return `
-      <div class="mj-card fade-in">
+      <div class="mj-card fade-in" onclick="window.location.href='${jobDetailHref || '#'}'">
         <div class="mj-card-top">
           ${branche ? `<span class="tag ${branche.cls}">${branche.label}</span>` : '<span></span>'}
           <span class="mj-status ${stCls}">${stLbl}</span>
@@ -349,12 +358,13 @@ async function loadMeineBewerbungen() {
           <span class="mj-meta">🕐 Beworben am ${bewDat}</span>
         </div>
         <div class="mj-footer">
-          <div>
+          <div style="display:flex;flex-direction:column;gap:4px">
             ${gehalt ? `<div class="mj-pay">€ ${gehalt} <span>/ Tag</span></div>` : ''}
             ${job?.plaetze ? `<div class="mj-spots">${plaetze}</div>` : ''}
+            ${jobDetailHref ? `<a href="${jobDetailHref}" class="mj-details-link" onclick="event.stopPropagation()">Details ansehen →</a>` : ''}
           </div>
           ${b.status === 'angenommen' ? `
-            <a href="chat.html?bew=${b.id}" class="mj-btn-chat">
+            <a href="chat.html?bew=${b.id}" class="mj-btn-chat" onclick="event.stopPropagation()">
               💬 Nachricht
             </a>` : `
             <span style="font-size:13px;color:var(--text-lt)">
