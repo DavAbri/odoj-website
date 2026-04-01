@@ -708,7 +708,8 @@ async function loadInserate() {
   const countMap      = {};
   const acceptedMap   = {};
   bews?.forEach(b => {
-    countMap[b.job_id]    = (countMap[b.job_id] || 0) + 1;
+    // Abgelehnte nicht mitzählen
+    if (b.status !== 'abgelehnt') countMap[b.job_id] = (countMap[b.job_id] || 0) + 1;
     if (b.status === 'angenommen') acceptedMap[b.job_id] = (acceptedMap[b.job_id] || 0) + 1;
   });
 
@@ -778,7 +779,7 @@ async function openBewerbungen(jobId, jobTitel) {
   const bodyEl = document.getElementById('bew-overlay-body');
   bodyEl.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-lt)">Lade Bewerbungen…</div>';
 
-  const { data: bewerbungen, error } = await odojSb
+  const { data: alle, error } = await odojSb
     .from('bewerbungen')
     .select('*')
     .eq('job_id', jobId)
@@ -788,11 +789,15 @@ async function openBewerbungen(jobId, jobTitel) {
     bodyEl.innerHTML = '<p style="color:#c0392b;padding:24px">Fehler: ' + error.message + '</p>';
     return;
   }
-  if (!bewerbungen || bewerbungen.length === 0) {
+
+  // Abgelehnte ausblenden
+  const bewerbungen = (alle || []).filter(b => b.status !== 'abgelehnt');
+
+  if (bewerbungen.length === 0) {
     bodyEl.innerHTML = `
       <div style="text-align:center;padding:56px 32px;color:var(--text-lt)">
         <div style="font-size:42px;margin-bottom:14px">📭</div>
-        <p style="font-size:15px">Noch keine Bewerbungen für dieses Inserat.</p>
+        <p style="font-size:15px">Keine aktiven Bewerbungen für dieses Inserat.</p>
       </div>`;
     return;
   }
@@ -932,17 +937,39 @@ async function updateBewStatus(bewId, newStatus) {
     }
   }
 
-  const badge = document.getElementById('bew-badge-' + bewId);
-  if (badge) {
-    badge.className = 'bew-st-badge ' + (newStatus === 'angenommen' ? 'bew-st-angenommen' : 'bew-st-abgelehnt');
-    badge.textContent = newStatus === 'angenommen' ? 'Angenommen' : 'Abgelehnt';
-  }
-  const actEl = document.getElementById('bew-actions-' + bewId);
-  if (actEl) {
-    actEl.innerHTML =
-      (newStatus !== 'angenommen' ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${bewId}','angenommen')">✓ Annehmen</button>` : '') +
-      (newStatus !== 'abgelehnt'  ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">✕ Ablehnen</button>` : '') +
-      `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')">💬 Nachricht senden</button>`;
+  if (newStatus === 'abgelehnt') {
+    // Abgelehnte sofort aus dem Overlay entfernen
+    const itemEl = document.getElementById('bew-item-' + bewId);
+    if (itemEl) {
+      itemEl.style.transition = 'opacity .25s';
+      itemEl.style.opacity = '0';
+      setTimeout(() => {
+        itemEl.remove();
+        // Prüfen ob Overlay jetzt leer ist
+        const body = document.getElementById('bew-overlay-body');
+        if (body && !body.querySelector('.bew-item')) {
+          body.innerHTML = `
+            <div style="text-align:center;padding:56px 32px;color:var(--text-lt)">
+              <div style="font-size:42px;margin-bottom:14px">📭</div>
+              <p style="font-size:15px">Keine aktiven Bewerbungen für dieses Inserat.</p>
+            </div>`;
+        }
+      }, 250);
+    }
+  } else {
+    // Angenommen: Badge und Buttons aktualisieren
+    const badge = document.getElementById('bew-badge-' + bewId);
+    if (badge) {
+      badge.className = 'bew-st-badge bew-st-angenommen';
+      badge.textContent = 'Angenommen';
+    }
+    const actEl = document.getElementById('bew-actions-' + bewId);
+    if (actEl) {
+      actEl.innerHTML =
+        `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">✕ Ablehnen</button>` +
+        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')">💬 Nachricht senden</button>` +
+        `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '', '', '')">Anwesenheit bestätigen ✓</button>`;
+    }
   }
   loadInserate();
 }
