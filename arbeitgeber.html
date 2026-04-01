@@ -702,17 +702,22 @@ async function loadInserate() {
     return;
   }
 
-  // Bewerbungs-Anzahl pro Job laden
+  // Bewerbungs-Anzahl und angenommene pro Job laden
   const jobIds = jobs.map(j => j.id);
-  const { data: bews } = await odojSb.from('bewerbungen').select('job_id').in('job_id', jobIds);
-  const countMap = {};
-  bews?.forEach(b => { countMap[b.job_id] = (countMap[b.job_id] || 0) + 1; });
+  const { data: bews } = await odojSb.from('bewerbungen').select('job_id, status').in('job_id', jobIds);
+  const countMap      = {};
+  const acceptedMap   = {};
+  bews?.forEach(b => {
+    countMap[b.job_id]    = (countMap[b.job_id] || 0) + 1;
+    if (b.status === 'angenommen') acceptedMap[b.job_id] = (acceptedMap[b.job_id] || 0) + 1;
+  });
 
-  grid.innerHTML = jobs.map(j => renderInseratCard(j, countMap[j.id] || 0)).join('');
+  grid.innerHTML = jobs.map(j => renderInseratCard(j, countMap[j.id] || 0, acceptedMap[j.id] || 0)).join('');
 }
 
-function renderInseratCard(j, bewCount) {
-  bewCount = bewCount || 0;
+function renderInseratCard(j, bewCount, acceptedCount) {
+  bewCount     = bewCount     || 0;
+  acceptedCount = acceptedCount || 0;
   const b = BRANCHEN[j.branche] || { label: j.branche, cls: '' };
   const datum = j.datum
     ? new Date(j.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -722,12 +727,20 @@ function renderInseratCard(j, bewCount) {
   const gehalt    = Number(j.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const titelEsc  = (j.titel || '').replace(/"/g, '&quot;');
 
+  // Vergeben-Badge
+  const vergebenBadge = acceptedCount > 0
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">
+        ✓ ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben
+       </span>`
+    : '';
+
   return `
     <div class="inserat-card">
       <div class="inserat-top">
-        <div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
           <div class="inserat-titel">${j.titel}</div>
-          <div class="inserat-firma">${j.firmenname || ''}</div>
+          ${vergebenBadge}
+          <div class="inserat-firma" style="width:100%">${j.firmenname || ''}</div>
         </div>
         <span class="status-badge ${statusCls}">${j.status || 'aktiv'}</span>
       </div>
@@ -881,6 +894,20 @@ async function updateBewStatus(bewId, newStatus) {
   const { data: bew } = await odojSb.from('bewerbungen')
     .select('jobber_id, job_id')
     .eq('id', bewId).single();
+
+  // Wenn angenommen: prüfen ob alle Plätze vergeben → Job deaktivieren
+  if (newStatus === 'angenommen' && bew?.job_id) {
+    const { data: job } = await odojSb.from('jobs').select('id, plaetze, status').eq('id', bew.job_id).single();
+    if (job && job.status === 'aktiv') {
+      const { count } = await odojSb.from('bewerbungen')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_id', bew.job_id)
+        .eq('status', 'angenommen');
+      if (count >= job.plaetze) {
+        await odojSb.from('jobs').update({ status: 'inaktiv' }).eq('id', bew.job_id);
+      }
+    }
+  }
 
   if (bew?.jobber_id && bew?.job_id) {
     const { data: job } = await odojSb.from('jobs').select('titel').eq('id', bew.job_id).single();
