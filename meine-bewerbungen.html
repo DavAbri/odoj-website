@@ -37,27 +37,27 @@
   background: var(--white);
   border: 1.5px solid var(--gray-lt);
   border-radius: var(--r-md);
-  padding: 22px 24px;
+  padding: 26px;
   display: flex;
   flex-direction: column;
   transition: border-color .2s, box-shadow .2s, transform .2s;
 }
-.mj-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-2px); }
+.mj-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-3px); }
 .mj-card-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .mj-titel {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
-.mj-firma { font-size: 13px; color: var(--text-lt); font-weight: 300; }
+.mj-firma { font-size: 13px; color: var(--text-lt); font-weight: 300; margin-bottom: 14px; }
 
 /* Status Badges */
 .mj-status {
@@ -73,8 +73,8 @@
 .mj-metas {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 .mj-meta {
   font-size: 13px;
@@ -82,16 +82,25 @@
   font-weight: 300;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
+.mj-meta svg { opacity: .5; flex-shrink: 0; }
 .mj-footer {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  padding-top: 14px;
+  padding-top: 16px;
   border-top: 1px solid var(--gray-lt);
   margin-top: auto;
 }
+.mj-pay {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 19px; font-weight: 700; color: var(--navy);
+}
+.mj-pay span { font-size: 12px; font-weight: 300; color: var(--text-lt); }
+.mj-spots { font-size: 12px; color: var(--accent); font-weight: 600; }
 .mj-btn-chat {
   background: var(--navy);
   color: var(--white);
@@ -104,6 +113,7 @@
   align-items: center;
   gap: 6px;
   transition: background .2s;
+  white-space: nowrap;
 }
 .mj-btn-chat:hover { background: var(--navy-soft); }
 .mj-btn-jobs {
@@ -275,18 +285,22 @@ async function loadMeineBewerbungen() {
   document.getElementById('mj-title').textContent =
     bewerbungen.length + ' Bewerbung' + (bewerbungen.length !== 1 ? 'en' : '');
 
-  // Job-Details laden
+  // Job-Details laden (alle Felder wie auf jobs.html)
   const jobIds = [...new Set(bewerbungen.map(b => b.job_id).filter(Boolean))];
   let jobMap = {};
   if (jobIds.length) {
     const { data: jobs } = await odojSb
-      .from('jobs').select('id,titel,firmenname,datum,ort,branche').in('id', jobIds);
+      .from('jobs')
+      .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,uhrzeit_von,uhrzeit_bis,plaetze,mindestalter')
+      .in('id', jobIds);
     jobs?.forEach(j => { jobMap[j.id] = j; });
   }
 
   const BRANCHEN = {
-    gastro: '🍽 Gastronomie', bau: '🏗 Bau & Handwerk',
-    lager: '📦 Lager & Logistik', events: '🎤 Events'
+    gastro: { label: '🍽 Gastronomie',      cls: 'tag-gastro' },
+    bau:    { label: '🏗 Bau & Handwerk',   cls: 'tag-bau'    },
+    lager:  { label: '📦 Lager & Logistik', cls: 'tag-lager'  },
+    events: { label: '🎤 Events',           cls: 'tag-events' },
   };
 
   grid.innerHTML = bewerbungen.map(b => {
@@ -296,7 +310,7 @@ async function loadMeineBewerbungen() {
       : '–';
     const jobDat = job?.datum
       ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday:'short', day:'numeric', month:'long' })
-      : null;
+      : '–';
 
     const stCls  = b.status === 'angenommen' ? 'mj-st-angenommen'
                  : b.status === 'abgelehnt'  ? 'mj-st-abgelehnt'
@@ -305,30 +319,46 @@ async function loadMeineBewerbungen() {
                  : b.status === 'abgelehnt'  ? '✕ Abgelehnt'
                  : '⏳ Ausstehend';
 
-    const branche = job?.branche ? (BRANCHEN[job.branche] || job.branche) : null;
+    const branche = job?.branche ? (BRANCHEN[job.branche] || { label: job.branche, cls: '' }) : null;
+    const gehalt  = job?.tagesgehalt
+      ? Number(job.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+      : null;
+    const plaetze = job?.plaetze === 1 ? '1 Platz frei' : ((job?.plaetze || 0) + ' Plätze frei');
 
     return `
       <div class="mj-card fade-in">
         <div class="mj-card-top">
-          <div>
-            <div class="mj-titel">${job?.titel || 'Unbekannter Job'}</div>
-            <div class="mj-firma">${job?.firmenname || '–'}</div>
-          </div>
+          ${branche ? `<span class="tag ${branche.cls}">${branche.label}</span>` : '<span></span>'}
           <span class="mj-status ${stCls}">${stLbl}</span>
         </div>
+        <div class="mj-titel">${job?.titel || 'Unbekannter Job'}</div>
+        <div class="mj-firma">${job?.firmenname || '–'}</div>
         <div class="mj-metas">
-          ${jobDat  ? `<span class="mj-meta">📅 ${jobDat}</span>` : ''}
-          ${job?.ort ? `<span class="mj-meta">📍 ${job.ort}</span>` : ''}
-          ${branche  ? `<span class="mj-meta">${branche}</span>` : ''}
+          <span class="mj-meta">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            ${jobDat} · ${job?.ort || '–'}
+          </span>
+          <span class="mj-meta">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ${job?.uhrzeit_von || '–'} – ${job?.uhrzeit_bis || '–'}
+          </span>
+          <span class="mj-meta">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Ab ${job?.mindestalter || 18} Jahren
+          </span>
           <span class="mj-meta">🕐 Beworben am ${bewDat}</span>
         </div>
         <div class="mj-footer">
+          <div>
+            ${gehalt ? `<div class="mj-pay">€ ${gehalt} <span>/ Tag</span></div>` : ''}
+            ${job?.plaetze ? `<div class="mj-spots">${plaetze}</div>` : ''}
+          </div>
           ${b.status === 'angenommen' ? `
             <a href="chat.html?bew=${b.id}" class="mj-btn-chat">
               💬 Nachricht
             </a>` : `
-            <span style="font-size:13px;color:var(--text-lt);align-self:center">
-              ${b.status === 'abgelehnt' ? 'Bewerbung nicht angenommen.' : 'Warte auf Rückmeldung des Arbeitgebers.'}
+            <span style="font-size:13px;color:var(--text-lt)">
+              ${b.status === 'abgelehnt' ? 'Nicht angenommen.' : 'Warte auf Rückmeldung…'}
             </span>`}
         </div>
       </div>`;
