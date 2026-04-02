@@ -339,9 +339,9 @@
   <div class="filter-divider"></div>
   <span class="filter-lbl">Mindestalter:</span>
   <button class="fbtn on" id="fbtn-alter-alle" onclick="filterAlter(null, this)">Alle</button>
-  <button class="fbtn" onclick="filterAlter(16, this)">Ab 16</button>
-  <button class="fbtn" onclick="filterAlter(18, this)">Ab 18</button>
-  <button class="fbtn" onclick="filterAlter(21, this)">Ab 21</button>
+  <button class="fbtn" onclick="filterAlter(16, this)">Ich bin 16+</button>
+  <button class="fbtn" onclick="filterAlter(18, this)">Ich bin 18+</button>
+  <button class="fbtn" onclick="filterAlter(21, this)">Ich bin 21+</button>
   <span class="filter-count" id="jobCount">– Jobs gefunden</span>
 </div>
 
@@ -481,7 +481,7 @@ function _applyFilters() {
     if (locked) { c.style.display = 'none'; return; }
     const brancheOk = _activeBranche === 'alle' || c.dataset.b === _activeBranche;
     const alter     = parseInt(c.dataset.mindestalter, 10) || 15;
-    const alterOk   = _activeAlter === null || alter >= _activeAlter;
+    const alterOk   = _activeAlter === null || alter <= _activeAlter;
     const show = brancheOk && alterOk;
     c.style.display = show ? 'flex' : 'none';
     if (show) n++;
