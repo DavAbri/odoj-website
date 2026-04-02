@@ -214,6 +214,31 @@
 .back-link a { color: var(--accent); font-weight: 600; text-decoration: none; }
 .back-link a:hover { text-decoration: underline; }
 
+.forgot-link {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-lt);
+  text-decoration: none;
+  margin-top: -6px;
+  margin-bottom: 14px;
+  transition: color .2s;
+  cursor: pointer;
+  background: none; border: none; padding: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.forgot-link:hover { color: var(--accent); }
+.reset-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 600; color: var(--text-lt);
+  background: none; border: none; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  margin-bottom: 20px; padding: 0;
+  transition: color .2s;
+}
+.reset-back:hover { color: var(--navy); }
+
 @media (max-width: 540px) {
   .login-card { padding: 32px 24px 28px; }
 }
@@ -280,9 +305,43 @@
         <label>Passwort</label>
         <input type="password" id="login-pw" placeholder="••••••••" required autocomplete="current-password">
       </div>
+      <button type="button" class="forgot-link" onclick="setMode('reset')">Passwort vergessen?</button>
       <div id="login-error" class="form-error" style="display:none"></div>
       <button type="submit" class="lf-btn" id="login-btn">Anmelden</button>
     </form>
+
+    <!-- Passwort-Reset Form -->
+    <div id="form-reset" style="display:none">
+      <button type="button" class="reset-back" onclick="setMode('login')">← Zurück zur Anmeldung</button>
+      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:6px">Passwort zurücksetzen</h3>
+      <p style="font-size:13px;color:var(--text-lt);margin-bottom:20px;line-height:1.5">Gib deine E-Mail-Adresse ein. Wir schicken dir einen Link zum Zurücksetzen.</p>
+      <form onsubmit="doResetPassword(event)">
+        <div class="lf-field">
+          <label>E-Mail</label>
+          <input type="email" id="reset-email" placeholder="deine@email.at" required autocomplete="email">
+        </div>
+        <div id="reset-error" class="form-error" style="display:none"></div>
+        <button type="submit" class="lf-btn" id="reset-btn">Reset-Link senden</button>
+      </form>
+    </div>
+
+    <!-- Neues Passwort setzen Form -->
+    <div id="form-new-pw" style="display:none">
+      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:6px">Neues Passwort</h3>
+      <p style="font-size:13px;color:var(--text-lt);margin-bottom:20px;line-height:1.5">Wähle ein neues Passwort für dein Konto.</p>
+      <form onsubmit="doNewPassword(event)">
+        <div class="lf-field">
+          <label>Neues Passwort</label>
+          <input type="password" id="newpw-pw" placeholder="Mindestens 8 Zeichen" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="lf-field">
+          <label>Passwort bestätigen</label>
+          <input type="password" id="newpw-pw2" placeholder="Passwort wiederholen" required autocomplete="new-password">
+        </div>
+        <div id="newpw-error" class="form-error" style="display:none"></div>
+        <button type="submit" class="lf-btn" id="newpw-btn">Passwort speichern</button>
+      </form>
+    </div>
 
     <!-- Register Form -->
     <form id="form-register" onsubmit="doRegister(event)" style="display:none">
@@ -394,10 +453,17 @@ function setRole(rolle) {
 }
 
 function setMode(mode) {
-  document.querySelectorAll('.auth-mode-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('mode-' + mode).classList.add('active');
+  const isAuthMode = mode === 'login' || mode === 'register';
+  document.querySelector('.role-tabs').style.display      = isAuthMode ? '' : 'none';
+  document.querySelector('.auth-mode-tabs').style.display = isAuthMode ? '' : 'none';
+  if (isAuthMode) {
+    document.querySelectorAll('.auth-mode-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('mode-' + mode).classList.add('active');
+  }
   document.getElementById('form-login').style.display    = mode === 'login'    ? 'block' : 'none';
   document.getElementById('form-register').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('form-reset').style.display    = mode === 'reset'    ? 'block' : 'none';
+  document.getElementById('form-new-pw').style.display   = mode === 'new-pw'   ? 'block' : 'none';
   document.getElementById('auth-success').style.display  = 'none';
 }
 
@@ -550,6 +616,96 @@ async function doRegister(e) {
     setRole('arbeitgeber');
   }
 })();
+
+// ── PASSWORT ZURÜCKSETZEN ──
+async function doResetPassword(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('reset-btn');
+  const errEl = document.getElementById('reset-error');
+  errEl.style.display = 'none';
+  btn.textContent = 'Wird gesendet…';
+  btn.disabled = true;
+
+  const email = document.getElementById('reset-email').value.trim();
+  const { error } = await odojSb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Reset-Link senden';
+    btn.disabled = false;
+    return;
+  }
+
+  // Erfolg anzeigen
+  document.getElementById('form-reset').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'block';
+  document.getElementById('auth-success-msg').textContent =
+    'Wir haben dir einen Reset-Link geschickt. Bitte prüfe deine E-Mails und klick auf den Link.';
+}
+
+// ── NEUES PASSWORT SETZEN ──
+async function doNewPassword(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('newpw-btn');
+  const errEl = document.getElementById('newpw-error');
+  errEl.style.display = 'none';
+
+  const pw  = document.getElementById('newpw-pw').value;
+  const pw2 = document.getElementById('newpw-pw2').value;
+
+  if (pw.length < 8) {
+    errEl.textContent = 'Passwort muss mindestens 8 Zeichen haben.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (pw !== pw2) {
+    errEl.textContent = 'Passwörter stimmen nicht überein.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Wird gespeichert…';
+  btn.disabled = true;
+
+  const { error } = await odojSb.auth.updateUser({ password: pw });
+
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Passwort speichern';
+    btn.disabled = false;
+    return;
+  }
+
+  // Erfolg → weiterleiten nach kurzer Meldung
+  document.getElementById('form-new-pw').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'block';
+  document.getElementById('auth-success-msg').textContent =
+    'Dein Passwort wurde erfolgreich geändert. Du wirst jetzt weitergeleitet…';
+  setTimeout(async () => {
+    let rolle = 'jobber';
+    try {
+      const { data: { session } } = await odojSb.auth.getSession();
+      if (session) {
+        const { data: profile } = await odojSb
+          .from('Profile').select('rolle').eq('user_id', session.user.id).single();
+        if (profile?.rolle) rolle = profile.rolle;
+        odojSaveRolle(rolle);
+      }
+    } catch (_) {}
+    redirectAfterAuth(rolle);
+  }, 2000);
+}
+
+// Password-Recovery-Event erkennen (wenn User auf Reset-Link klickt)
+odojSb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    setMode('new-pw');
+  }
+});
 
 // Bereits eingeloggt? → weiterleiten
 odojSb.auth.getSession().then(async ({ data }) => {
