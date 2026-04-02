@@ -354,6 +354,12 @@
 .bew-st-ausstehend { background: #FFF8E8; color: #A05000; }
 .bew-st-angenommen { background: #E6F5EE; color: #1A7A50; }
 .bew-st-abgelehnt  { background: #FFF0F0; color: #C0392B; }
+.bew-item-profile {
+  display: flex; flex-wrap: wrap; gap: 8px 16px;
+  background: var(--off); border-radius: var(--r-sm);
+  padding: 10px 14px; margin-bottom: 10px;
+}
+.bew-profile-field { font-size: 13px; color: var(--text-mid); font-weight: 400; }
 .bew-item-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .bew-btn {
   font-size: 13px; font-weight: 600;
@@ -713,18 +719,38 @@ async function loadInserate() {
   const { data: bews } = await odojSb.from('bewerbungen').select('job_id, status').in('job_id', jobIds);
   const countMap      = {};
   const acceptedMap   = {};
+  const ausstehendMap = {};
   bews?.forEach(b => {
-    // Abgelehnte nicht mitzählen
     if (b.status !== 'abgelehnt') countMap[b.job_id] = (countMap[b.job_id] || 0) + 1;
-    if (b.status === 'angenommen') acceptedMap[b.job_id] = (acceptedMap[b.job_id] || 0) + 1;
+    if (b.status === 'angenommen')  acceptedMap[b.job_id]   = (acceptedMap[b.job_id]   || 0) + 1;
+    if (b.status === 'ausstehend')  ausstehendMap[b.job_id] = (ausstehendMap[b.job_id] || 0) + 1;
   });
 
-  grid.innerHTML = jobs.map(j => renderInseratCard(j, countMap[j.id] || 0, acceptedMap[j.id] || 0)).join('');
+  // Notification-Badge auf Tab
+  const totalNeu = Object.values(ausstehendMap).reduce((s, v) => s + v, 0);
+  const tabBtn = document.querySelector('[data-tab="inserate"]');
+  if (tabBtn) {
+    let dot = tabBtn.querySelector('.tab-notif');
+    if (totalNeu > 0) {
+      if (!dot) {
+        dot = document.createElement('span');
+        dot.className = 'tab-notif';
+        dot.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#e74c3c;color:#fff;font-size:11px;font-weight:700;border-radius:100px;padding:0 5px;margin-left:6px';
+        tabBtn.appendChild(dot);
+      }
+      dot.textContent = totalNeu;
+    } else if (dot) {
+      dot.remove();
+    }
+  }
+
+  grid.innerHTML = jobs.map(j => renderInseratCard(j, countMap[j.id] || 0, acceptedMap[j.id] || 0, ausstehendMap[j.id] || 0)).join('');
 }
 
-function renderInseratCard(j, bewCount, acceptedCount) {
-  bewCount     = bewCount     || 0;
+function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
+  bewCount      = bewCount      || 0;
   acceptedCount = acceptedCount || 0;
+  ausstehendCount = ausstehendCount || 0;
   const b = BRANCHEN[j.branche] || { label: j.branche, cls: '' };
   const datum = j.datum
     ? new Date(j.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -736,10 +762,12 @@ function renderInseratCard(j, bewCount, acceptedCount) {
 
   // Vergeben-Badge
   const vergebenBadge = acceptedCount > 0
-    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">
-        ✓ ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben
-       </span>`
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">✓ ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben</span>`
     : '';
+
+  // Verbleibende Plätze
+  const remaining = (j.plaetze || 0) - acceptedCount;
+  const remainingHtml = `<span class="inserat-meta">🟢 ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
 
   return `
     <div class="inserat-card" onclick="window.location.href='job-detail.html?id=${j.id}'">
@@ -756,7 +784,8 @@ function renderInseratCard(j, bewCount, acceptedCount) {
         <span class="inserat-meta">📅 ${datum}</span>
         <span class="inserat-meta">🕐 ${j.uhrzeit_von || '–'} – ${j.uhrzeit_bis || '–'}</span>
         <span class="inserat-meta">📍 ${j.ort || '–'}</span>
-        <span class="inserat-meta">👥 ${j.plaetze || '–'} Platz/Plätze</span>
+        <span class="inserat-meta">👥 ${j.plaetze || '–'} Platz/Plätze gesamt</span>
+        ${remainingHtml}
         <span class="inserat-meta">🔞 Ab ${j.mindestalter || 18} Jahren</span>
       </div>
       <div class="inserat-footer">
@@ -770,6 +799,7 @@ function renderInseratCard(j, bewCount, acceptedCount) {
             data-job-id="${j.id}" data-job-titel="${titelEsc}"
             onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel)">
             👤 ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
+            ${ausstehendCount > 0 ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:0 4px;margin-left:4px">${ausstehendCount} neu</span>` : ''}
           </button>
           <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}')">Löschen</button>
         </div>
@@ -808,10 +838,22 @@ async function openBewerbungen(jobId, jobTitel) {
       </div>`;
     return;
   }
-  bodyEl.innerHTML = bewerbungen.map(renderBewItem).join('');
+
+  // Profildaten der Bewerber laden
+  const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
+  let profileMap = {};
+  if (jobberIds.length) {
+    const { data: profiles } = await odojSb
+      .from('Profile')
+      .select('user_id, adresse, svnummer, geburtsdatum')
+      .in('user_id', jobberIds);
+    profiles?.forEach(p => { profileMap[p.user_id] = p; });
+  }
+
+  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id])).join('');
 }
 
-function renderBewItem(b) {
+function renderBewItem(b, profile) {
   const dateStr = b.erstellt_am
     ? new Date(b.erstellt_am).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
     : '–';
@@ -828,9 +870,27 @@ function renderBewItem(b) {
 
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
-        ? `<button class="bew-btn bew-btn-presence-done" disabled>✓ Anwesenheit bestätigt</button>`
-        : `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${(b.jobber_name || '').replace(/'/g,"\\'")}')">Anwesenheit bestätigen ✓</button>`)
+        ? `<button class="bew-btn bew-btn-presence-done" disabled>✓ Anwesenheit & Bezahlung bestätigt</button>`
+        : `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${(b.jobber_name || '').replace(/'/g,"\\'")}')">✓ Anwesenheit & Bezahlung bestätigen</button>`)
     : '';
+
+  // Geburtsdatum formatieren
+  let gebStr = '';
+  if (profile?.geburtsdatum) {
+    const geb = new Date(profile.geburtsdatum);
+    const heute = new Date();
+    let alter = heute.getFullYear() - geb.getFullYear();
+    const m = heute.getMonth() - geb.getMonth();
+    if (m < 0 || (m === 0 && heute.getDate() < geb.getDate())) alter--;
+    gebStr = geb.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' }) + ` (${alter} Jahre)`;
+  }
+
+  const profileDetails = (profile?.adresse || profile?.svnummer || gebStr) ? `
+    <div class="bew-item-profile">
+      ${gebStr             ? `<span class="bew-profile-field">🎂 ${gebStr}</span>` : ''}
+      ${profile?.adresse   ? `<span class="bew-profile-field">📍 ${profile.adresse}</span>` : ''}
+      ${profile?.svnummer  ? `<span class="bew-profile-field">🪪 SV-Nr.: ${profile.svnummer}</span>` : ''}
+    </div>` : '';
 
   return `
     <div class="bew-item" id="bew-item-${b.id}">
@@ -842,6 +902,7 @@ function renderBewItem(b) {
         </div>
         <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
       </div>
+      ${profileDetails}
       <div class="bew-item-actions" id="bew-actions-${b.id}">
         ${acceptBtn}${rejectBtn}
         <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')">💬 Nachricht senden</button>
@@ -975,7 +1036,7 @@ async function updateBewStatus(bewId, newStatus) {
       actEl.innerHTML =
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">✕ Ablehnen</button>` +
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')">💬 Nachricht senden</button>` +
-        `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '', '', '')">Anwesenheit bestätigen ✓</button>`;
+        `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '', '', '')">✓ Anwesenheit & Bezahlung bestätigen</button>`;
     }
   }
   loadInserate();
