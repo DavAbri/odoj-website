@@ -608,6 +608,18 @@ async function sendMessage() {
   if (error) { alert('Fehler beim Senden: ' + error.message); return; }
   await loadMessages();
 
+  // E-Mail-Benachrichtigung an Empfänger (fire & forget)
+  if (empfaengerId) {
+    const job = document.getElementById('chat-win-sub')?.textContent || '';
+    const senderProfile = await odojGetProfile(_chatSession.user.id);
+    const senderName = senderProfile
+      ? ((senderProfile.vorname || '') + ' ' + (senderProfile.nachname || '')).trim() || _chatSession.user.email
+      : _chatSession.user.email;
+    odojSb.functions.invoke('send-email', {
+      body: { type: 'new_message', recipientId: empfaengerId, senderName, jobTitel: job, bewId: _activeBewId }
+    }).catch(() => {});
+  }
+
   // Konversationsliste aktualisieren (Preview)
   const convEl = document.getElementById('conv-' + _activeBewId);
   if (convEl) {

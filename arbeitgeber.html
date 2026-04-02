@@ -952,6 +952,20 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   });
   if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
 
+  // E-Mail an Jobber mit Bewertungslink (fire & forget)
+  if (jobberId) {
+    const { data: agProfile } = await odojSb.from('Profile').select('firmenname').eq('user_id', agId).single();
+    odojSb.functions.invoke('send-email', {
+      body: {
+        type:        'work_confirmed',
+        recipientId: jobberId,
+        firmenname:  agProfile?.firmenname || '',
+        jobTitel:    jobTitel,
+        bewId:       bewId
+      }
+    }).catch(() => {});
+  }
+
   if (btn) {
     btn.textContent = '✓ Anwesenheit bestätigt';
     btn.className = 'bew-btn bew-btn-presence-done';

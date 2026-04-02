@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bewertung abgeben – ODOJ</title>
+<meta name="description" content="Wie war deine Erfahrung mit ODOJ? Gib uns dein Feedback.">
+<link rel="stylesheet" href="shared.css">
+<style>
+.bew-bg {
+  min-height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 72px;
+  position: relative;
+  overflow: hidden;
+}
+.bew-bg-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+  pointer-events: none;
+}
+.bew-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(232,160,32,.14) 0%, transparent 70%);
+  top: -80px; right: -80px;
+  pointer-events: none;
+}
+.bew-card {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  padding: 48px 44px 40px;
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 24px 80px rgba(0,0,0,.32);
+}
+.bew-logo-wrap { text-align: center; margin-bottom: 8px; }
+.bew-logo {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 28px; font-weight: 800;
+  color: var(--navy); text-decoration: none;
+  letter-spacing: -.5px;
+}
+.bew-logo span { color: var(--accent); }
+.bew-subtitle {
+  text-align: center;
+  font-size: 13px; color: var(--text-lt);
+  font-weight: 300; margin-bottom: 32px;
+}
+.bew-job-box {
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  padding: 14px 16px;
+  margin-bottom: 28px;
+  font-size: 13px; color: var(--text-mid);
+  line-height: 1.6;
+}
+.bew-job-box strong { color: var(--navy); font-weight: 700; }
+
+/* ── STERNE ── */
+.stars-label {
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--text-lt); margin-bottom: 12px;
+  display: block;
+}
+.stars-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.star-btn {
+  font-size: 36px;
+  background: none; border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform .15s;
+  line-height: 1;
+  filter: grayscale(1) opacity(.35);
+}
+.star-btn:hover,
+.star-btn.active { filter: none; transform: scale(1.15); }
+.stars-hint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-lt);
+  min-height: 20px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  transition: color .2s;
+}
+
+/* ── KOMMENTAR ── */
+.bew-field { margin-bottom: 18px; }
+.bew-field label {
+  display: block;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--text-lt); margin-bottom: 6px;
+}
+.bew-field textarea {
+  width: 100%;
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  padding: 12px 14px;
+  outline: none;
+  resize: vertical;
+  min-height: 90px;
+  transition: border-color .2s, background .2s;
+  box-sizing: border-box;
+}
+.bew-field textarea:focus { border-color: var(--accent); background: var(--white); }
+
+.bew-submit {
+  width: 100%;
+  background: var(--accent);
+  color: var(--navy);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+  padding: 15px; border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+}
+.bew-submit:hover:not(:disabled) { background: var(--accent-lt); transform: translateY(-1px); }
+.bew-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ── SUCCESS ── */
+.bew-success {
+  text-align: center;
+  padding: 16px 0 8px;
+  display: none;
+}
+.bew-success-icon {
+  width: 72px; height: 72px;
+  background: #E6F5EE; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px; font-size: 30px;
+}
+.bew-success h3 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px; font-weight: 800;
+  color: var(--navy); margin-bottom: 10px;
+}
+.bew-success p { font-size: 14px; color: var(--text-lt); line-height: 1.65; }
+.bew-success a {
+  display: inline-block; margin-top: 24px;
+  color: var(--accent); font-weight: 700;
+  font-size: 14px; text-decoration: none;
+}
+.bew-success a:hover { text-decoration: underline; }
+
+.bew-error {
+  background: #FFF0F0; border: 1px solid #FFBBBB;
+  color: #C0392B; font-size: 13px;
+  padding: 10px 14px; border-radius: var(--r-sm);
+  margin-bottom: 14px; display: none;
+}
+
+@media (max-width: 540px) {
+  .bew-card { padding: 32px 24px 28px; }
+  .star-btn { font-size: 30px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+</div>
+
+<div class="bew-bg">
+  <div class="bew-bg-grid"></div>
+  <div class="bew-glow"></div>
+
+  <div class="bew-card">
+    <div class="bew-logo-wrap">
+      <a href="index.html" class="bew-logo">O<span>D</span>OJ</a>
+    </div>
+    <p class="bew-subtitle">Dein Feedback hilft uns, besser zu werden</p>
+
+    <!-- Formular -->
+    <div id="bew-form">
+      <div id="bew-job-box" class="bew-job-box" style="display:none"></div>
+
+      <span class="stars-label" style="text-align:center;display:block">Wie zufrieden warst du mit ODOJ als Vermittler?</span>
+      <div class="stars-row" id="stars-row">
+        <button class="star-btn" data-value="1" onclick="setStar(1)" title="Schlecht">⭐</button>
+        <button class="star-btn" data-value="2" onclick="setStar(2)" title="Nicht so gut">⭐</button>
+        <button class="star-btn" data-value="3" onclick="setStar(3)" title="Ok">⭐</button>
+        <button class="star-btn" data-value="4" onclick="setStar(4)" title="Gut">⭐</button>
+        <button class="star-btn" data-value="5" onclick="setStar(5)" title="Sehr gut">⭐</button>
+      </div>
+      <div class="stars-hint" id="stars-hint"></div>
+
+      <div class="bew-field">
+        <label>Kommentar (optional)</label>
+        <textarea id="bew-kommentar" placeholder="Was lief gut? Was können wir besser machen?"></textarea>
+      </div>
+
+      <div class="bew-error" id="bew-error"></div>
+      <button class="bew-submit" id="bew-submit-btn" onclick="submitBewertung()" disabled>Bewertung abgeben</button>
+    </div>
+
+    <!-- Erfolg -->
+    <div class="bew-success" id="bew-success">
+      <div class="bew-success-icon">🙏</div>
+      <h3>Vielen Dank!</h3>
+      <p>Dein Feedback hilft uns, ODOJ stetig zu verbessern.<br>Wir schätzen deine Zeit sehr!</p>
+      <a href="jobs.html">← Zurück zu den Jobs</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+const STAR_HINTS = ['', 'Schlecht', 'Nicht so gut', 'Ok', 'Gut', 'Sehr gut!'];
+let _selectedStar = 0;
+let _bewId        = null;
+let _session      = null;
+
+const params = new URLSearchParams(location.search);
+_bewId = params.get('bew');
+const preselect = parseInt(params.get('sterne') || '0', 10);
+
+// Sterne-Logik
+function setStar(n) {
+  _selectedStar = n;
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.value, 10) <= n);
+  });
+  document.getElementById('stars-hint').textContent = STAR_HINTS[n] || '';
+  document.getElementById('bew-submit-btn').disabled = false;
+}
+
+function hoverStar(n) {
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.value, 10) <= n);
+  });
+  document.getElementById('stars-hint').textContent = STAR_HINTS[n] || '';
+}
+
+function leaveStar() {
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.value, 10) <= _selectedStar);
+  });
+  document.getElementById('stars-hint').textContent = STAR_HINTS[_selectedStar] || '';
+}
+
+document.querySelectorAll('.star-btn').forEach(btn => {
+  const n = parseInt(btn.dataset.value, 10);
+  btn.addEventListener('mouseenter', () => hoverStar(n));
+  btn.addEventListener('mouseleave', leaveStar);
+});
+
+// Job-Info laden
+async function loadJobInfo() {
+  if (!_bewId) return;
+  const { data: bew } = await odojSb.from('bewerbungen').select('job_id, jobber_id').eq('id', _bewId).single();
+  if (!bew) return;
+  if (bew.job_id) {
+    const { data: job } = await odojSb.from('jobs').select('titel, firmenname, datum').eq('id', bew.job_id).single();
+    if (job) {
+      const datum = job.datum
+        ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
+        : '';
+      const box = document.getElementById('bew-job-box');
+      box.innerHTML = `<strong>${job.titel}</strong> bei ${job.firmenname || '–'}${datum ? '<br>' + datum : ''}`;
+      box.style.display = 'block';
+    }
+  }
+}
+
+// Bewertung absenden
+async function submitBewertung() {
+  if (!_selectedStar) return;
+
+  const btn = document.getElementById('bew-submit-btn');
+  const errEl = document.getElementById('bew-error');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Wird gespeichert…';
+
+  const kommentar = document.getElementById('bew-kommentar').value.trim();
+
+  // Prüfen ob Bewertung bereits existiert
+  if (_bewId) {
+    const { data: existing } = await odojSb.from('bewertungen').select('id').eq('bewerbung_id', _bewId).maybeSingle();
+    if (existing) {
+      document.getElementById('bew-form').style.display = 'none';
+      document.getElementById('bew-success').style.display = 'block';
+      return;
+    }
+  }
+
+  const insertData = {
+    sterne:    _selectedStar,
+    kommentar: kommentar || null,
+    erstellt_am: new Date().toISOString()
+  };
+  if (_bewId) insertData.bewerbung_id = _bewId;
+  if (_session) insertData.jobber_id = _session.user.id;
+
+  const { error } = await odojSb.from('bewertungen').insert(insertData);
+
+  if (error) {
+    errEl.textContent = 'Fehler beim Speichern: ' + error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Bewertung abgeben';
+    return;
+  }
+
+  document.getElementById('bew-form').style.display = 'none';
+  document.getElementById('bew-success').style.display = 'block';
+}
+
+// Init
+(async () => {
+  _session = await odojGetSession();
+  await loadJobInfo();
+  if (preselect >= 1 && preselect <= 5) setStar(preselect);
+})();
+</script>
+<script src="cookies.js"></script>
+</body>
+</html>
