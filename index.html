@@ -41,12 +41,87 @@
   bottom: 80px; left: 180px;
   pointer-events: none;
 }
-.hero-inner {
+.hero-layout {
   position: relative;
   z-index: 2;
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 56px;
+  align-items: center;
+}
+.hero-inner {
+  position: relative;
+}
+
+/* ── HERO VISUAL (rechte Seite) ── */
+.hero-visual {
+  position: relative;
+  height: 420px;
+  flex-shrink: 0;
+}
+.hv-card {
+  position: absolute;
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px 24px;
+  width: 300px;
+  box-shadow: 0 24px 64px rgba(11,31,58,.38);
+}
+.hv-card-1 { top: 0; right: 0; z-index: 3; }
+.hv-card-2 {
+  top: 175px; right: 28px; z-index: 2;
+  transform: rotate(2deg);
+  opacity: .82;
+}
+.hv-card-3 {
+  top: 295px; right: 10px; z-index: 1;
+  transform: rotate(-1deg);
+  opacity: .55;
+  width: 280px;
+}
+.hv-tag {
+  display: inline-block;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: .3px;
+  margin-bottom: 12px;
+}
+.hv-tag-gastro { background: #FDF3DC; color: #A05000; }
+.hv-tag-bau    { background: #EAF0FA; color: #1C3760; }
+.hv-tag-events { background: #F3EDFD; color: #5B2D9E; }
+.hv-card-row {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; margin-bottom: 8px;
+}
+.hv-titel {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; color: #0B1F3A;
+  margin-bottom: 2px;
+}
+.hv-firma { font-size: 12px; color: #7A8FA8; font-weight: 300; }
+.hv-metas {
+  display: flex; flex-direction: column; gap: 4px;
+  margin: 10px 0 14px;
+}
+.hv-meta { font-size: 12px; color: #3A5070; font-weight: 300; display: flex; align-items: center; gap: 5px; }
+.hv-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 12px; border-top: 1px solid #E8EDF5;
+}
+.hv-pay { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #0B1F3A; }
+.hv-pay span { font-size: 11px; font-weight: 300; color: #7A8FA8; }
+.hv-btn {
+  background: #0B1F3A; color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 7px 14px; border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.hv-badge-new {
+  background: #E8A020; color: #0B1F3A;
+  font-size: 10px; font-weight: 800;
+  padding: 2px 8px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: .5px;
+  flex-shrink: 0;
 }
 .hero-badge {
   display: inline-flex;
@@ -86,8 +161,8 @@
 .hero-sub {
   font-size: 19px;
   color: rgba(255,255,255,.62);
-  max-width: 540px;
-  margin: 0 auto 48px;
+  max-width: 480px;
+  margin-bottom: 48px;
   line-height: 1.65;
   font-weight: 300;
 }
@@ -96,7 +171,6 @@
   gap: 14px;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
 }
 .hero-stats {
   position: absolute;
@@ -304,6 +378,10 @@
 }
 
 /* ── RESPONSIVE ── */
+@media (max-width: 1000px) {
+  .hero-layout { grid-template-columns: 1fr; }
+  .hero-visual { display: none; }
+}
 @media (max-width: 900px) {
   .hero { padding: calc(var(--nav-h) + 40px) 24px 100px; }
   .hero h1 { letter-spacing: -2px; }
@@ -351,16 +429,77 @@
   <div class="hero-glow-a"></div>
   <div class="hero-glow-b"></div>
 
-  <div class="hero-inner">
-    <div class="hero-badge">Vorarlberg &amp; Region – Jobs ab morgen</div>
-    <h1>Dein Tag.<br><em>Dein Job.</em><br>Sofort.</h1>
-    <p class="hero-sub">ODOJ vermittelt flexible Tagesjobs in Gastronomie, Bau, Lager und Events – schnell, unkompliziert und fair bezahlt.</p>
-    <div class="hero-btns">
-      <a href="jobs.html" class="btn btn-accent">
-        Jobs ansehen
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
-      <a href="arbeitgeber.html" class="btn btn-outline">Ich bin Arbeitgeber</a>
+  <div class="hero-layout">
+    <div class="hero-inner">
+      <div class="hero-badge">Vorarlberg &amp; Region – Jobs ab morgen</div>
+      <h1>Dein Tag.<br><em>Dein Job.</em><br>Sofort.</h1>
+      <p class="hero-sub">ODOJ vermittelt flexible Tagesjobs in Gastronomie, Bau, Lager und Events – schnell, unkompliziert und fair bezahlt.</p>
+      <div class="hero-btns">
+        <a href="jobs.html" class="btn btn-accent">
+          Jobs ansehen
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="arbeitgeber.html" class="btn btn-outline">Ich bin Arbeitgeber</a>
+      </div>
+    </div>
+
+    <!-- RECHTE SEITE: gestapelte Job-Card-Vorschau -->
+    <div class="hero-visual" aria-hidden="true">
+
+      <!-- Card 1 – oben, vorne -->
+      <div class="hv-card hv-card-1">
+        <div class="hv-card-row">
+          <span class="hv-tag hv-tag-gastro">🍽 Gastronomie</span>
+          <span class="hv-badge-new">Neu</span>
+        </div>
+        <div class="hv-titel">Servicekraft (m/w/d)</div>
+        <div class="hv-firma">Bergrestaurant Hohenems</div>
+        <div class="hv-metas">
+          <span class="hv-meta">
+            <svg width="12" height="12" fill="none" stroke="#7A8FA8" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Mi, 8. April 2026 · Hohenems
+          </span>
+          <span class="hv-meta">
+            <svg width="12" height="12" fill="none" stroke="#7A8FA8" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            09:00 – 17:00 Uhr
+          </span>
+        </div>
+        <div class="hv-footer">
+          <div class="hv-pay">€ 115 <span>/ Tag</span></div>
+          <div class="hv-btn">Bewerben</div>
+        </div>
+      </div>
+
+      <!-- Card 2 – Mitte, leicht rotiert -->
+      <div class="hv-card hv-card-2">
+        <div class="hv-card-row">
+          <span class="hv-tag hv-tag-bau">🏗 Bau &amp; Handwerk</span>
+        </div>
+        <div class="hv-titel">Hilfsarbeiter Baustelle</div>
+        <div class="hv-firma">Rüf Bau GmbH, Dornbirn</div>
+        <div class="hv-metas">
+          <span class="hv-meta">
+            <svg width="12" height="12" fill="none" stroke="#7A8FA8" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Do, 9. April 2026 · Dornbirn
+          </span>
+        </div>
+        <div class="hv-footer">
+          <div class="hv-pay">€ 130 <span>/ Tag</span></div>
+          <div class="hv-btn">Bewerben</div>
+        </div>
+      </div>
+
+      <!-- Card 3 – unten, fast verdeckt -->
+      <div class="hv-card hv-card-3">
+        <span class="hv-tag hv-tag-events">🎤 Events</span>
+        <div class="hv-titel">Veranstaltungshelfer</div>
+        <div class="hv-firma">Messe Dornbirn</div>
+        <div class="hv-footer">
+          <div class="hv-pay">€ 105 <span>/ Tag</span></div>
+          <div class="hv-btn">Bewerben</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
