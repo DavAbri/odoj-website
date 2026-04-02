@@ -36,6 +36,7 @@
   white-space: nowrap;
 }
 .fbtn:hover, .fbtn.on { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.filter-divider { width: 1px; height: 22px; background: var(--gray-lt); margin: 0 4px; flex-shrink: 0; }
 .filter-count { margin-left: auto; font-size: 13px; color: var(--text-lt); font-weight: 300; }
 
 /* ── JOBS GRID ── */
@@ -330,12 +331,18 @@
 <!-- FILTER BAR -->
 <div class="filter-bar">
   <span class="filter-lbl">Branche:</span>
-  <button class="fbtn on" onclick="filter('alle', this)">Alle</button>
-  <button class="fbtn" onclick="filter('gastro', this)">🍽 Gastronomie</button>
-  <button class="fbtn" onclick="filter('bau', this)">🏗 Bau &amp; Handwerk</button>
-  <button class="fbtn" onclick="filter('lager', this)">📦 Lager &amp; Logistik</button>
-  <button class="fbtn" onclick="filter('events', this)">🎤 Events</button>
-  <span class="filter-count" id="jobCount">6 Jobs gefunden</span>
+  <button class="fbtn on" id="fbtn-branche-alle" onclick="filterBranche('alle', this)">Alle</button>
+  <button class="fbtn" onclick="filterBranche('gastro', this)">🍽 Gastronomie</button>
+  <button class="fbtn" onclick="filterBranche('bau', this)">🏗 Bau &amp; Handwerk</button>
+  <button class="fbtn" onclick="filterBranche('lager', this)">📦 Lager &amp; Logistik</button>
+  <button class="fbtn" onclick="filterBranche('events', this)">🎤 Events</button>
+  <div class="filter-divider"></div>
+  <span class="filter-lbl">Mindestalter:</span>
+  <button class="fbtn on" id="fbtn-alter-alle" onclick="filterAlter(null, this)">Alle</button>
+  <button class="fbtn" onclick="filterAlter(16, this)">Ab 16</button>
+  <button class="fbtn" onclick="filterAlter(18, this)">Ab 18</button>
+  <button class="fbtn" onclick="filterAlter(21, this)">Ab 21</button>
+  <span class="filter-count" id="jobCount">– Jobs gefunden</span>
 </div>
 
 <!-- ARBEITGEBER INFO BANNER (wird per JS eingeblendet) -->
@@ -463,23 +470,41 @@ function showJobsToast(msg, type) {
   setTimeout(() => t.remove(), 3000);
 }
 
-// ── FILTER ──
-function filter(b, btn) {
-  document.querySelectorAll('.fbtn').forEach(x => x.classList.remove('on'));
-  btn.classList.add('on');
+// ── FILTER STATE ──
+let _activeBranche = 'alle';
+let _activeAlter   = null;   // null = alle, 16 / 18 / 21
+
+function _applyFilters() {
   let n = 0;
   document.querySelectorAll('.job-card').forEach(c => {
     const locked = c.dataset.locked === 'true' && !window._odojJobsUnlocked;
-    if (locked) {
-      c.style.display = 'none';
-    } else {
-      const show = b === 'alle' || c.dataset.b === b;
-      c.style.display = show ? 'flex' : 'none';
-      if (show) n++;
-    }
+    if (locked) { c.style.display = 'none'; return; }
+    const brancheOk = _activeBranche === 'alle' || c.dataset.b === _activeBranche;
+    const alter     = parseInt(c.dataset.mindestalter, 10) || 15;
+    const alterOk   = _activeAlter === null || alter <= _activeAlter;
+    const show = brancheOk && alterOk;
+    c.style.display = show ? 'flex' : 'none';
+    if (show) n++;
   });
   document.getElementById('jobCount').textContent = n + ' Job' + (n !== 1 ? 's' : '') + ' gefunden';
 }
+
+function filterBranche(b, btn) {
+  _activeBranche = b;
+  document.querySelectorAll('#fbtn-branche-alle, .fbtn[onclick*="filterBranche"]').forEach(x => x.classList.remove('on'));
+  btn.classList.add('on');
+  _applyFilters();
+}
+
+function filterAlter(alter, btn) {
+  _activeAlter = alter;
+  document.querySelectorAll('#fbtn-alter-alle, .fbtn[onclick*="filterAlter"]').forEach(x => x.classList.remove('on'));
+  btn.classList.add('on');
+  _applyFilters();
+}
+
+// Legacy alias used by URL param code below
+function filter(b, btn) { filterBranche(b, btn); }
 
 // ── CARD KLICK → DETAIL-SEITE ──
 function goToJobDetail(jobId, cardEl) {
@@ -582,7 +607,7 @@ function renderJobCard(job, locked) {
   }
 
   return `
-    <div class="job-card fade-in" data-b="${job.branche}"${lockedAttr} onclick="goToJobDetail('${job.id}', this)">
+    <div class="job-card fade-in" data-b="${job.branche}" data-mindestalter="${job.mindestalter || 15}"${lockedAttr} onclick="goToJobDetail('${job.id}', this)">
       <div class="job-card-top">
         <span class="tag ${b.cls}">${b.label}</span>
         <span class="job-date">${datum} · ${job.ort}</span>
@@ -635,16 +660,8 @@ function renderJobs(jobs, unlocked) {
 
   grid.innerHTML = filteredJobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
 
-  // Filter anwenden
-  const activeBtn = document.querySelector('.fbtn.on');
-  if (activeBtn) {
-    const m = activeBtn.getAttribute('onclick').match(/filter\('(\w+)'/);
-    if (m) filter(m[1], activeBtn);
-  } else {
-    let n = 0;
-    document.querySelectorAll('.job-card').forEach(c => { if (c.style.display !== 'none') n++; });
-    document.getElementById('jobCount').textContent = n + ' Job' + (n !== 1 ? 's' : '') + ' gefunden';
-  }
+  // Filter anwenden (behält aktive Branche + Alter)
+  _applyFilters();
 
   document.querySelectorAll('.job-card.fade-in').forEach(el => obs.observe(el));
 }
