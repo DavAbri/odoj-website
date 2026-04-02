@@ -74,9 +74,15 @@
   padding: 24px;
   display: flex;
   flex-direction: column;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  cursor: pointer;
 }
-.inserat-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); }
+.inserat-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-2px); }
+.inserat-details-link {
+  font-size: 12px; font-weight: 600; color: var(--text-lt);
+  text-decoration: none; transition: color .2s; white-space: nowrap;
+}
+.inserat-details-link:hover { color: var(--navy); }
 .inserat-top {
   display: flex;
   justify-content: space-between;
@@ -736,7 +742,7 @@ function renderInseratCard(j, bewCount, acceptedCount) {
     : '';
 
   return `
-    <div class="inserat-card">
+    <div class="inserat-card" onclick="window.location.href='job-detail.html?id=${j.id}'">
       <div class="inserat-top">
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
           <div class="inserat-titel">${j.titel}</div>
@@ -759,12 +765,13 @@ function renderInseratCard(j, bewCount, acceptedCount) {
           <div class="inserat-stunden">${stunden}</div>
         </div>
         <div class="inserat-card-footer-actions">
+          <a href="job-detail.html?id=${j.id}" class="inserat-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
           <button class="bew-count-badge"
             data-job-id="${j.id}" data-job-titel="${titelEsc}"
-            onclick="openBewerbungen(this.dataset.jobId, this.dataset.jobTitel)">
+            onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel)">
             👤 ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
           </button>
-          <button class="btn-del" onclick="deleteInserat('${j.id}')">Löschen</button>
+          <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}')">Löschen</button>
         </div>
       </div>
     </div>`;
