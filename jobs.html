@@ -481,7 +481,7 @@ function _applyFilters() {
     if (locked) { c.style.display = 'none'; return; }
     const brancheOk = _activeBranche === 'alle' || c.dataset.b === _activeBranche;
     const alter     = parseInt(c.dataset.mindestalter, 10) || 15;
-    const alterOk   = _activeAlter === null || alter <= _activeAlter;
+    const alterOk   = _activeAlter === null || alter >= _activeAlter;
     const show = brancheOk && alterOk;
     c.style.display = show ? 'flex' : 'none';
     if (show) n++;
