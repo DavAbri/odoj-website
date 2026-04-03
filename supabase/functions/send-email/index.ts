@@ -5,7 +5,9 @@ const RESEND_API_KEY      = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SITE_URL            = Deno.env.get("SITE_URL") || "https://odoj.at";
-const FROM                = "ODOJ <noreply@odoj.at>";
+// Für Tests: "onboarding@resend.dev" verwenden (kein Domain-Verify nötig)
+// Für Produktion: eigene verifizierte Domain eintragen, z.B. "noreply@odoj.at"
+const FROM                = Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

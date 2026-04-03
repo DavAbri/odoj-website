@@ -342,7 +342,18 @@
 }
 .bew-item:hover { border-color: var(--sky-lt); }
 .bew-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
-.bew-item-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+.bew-item-name {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: color .2s;
+}
+.bew-item-name:hover { color: var(--accent); }
+.bew-item-name::after {
+  content: '›';
+  font-size: 14px; opacity: 0.45;
+  transition: opacity .2s, transform .2s;
+}
+.bew-item-name:hover::after { opacity: 1; transform: translateX(2px); }
 .bew-item-email { font-size: 13px; color: var(--text-lt); margin-top: 2px; }
 .bew-item-date  { font-size: 12px; color: var(--text-lt); font-weight: 300; margin-top: 3px; }
 .bew-st-badge {
@@ -360,6 +371,83 @@
   padding: 10px 14px; margin-bottom: 10px;
 }
 .bew-profile-field { font-size: 13px; color: var(--text-mid); font-weight: 400; }
+
+/* ── BEWERBER-PROFIL-MODAL ── */
+.jp-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(10,20,40,.55);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .22s;
+}
+.jp-overlay.open { opacity: 1; pointer-events: all; }
+.jp-modal {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  width: 100%; max-width: 460px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.30);
+  overflow: hidden;
+  transform: translateY(18px) scale(.97);
+  transition: transform .22s;
+}
+.jp-overlay.open .jp-modal { transform: none; }
+.jp-modal-header {
+  background: var(--navy);
+  padding: 24px 28px 20px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.jp-avatar {
+  width: 52px; height: 52px;
+  background: rgba(255,255,255,.12);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800; color: #fff;
+  flex-shrink: 0;
+}
+.jp-modal-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px; font-weight: 800; color: #fff;
+  margin-bottom: 3px;
+}
+.jp-modal-email { font-size: 13px; color: rgba(255,255,255,.65); }
+.jp-modal-close {
+  background: rgba(255,255,255,.12); border: none;
+  color: #fff; font-size: 18px; line-height: 1;
+  width: 32px; height: 32px; border-radius: 50%;
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.jp-modal-close:hover { background: rgba(255,255,255,.22); }
+.jp-modal-body { padding: 24px 28px 28px; }
+.jp-section-title {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .8px;
+  color: var(--text-lt); margin: 0 0 12px;
+}
+.jp-fields { display: flex; flex-direction: column; gap: 10px; }
+.jp-field {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  background: var(--off);
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--gray-lt);
+}
+.jp-field-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.jp-field-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--text-lt); margin-bottom: 2px;
+}
+.jp-field-value { font-size: 14px; color: var(--text); font-weight: 500; }
+.jp-field-sub { font-size: 12px; color: var(--text-lt); margin-top: 2px; font-weight: 300; }
+.jp-loading {
+  text-align: center; padding: 40px;
+  font-size: 14px; color: var(--text-lt);
+}
 .bew-item-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .bew-btn {
   font-size: 13px; font-weight: 600;
@@ -661,6 +749,25 @@
   </div>
 </footer>
 
+<!-- BEWERBER-PROFIL-MODAL -->
+<div class="jp-overlay" id="jp-overlay" onclick="closeJobberProfile(event)">
+  <div class="jp-modal" id="jp-modal">
+    <div class="jp-modal-header">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="jp-avatar" id="jp-avatar">?</div>
+        <div>
+          <div class="jp-modal-name" id="jp-modal-name">–</div>
+          <div class="jp-modal-email" id="jp-modal-email">–</div>
+        </div>
+      </div>
+      <button class="jp-modal-close" onclick="closeJobberProfile()">✕</button>
+    </div>
+    <div class="jp-modal-body" id="jp-modal-body">
+      <div class="jp-loading">Daten werden geladen…</div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
 <script>
@@ -896,7 +1003,9 @@ function renderBewItem(b, profile) {
     <div class="bew-item" id="bew-item-${b.id}">
       <div class="bew-item-header">
         <div>
-          <div class="bew-item-name">${b.jobber_name || 'Unbekannt'}</div>
+          <div class="bew-item-name" onclick="showJobberProfile('${b.jobber_id || ''}', '${(b.jobber_name || 'Unbekannt').replace(/'/g,"\\'")}', '${(b.jobber_email || '').replace(/'/g,"\\'")}')">
+            ${b.jobber_name || 'Unbekannt'}
+          </div>
           <div class="bew-item-email">${b.jobber_email || ''}</div>
           <div class="bew-item-date">Beworben am ${dateStr}</div>
         </div>
@@ -1215,6 +1324,100 @@ const obs = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80); });
 }, { threshold: 0.08 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+// ── BEWERBER-PROFIL-MODAL ──────────────────────────────────────
+
+function escJ(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _berechneAlterStr(geburtsdatum) {
+  if (!geburtsdatum) return null;
+  const geb = new Date(geburtsdatum);
+  const heute = new Date();
+  let alter = heute.getFullYear() - geb.getFullYear();
+  const md = heute.getMonth() - geb.getMonth();
+  if (md < 0 || (md === 0 && heute.getDate() < geb.getDate())) alter--;
+  return alter;
+}
+
+async function showJobberProfile(jobberId, jobberName, jobberEmail) {
+  const overlay = document.getElementById('jp-overlay');
+  const body    = document.getElementById('jp-modal-body');
+
+  // Initialen im Avatar
+  const initials = (jobberName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.getElementById('jp-avatar').textContent    = initials;
+  document.getElementById('jp-modal-name').textContent = jobberName || 'Unbekannt';
+  document.getElementById('jp-modal-email').textContent = jobberEmail || '';
+  body.innerHTML = '<div class="jp-loading">Daten werden geladen…</div>';
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // ESC schließt
+  document._jpEsc = (e) => { if (e.key === 'Escape') closeJobberProfile(); };
+  document.addEventListener('keydown', document._jpEsc);
+
+  // Profildaten laden
+  const { data: profile } = await odojSb
+    .from('Profile')
+    .select('vorname, nachname, geburtsdatum, adresse, adresse_plz, adresse_ort, svnummer')
+    .eq('user_id', jobberId)
+    .single();
+
+  const fields = [];
+
+  // Alter / Geburtsdatum
+  if (profile?.geburtsdatum) {
+    const alter = _berechneAlterStr(profile.geburtsdatum);
+    const gebFormatted = new Date(profile.geburtsdatum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    fields.push({ icon: '🎂', label: 'Geburtsdatum', value: gebFormatted, sub: alter !== null ? `${alter} Jahre alt` : '' });
+  }
+
+  // Adresse
+  const adresseTeile = [profile?.adresse, profile?.adresse_plz, profile?.adresse_ort].filter(Boolean);
+  const adresseStr = adresseTeile.length ? adresseTeile.join(', ') : (profile?.adresse || null);
+  if (adresseStr) {
+    fields.push({ icon: '📍', label: 'Wohnadresse', value: escJ(adresseStr) });
+  }
+
+  // SV-Nummer
+  if (profile?.svnummer) {
+    fields.push({ icon: '🪪', label: 'SV-Nummer', value: escJ(profile.svnummer) });
+  }
+
+  // E-Mail
+  if (jobberEmail) {
+    fields.push({ icon: '✉️', label: 'E-Mail', value: escJ(jobberEmail) });
+  }
+
+  if (fields.length === 0) {
+    body.innerHTML = `<p style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px 0">Dieser Bewerber hat noch keine weiteren Profildaten hinterlegt.</p>`;
+    return;
+  }
+
+  body.innerHTML = `
+    <p class="jp-section-title">Profildaten</p>
+    <div class="jp-fields">
+      ${fields.map(f => `
+        <div class="jp-field">
+          <span class="jp-field-icon">${f.icon}</span>
+          <div>
+            <div class="jp-field-label">${f.label}</div>
+            <div class="jp-field-value">${f.value}</div>
+            ${f.sub ? `<div class="jp-field-sub">${f.sub}</div>` : ''}
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function closeJobberProfile(e) {
+  if (e && e.target !== document.getElementById('jp-overlay')) return;
+  document.getElementById('jp-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  if (document._jpEsc) { document.removeEventListener('keydown', document._jpEsc); delete document._jpEsc; }
+}
 </script>
 <script src="cookies.js"></script>
 </body>
