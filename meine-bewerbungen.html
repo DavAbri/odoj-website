@@ -408,38 +408,22 @@ async function loadMeineBewerbungen() {
   document.getElementById('cnt-abgelehnt').textContent   = abgelehnt.length;
   document.getElementById('cnt-abgeschlossen').textContent = abgeschlossen.length;
 
-  // ── Spalte 1: Offen (ausstehend) ──
-  const colOffen = document.getElementById('col-offen');
-  if (offen.length === 0) {
-    colOffen.innerHTML = renderEmpty('✅', 'Keine offenen Bewerbungen');
-  } else {
-    const VISIBLE = 2;
-    const visibleCards = offen.slice(0, VISIBLE).map(b => renderCard(b, jobMap[b.job_id])).join('');
-    const hiddenCards  = offen.slice(VISIBLE).map(b => renderCard(b, jobMap[b.job_id])).join('');
-    colOffen.innerHTML = visibleCards
-      + (hiddenCards ? `<div id="mj-offen-more" style="display:none">${hiddenCards}</div>
-          <button class="mj-mehr-btn" id="mj-mehr-btn" onclick="toggleOffenMore()">
-            Alle ${offen.length} anzeigen
-          </button>` : '');
+  // Hilfsfunktion: Spalte mit "mehr anzeigen" befüllen
+  function fillCol(colId, items, emptyIcon, emptyText, cardOpts) {
+    const col = document.getElementById(colId);
+    if (items.length === 0) { col.innerHTML = renderEmpty(emptyIcon, emptyText); return; }
+    const visible = items.slice(0, 2).map(b => renderCard(b, jobMap[b.job_id], cardOpts)).join('');
+    const hidden  = items.slice(2).map(b => renderCard(b, jobMap[b.job_id], cardOpts)).join('');
+    col.innerHTML = visible + (hidden
+      ? `<div id="more-${colId}" style="display:none">${hidden}</div>
+         <button class="mj-mehr-btn" onclick="showMore('${colId}',this)">Alle ${items.length} anzeigen</button>`
+      : '');
   }
 
-  // ── Spalte 2: Anstehend (angenommen) ──
-  const colAnstehend = document.getElementById('col-anstehend');
-  colAnstehend.innerHTML = anstehend.length === 0
-    ? renderEmpty('📅', 'Noch keine angenommenen Einsätze')
-    : anstehend.map(b => renderCard(b, jobMap[b.job_id], { showChat: true })).join('');
-
-  // ── Spalte 3: Abgelehnt ──
-  const colAbgelehnt = document.getElementById('col-abgelehnt');
-  colAbgelehnt.innerHTML = abgelehnt.length === 0
-    ? renderEmpty('–', 'Keine abgelehnten Bewerbungen')
-    : abgelehnt.map(b => renderCard(b, jobMap[b.job_id], { muted: true })).join('');
-
-  // ── Spalte 4: Abgeschlossen ──
-  const colAbgeschlossen = document.getElementById('col-abgeschlossen');
-  colAbgeschlossen.innerHTML = abgeschlossen.length === 0
-    ? renderEmpty('🏁', 'Noch keine abgeschlossenen Einsätze')
-    : abgeschlossen.map(b => renderCard(b, jobMap[b.job_id], { showChat: true, muted: true })).join('');
+  fillCol('col-offen',        offen,        '✅', 'Keine offenen Bewerbungen',         {});
+  fillCol('col-anstehend',    anstehend,    '📅', 'Noch keine angenommenen Einsätze',  { showChat: true });
+  fillCol('col-abgelehnt',    abgelehnt,    '–',  'Keine abgelehnten Bewerbungen',     { muted: true });
+  fillCol('col-abgeschlossen',abgeschlossen,'🏁', 'Noch keine abgeschlossenen Einsätze',{ showChat: true, muted: true });
 
   document.getElementById('mj-board').style.display = 'grid';
 
@@ -450,14 +434,10 @@ async function loadMeineBewerbungen() {
   document.querySelectorAll('.mj-card.fade-in').forEach(el => obs.observe(el));
 }
 
-function toggleOffenMore() {
-  const more = document.getElementById('mj-offen-more');
-  const btn  = document.getElementById('mj-mehr-btn');
-  if (!more) return;
-  if (more.style.display === 'none') {
-    more.style.display = 'block';
-    btn.style.display = 'none';
-  }
+function showMore(colId, btn) {
+  const more = document.getElementById('more-' + colId);
+  if (more) more.style.display = 'block';
+  if (btn)  btn.style.display  = 'none';
 }
 
 loadMeineBewerbungen();
