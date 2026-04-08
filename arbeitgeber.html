@@ -572,6 +572,19 @@
           </div>
           <div class="if-row">
             <div class="if-field">
+              <label>Pause *</label>
+              <select id="ins-pause" required onchange="checkPauseWarning()">
+                <option value="0">Keine Pause</option>
+                <option value="15">15 Minuten</option>
+                <option value="30" selected>30 Minuten</option>
+                <option value="45">45 Minuten</option>
+                <option value="60">60 Minuten</option>
+              </select>
+            </div>
+          </div>
+          <div id="ins-pause-warn" style="display:none;background:#FFF4E0;border:1.5px solid #F5BE5A;color:#7A4A00;font-size:13px;padding:12px 16px;border-radius:8px;margin-bottom:14px;line-height:1.6"></div>
+          <div class="if-row">
+            <div class="if-field">
               <label>Tagesgehalt in € *</label>
               <input type="number" id="ins-gehalt" min="0" step="0.01" placeholder="z.B. 120" required>
               <div class="if-hint">Gesamtlohn für den ganzen Tag</div>
@@ -1006,7 +1019,6 @@ function renderBewItem(b, profile) {
           <div class="bew-item-name" onclick="showJobberProfile('${b.jobber_id || ''}', '${(b.jobber_name || 'Unbekannt').replace(/'/g,"\\'")}', '${(b.jobber_email || '').replace(/'/g,"\\'")}')">
             ${b.jobber_name || 'Unbekannt'}
           </div>
-          <div class="bew-item-email">${b.jobber_email || ''}</div>
           <div class="bew-item-date">Beworben am ${dateStr}</div>
         </div>
         <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
@@ -1192,6 +1204,27 @@ function calcStunden() {
   let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
   if (mins < 0) mins += 24 * 60; // Nachtschicht
   document.getElementById('ins-stunden').value = Math.round(mins / 60 * 10) / 10;
+  checkPauseWarning();
+}
+
+// ── PAUSE-PFLICHT PRÜFEN (§11 AZG Österreich) ──
+function checkPauseWarning() {
+  const stunden = parseFloat(document.getElementById('ins-stunden').value) || 0;
+  const pause   = parseInt(document.getElementById('ins-pause').value, 10);
+  const warnEl  = document.getElementById('ins-pause-warn');
+  if (!warnEl) return true;
+
+  if (stunden >= 9 && pause < 45) {
+    warnEl.innerHTML = '⚠️ <strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von mehr als 9 Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>45 Minuten</strong> vor. Bitte wähle eine entsprechende Pause.';
+    warnEl.style.display = 'block';
+    return false;
+  } else if (stunden >= 6 && pause < 30) {
+    warnEl.innerHTML = '⚠️ <strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von 6 oder mehr Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>30 Minuten</strong> vor. Bitte wähle eine entsprechende Pause.';
+    warnEl.style.display = 'block';
+    return false;
+  }
+  warnEl.style.display = 'none';
+  return true;
 }
 
 // ── JOB SPEICHERN ──
@@ -1214,10 +1247,18 @@ async function submitInserat(e) {
   const ort     = document.getElementById('ins-ort').value.trim();
   const plaetze      = parseInt(document.getElementById('ins-plaetze').value, 10);
   const mindestalter = parseInt(document.getElementById('ins-mindestalter').value, 10) || 18;
+  const pause        = parseInt(document.getElementById('ins-pause').value, 10) || 0;
   const beschr  = document.getElementById('ins-beschr').value.trim();
 
   if (!titel || !branche || !datum || !von || !bis || !gehalt || !adresse || !ort || plaetze < 1) {
     errEl.textContent = 'Bitte alle Pflichtfelder ausfüllen.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Pause-Pflicht prüfen
+  if (!checkPauseWarning()) {
+    errEl.textContent = 'Bitte eine gesetzeskonforme Pause auswählen (siehe Hinweis oben).';
     errEl.style.display = 'block';
     return;
   }
@@ -1233,7 +1274,7 @@ async function submitInserat(e) {
     uhrzeit_bis:   bis,
     stundenanzahl: stunden,
     tagesgehalt:   gehalt,
-    adresse, ort, plaetze, mindestalter,
+    adresse, ort, plaetze, mindestalter, pause,
     beschreibung:  beschr,
     status:        'aktiv'
   });

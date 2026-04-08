@@ -43,33 +43,86 @@ async function odojCountUnread(userId) {
   } catch (_) { return 0; }
 }
 
-// Unread-Dot aktualisieren
-function odojUpdateUnreadDot(hasUnread) {
-  const link = document.querySelector('#nav-nachrichten a');
-  if (link) {
-    let dot = link.querySelector('.odoj-unread-dot');
-    if (hasUnread && !dot) {
-      dot = document.createElement('span');
-      dot.className = 'odoj-unread-dot';
-      link.appendChild(dot);
-    } else if (!hasUnread && dot) {
-      dot.remove();
+// Ausstehende Bewerbungen für Arbeitgeber zählen
+async function odojCountPendingBewerbungen(userId) {
+  try {
+    const { count } = await odojSb
+      .from('bewerbungen')
+      .select('id', { count: 'exact', head: true })
+      .eq('arbeitgeber_id', userId)
+      .eq('status', 'ausstehend');
+    return count || 0;
+  } catch (_) { return 0; }
+}
+
+// Badge (Zahl) in der Desktop-Nav aktualisieren
+function _setNavBadge(liId, count) {
+  const li = document.getElementById(liId);
+  if (!li) return;
+  const a = li.querySelector('a');
+  if (!a) return;
+  let badge = a.querySelector('.odoj-nav-badge');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'odoj-nav-badge';
+      a.appendChild(badge);
     }
-  }
-  const mLink = document.getElementById('nav-mobile-nachrichten');
-  if (mLink) {
-    const base = 'Nachrichten';
-    const dot = mLink.querySelector('.odoj-unread-dot-mobile');
-    if (hasUnread && !dot) {
-      const s = document.createElement('span');
-      s.className = 'odoj-unread-dot-mobile';
-      s.style.cssText = 'display:inline-block;width:7px;height:7px;background:#e74c3c;border-radius:50%;margin-left:6px;vertical-align:middle';
-      mLink.appendChild(s);
-    } else if (!hasUnread && dot) {
-      dot.remove();
-    }
+    badge.textContent = count > 99 ? '99+' : String(count);
+  } else if (badge) {
+    badge.remove();
   }
 }
+
+// Badge in der Mobile-Nav aktualisieren
+function _setMobileNavBadge(elId, count) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  let badge = el.querySelector('.odoj-nav-badge-mobile');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'odoj-nav-badge-mobile';
+      el.appendChild(badge);
+    }
+    badge.textContent = count > 99 ? '99+' : String(count);
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+// Nachrichten-Badge aktualisieren (wird auch vom Polling gerufen)
+function odojUpdateUnreadDot(count) {
+  _setNavBadge('nav-nachrichten', count);
+  _setMobileNavBadge('nav-mobile-nachrichten', count);
+}
+
+// Badge-CSS einmalig injizieren
+(function injectBadgeCss() {
+  if (document.getElementById('odoj-badge-css')) return;
+  const s = document.createElement('style');
+  s.id = 'odoj-badge-css';
+  s.textContent = `
+    .odoj-nav-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #e74c3c; color: #fff;
+      font-size: 10px; font-weight: 700; line-height: 1;
+      min-width: 17px; height: 17px; border-radius: 100px;
+      padding: 0 4px; margin-left: 5px; vertical-align: middle;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      position: relative; top: -1px;
+    }
+    .odoj-nav-badge-mobile {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #e74c3c; color: #fff;
+      font-size: 10px; font-weight: 700; line-height: 1;
+      min-width: 17px; height: 17px; border-radius: 100px;
+      padding: 0 4px; margin-left: 7px; vertical-align: middle;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  `;
+  document.head.appendChild(s);
+})();
 
 async function odojInitNav() {
   const session = await odojGetSession();
@@ -106,70 +159,62 @@ async function odojInitNav() {
       '<a href="profil.html" class="nav-user-name-mobile">\u2713 ' + displayName + '</a>' +
       '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen \u2192</a>';
 
-    // Unread-Count
-    const unreadCount = await odojCountUnread(session.user.id);
-    const hasUnread   = unreadCount > 0;
+    // Zähler laden
+    const unreadCount   = await odojCountUnread(session.user.id);
+    const pendingBewCount = rolle === 'arbeitgeber'
+      ? await odojCountPendingBewerbungen(session.user.id)
+      : 0;
 
     // ── Desktop: Statische Links anpassen und rollenspezifische einfügen ──
     const navAuthLi = document.getElementById('nav-auth');
 
-    // Statische Links nach Rolle ein-/ausblenden
     if (navAuthLi && navAuthLi.parentElement) {
       navAuthLi.parentElement.querySelectorAll('li a').forEach(a => {
         const href = a.getAttribute('href');
         if (rolle === 'jobber') {
-          // Jobber sieht "Jobs finden", aber nicht "Für Arbeitgeber" und "Über uns"
-          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
-            a.parentElement.style.display = 'none';
-          }
+          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.parentElement.style.display = 'none';
         } else if (rolle === 'arbeitgeber') {
-          // Arbeitgeber sieht weder "Jobs finden" noch "Für Arbeitgeber" noch "Über uns"
-          if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
-            a.parentElement.style.display = 'none';
-          }
+          if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.parentElement.style.display = 'none';
         }
       });
     }
 
     if (navAuthLi && navAuthLi.parentElement && !document.getElementById('nav-nachrichten')) {
-      // Nachrichten
+      // Nachrichten-Link
       const msgLi = document.createElement('li');
       msgLi.id = 'nav-nachrichten';
-      msgLi.innerHTML = '<a href="chat.html" style="position:relative">Nachrichten' +
-        (hasUnread ? '<span class="odoj-unread-dot"></span>' : '') + '</a>';
+      msgLi.innerHTML = '<a href="chat.html" style="position:relative">Nachrichten</a>';
       navAuthLi.parentElement.insertBefore(msgLi, navAuthLi);
+      if (unreadCount > 0) _setNavBadge('nav-nachrichten', unreadCount);
 
-      // Jobber: "Meine Bewerbungen" vor Nachrichten
+      // Jobber: "Meine Bewerbungen"
       if (rolle === 'jobber' && !document.getElementById('nav-meine-bew')) {
         const mjLi = document.createElement('li');
         mjLi.id = 'nav-meine-bew';
         mjLi.innerHTML = '<a href="meine-bewerbungen.html">Meine Bewerbungen</a>';
         navAuthLi.parentElement.insertBefore(mjLi, msgLi);
       }
-      // Arbeitgeber: "Meine Inserate" vor Nachrichten
+
+      // Arbeitgeber: "Meine Inserate" mit Badge für ausstehende Bewerbungen
       if (rolle === 'arbeitgeber' && !document.getElementById('nav-meine-inserate')) {
         const miLi = document.createElement('li');
         miLi.id = 'nav-meine-inserate';
         miLi.innerHTML = '<a href="arbeitgeber.html">Meine Inserate</a>';
         navAuthLi.parentElement.insertBefore(miLi, msgLi);
+        if (pendingBewCount > 0) _setNavBadge('nav-meine-inserate', pendingBewCount);
       }
     }
 
     // ── Mobile: Statische Links anpassen und rollenspezifische einfügen ──
     const navMobile = document.getElementById('navMobile');
 
-    // Statische Mobile-Links nach Rolle ein-/ausblenden
     if (navMobile) {
       navMobile.querySelectorAll('a').forEach(a => {
         const href = a.getAttribute('href');
         if (rolle === 'jobber') {
-          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
-            a.style.display = 'none';
-          }
+          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.style.display = 'none';
         } else if (rolle === 'arbeitgeber') {
-          if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') {
-            a.style.display = 'none';
-          }
+          if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.style.display = 'none';
         }
       });
     }
@@ -180,12 +225,7 @@ async function odojInitNav() {
       msgA.id          = 'nav-mobile-nachrichten';
       msgA.textContent = 'Nachrichten';
       navMobile.insertBefore(msgA, mobileEl);
-      if (hasUnread) {
-        const dot = document.createElement('span');
-        dot.className = 'odoj-unread-dot-mobile';
-        dot.style.cssText = 'display:inline-block;width:7px;height:7px;background:#e74c3c;border-radius:50%;margin-left:6px;vertical-align:middle';
-        msgA.appendChild(dot);
-      }
+      if (unreadCount > 0) _setMobileNavBadge('nav-mobile-nachrichten', unreadCount);
 
       if (rolle === 'jobber' && !document.getElementById('nav-mobile-meine-bew')) {
         const mjA = document.createElement('a');
@@ -200,13 +240,19 @@ async function odojInitNav() {
         miA.id   = 'nav-mobile-meine-inserate';
         miA.textContent = 'Meine Inserate';
         navMobile.insertBefore(miA, msgA);
+        if (pendingBewCount > 0) _setMobileNavBadge('nav-mobile-meine-inserate', pendingBewCount);
       }
     }
 
-    // Alle 30s ungelesene prüfen
+    // Alle 30s Badges aktualisieren
     setInterval(async () => {
       const cnt = await odojCountUnread(session.user.id);
-      odojUpdateUnreadDot(cnt > 0);
+      odojUpdateUnreadDot(cnt);
+      if (rolle === 'arbeitgeber') {
+        const pc = await odojCountPendingBewerbungen(session.user.id);
+        _setNavBadge('nav-meine-inserate', pc);
+        _setMobileNavBadge('nav-mobile-meine-inserate', pc);
+      }
     }, 30000);
 
   } else {

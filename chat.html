@@ -53,6 +53,8 @@
   position: relative;
   text-decoration: none;
   display: block;
+  min-height: 88px;
+  box-sizing: border-box;
 }
 .conv-item:hover { background: var(--off); }
 .conv-item.active {
@@ -412,6 +414,12 @@ async function loadConversations() {
   ]);
 
   _allConvs = bewerbungen.filter(b => activeBewIds.has(b.id));
+  // Nach neuester Nachricht sortieren (neueste zuerst)
+  _allConvs.sort((a, b) => {
+    const ta = msgLatest[a.id]?.erstellt_am || a.erstellt_am || '';
+    const tb = msgLatest[b.id]?.erstellt_am || b.erstellt_am || '';
+    return tb > ta ? 1 : -1;
+  });
 
   if (!_allConvs.length) {
     listEl.innerHTML = '<div style="padding:28px 20px;text-align:center;color:var(--text-lt);font-size:13px;line-height:1.6">Noch keine Nachrichten.<br>Starte ein Gespräch über eine Bewerbung.</div>';
