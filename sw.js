@@ -1,18 +1,19 @@
 // ── ODOJ Service Worker ───────────────────────────────────────
-const CACHE   = 'odoj-v1';
-const OFFLINE = '/offline.html';
+const CACHE   = 'odoj-v2';
 
-// Statische Assets cachen
+// Statische Assets cachen (nur Dateien die tatsächlich existieren)
 const PRECACHE = [
   '/', '/index.html', '/jobs.html', '/login.html',
-  '/shared.css', '/auth.js', '/manifest.json',
-  '/icons/icon-192.png', '/icons/icon-512.png'
+  '/shared.css', '/auth.js', '/manifest.json'
 ];
 
 // ── INSTALL ──────────────────────────────────────────────────
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c =>
+      // Einzeln cachen damit ein fehlender Asset nicht alles blockiert
+      Promise.allSettled(PRECACHE.map(url => c.add(url)))
+    ).then(() => self.skipWaiting())
   );
 });
 
@@ -37,7 +38,7 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE).then(c => c.put(e.request, clone));
         return res;
       })
-      .catch(() => caches.match(e.request).then(r => r || caches.match(OFFLINE)))
+      .catch(() => caches.match(e.request))
   );
 });
 
