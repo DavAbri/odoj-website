@@ -1,0 +1,17 @@
+{
+  "name": "ODOJ – One Day One Job",
+  "short_name": "ODOJ",
+  "description": "Tagesjobs in Vorarlberg – schnell, fair, unkompliziert.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1f3d",
+  "theme_color": "#0f1f3d",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "de"
+}

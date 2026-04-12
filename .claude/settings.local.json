@@ -9,7 +9,10 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//c/Users/mail4/OneDrive/Desktop/ODOJ/Webseite Codes/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(do)",
+      "Bash(sed -i 's|<script src=\"\"auth.js\"\"></script>|<script src=\"\"auth.js\"\"></script>\\\\n<script src=\"\"notifications.js\"\"></script>|' \"$f\")",
+      "Bash(echo \"notifications.js added: $f\")"
     ]
   }
 }

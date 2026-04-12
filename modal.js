@@ -162,4 +162,79 @@
   function escModal(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
+
+  // ── ERFOLGS-POPUP nach Bewerbung ─────────────────────────────
+  window.showBewerbungsErfolg = function ({ titel, firma }) {
+    const old = document.getElementById('odoj-success-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'odoj-success-overlay';
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:9999;
+      background:rgba(11,31,58,.65);
+      backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+      display:flex;align-items:center;justify-content:center;padding:24px;
+      animation:odoj-fade-in .18s ease;
+    `;
+
+    overlay.innerHTML = `
+      <div style="
+        background:#fff;border-radius:20px;
+        box-shadow:0 24px 80px rgba(11,31,58,.28);
+        width:100%;max-width:420px;overflow:hidden;
+        animation:odoj-slide-up .25s cubic-bezier(.34,1.2,.64,1);
+        text-align:center;
+      ">
+        <!-- Grüner Header -->
+        <div style="background:#1a7a50;padding:32px 28px 24px">
+          <div style="
+            width:64px;height:64px;border-radius:50%;
+            background:rgba(255,255,255,.18);
+            display:flex;align-items:center;justify-content:center;
+            margin:0 auto 16px;font-size:28px;
+          ">✓</div>
+          <h3 style="
+            font-family:'Plus Jakarta Sans',sans-serif;
+            font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;
+          ">Bewerbung gesendet!</h3>
+          <p style="font-size:13px;color:rgba(255,255,255,.7);font-weight:300">
+            ${escModal(titel)}${firma ? ' · ' + escModal(firma) : ''}
+          </p>
+        </div>
+        <!-- Body -->
+        <div style="padding:24px 28px 28px">
+          <p style="font-size:15px;color:#3a5070;line-height:1.65;margin-bottom:24px">
+            Deine Bewerbung wurde erfolgreich übermittelt.<br>
+            Du wirst benachrichtigt, sobald der Arbeitgeber reagiert.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <a href="meine-bewerbungen.html" style="
+              display:block;background:#0B1F3A;color:#fff;
+              font-family:'Plus Jakarta Sans',sans-serif;
+              font-size:14px;font-weight:700;
+              padding:13px 20px;border-radius:10px;
+              text-decoration:none;transition:background .2s;
+            ">Meine Bewerbungen ansehen →</a>
+            <button id="odoj-success-close" style="
+              background:transparent;border:1.5px solid #E8EDF5;
+              color:#7a8fa8;font-family:'Plus Jakarta Sans',sans-serif;
+              font-size:14px;font-weight:600;
+              padding:11px 20px;border-radius:10px;cursor:pointer;
+              transition:border-color .2s,color .2s;
+            ">Weiter Jobs durchsuchen</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#odoj-success-close').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    const onKey = e => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); } };
+    document.addEventListener('keydown', onKey);
+    overlay.querySelector('#odoj-success-close').focus();
+  };
+
 })();

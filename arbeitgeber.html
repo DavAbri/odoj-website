@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Für Arbeitgeber – ODOJ | Flexibles Personal in Vorarlberg</title>
 <meta name="description" content="Als Betrieb in Vorarlberg schnell und einfach qualifiziertes Tagespersonal anfragen. ODOJ übernimmt die Vermittlung.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1f3d">
 <link rel="stylesheet" href="shared.css">
 <style>
 
@@ -783,6 +785,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
+<script src="notifications.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
@@ -1331,6 +1334,10 @@ async function submitInserat(e) {
       document.getElementById('ag-marketing').style.display  = 'none';
       document.getElementById('ag-dashboard').style.display  = 'block';
       loadInserate();
+      // Bewerbungs-Notifications als gelesen → Badge zurücksetzen
+      if (window.odojNotifications) {
+        window.odojNotifications.markAllRead(session.user.id).catch(() => {});
+      }
     } else {
       // Jobber: Hinweis-Banner zeigen
       document.getElementById('ag-marketing').style.display       = 'none';

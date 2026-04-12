@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nachrichten – ODOJ</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1f3d">
 <link rel="stylesheet" href="shared.css">
 <style>
 /* ── LAYOUT ── */
@@ -332,6 +334,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
+<script src="notifications.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
@@ -501,6 +504,11 @@ async function openConversation(bewId) {
     .eq('empfaenger_id', _chatSession.user.id)
     .eq('gelesen', false);
 
+  // Notifications als gelesen markieren → Badge aktualisieren
+  if (window.odojNotifications) {
+    window.odojNotifications.markAllRead(_chatSession.user.id).catch(() => {});
+  }
+
   // Unread-Dot entfernen
   if (convEl) {
     const dot = convEl.querySelector('.conv-unread-dot');
@@ -626,6 +634,14 @@ async function sendMessage() {
     odojSb.functions.invoke('send-email', {
       body: { type: 'new_message', recipientId: empfaengerId, senderName, jobTitel: job, bewId: _activeBewId }
     }).catch(() => {});
+    // In-App Notification für Empfänger anlegen
+    if (window.odojNotifications) {
+      window.odojNotifications.createNotification(
+        empfaengerId, 'new_message',
+        `Neue Nachricht von ${senderName}${job ? ' zu: ' + job : ''}`,
+        `chat.html?bew=${_activeBewId}`
+      ).catch(() => {});
+    }
   }
 
   // Konversationsliste aktualisieren (Preview)
