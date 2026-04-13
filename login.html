@@ -506,14 +506,10 @@ async function doLogin(e) {
     return;
   }
 
-  // Rolle aus profile-Tabelle laden
-  let rolle = data.user.user_metadata?.rolle || 'jobber';
-  try {
-    const { data: profile } = await odojSb
-      .from('Profile').select('rolle').eq('user_id', data.user.id).single();
-    if (profile?.rolle) rolle = profile.rolle;
-  } catch (_) {}
-
+  // Rolle aus Metadaten (kein DB-Aufruf nötig, sofortige Weiterleitung)
+  const rolle = data.user.user_metadata?.rolle
+    || localStorage.getItem('odoj_rolle')
+    || 'jobber';
   odojSaveRolle(rolle);
   redirectAfterAuth(rolle);
 }
@@ -711,16 +707,13 @@ odojSb.auth.onAuthStateChange((event) => {
 });
 
 // Bereits eingeloggt? → weiterleiten
-odojSb.auth.getSession().then(async ({ data }) => {
+odojSb.auth.getSession().then(({ data }) => {
   if (data.session) {
     const params = new URLSearchParams(location.search);
     if (!params.get('msg')) {
-      let rolle = data.session.user.user_metadata?.rolle || 'jobber';
-      try {
-        const { data: profile } = await odojSb
-          .from('Profile').select('rolle').eq('user_id', data.session.user.id).single();
-        if (profile?.rolle) rolle = profile.rolle;
-      } catch (_) {}
+      const rolle = data.session.user.user_metadata?.rolle
+        || localStorage.getItem('odoj_rolle')
+        || 'jobber';
       odojSaveRolle(rolle);
       redirectAfterAuth(rolle);
     }
