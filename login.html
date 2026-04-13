@@ -494,22 +494,7 @@ async function doLogin(e) {
   const email = document.getElementById('login-email').value.trim();
   const pw    = document.getElementById('login-pw').value;
 
-  let data, error;
-  try {
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.')), 10000)
-    );
-    ({ data, error } = await Promise.race([
-      odojSb.auth.signInWithPassword({ email, password: pw }),
-      timeout
-    ]));
-  } catch (e) {
-    errEl.textContent = e.message;
-    errEl.style.display = 'block';
-    btn.textContent = 'Anmelden';
-    btn.disabled = false;
-    return;
-  }
+  const { data, error } = await odojSb.auth.signInWithPassword({ email, password: pw });
 
   if (error) {
     errEl.textContent = (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('credentials'))
