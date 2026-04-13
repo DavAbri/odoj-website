@@ -10,194 +10,6 @@
 <link rel="stylesheet" href="shared.css">
 <style>
 
-/* ── DASHBOARD BEREICH ── */
-.dash-area {
-  background: var(--off);
-  min-height: calc(100vh - var(--nav-h));
-  padding-top: var(--nav-h);
-}
-.dash-tabs-bar {
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-lt);
-  padding: 14px 60px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: sticky;
-  top: var(--nav-h);
-  z-index: 50;
-  box-shadow: var(--sh-sm);
-}
-.dash-tab {
-  padding: 9px 22px;
-  border-radius: 100px;
-  border: 1.5px solid var(--gray-lt);
-  background: transparent;
-  color: var(--text-mid);
-  font-size: 14px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .2s;
-  white-space: nowrap;
-}
-.dash-tab:hover, .dash-tab.active {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: var(--white);
-}
-.dash-panel { display: none; padding: 40px 60px 80px; }
-.dash-panel.active { display: block; }
-
-/* ── INSERATE ── */
-.inserate-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.inserate-header h2 {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--navy);
-}
-.inserate-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 18px;
-}
-.inserat-card {
-  background: var(--white);
-  border: 1.5px solid var(--gray-lt);
-  border-radius: var(--r-md);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  transition: border-color .2s, box-shadow .2s, transform .2s;
-  cursor: pointer;
-}
-.inserat-card:hover { border-color: var(--sky-lt); box-shadow: var(--sh-md); transform: translateY(-2px); }
-.inserat-details-link {
-  font-size: 12px; font-weight: 600; color: var(--text-lt);
-  text-decoration: none; transition: color .2s; white-space: nowrap;
-}
-.inserat-details-link:hover { color: var(--navy); }
-.inserat-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-.inserat-titel {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 3px;
-}
-.inserat-firma { font-size: 13px; color: var(--text-lt); font-weight: 300; }
-.status-badge {
-  font-size: 11px; font-weight: 700;
-  padding: 3px 10px; border-radius: 100px;
-  text-transform: uppercase; letter-spacing: .3px; white-space: nowrap;
-}
-.status-aktiv   { background: #E6F5EE; color: #1A7A50; }
-.status-inaktiv { background: #F5F5F5; color: #888; }
-.inserat-metas {
-  display: flex; flex-wrap: wrap; gap: 10px;
-  margin: 10px 0 12px;
-}
-.inserat-meta {
-  font-size: 13px; color: var(--text-mid);
-  display: flex; align-items: center; gap: 4px;
-}
-.inserat-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  border-top: 1px solid var(--gray-lt); padding-top: 14px; margin-top: auto;
-}
-.inserat-gehalt {
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy);
-}
-.inserat-gehalt span { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 300; color: var(--text-lt); }
-.inserat-stunden { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
-.btn-del {
-  background: transparent; border: 1.5px solid #FFBBBB;
-  color: #C0392B; font-size: 13px; font-weight: 600;
-  padding: 7px 14px; border-radius: var(--r-sm);
-  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .2s;
-}
-.btn-del:hover { background: #FFF0F0; }
-
-.empty-state {
-  text-align: center; padding: 72px 32px; color: var(--text-lt);
-  grid-column: 1 / -1;
-}
-.empty-state-icon { font-size: 52px; margin-bottom: 18px; }
-.empty-state h3 {
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800;
-  color: var(--navy); margin-bottom: 8px;
-}
-.empty-state p { font-size: 14px; line-height: 1.6; max-width: 340px; margin: 0 auto 24px; }
-.dash-loading { text-align: center; padding: 60px; color: var(--text-lt); font-size: 15px; }
-
-/* ── INSERT FORM ── */
-.insert-wrap {
-  max-width: 700px;
-}
-.insert-card {
-  background: var(--white);
-  border-radius: var(--r-lg);
-  padding: 44px;
-  box-shadow: var(--sh-sm);
-}
-.insert-card h2 {
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800;
-  color: var(--navy); margin-bottom: 6px;
-}
-.insert-card > p { font-size: 14px; color: var(--text-lt); margin-bottom: 28px; }
-.if-field { margin-bottom: 14px; }
-.if-field label {
-  display: block; font-size: 11px; font-weight: 700;
-  letter-spacing: .5px; text-transform: uppercase;
-  color: var(--text-lt); margin-bottom: 6px;
-}
-.if-field input,
-.if-field select,
-.if-field textarea {
-  width: 100%; background: var(--off);
-  border: 1.5px solid var(--gray-lt); border-radius: var(--r-sm);
-  color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px; padding: 12px 14px; outline: none;
-  transition: border-color .2s, background .2s; box-sizing: border-box;
-}
-.if-field input:focus,
-.if-field select:focus,
-.if-field textarea:focus { border-color: var(--accent); background: var(--white); }
-.if-field textarea { resize: vertical; min-height: 88px; }
-.if-row   { display: grid; grid-template-columns: 1fr 1fr;     gap: 12px; }
-.if-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.if-hint  { font-size: 12px; color: var(--text-lt); margin-top: 4px; }
-.if-submit {
-  width: 100%; background: var(--accent); color: var(--navy);
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
-  padding: 15px; border: none; border-radius: var(--r-sm);
-  cursor: pointer; margin-top: 8px; transition: background .2s, transform .15s;
-}
-.if-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
-.if-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-.if-error {
-  background: #FFF0F0; border: 1px solid #FFBBBB; color: #C0392B;
-  font-size: 13px; padding: 10px 14px; border-radius: var(--r-sm); margin-bottom: 12px;
-}
-.if-success {
-  background: #E6F5EE; border: 1px solid #A3D9BB; color: #1A7A50;
-  font-size: 14px; font-weight: 500; padding: 12px 16px;
-  border-radius: var(--r-sm); margin-bottom: 12px; text-align: center;
-}
-
 /* ── FALSCHER ROLE HINWEIS ── */
 .wrong-role-banner {
   display: none; background: var(--navy);
@@ -220,7 +32,26 @@
 }
 .wrong-role-card p { font-size: 14px; color: var(--text-lt); line-height: 1.6; margin-bottom: 28px; }
 
-/* ── MARKETING SECTIONS (für nicht eingeloggte Besucher) ── */
+/* ── INSERATE BAR (für eingeloggte Arbeitgeber) ── */
+.ag-inserate-bar {
+  position: sticky; top: var(--nav-h); z-index: 100;
+  background: var(--accent);
+  box-shadow: 0 4px 24px rgba(232,160,32,.35);
+  border-bottom: 2px solid rgba(11,31,58,.1);
+}
+.ag-inserate-bar-inner {
+  max-width: 1200px; margin: 0 auto;
+  padding: 16px 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; flex-wrap: wrap;
+}
+.ag-inserate-bar-text strong {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800;
+  color: var(--navy); font-size: 15px; display: block; margin-bottom: 2px;
+}
+.ag-inserate-bar-text span { font-size: 13px; color: rgba(11,31,58,.6); }
+
+/* ── MARKETING SECTIONS ── */
 
 /* Hero */
 .ag-hero {
@@ -293,7 +124,7 @@
 .ag-hero-stat-num sup { font-size: 15px; color: var(--accent); vertical-align: super; }
 .ag-hero-stat-lbl { font-size: 13px; color: rgba(255,255,255,.38); margin-top: 4px; font-weight: 300; }
 
-/* Hero Visual (rechts) */
+/* Hero Visual */
 .ag-hero-visual { position: relative; height: 380px; }
 .ag-card {
   position: absolute; background: #fff; border-radius: 18px;
@@ -315,13 +146,8 @@
 .ag-card-row { display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid #E8EDF5; }
 .ag-card-pay { font-family:'Plus Jakarta Sans',sans-serif; font-size:17px; font-weight:800; color:#0B1F3A; }
 .ag-card-pay span { font-size:11px; font-weight:300; color:#7A8FA8; }
-.ag-card-badge {
-  background: #E8A020; color: #0B1F3A; font-size:11px; font-weight:800;
-  padding:4px 10px; border-radius:100px;
-}
-.ag-card-status {
-  display:flex; align-items:center; gap:6px; font-size:12px; color:#1a7a50; font-weight:600;
-}
+.ag-card-badge { background: #E8A020; color: #0B1F3A; font-size:11px; font-weight:800; padding:4px 10px; border-radius:100px; }
+.ag-card-status { display:flex; align-items:center; gap:6px; font-size:12px; color:#1a7a50; font-weight:600; }
 .ag-card-dot { width:7px; height:7px; background:#1a7a50; border-radius:50%; }
 
 /* Vorteile */
@@ -348,6 +174,79 @@
 .ablauf-step p  { font-size: 13px; color: var(--text-lt); line-height: 1.6; font-weight: 300; }
 .ablauf-line { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
 .ablauf-step:hover .ablauf-line { transform: scaleX(1); }
+
+/* ── INFO SEKTIONEN ── */
+.info-section { background: var(--white); }
+.info-section-alt { background: var(--off); }
+.info-section-inner { max-width: 1100px; margin: 0 auto; }
+.info-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 18px; margin-top: 52px;
+}
+.info-card {
+  background: var(--white); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md); padding: 28px;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.info-section-alt .info-card { background: var(--white); }
+.info-card:hover { border-color: var(--accent); box-shadow: 0 8px 28px rgba(232,160,32,.1); transform: translateY(-3px); }
+.info-card-ico { font-size: 22px; margin-bottom: 14px; display: block; }
+.info-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.info-card p   { font-size: 13px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
+.info-card-note {
+  margin-top: 12px; background: #FFF8E8;
+  border: 1px solid rgba(232,160,32,.3); border-radius: 6px;
+  padding: 10px 12px; font-size: 12px; color: #7A4A00; line-height: 1.5;
+}
+.info-disclaimer {
+  margin-top: 40px; background: #FFF8E8;
+  border: 1px solid rgba(232,160,32,.35); border-radius: var(--r-md);
+  padding: 20px 24px; font-size: 13px; color: var(--text-mid); line-height: 1.7;
+}
+.info-disclaimer strong { color: var(--navy); font-weight: 700; }
+
+/* Tipps */
+.tipps-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 18px; margin-top: 52px;
+}
+.tipp-card {
+  display: flex; gap: 18px; align-items: flex-start;
+  background: var(--white); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md); padding: 26px;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.tipp-card:hover { border-color: var(--accent); box-shadow: 0 8px 28px rgba(232,160,32,.1); transform: translateY(-3px); }
+.tipp-ico {
+  width: 46px; height: 46px; background: var(--accent-pale);
+  border-radius: var(--r-sm); display: flex; align-items: center;
+  justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.tipp-body h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.tipp-body p  { font-size: 13px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
+
+/* FAQ */
+.faq-section { background: var(--navy); }
+.faq-list { max-width: 780px; margin: 52px auto 0; }
+.faq-item { border-bottom: 1px solid rgba(255,255,255,.09); }
+.faq-question {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 0; cursor: pointer; gap: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px; font-weight: 700; color: var(--white);
+  background: none; border: none; width: 100%; text-align: left;
+  transition: color .2s;
+}
+.faq-question:hover { color: var(--accent); }
+.faq-chevron { flex-shrink: 0; font-size: 18px; color: var(--accent); transition: transform .3s; }
+.faq-item.open .faq-chevron { transform: rotate(180deg); }
+.faq-answer {
+  max-height: 0; overflow: hidden;
+  font-size: 14px; color: rgba(255,255,255,.55);
+  line-height: 1.8; font-weight: 300;
+  transition: max-height .35s ease, padding-bottom .3s;
+}
+.faq-item.open .faq-answer { max-height: 400px; padding-bottom: 22px; }
 
 /* CTA Band */
 .ag-cta-band {
@@ -402,17 +301,15 @@
   .ag-hero-stat { padding: 18px 20px; }
   .ag-hero-stat-num { font-size: 22px; }
   .ag-cta-band { padding: 48px 28px; flex-direction: column; align-items: flex-start; gap: 24px; }
+  .ag-inserate-bar-inner { padding: 14px 24px; }
   .vorteile-grid { grid-template-columns: 1fr 1fr; }
   .ablauf-steps { grid-template-columns: 1fr 1fr; }
   .ablauf-step:first-child { border-radius: var(--r-lg) 0 0 0; }
   .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) 0; }
   .anfrage-layout { grid-template-columns: 1fr; gap: 36px; }
   .form-row { grid-template-columns: 1fr; }
-  .dash-tabs-bar { padding: 12px 24px; }
-  .dash-panel { padding: 28px 24px 60px; }
-  .if-row, .if-row-3 { grid-template-columns: 1fr; }
-  .insert-card { padding: 28px 24px; }
-  .inserate-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: 1fr 1fr; }
+  .tipps-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 540px) {
   .ag-hero { padding: calc(var(--nav-h) + 24px) 20px 0; }
@@ -422,206 +319,14 @@
   .ag-hero-stats { flex-wrap: wrap; }
   .ag-hero-stat { flex: 1 1 50%; border-right: none; border-top: 1px solid rgba(255,255,255,.07); }
   .ag-cta-band { padding: 40px 20px; }
+  .ag-inserate-bar-inner { padding: 12px 20px; flex-direction: column; align-items: stretch; }
   .vorteile-grid { grid-template-columns: 1fr; }
   .ablauf-steps { grid-template-columns: 1fr; }
   .ablauf-step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+  .info-grid { grid-template-columns: 1fr; }
 }
 
-/* ── BEWERBUNGEN OVERLAY ── */
-.bew-overlay {
-  position: fixed; inset: 0;
-  background: rgba(11,31,58,.72);
-  z-index: 500;
-  overflow-y: auto;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: none;
-}
-.bew-overlay-box {
-  max-width: 720px;
-  margin: 56px auto 56px;
-  background: var(--white);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  box-shadow: var(--sh-lg);
-}
-.bew-overlay-head {
-  background: var(--navy);
-  padding: 22px 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-.bew-overlay-label {
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase;
-  color: var(--accent); margin-bottom: 5px; display: block;
-}
-.bew-overlay-titel {
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px;
-  font-weight: 700; color: var(--white); margin: 0;
-}
-.bew-close-btn {
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.8);
-  font-size: 13px; font-weight: 600;
-  padding: 8px 18px; border-radius: var(--r-sm);
-  cursor: pointer; white-space: nowrap; flex-shrink: 0;
-  transition: background .2s;
-}
-.bew-close-btn:hover { background: rgba(255,255,255,.2); }
-.bew-overlay-body { padding: 24px 32px; min-height: 180px; }
-
-/* Einzelne Bewerbungs-Card im Overlay */
-.bew-item {
-  background: var(--off);
-  border: 1.5px solid var(--gray-lt);
-  border-radius: var(--r-md);
-  padding: 20px 24px;
-  margin-bottom: 14px;
-  transition: border-color .2s;
-}
-.bew-item:hover { border-color: var(--sky-lt); }
-.bew-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
-.bew-item-name {
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text);
-  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-  transition: color .2s;
-}
-.bew-item-name:hover { color: var(--accent); }
-.bew-item-name::after {
-  content: '›';
-  font-size: 14px; opacity: 0.45;
-  transition: opacity .2s, transform .2s;
-}
-.bew-item-name:hover::after { opacity: 1; transform: translateX(2px); }
-.bew-item-email { font-size: 13px; color: var(--text-lt); margin-top: 2px; }
-.bew-item-date  { font-size: 12px; color: var(--text-lt); font-weight: 300; margin-top: 3px; }
-.bew-st-badge {
-  font-size: 11px; font-weight: 700;
-  padding: 4px 12px; border-radius: 100px;
-  text-transform: uppercase; letter-spacing: .3px;
-  white-space: nowrap; flex-shrink: 0;
-}
-.bew-st-ausstehend { background: #FFF8E8; color: #A05000; }
-.bew-st-angenommen { background: #E6F5EE; color: #1A7A50; }
-.bew-st-abgelehnt  { background: #FFF0F0; color: #C0392B; }
-.bew-item-profile {
-  display: flex; flex-wrap: wrap; gap: 8px 16px;
-  background: var(--off); border-radius: var(--r-sm);
-  padding: 10px 14px; margin-bottom: 10px;
-}
-.bew-profile-field { font-size: 13px; color: var(--text-mid); font-weight: 400; }
-
-/* ── BEWERBER-PROFIL-MODAL ── */
-.jp-overlay {
-  position: fixed; inset: 0; z-index: 9000;
-  background: rgba(10,20,40,.55);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  opacity: 0; pointer-events: none;
-  transition: opacity .22s;
-}
-.jp-overlay.open { opacity: 1; pointer-events: all; }
-.jp-modal {
-  background: var(--white);
-  border-radius: var(--r-lg);
-  width: 100%; max-width: 460px;
-  box-shadow: 0 24px 80px rgba(0,0,0,.30);
-  overflow: hidden;
-  transform: translateY(18px) scale(.97);
-  transition: transform .22s;
-}
-.jp-overlay.open .jp-modal { transform: none; }
-.jp-modal-header {
-  background: var(--navy);
-  padding: 24px 28px 20px;
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-}
-.jp-avatar {
-  width: 52px; height: 52px;
-  background: rgba(255,255,255,.12);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 800; color: #fff;
-  flex-shrink: 0;
-}
-.jp-modal-name {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 18px; font-weight: 800; color: #fff;
-  margin-bottom: 3px;
-}
-.jp-modal-email { font-size: 13px; color: rgba(255,255,255,.65); }
-.jp-modal-close {
-  background: rgba(255,255,255,.12); border: none;
-  color: #fff; font-size: 18px; line-height: 1;
-  width: 32px; height: 32px; border-radius: 50%;
-  cursor: pointer; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .2s;
-}
-.jp-modal-close:hover { background: rgba(255,255,255,.22); }
-.jp-modal-body { padding: 24px 28px 28px; }
-.jp-section-title {
-  font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .8px;
-  color: var(--text-lt); margin: 0 0 12px;
-}
-.jp-fields { display: flex; flex-direction: column; gap: 10px; }
-.jp-field {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 12px 14px;
-  background: var(--off);
-  border-radius: var(--r-sm);
-  border: 1.5px solid var(--gray-lt);
-}
-.jp-field-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-.jp-field-label {
-  font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .5px;
-  color: var(--text-lt); margin-bottom: 2px;
-}
-.jp-field-value { font-size: 14px; color: var(--text); font-weight: 500; }
-.jp-field-sub { font-size: 12px; color: var(--text-lt); margin-top: 2px; font-weight: 300; }
-.jp-loading {
-  text-align: center; padding: 40px;
-  font-size: 14px; color: var(--text-lt);
-}
-.bew-item-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-.bew-btn {
-  font-size: 13px; font-weight: 600;
-  padding: 8px 16px; border-radius: var(--r-sm);
-  border: none; cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  transition: all .2s; text-decoration: none; display: inline-block;
-}
-.bew-btn-accept { background: #E6F5EE; color: #1A7A50; }
-.bew-btn-accept:hover { background: #1A7A50; color: white; }
-.bew-btn-reject { background: #FFF0F0; color: #C0392B; }
-.bew-btn-reject:hover { background: #C0392B; color: white; }
-.bew-btn-chat { background: var(--navy); color: white; }
-.bew-btn-chat:hover { background: var(--navy-soft); }
-.bew-btn-presence { background: #E6F5EE; color: #1A7A50; }
-.bew-btn-presence:hover { background: #1A7A50; color: white; }
-.bew-btn-presence-done { background: #1A7A50 !important; color: white !important; cursor: default !important; }
-
-/* Badge auf Inserat-Card */
-.bew-count-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: var(--accent-pale); color: var(--accent);
-  border: 1px solid rgba(232,160,32,.3);
-  font-size: 12px; font-weight: 700;
-  padding: 4px 12px; border-radius: 100px;
-  cursor: pointer; transition: all .2s; border: none;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-.bew-count-badge:hover { background: var(--accent); color: var(--navy); }
-.inserat-card-footer-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 </style>
 </head>
 <body>
@@ -646,138 +351,30 @@
   <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
 </div>
 
-<!-- ───────────────────────────────────────────────
-     DASHBOARD (nur für eingeloggte Arbeitgeber)
-─────────────────────────────────────────────── -->
-<div id="ag-dashboard" class="dash-area" style="display:none">
-
-  <!-- Tab-Leiste -->
-  <div class="dash-tabs-bar">
-    <button class="dash-tab active" data-tab="inserate" onclick="showTab('inserate')">📋 Meine Inserate</button>
-    <button class="dash-tab"        data-tab="inserieren" onclick="showTab('inserieren')">➕ Job inserieren</button>
-  </div>
-
-  <!-- Panel: Meine Inserate -->
-  <div id="panel-inserate" class="dash-panel active">
-    <div class="inserate-header">
-      <h2>Meine Inserate</h2>
-      <button class="dash-tab" style="background:var(--navy);border-color:var(--navy);color:var(--white)" onclick="showTab('inserieren')">+ Neuer Job</button>
+<!-- ── INSERATE-BAR (nur für eingeloggte Arbeitgeber) ── -->
+<div id="ag-inserate-bar" class="ag-inserate-bar" style="display:none">
+  <div class="ag-inserate-bar-inner">
+    <div class="ag-inserate-bar-text">
+      <strong>Willkommen zurück!</strong>
+      <span>Du hast ein aktives Arbeitgeber-Konto – verwalte deine Inserate und Bewerbungen.</span>
     </div>
-    <div class="inserate-grid" id="inserate-grid">
-      <div class="dash-loading">Lade Inserate…</div>
-    </div>
-  </div>
-
-  <!-- Panel: Job inserieren -->
-  <div id="panel-inserieren" class="dash-panel">
-    <div class="insert-wrap">
-      <div class="insert-card">
-        <h2>Job inserieren</h2>
-        <p>Fülle das Formular aus – dein Inserat erscheint sofort in der Jobsuche.</p>
-
-        <div id="ins-success" class="if-success" style="display:none">✓ Job erfolgreich gespeichert!</div>
-        <div id="ins-error"   class="if-error"   style="display:none"></div>
-
-        <form id="ins-form" onsubmit="submitInserat(event)">
-          <div class="if-field">
-            <label>Jobtitel *</label>
-            <input type="text" id="ins-titel" placeholder="z.B. Servicekraft, Lagerhelfer…" required>
-          </div>
-          <div class="if-row">
-            <div class="if-field">
-              <label>Branche *</label>
-              <select id="ins-branche" required>
-                <option value="" disabled selected>Bitte wählen</option>
-                <option value="gastro">Gastronomie &amp; Hotel</option>
-                <option value="bau">Bau &amp; Handwerk</option>
-                <option value="lager">Lager &amp; Logistik</option>
-                <option value="events">Veranstaltungen &amp; Events</option>
-              </select>
-            </div>
-            <div class="if-field">
-              <label>Datum *</label>
-              <input type="date" id="ins-datum" required>
-            </div>
-          </div>
-          <div class="if-row-3">
-            <div class="if-field">
-              <label>Uhrzeit von *</label>
-              <input type="time" id="ins-von" required onchange="calcStunden()">
-            </div>
-            <div class="if-field">
-              <label>Uhrzeit bis *</label>
-              <input type="time" id="ins-bis" required onchange="calcStunden()">
-            </div>
-            <div class="if-field">
-              <label>Stundenanzahl</label>
-              <input type="number" id="ins-stunden" step="0.5" min="0" placeholder="Auto">
-              <div class="if-hint">Wird automatisch berechnet</div>
-            </div>
-          </div>
-          <div class="if-row">
-            <div class="if-field">
-              <label>Pause *</label>
-              <select id="ins-pause" required onchange="checkPauseWarning()">
-                <option value="0">Keine Pause</option>
-                <option value="15">15 Minuten</option>
-                <option value="30" selected>30 Minuten</option>
-                <option value="45">45 Minuten</option>
-                <option value="60">60 Minuten</option>
-              </select>
-            </div>
-          </div>
-          <div id="ins-pause-warn" style="display:none;background:#FFF4E0;border:1.5px solid #F5BE5A;color:#7A4A00;font-size:13px;padding:12px 16px;border-radius:8px;margin-bottom:14px;line-height:1.6"></div>
-          <div class="if-row">
-            <div class="if-field">
-              <label>Tagesgehalt in € *</label>
-              <input type="number" id="ins-gehalt" min="0" step="0.01" placeholder="z.B. 120" required>
-              <div class="if-hint">Gesamtlohn für den ganzen Tag</div>
-            </div>
-            <div class="if-field">
-              <label>Anzahl Plätze *</label>
-              <input type="number" id="ins-plaetze" min="1" placeholder="z.B. 2" required>
-            </div>
-            <div class="if-field">
-              <label>Mindestalter *</label>
-              <input type="number" id="ins-mindestalter" min="15" max="65" value="18" required>
-            </div>
-          </div>
-          <div class="if-row">
-            <div class="if-field">
-              <label>Adresse / Straße *</label>
-              <input type="text" id="ins-adresse" placeholder="Musterstraße 12" required>
-            </div>
-            <div class="if-field">
-              <label>Ort *</label>
-              <input type="text" id="ins-ort" placeholder="z.B. Dornbirn" required>
-            </div>
-          </div>
-          <div class="if-field">
-            <label>Beschreibung (optional)</label>
-            <textarea id="ins-beschr" placeholder="Aufgaben, Anforderungen, besondere Hinweise…"></textarea>
-          </div>
-          <button type="submit" class="if-submit" id="ins-btn">Job speichern</button>
-        </form>
-      </div>
-    </div>
+    <a href="meine-inserate.html" class="btn btn-navy" style="white-space:nowrap;text-decoration:none">
+      📋 Meine Inserate verwalten →
+    </a>
   </div>
 </div>
 
-<!-- ───────────────────────────────────────────────
-     FALSCHER ROLE: Hinweis für Jobber
-─────────────────────────────────────────────── -->
+<!-- ── FALSCHER ROLE BANNER ── -->
 <div id="ag-wrong-role-banner" class="wrong-role-banner">
   <div class="wrong-role-card">
     <div class="wrong-role-icon">🔒</div>
     <h2>Nur für Arbeitgeber</h2>
-    <p>Diese Seite ist ausschließlich für registrierte Arbeitgeber zugänglich. Dein Konto ist als Jobber registriert.</p>
+    <p>Diese Seite ist für registrierte Arbeitgeber. Dein Konto ist als Jobber registriert.</p>
     <a href="jobs.html" class="btn btn-accent" style="display:inline-block;text-decoration:none">Zur Jobsuche</a>
   </div>
 </div>
 
-<!-- ───────────────────────────────────────────────
-     MARKETING (für nicht eingeloggte Besucher)
-─────────────────────────────────────────────── -->
+<!-- ── MARKETING (für alle Besucher) ── -->
 <div id="ag-marketing">
 
 <!-- HERO -->
@@ -869,7 +466,7 @@
     <div class="vorteil fade-in">
       <div class="vorteil-ico">📄</div>
       <h3>Rechtssicher &amp; einfach</h3>
-      <p>ODOJ übernimmt Verträge, Abrechnung und Anmeldung – vollständig konform mit österreichischem Arbeitsrecht.</p>
+      <p>ODOJ übernimmt die Vermittlung – vollständig konform mit österreichischem Arbeitsrecht.</p>
     </div>
     <div class="vorteil fade-in">
       <div class="vorteil-ico">🔁</div>
@@ -920,6 +517,164 @@
       <h4>Personal erscheint</h4>
       <p>Der Mitarbeiter kommt vorbereitet. Abrechnung und Abwicklung direkt über ODOJ.</p>
       <div class="ablauf-line"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SEKTION: RECHTLICHES & ANSTELLUNG -->
+<section class="info-section" id="rechtliches">
+  <div class="info-section-inner">
+    <div class="fade-in">
+      <span class="section-label">Rechtlicher Rahmen</span>
+      <h2 class="section-title">Rechtliches &amp;<br>Anstellung</h2>
+      <p class="section-sub">ODOJ übernimmt die Vermittlung – für die korrekte Anmeldung und Abwicklung ist der Arbeitgeber selbst verantwortlich.</p>
+    </div>
+    <div class="info-grid">
+      <div class="info-card fade-in">
+        <span class="info-card-ico">📋</span>
+        <h3>Anmeldung bei der ÖGK</h3>
+        <p>Jeder Tagesarbeiter muss <strong>vor Arbeitsbeginn</strong> bei der Österreichischen Gesundheitskasse (ÖGK) angemeldet werden. Eine Vorabanmeldung am Vortag bis 23:59 Uhr ist möglich.</p>
+        <div class="info-card-note">⚠️ Anmeldung muss vor dem ersten Arbeitstag erfolgen – nicht danach!</div>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico">🔒</span>
+        <h3>Pflichtversicherungen</h3>
+        <p>Für alle unselbständig Beschäftigten gilt: Kranken-, Unfall-, Pensions- und Arbeitslosenversicherung sind in Österreich gesetzlich vorgeschrieben und müssen vom Arbeitgeber abgeführt werden.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico">📄</span>
+        <h3>Werkvertrag vs. Dienstvertrag</h3>
+        <p>Tagesarbeitskräfte werden in der Regel über einen freien Dienstvertrag oder als geringfügig Beschäftigte angestellt. Ein Werkvertrag ist unzulässig, wenn echte Weisungsgebundenheit besteht.</p>
+        <div class="info-card-note">ℹ️ Bei Unsicherheit: Rechtsberatung der WKO nutzen.</div>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico">⏱</span>
+        <h3>Arbeitszeitgesetz (AZG)</h3>
+        <p>Ab <strong>6 Stunden</strong> Arbeitszeit sind 30 Minuten Pause Pflicht. Ab <strong>9 Stunden</strong> sind es 45 Minuten. ODOJ weist im Inserierformular automatisch auf Verstöße hin.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico">🏛</span>
+        <h3>WKO Vorarlberg</h3>
+        <p>Die Wirtschaftskammer Vorarlberg bietet kostenlose Rechtsberatung für Betriebe – ideal für Fragen zu Vertragsformen, Kollektivverträgen und kurzfristigen Anstellungen.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico">🤝</span>
+        <h3>AK Vorarlberg</h3>
+        <p>Die Arbeiterkammer berät zu Mindestlöhnen, Überstundenregelungen und Urlaubsanspruch. Auch als Arbeitgeber können Sie sich dort über Ihre Pflichten informieren.</p>
+      </div>
+    </div>
+    <p class="info-disclaimer fade-in">
+      <strong>Wichtiger Hinweis:</strong> ODOJ ist eine Vermittlungsplattform und übernimmt keine Arbeitgeberstellung. Die rechtlich korrekte Anmeldung, Versicherung und Abmeldung der vermittelten Arbeitskräfte liegt ausschließlich in der Verantwortung des Arbeitgebers. Wir empfehlen, bei Unsicherheiten einen Steuerberater, die WKO oder die AK Vorarlberg zu kontaktieren.
+    </p>
+  </div>
+</section>
+
+<!-- SEKTION: TIPPS FÜR EINEN GUTEN EINSATZ -->
+<section class="info-section info-section-alt" id="tipps">
+  <div class="info-section-inner">
+    <div class="fade-in">
+      <span class="section-label">Best Practices</span>
+      <h2 class="section-title">Tipps für einen<br>erfolgreichen Einsatz</h2>
+      <p class="section-sub">Gute Vorbereitung und faire Behandlung machen den Unterschied – für Dich und den Jobber.</p>
+    </div>
+    <div class="tipps-grid">
+      <div class="tipp-card fade-in">
+        <div class="tipp-ico">📝</div>
+        <div class="tipp-body">
+          <h3>Klares Briefing vor dem Einsatz</h3>
+          <p>Teile dem Jobber vorab mit, wo er erscheinen soll, was er mitbringen muss, welche Kleiderordnung gilt und wer sein Ansprechpartner vor Ort ist. Je klarer das Briefing, desto besser der Start.</p>
+        </div>
+      </div>
+      <div class="tipp-card fade-in">
+        <div class="tipp-ico">💰</div>
+        <div class="tipp-body">
+          <h3>Pünktliche Bezahlung</h3>
+          <p>Bezahle den vereinbarten Lohn pünktlich und vollständig. Zuverlässige Bezahlung stärkt deine Reputation auf ODOJ und sorgt dafür, dass gute Jobber wieder bei dir arbeiten möchten.</p>
+        </div>
+      </div>
+      <div class="tipp-card fade-in">
+        <div class="tipp-ico">⭐</div>
+        <div class="tipp-body">
+          <h3>Faire Behandlung = bessere Bewertungen</h3>
+          <p>Jobber, die sich wertgeschätzt fühlen, geben bessere Bewertungen ab. Ein gutes Rating auf ODOJ hilft dir, bei zukünftigen Inseraten schneller qualifizierte Bewerber zu gewinnen.</p>
+        </div>
+      </div>
+      <div class="tipp-card fade-in">
+        <div class="tipp-ico">🔁</div>
+        <div class="tipp-body">
+          <h3>Stammkräfte systematisch aufbauen</h3>
+          <p>Merke dir bewährte Jobber und frage sie gezielt für Folgeeinsätze an. Stammkräfte kennen deine Abläufe, brauchen weniger Einarbeitung und sind zuverlässiger als Erstkräfte.</p>
+        </div>
+      </div>
+      <div class="tipp-card fade-in">
+        <div class="tipp-ico">📍</div>
+        <div class="tipp-body">
+          <h3>Genaue Adresse im Inserat</h3>
+          <p>Gib im Inserat die genaue Einsatzadresse an. Jobber, die den Weg nicht finden oder zu weit fahren müssen, sagen eher ab. Eine klare Adresse erhöht die Bewerbungsquote spürbar.</p>
+        </div>
+      </div>
+      <div class="tipp-card fade-in">
+        <div class="tipp-ico">🗓</div>
+        <div class="tipp-body">
+          <h3>Früh inserieren lohnt sich</h3>
+          <p>Inserate, die mindestens 3–5 Tage im Voraus veröffentlicht werden, erhalten deutlich mehr Bewerbungen. In dringenden Fällen ist auch eine kurzfristige Besetzung möglich – aber Vorlauf hilft.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEKTION: FAQ -->
+<section class="faq-section" id="faq">
+  <div class="info-section-inner">
+    <div class="fade-in" style="text-align:center">
+      <span class="section-label" style="color:var(--accent)">Häufige Fragen</span>
+      <h2 class="section-title" style="color:var(--white)">Alles, was du<br>wissen musst</h2>
+      <p class="section-sub" style="color:rgba(255,255,255,.45)">Noch Fragen? Hier findest du die Antworten auf die häufigsten Fragen von Arbeitgebern.</p>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item fade-in">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Was kostet ODOJ für Arbeitgeber?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">Das Inserieren auf ODOJ ist vollständig kostenlos. Es gibt keine monatlichen Gebühren, keine Abonnements und keine versteckten Kosten. ODOJ finanziert sich über eine kleine Vermittlungsgebühr, die nur bei erfolgreich abgeschlossenem Einsatz anfällt und transparent ausgewiesen wird.</div>
+      </div>
+      <div class="faq-item fade-in">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Was passiert, wenn ein Jobber nicht erscheint?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">Sollte ein bestätigter Jobber nicht erscheinen, kontaktiere uns sofort über betriebe@odoj.at oder telefonisch. Wir versuchen, kurzfristig einen Ersatz zu organisieren. Jobber, die Einsätze unentschuldigt absagen, werden auf unserer Plattform bewertet und können bei Wiederholung gesperrt werden.</div>
+      </div>
+      <div class="faq-item fade-in">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Wie funktioniert die Abrechnung?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">Du gibst im Inserat das Tagesgehalt an, das direkt an den Jobber ausbezahlt wird – dies ist deine Verantwortung als Arbeitgeber. ODOJ stellt nach Bestätigung der Anwesenheit eine separate Vermittlungsrechnung aus. So bleibt alles klar und nachvollziehbar getrennt.</div>
+      </div>
+      <div class="faq-item fade-in">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Kann ich denselben Jobber wieder buchen?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">Ja! Du kannst in deinen vergangenen Inseraten sehen, welche Jobber bei dir gearbeitet haben, und sie direkt für neue Inserate anfragen. Gute Jobber zu Stammkräften zu machen ist eines der wichtigsten Features von ODOJ – so sparst du Einarbeitungszeit und hast verlässliche Unterstützung.</div>
+      </div>
+      <div class="faq-item fade-in">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Wie schnell bekomme ich Personal?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">In der Regel innerhalb von 24 Stunden nach Veröffentlichung deines Inserats. Bei kurzfristigen Einsätzen (selber oder nächster Tag) ist es sinnvoll, das Inserat frühzeitig zu veröffentlichen. In dringenden Fällen hilft auch ein direkter Anruf bei uns – wir versuchen, schnell eine Lösung zu finden.</div>
+      </div>
+      <div class="faq-item fade-in">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Welche Branchen kann ich auf ODOJ bedienen?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">Aktuell bietet ODOJ Personal für Gastronomie &amp; Hotel, Bau &amp; Handwerk, Lager &amp; Logistik sowie Veranstaltungen &amp; Events. Das Angebot wird laufend erweitert. Wenn deine Branche noch nicht dabei ist, kontaktiere uns – wir prüfen gerne, ob wir helfen können.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -981,22 +736,6 @@
 
 </div><!-- /ag-marketing -->
 
-<!-- ── BEWERBUNGEN OVERLAY ── -->
-<div class="bew-overlay" id="bew-overlay" onclick="overlayBgClick(event)">
-  <div class="bew-overlay-box">
-    <div class="bew-overlay-head">
-      <div>
-        <span class="bew-overlay-label">Eingehende Bewerbungen</span>
-        <h3 class="bew-overlay-titel" id="bew-overlay-titel">–</h3>
-      </div>
-      <button class="bew-close-btn" onclick="closeBewOverlay()">✕ Schließen</button>
-    </div>
-    <div class="bew-overlay-body" id="bew-overlay-body">
-      <div style="text-align:center;padding:40px;color:var(--text-lt)">Lade…</div>
-    </div>
-  </div>
-</div>
-
 <!-- FOOTER -->
 <footer>
   <div class="footer-grid">
@@ -1005,7 +744,7 @@
       <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
     </div>
     <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li></ul></div>
-    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="arbeitgeber.html">Inserat erstellen</a></li></ul></div>
+    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="meine-inserate.html">Meine Inserate</a></li></ul></div>
     <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
   </div>
   <div class="footer-bottom">
@@ -1013,25 +752,6 @@
     <div class="footer-legal"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="agb.html">AGB</a></div>
   </div>
 </footer>
-
-<!-- BEWERBER-PROFIL-MODAL -->
-<div class="jp-overlay" id="jp-overlay" onclick="closeJobberProfile(event)">
-  <div class="jp-modal" id="jp-modal">
-    <div class="jp-modal-header">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div class="jp-avatar" id="jp-avatar">?</div>
-        <div>
-          <div class="jp-modal-name" id="jp-modal-name">–</div>
-          <div class="jp-modal-email" id="jp-modal-email">–</div>
-        </div>
-      </div>
-      <button class="jp-modal-close" onclick="closeJobberProfile()">✕</button>
-    </div>
-    <div class="jp-modal-body" id="jp-modal-body">
-      <div class="jp-loading">Daten werden geladen…</div>
-    </div>
-  </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
@@ -1043,524 +763,15 @@ function toggleMenu() { document.getElementById('navMobile').classList.toggle('o
 function goToInserate() {
   const rolle = localStorage.getItem('odoj_rolle');
   if (rolle === 'arbeitgeber') {
-    // Bereits eingeloggt als Arbeitgeber → Dashboard anzeigen
-    document.getElementById('ag-marketing').style.display = 'none';
-    document.getElementById('ag-dashboard').style.display = 'block';
-    showTab('inserate');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.location.href = 'meine-inserate.html';
   } else {
     window.location.href = 'login.html';
   }
 }
 
-// ── GLOBALER STATE ──
-let _agSession   = null;
-let _agFirmenname = '';
-
-// ── TAB WECHSEL ──
-function showTab(tab) {
-  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
-  document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'inserate') loadInserate();
-}
-
-// ── BRANCHE → Label + Tag-Klasse ──
-const BRANCHEN = {
-  gastro: { label: '🍽 Gastronomie',       cls: 'tag-gastro' },
-  bau:    { label: '🏗 Bau & Handwerk',    cls: 'tag-bau'    },
-  lager:  { label: '📦 Lager & Logistik',  cls: 'tag-lager'  },
-  events: { label: '🎤 Events',            cls: 'tag-events' },
-};
-
-// ── INSERATE LADEN ──
-async function loadInserate() {
-  const grid = document.getElementById('inserate-grid');
-  grid.innerHTML = '<div class="dash-loading">Lade Inserate…</div>';
-
-  const { data: jobs, error } = await odojSb
-    .from('jobs')
-    .select('*')
-    .eq('arbeitgeber_id', _agSession.user.id)
-    .order('erstellt_am', { ascending: false });
-
-  if (error) {
-    grid.innerHTML = '<div class="dash-loading" style="color:#c0392b">Fehler beim Laden: ' + error.message + '</div>';
-    return;
-  }
-
-  if (!jobs || jobs.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">📋</div>
-        <h3>Noch keine Inserate</h3>
-        <p>Erstelle deinen ersten Job und finde passende Mitarbeitende in ganz Vorarlberg.</p>
-        <button class="btn btn-accent" onclick="showTab('inserieren')">Jetzt Job inserieren</button>
-      </div>`;
-    return;
-  }
-
-  // Bewerbungs-Anzahl und angenommene pro Job laden
-  const jobIds = jobs.map(j => j.id);
-  const { data: bews } = await odojSb.from('bewerbungen').select('job_id, status').in('job_id', jobIds);
-  const countMap      = {};
-  const acceptedMap   = {};
-  const ausstehendMap = {};
-  bews?.forEach(b => {
-    if (b.status !== 'abgelehnt') countMap[b.job_id] = (countMap[b.job_id] || 0) + 1;
-    if (b.status === 'angenommen')  acceptedMap[b.job_id]   = (acceptedMap[b.job_id]   || 0) + 1;
-    if (b.status === 'ausstehend')  ausstehendMap[b.job_id] = (ausstehendMap[b.job_id] || 0) + 1;
-  });
-
-  // Notification-Badge auf Tab
-  const totalNeu = Object.values(ausstehendMap).reduce((s, v) => s + v, 0);
-  const tabBtn = document.querySelector('[data-tab="inserate"]');
-  if (tabBtn) {
-    let dot = tabBtn.querySelector('.tab-notif');
-    if (totalNeu > 0) {
-      if (!dot) {
-        dot = document.createElement('span');
-        dot.className = 'tab-notif';
-        dot.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#e74c3c;color:#fff;font-size:11px;font-weight:700;border-radius:100px;padding:0 5px;margin-left:6px';
-        tabBtn.appendChild(dot);
-      }
-      dot.textContent = totalNeu;
-    } else if (dot) {
-      dot.remove();
-    }
-  }
-
-  grid.innerHTML = jobs.map(j => renderInseratCard(j, countMap[j.id] || 0, acceptedMap[j.id] || 0, ausstehendMap[j.id] || 0)).join('');
-}
-
-function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
-  bewCount      = bewCount      || 0;
-  acceptedCount = acceptedCount || 0;
-  ausstehendCount = ausstehendCount || 0;
-  const b = BRANCHEN[j.branche] || { label: j.branche, cls: '' };
-  const datum = j.datum
-    ? new Date(j.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : '–';
-  const statusCls = j.status === 'aktiv' ? 'status-aktiv' : 'status-inaktiv';
-  const stunden   = j.stundenanzahl ? j.stundenanzahl + ' Std.' : '';
-  const gehalt    = Number(j.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  const titelEsc  = (j.titel || '').replace(/"/g, '&quot;');
-
-  // Vergeben-Badge
-  const vergebenBadge = acceptedCount > 0
-    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">✓ ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben</span>`
-    : '';
-
-  // Verbleibende Plätze
-  const remaining = (j.plaetze || 0) - acceptedCount;
-  const remainingHtml = `<span class="inserat-meta">🟢 ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
-
-  return `
-    <div class="inserat-card" onclick="window.location.href='job-detail.html?id=${j.id}'">
-      <div class="inserat-top">
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
-          <div class="inserat-titel">${j.titel}</div>
-          ${vergebenBadge}
-          <div class="inserat-firma" style="width:100%">${j.firmenname || ''}</div>
-        </div>
-        <span class="status-badge ${statusCls}">${j.status || 'aktiv'}</span>
-      </div>
-      <span class="tag ${b.cls}" style="display:inline-block;margin-bottom:8px">${b.label}</span>
-      <div class="inserat-metas">
-        <span class="inserat-meta">📅 ${datum}</span>
-        <span class="inserat-meta">🕐 ${j.uhrzeit_von || '–'} – ${j.uhrzeit_bis || '–'}</span>
-        <span class="inserat-meta">📍 ${j.ort || '–'}</span>
-        <span class="inserat-meta">👥 ${j.plaetze || '–'} Platz/Plätze gesamt</span>
-        ${remainingHtml}
-        <span class="inserat-meta">🔞 Ab ${j.mindestalter || 18} Jahren</span>
-      </div>
-      <div class="inserat-footer">
-        <div>
-          <div class="inserat-gehalt">€ ${gehalt} <span>/ Tag</span></div>
-          <div class="inserat-stunden">${stunden}</div>
-        </div>
-        <div class="inserat-card-footer-actions">
-          <a href="job-detail.html?id=${j.id}" class="inserat-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
-          <button class="bew-count-badge"
-            data-job-id="${j.id}" data-job-titel="${titelEsc}"
-            onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel)">
-            👤 ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
-            ${ausstehendCount > 0 ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:0 4px;margin-left:4px">${ausstehendCount} neu</span>` : ''}
-          </button>
-          <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}')">Löschen</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-// ── BEWERBUNGEN OVERLAY ──
-async function openBewerbungen(jobId, jobTitel) {
-  document.getElementById('bew-overlay-titel').textContent = jobTitel;
-  document.getElementById('bew-overlay').style.display = 'block';
-  document.body.style.overflow = 'hidden';
-
-  const bodyEl = document.getElementById('bew-overlay-body');
-  bodyEl.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-lt)">Lade Bewerbungen…</div>';
-
-  const { data: alle, error } = await odojSb
-    .from('bewerbungen')
-    .select('*')
-    .eq('job_id', jobId)
-    .order('erstellt_am', { ascending: false });
-
-  if (error) {
-    bodyEl.innerHTML = '<p style="color:#c0392b;padding:24px">Fehler: ' + error.message + '</p>';
-    return;
-  }
-
-  // Abgelehnte ausblenden
-  const bewerbungen = (alle || []).filter(b => b.status !== 'abgelehnt');
-
-  if (bewerbungen.length === 0) {
-    bodyEl.innerHTML = `
-      <div style="text-align:center;padding:56px 32px;color:var(--text-lt)">
-        <div style="font-size:42px;margin-bottom:14px">📭</div>
-        <p style="font-size:15px">Keine aktiven Bewerbungen für dieses Inserat.</p>
-      </div>`;
-    return;
-  }
-
-  // Profildaten der Bewerber laden
-  const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
-  let profileMap = {};
-  if (jobberIds.length) {
-    const { data: profiles } = await odojSb
-      .from('Profile')
-      .select('user_id, adresse, svnummer, geburtsdatum')
-      .in('user_id', jobberIds);
-    profiles?.forEach(p => { profileMap[p.user_id] = p; });
-  }
-
-  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id])).join('');
-}
-
-function renderBewItem(b, profile) {
-  const dateStr = b.erstellt_am
-    ? new Date(b.erstellt_am).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
-    : '–';
-  const stCls   = b.status === 'angenommen' ? 'bew-st-angenommen'
-                : b.status === 'abgelehnt'  ? 'bew-st-abgelehnt'
-                : 'bew-st-ausstehend';
-  const stLabel = b.status === 'angenommen' ? 'Angenommen'
-                : b.status === 'abgelehnt'  ? 'Abgelehnt'
-                : 'Ausstehend';
-  const acceptBtn = b.status !== 'angenommen'
-    ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${b.id}','angenommen')">✓ Annehmen</button>` : '';
-  const rejectBtn = b.status !== 'abgelehnt'
-    ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">✕ Ablehnen</button>` : '';
-
-  const presenceBtn = b.status === 'angenommen'
-    ? (b.anwesenheit_bestaetigt
-        ? `<button class="bew-btn bew-btn-presence-done" disabled>✓ Anwesenheit & Bezahlung bestätigt</button>`
-        : `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${(b.jobber_name || '').replace(/'/g,"\\'")}')">✓ Anwesenheit & Bezahlung bestätigen</button>`)
-    : '';
-
-  // Geburtsdatum formatieren
-  let gebStr = '';
-  if (profile?.geburtsdatum) {
-    const geb = new Date(profile.geburtsdatum);
-    const heute = new Date();
-    let alter = heute.getFullYear() - geb.getFullYear();
-    const m = heute.getMonth() - geb.getMonth();
-    if (m < 0 || (m === 0 && heute.getDate() < geb.getDate())) alter--;
-    gebStr = geb.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' }) + ` (${alter} Jahre)`;
-  }
-
-  const profileDetails = (profile?.adresse || profile?.svnummer || gebStr) ? `
-    <div class="bew-item-profile">
-      ${gebStr             ? `<span class="bew-profile-field">🎂 ${gebStr}</span>` : ''}
-      ${profile?.adresse   ? `<span class="bew-profile-field">📍 ${profile.adresse}</span>` : ''}
-      ${profile?.svnummer  ? `<span class="bew-profile-field">🪪 SV-Nr.: ${profile.svnummer}</span>` : ''}
-    </div>` : '';
-
-  return `
-    <div class="bew-item" id="bew-item-${b.id}">
-      <div class="bew-item-header">
-        <div>
-          <div class="bew-item-name" onclick="showJobberProfile('${b.jobber_id || ''}', '${(b.jobber_name || 'Unbekannt').replace(/'/g,"\\'")}', '${(b.jobber_email || '').replace(/'/g,"\\'")}')">
-            ${b.jobber_name || 'Unbekannt'}
-          </div>
-          <div class="bew-item-date">Beworben am ${dateStr}</div>
-        </div>
-        <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
-      </div>
-      ${profileDetails}
-      <div class="bew-item-actions" id="bew-actions-${b.id}">
-        ${acceptBtn}${rejectBtn}
-        <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')">💬 Nachricht senden</button>
-        ${presenceBtn}
-      </div>
-    </div>`;
-}
-
-async function confirmPresence(bewId, jobberId, agId, jobberName) {
-  const btn = document.getElementById('pres-btn-' + bewId);
-  if (btn) { btn.disabled = true; btn.textContent = 'Speichern…'; }
-
-  const now = new Date().toISOString();
-  const { error: bewErr } = await odojSb.from('bewerbungen')
-    .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now })
-    .eq('id', bewId);
-  if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen ✓'; } return; }
-
-  // Job-Titel für Rechnung laden
-  const { data: bewData } = await odojSb.from('bewerbungen').select('job_id').eq('id', bewId).single();
-  let jobTitel = 'Tagesjob';
-  if (bewData?.job_id) {
-    const { data: jobData } = await odojSb.from('jobs').select('titel').eq('id', bewData.job_id).single();
-    if (jobData?.titel) jobTitel = jobData.titel;
-  }
-
-  const today = new Date().toISOString().split('T')[0];
-  await odojSb.from('rechnungen').insert({
-    arbeitgeber_id: agId,
-    jobber_id:      jobberId,
-    bewerbung_id:   bewId,
-    job_titel:      jobTitel,
-    jobber_name:    jobberName,
-    betrag:         15,
-    datum:          today
-  });
-
-  // Automatische Bestätigungsnachricht im Chat
-  const systemMsg = `✅ Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben! 🙌\n\n– Team ODOJ`;
-  const { error: msgErr } = await odojSb.from('nachrichten').insert({
-    bewerbung_id:  bewId,
-    sender_id:     agId,
-    empfaenger_id: jobberId,
-    nachricht:     systemMsg,
-    gelesen:       false,
-    erstellt_am:   new Date().toISOString()
-  });
-  if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
-
-  // E-Mail an Jobber mit Bewertungslink (fire & forget)
-  if (jobberId) {
-    const { data: agProfile } = await odojSb.from('Profile').select('firmenname').eq('user_id', agId).single();
-    odojSb.functions.invoke('send-email', {
-      body: {
-        type:        'work_confirmed',
-        recipientId: jobberId,
-        firmenname:  agProfile?.firmenname || '',
-        jobTitel:    jobTitel,
-        bewId:       bewId
-      }
-    }).catch(() => {});
-  }
-
-  if (btn) {
-    btn.textContent = '✓ Anwesenheit bestätigt';
-    btn.className = 'bew-btn bew-btn-presence-done';
-    btn.disabled = true;
-  }
-}
-
-async function updateBewStatus(bewId, newStatus) {
-  const { error } = await odojSb.from('bewerbungen').update({ status: newStatus }).eq('id', bewId);
-  if (error) { alert('Fehler: ' + error.message); return; }
-
-  // Bewerbungsdaten für automatische Nachricht laden
-  const { data: bew } = await odojSb.from('bewerbungen')
-    .select('jobber_id, job_id')
-    .eq('id', bewId).single();
-
-  // Wenn angenommen: prüfen ob alle Plätze vergeben → Job deaktivieren
-  if (newStatus === 'angenommen' && bew?.job_id) {
-    const { data: job } = await odojSb.from('jobs').select('id, plaetze, status').eq('id', bew.job_id).single();
-    if (job && job.status === 'aktiv') {
-      const { count } = await odojSb.from('bewerbungen')
-        .select('id', { count: 'exact', head: true })
-        .eq('job_id', bew.job_id)
-        .eq('status', 'angenommen');
-      if (count >= job.plaetze) {
-        await odojSb.from('jobs').update({ status: 'inaktiv' }).eq('id', bew.job_id);
-      }
-    }
-  }
-
-  if (bew?.jobber_id && bew?.job_id) {
-    const { data: job } = await odojSb.from('jobs').select('titel').eq('id', bew.job_id).single();
-    const jobTitel = job?.titel || 'den Job';
-    const firma    = _agFirmenname || 'uns';
-    const agId     = _agSession?.user?.id;
-
-    const nachricht = newStatus === 'angenommen'
-      ? `🎉 Herzlichen Glückwunsch! Deine Bewerbung für ${jobTitel} bei ${firma} wurde angenommen! Wir freuen uns auf deinen Einsatz. Bei Fragen kannst du uns hier direkt schreiben. Bis bald! 👋`
-      : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche! 🍀`;
-
-    if (agId) {
-      const { error: msgErr } = await odojSb.from('nachrichten').insert({
-        bewerbung_id:  bewId,
-        sender_id:     agId,
-        empfaenger_id: bew.jobber_id,
-        nachricht,
-        gelesen:       false,
-        erstellt_am:   new Date().toISOString()
-      });
-      if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
-    }
-  }
-
-  if (newStatus === 'abgelehnt') {
-    // Abgelehnte sofort aus dem Overlay entfernen
-    const itemEl = document.getElementById('bew-item-' + bewId);
-    if (itemEl) {
-      itemEl.style.transition = 'opacity .25s';
-      itemEl.style.opacity = '0';
-      setTimeout(() => {
-        itemEl.remove();
-        // Prüfen ob Overlay jetzt leer ist
-        const body = document.getElementById('bew-overlay-body');
-        if (body && !body.querySelector('.bew-item')) {
-          body.innerHTML = `
-            <div style="text-align:center;padding:56px 32px;color:var(--text-lt)">
-              <div style="font-size:42px;margin-bottom:14px">📭</div>
-              <p style="font-size:15px">Keine aktiven Bewerbungen für dieses Inserat.</p>
-            </div>`;
-        }
-      }, 250);
-    }
-  } else {
-    // Angenommen: Badge und Buttons aktualisieren
-    const badge = document.getElementById('bew-badge-' + bewId);
-    if (badge) {
-      badge.className = 'bew-st-badge bew-st-angenommen';
-      badge.textContent = 'Angenommen';
-    }
-    const actEl = document.getElementById('bew-actions-' + bewId);
-    if (actEl) {
-      actEl.innerHTML =
-        `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">✕ Ablehnen</button>` +
-        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')">💬 Nachricht senden</button>` +
-        `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '', '', '')">✓ Anwesenheit & Bezahlung bestätigen</button>`;
-    }
-  }
-  loadInserate();
-}
-
-function startChat(bewId) { window.location.href = 'chat.html?bew=' + bewId; }
-
-function closeBewOverlay() {
-  document.getElementById('bew-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
-function overlayBgClick(e) {
-  if (e.target === document.getElementById('bew-overlay')) closeBewOverlay();
-}
-
-async function deleteInserat(id) {
-  if (!confirm('Inserat wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
-  const { error } = await odojSb.from('jobs').delete().eq('id', id);
-  if (error) { alert('Fehler beim Löschen: ' + error.message); return; }
-  loadInserate();
-}
-
-// ── STUNDEN AUTO-BERECHNUNG ──
-function calcStunden() {
-  const von = document.getElementById('ins-von').value;
-  const bis = document.getElementById('ins-bis').value;
-  if (!von || !bis) return;
-  const [h1, m1] = von.split(':').map(Number);
-  const [h2, m2] = bis.split(':').map(Number);
-  let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
-  if (mins < 0) mins += 24 * 60; // Nachtschicht
-  document.getElementById('ins-stunden').value = Math.round(mins / 60 * 10) / 10;
-  checkPauseWarning();
-}
-
-// ── PAUSE-PFLICHT PRÜFEN (§11 AZG Österreich) ──
-function checkPauseWarning() {
-  const stunden = parseFloat(document.getElementById('ins-stunden').value) || 0;
-  const pause   = parseInt(document.getElementById('ins-pause').value, 10);
-  const warnEl  = document.getElementById('ins-pause-warn');
-  if (!warnEl) return true;
-
-  if (stunden >= 9 && pause < 45) {
-    warnEl.innerHTML = '⚠️ <strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von mehr als 9 Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>45 Minuten</strong> vor. Bitte wähle eine entsprechende Pause.';
-    warnEl.style.display = 'block';
-    return false;
-  } else if (stunden >= 6 && pause < 30) {
-    warnEl.innerHTML = '⚠️ <strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von 6 oder mehr Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>30 Minuten</strong> vor. Bitte wähle eine entsprechende Pause.';
-    warnEl.style.display = 'block';
-    return false;
-  }
-  warnEl.style.display = 'none';
-  return true;
-}
-
-// ── JOB SPEICHERN ──
-async function submitInserat(e) {
-  e.preventDefault();
-  const btn       = document.getElementById('ins-btn');
-  const errEl     = document.getElementById('ins-error');
-  const successEl = document.getElementById('ins-success');
-  errEl.style.display = 'none';
-  successEl.style.display = 'none';
-
-  const titel   = document.getElementById('ins-titel').value.trim();
-  const branche = document.getElementById('ins-branche').value;
-  const datum   = document.getElementById('ins-datum').value;
-  const von     = document.getElementById('ins-von').value;
-  const bis     = document.getElementById('ins-bis').value;
-  const stunden = parseFloat(document.getElementById('ins-stunden').value) || null;
-  const gehalt  = parseFloat(document.getElementById('ins-gehalt').value);
-  const adresse = document.getElementById('ins-adresse').value.trim();
-  const ort     = document.getElementById('ins-ort').value.trim();
-  const plaetze      = parseInt(document.getElementById('ins-plaetze').value, 10);
-  const mindestalter = parseInt(document.getElementById('ins-mindestalter').value, 10) || 18;
-  const pause        = parseInt(document.getElementById('ins-pause').value, 10) || 0;
-  const beschr  = document.getElementById('ins-beschr').value.trim();
-
-  if (!titel || !branche || !datum || !von || !bis || !gehalt || !adresse || !ort || plaetze < 1) {
-    errEl.textContent = 'Bitte alle Pflichtfelder ausfüllen.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  // Pause-Pflicht prüfen
-  if (!checkPauseWarning()) {
-    errEl.textContent = 'Bitte eine gesetzeskonforme Pause auswählen (siehe Hinweis oben).';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  btn.textContent = 'Speichern…';
-  btn.disabled    = true;
-
-  const { error } = await odojSb.from('jobs').insert({
-    arbeitgeber_id: _agSession.user.id,
-    firmenname:     _agFirmenname,
-    titel, branche, datum,
-    uhrzeit_von:   von,
-    uhrzeit_bis:   bis,
-    stundenanzahl: stunden,
-    tagesgehalt:   gehalt,
-    adresse, ort, plaetze, mindestalter, pause,
-    beschreibung:  beschr,
-    status:        'aktiv'
-  });
-
-  btn.textContent = 'Job speichern';
-  btn.disabled    = false;
-
-  if (error) {
-    errEl.textContent = 'Fehler: ' + error.message;
-    errEl.style.display = 'block';
-    return;
-  }
-
-  document.getElementById('ins-form').reset();
-  successEl.style.display = 'block';
-  setTimeout(() => {
-    successEl.style.display = 'none';
-    showTab('inserate');
-  }, 1500);
+// ── FAQ TOGGLE ──
+function toggleFaq(btn) {
+  btn.parentElement.classList.toggle('open');
 }
 
 // ── AUTH GUARD ──
@@ -1571,40 +782,25 @@ async function submitInserat(e) {
     if (handled) return;
     handled = true;
 
-    if (!session) {
-      // Nicht eingeloggt → Marketing zeigen (kein Redirect)
-      return;
-    }
+    if (!session) return; // Nicht eingeloggt → Marketing anzeigen
 
-    // Rolle + Firmenname aus profile laden
     let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
-    let firmenname = '';
     try {
       const { data: profile } = await odojSb
         .from('Profile')
-        .select('rolle, firmenname')
+        .select('rolle')
         .eq('user_id', session.user.id)
         .single();
-      if (profile?.rolle)      rolle      = profile.rolle;
-      if (profile?.firmenname) firmenname = profile.firmenname;
+      if (profile?.rolle) rolle = profile.rolle;
     } catch (_) {}
 
     odojSaveRolle(rolle);
 
     if (rolle === 'arbeitgeber') {
-      // Dashboard einblenden, Marketing ausblenden
-      _agSession    = session;
-      _agFirmenname = firmenname;
-      document.getElementById('ag-marketing').style.display  = 'none';
-      document.getElementById('ag-dashboard').style.display  = 'block';
-      loadInserate();
-      // Bewerbungs-Notifications als gelesen → Badge zurücksetzen
-      if (window.odojNotifications) {
-        window.odojNotifications.markAllRead(session.user.id).catch(() => {});
-      }
+      document.getElementById('ag-inserate-bar').style.display = 'block';
     } else {
       // Jobber: Hinweis-Banner zeigen
-      document.getElementById('ag-marketing').style.display       = 'none';
+      document.getElementById('ag-marketing').style.display = 'none';
       document.getElementById('ag-wrong-role-banner').style.display = 'flex';
     }
   }
@@ -1636,100 +832,6 @@ const obs = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80); });
 }, { threshold: 0.08 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
-
-// ── BEWERBER-PROFIL-MODAL ──────────────────────────────────────
-
-function escJ(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function _berechneAlterStr(geburtsdatum) {
-  if (!geburtsdatum) return null;
-  const geb = new Date(geburtsdatum);
-  const heute = new Date();
-  let alter = heute.getFullYear() - geb.getFullYear();
-  const md = heute.getMonth() - geb.getMonth();
-  if (md < 0 || (md === 0 && heute.getDate() < geb.getDate())) alter--;
-  return alter;
-}
-
-async function showJobberProfile(jobberId, jobberName, jobberEmail) {
-  const overlay = document.getElementById('jp-overlay');
-  const body    = document.getElementById('jp-modal-body');
-
-  // Initialen im Avatar
-  const initials = (jobberName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  document.getElementById('jp-avatar').textContent    = initials;
-  document.getElementById('jp-modal-name').textContent = jobberName || 'Unbekannt';
-  document.getElementById('jp-modal-email').textContent = jobberEmail || '';
-  body.innerHTML = '<div class="jp-loading">Daten werden geladen…</div>';
-
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-
-  // ESC schließt
-  document._jpEsc = (e) => { if (e.key === 'Escape') closeJobberProfile(); };
-  document.addEventListener('keydown', document._jpEsc);
-
-  // Profildaten laden
-  const { data: profile } = await odojSb
-    .from('Profile')
-    .select('vorname, nachname, geburtsdatum, adresse, adresse_plz, adresse_ort, svnummer')
-    .eq('user_id', jobberId)
-    .single();
-
-  const fields = [];
-
-  // Alter / Geburtsdatum
-  if (profile?.geburtsdatum) {
-    const alter = _berechneAlterStr(profile.geburtsdatum);
-    const gebFormatted = new Date(profile.geburtsdatum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    fields.push({ icon: '🎂', label: 'Geburtsdatum', value: gebFormatted, sub: alter !== null ? `${alter} Jahre alt` : '' });
-  }
-
-  // Adresse
-  const adresseTeile = [profile?.adresse, profile?.adresse_plz, profile?.adresse_ort].filter(Boolean);
-  const adresseStr = adresseTeile.length ? adresseTeile.join(', ') : (profile?.adresse || null);
-  if (adresseStr) {
-    fields.push({ icon: '📍', label: 'Wohnadresse', value: escJ(adresseStr) });
-  }
-
-  // SV-Nummer
-  if (profile?.svnummer) {
-    fields.push({ icon: '🪪', label: 'SV-Nummer', value: escJ(profile.svnummer) });
-  }
-
-  // E-Mail
-  if (jobberEmail) {
-    fields.push({ icon: '✉️', label: 'E-Mail', value: escJ(jobberEmail) });
-  }
-
-  if (fields.length === 0) {
-    body.innerHTML = `<p style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px 0">Dieser Bewerber hat noch keine weiteren Profildaten hinterlegt.</p>`;
-    return;
-  }
-
-  body.innerHTML = `
-    <p class="jp-section-title">Profildaten</p>
-    <div class="jp-fields">
-      ${fields.map(f => `
-        <div class="jp-field">
-          <span class="jp-field-icon">${f.icon}</span>
-          <div>
-            <div class="jp-field-label">${f.label}</div>
-            <div class="jp-field-value">${f.value}</div>
-            ${f.sub ? `<div class="jp-field-sub">${f.sub}</div>` : ''}
-          </div>
-        </div>`).join('')}
-    </div>`;
-}
-
-function closeJobberProfile(e) {
-  if (e && e.target !== document.getElementById('jp-overlay')) return;
-  document.getElementById('jp-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-  if (document._jpEsc) { document.removeEventListener('keydown', document._jpEsc); delete document._jpEsc; }
-}
 </script>
 <script src="cookies.js"></script>
 </body>
