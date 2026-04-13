@@ -199,7 +199,8 @@ async function odojInitNav() {
       if (rolle === 'arbeitgeber' && !document.getElementById('nav-meine-inserate')) {
         const miLi = document.createElement('li');
         miLi.id = 'nav-meine-inserate';
-        miLi.innerHTML = '<a href="arbeitgeber.html">Meine Inserate</a>';
+        const miActive = location.pathname.includes('meine-inserate') ? ' class="active"' : '';
+        miLi.innerHTML = `<a href="meine-inserate.html"${miActive}>Meine Inserate</a>`;
         navAuthLi.parentElement.insertBefore(miLi, msgLi);
         if (pendingBewCount > 0) _setNavBadge('nav-meine-inserate', pendingBewCount);
       }
@@ -236,9 +237,10 @@ async function odojInitNav() {
       }
       if (rolle === 'arbeitgeber' && !document.getElementById('nav-mobile-meine-inserate')) {
         const miA = document.createElement('a');
-        miA.href = 'arbeitgeber.html';
+        miA.href = 'meine-inserate.html';
         miA.id   = 'nav-mobile-meine-inserate';
         miA.textContent = 'Meine Inserate';
+        if (location.pathname.includes('meine-inserate')) miA.style.color = 'var(--accent)';
         navMobile.insertBefore(miA, msgA);
         if (pendingBewCount > 0) _setMobileNavBadge('nav-mobile-meine-inserate', pendingBewCount);
       }
