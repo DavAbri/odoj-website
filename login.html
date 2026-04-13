@@ -468,6 +468,9 @@ function setMode(mode) {
 }
 
 function redirectAfterAuth(rolle) {
+  const params = new URLSearchParams(location.search);
+  const redirect = params.get('redirect');
+  if (redirect) { window.location.href = redirect; return; }
   window.location.href = rolle === 'arbeitgeber' ? 'arbeitgeber.html' : 'jobs.html';
 }
 
