@@ -356,6 +356,15 @@ function renderArbeitgeber(session, profile) {
   const ansprechperson = profile?.vorname && profile?.nachname
     ? profile.vorname + ' ' + profile.nachname : (profile?.vorname || '–');
 
+  const adresseFull = [profile?.adresse, profile?.adresse_plz, profile?.adresse_ort].filter(Boolean).join(', ') || '–';
+
+  const BRANCHEN_LABEL = {
+    gastro: '🍽 Gastronomie & Hotel',
+    bau:    '🏗 Bau & Handwerk',
+    lager:  '📦 Lager & Logistik',
+    events: '🎤 Veranstaltungen & Events',
+  };
+
   body.innerHTML = `
     <!-- Profilkarte -->
     <div class="profil-card">
@@ -377,6 +386,31 @@ function renderArbeitgeber(session, profile) {
             <label>E-Mail</label>
             <span>${escH(session.user.email)}</span>
           </div>
+          <div class="profil-info-item">
+            <label>Adresse</label>
+            <span id="ag-info-adresse">${escH(adresseFull)}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>Telefon</label>
+            <span id="ag-info-telefon">${escH(profile?.telefon || '–')}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>Website</label>
+            <span id="ag-info-website">${escH(profile?.website || '–')}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>Branche</label>
+            <span id="ag-info-branche">${escH(BRANCHEN_LABEL[profile?.branche] || profile?.branche || '–')}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>UID-Nummer</label>
+            <span id="ag-info-uid">${escH(profile?.uid_nummer || '–')}</span>
+          </div>
+          ${profile?.beschreibung ? `
+          <div class="profil-info-item" style="grid-column:1/-1">
+            <label>Über uns</label>
+            <span id="ag-info-beschreibung">${escH(profile.beschreibung)}</span>
+          </div>` : ''}
         </div>
         <button class="btn-edit" onclick="toggleAgEdit(true)">Profil bearbeiten</button>
       </div>
@@ -384,7 +418,7 @@ function renderArbeitgeber(session, profile) {
       <div id="ag-profil-edit" style="display:none">
         <div class="profil-form">
           <div class="profil-field">
-            <label>Firmenname</label>
+            <label>Firmenname *</label>
             <input type="text" id="ag-edit-firma" value="${escH(profile?.firmenname || '')}" placeholder="Firmenname">
           </div>
           <div class="profil-field">
@@ -395,8 +429,49 @@ function renderArbeitgeber(session, profile) {
             <label>Nachname Ansprechperson</label>
             <input type="text" id="ag-edit-nachname" value="${escH(profile?.nachname || '')}" placeholder="Nachname">
           </div>
+          <div class="profil-field">
+            <label>Adresse / Straße</label>
+            <input type="text" id="ag-edit-adresse" value="${escH(profile?.adresse || '')}" placeholder="Musterstraße 12">
+          </div>
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:10px">
+            <div class="profil-field">
+              <label>PLZ</label>
+              <input type="text" id="ag-edit-plz" value="${escH(profile?.adresse_plz || '')}" placeholder="6850">
+            </div>
+            <div class="profil-field">
+              <label>Ort</label>
+              <input type="text" id="ag-edit-ort" value="${escH(profile?.adresse_ort || '')}" placeholder="Dornbirn">
+            </div>
+          </div>
+          <div class="profil-field">
+            <label>Telefonnummer</label>
+            <input type="tel" id="ag-edit-telefon" value="${escH(profile?.telefon || '')}" placeholder="+43 5572 ...">
+          </div>
+          <div class="profil-field">
+            <label>Website (optional)</label>
+            <input type="url" id="ag-edit-website" value="${escH(profile?.website || '')}" placeholder="https://www.beispiel.at">
+          </div>
+          <div class="profil-field">
+            <label>Branche</label>
+            <select id="ag-edit-branche">
+              <option value="">Bitte wählen</option>
+              <option value="gastro" ${profile?.branche === 'gastro' ? 'selected' : ''}>🍽 Gastronomie &amp; Hotel</option>
+              <option value="bau"    ${profile?.branche === 'bau'    ? 'selected' : ''}>🏗 Bau &amp; Handwerk</option>
+              <option value="lager"  ${profile?.branche === 'lager'  ? 'selected' : ''}>📦 Lager &amp; Logistik</option>
+              <option value="events" ${profile?.branche === 'events' ? 'selected' : ''}>🎤 Veranstaltungen &amp; Events</option>
+            </select>
+          </div>
+          <div class="profil-field">
+            <label>UID-Nummer (optional)</label>
+            <input type="text" id="ag-edit-uid" value="${escH(profile?.uid_nummer || '')}" placeholder="ATU12345678">
+          </div>
+          <div class="profil-field">
+            <label>Über uns (optional)</label>
+            <textarea id="ag-edit-beschreibung" placeholder="Kurze Beschreibung Ihres Unternehmens…" rows="3">${escH(profile?.beschreibung || '')}</textarea>
+          </div>
+          <div id="ag-save-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px"></div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn-save" onclick="saveAgProfil('${session.user.id}')">Speichern</button>
+            <button class="btn-save" id="ag-save-btn" onclick="saveAgProfil('${session.user.id}')">Speichern</button>
             <button class="btn-edit" onclick="toggleAgEdit(false)">Abbrechen</button>
           </div>
         </div>
@@ -423,21 +498,55 @@ function toggleAgEdit(show) {
 }
 
 async function saveAgProfil(userId) {
-  const firma    = document.getElementById('ag-edit-firma').value.trim();
-  const vorname  = document.getElementById('ag-edit-vorname').value.trim();
-  const nachname = document.getElementById('ag-edit-nachname').value.trim();
+  const btn    = document.getElementById('ag-save-btn');
+  const errEl  = document.getElementById('ag-save-error');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Speichern…';
 
-  const { data, error } = await odojSb.from('Profile')
-    .update({ firmenname: firma, vorname, nachname })
-    .eq('user_id', userId)
-    .select();
+  const firma       = document.getElementById('ag-edit-firma').value.trim();
+  const vorname     = document.getElementById('ag-edit-vorname').value.trim();
+  const nachname    = document.getElementById('ag-edit-nachname').value.trim();
+  const adresse     = document.getElementById('ag-edit-adresse').value.trim();
+  const plz         = document.getElementById('ag-edit-plz').value.trim();
+  const ort         = document.getElementById('ag-edit-ort').value.trim();
+  const telefon     = document.getElementById('ag-edit-telefon').value.trim();
+  const website     = document.getElementById('ag-edit-website').value.trim();
+  const branche     = document.getElementById('ag-edit-branche').value;
+  const uid_nummer  = document.getElementById('ag-edit-uid').value.trim();
+  const beschreibung= document.getElementById('ag-edit-beschreibung').value.trim();
 
-  if (error) { alert('Fehler: ' + error.message); console.error('AG profil save error:', error); return; }
+  const fields = {
+    firmenname: firma,
+    vorname, nachname,
+    adresse, adresse_plz: plz, adresse_ort: ort,
+    telefon, website, branche, uid_nummer, beschreibung
+  };
 
-  document.getElementById('ag-info-firma').textContent  = firma || '–';
-  document.getElementById('ag-info-person').textContent = [vorname, nachname].filter(Boolean).join(' ') || '–';
+  const { data, error } = await _saveProfileFields(userId, fields);
+
+  btn.disabled = false;
+  btn.textContent = 'Speichern';
+
+  if (error) {
+    errEl.textContent = 'Fehler beim Speichern: ' + error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // View aktualisieren
+  const BRANCHEN_LABEL = { gastro:'🍽 Gastronomie & Hotel', bau:'🏗 Bau & Handwerk', lager:'📦 Lager & Logistik', events:'🎤 Veranstaltungen & Events' };
+  const adresseFull = [adresse, plz, ort].filter(Boolean).join(', ') || '–';
+  document.getElementById('ag-info-firma').textContent    = firma || '–';
+  document.getElementById('ag-info-person').textContent   = [vorname, nachname].filter(Boolean).join(' ') || '–';
+  document.getElementById('ag-info-adresse').textContent  = adresseFull;
+  document.getElementById('ag-info-telefon').textContent  = telefon || '–';
+  document.getElementById('ag-info-website').textContent  = website || '–';
+  document.getElementById('ag-info-branche').textContent  = BRANCHEN_LABEL[branche] || branche || '–';
+  document.getElementById('ag-info-uid').textContent      = uid_nummer || '–';
+
   toggleAgEdit(false);
-  showToast('✓ Profil gespeichert');
+  showToast('✓ Firmenprofil gespeichert');
 }
 
 async function loadRechnungen(agId) {
