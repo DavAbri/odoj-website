@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anmelden – ODOJ | Tagesjobs in Vorarlberg</title>
 <meta name="description" content="Jetzt bei ODOJ anmelden oder registrieren – als Jobber oder Arbeitgeber.">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f1f3d">
 <link rel="stylesheet" href="shared.css">
 <style>
 .login-bg {
@@ -439,7 +437,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
-<script src="notifications.js"></script>
 <script>
 // odojSb kommt aus auth.js (bereits geladen)
 let _currentRole = 'jobber';
@@ -506,7 +503,6 @@ async function doLogin(e) {
     return;
   }
 
-  // Rolle aus Metadaten (kein DB-Aufruf nötig, sofortige Weiterleitung)
   const rolle = data.user.user_metadata?.rolle
     || localStorage.getItem('odoj_rolle')
     || 'jobber';

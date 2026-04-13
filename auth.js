@@ -261,35 +261,5 @@ async function odojInitNav() {
   }
 }
 
-// ── SERVICE WORKER REGISTRIEREN ──────────────────────────────
-(function registerSW() {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    });
-  }
-})();
-
-// ── NOTIFICATIONS + BADGE INITIALISIEREN ─────────────────────
-// Wird nach dem Laden von notifications.js aufgerufen.
-async function odojInitNotifications() {
-  const session = await odojGetSession();
-  if (session && window.odojNotifications) {
-    await window.odojNotifications.init(session);
-  }
-}
-
-// Supabase Auth-Changes abfangen (Login / Logout)
-odojSb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && window.odojNotifications) {
-    await window.odojNotifications.init(session);
-  }
-  if (event === 'SIGNED_OUT' && window.odojNotifications) {
-    window.odojNotifications.setBadge(0);
-  }
-});
-
 // Auto-Initialisierung Nav auf allen Seiten
 odojInitNav();
-// Notifications initialisieren (läuft parallel, kein await nötig)
-window.addEventListener('DOMContentLoaded', odojInitNotifications);

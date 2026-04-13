@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jobs finden – ODOJ | Tagesjobs in Vorarlberg</title>
 <meta name="description" content="Aktuelle Tagesjobs in Vorarlberg – Gastronomie, Bau, Lager, Events. Jetzt kostenlos bewerben bei ODOJ.">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f1f3d">
 <link rel="stylesheet" href="shared.css">
 <style>
 /* ── FILTER BAR ── */
@@ -432,7 +430,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
-<script src="notifications.js"></script>
 <script src="modal.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
@@ -587,24 +584,7 @@ async function applyForJob(jobId, agId, btnEl) {
   btnEl.style.background = '#1a7a50';
   btnEl.style.cursor = 'default';
   btnEl.disabled = true;
-  if (window.showBewerbungsErfolg) {
-    showBewerbungsErfolg({ titel: btnEl.dataset.titel || 'Tagesjob', firma: btnEl.dataset.firma || '' });
-  } else {
-    showJobsToast('Bewerbung erfolgreich gesendet!', 'success');
-  }
-
-  // Notification für Arbeitgeber anlegen
-  if (window.odojNotifications && agId) {
-    const titel = btnEl.dataset.titel || 'Tagesjob';
-    const name  = _odojJobsProfile
-      ? ((_odojJobsProfile.vorname || '') + ' ' + (_odojJobsProfile.nachname || '')).trim()
-      : _odojJobsSession.user.email;
-    window.odojNotifications.createNotification(
-      agId, 'new_bewerbung',
-      `Neue Bewerbung von ${name} für: ${titel}`,
-      'arbeitgeber.html'
-    ).catch(() => {});
-  }
+  showJobsToast('Bewerbung erfolgreich gesendet!', 'success');
 }
 
 // ── JOB CARD HTML ──
