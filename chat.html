@@ -394,6 +394,30 @@ async function loadConversations() {
     jobs?.forEach(j => { jobMap[j.id] = j; });
   }
 
+  // Echte Namen aus Profile laden (beide Rollen)
+  let jobberNameMap = {};  // arbeitgeber sieht: jobber_id → "Vorname Nachname"
+  let agNameMap     = {};  // jobber sieht:     arbeitgeber_id → Firmenname
+
+  if (_chatRolle === 'arbeitgeber') {
+    const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
+    if (jobberIds.length) {
+      const { data: jProfiles } = await odojSb.from('Profile').select('user_id,vorname,nachname').in('user_id', jobberIds);
+      jProfiles?.forEach(p => {
+        const n = [p.vorname, p.nachname].filter(Boolean).join(' ');
+        if (n) jobberNameMap[p.user_id] = n;
+      });
+    }
+  } else {
+    const agIds = [...new Set(bewerbungen.map(b => b.arbeitgeber_id).filter(Boolean))];
+    if (agIds.length) {
+      const { data: agProfiles } = await odojSb.from('Profile').select('user_id,firmenname,vorname,nachname').in('user_id', agIds);
+      agProfiles?.forEach(p => {
+        const n = p.firmenname || [p.vorname, p.nachname].filter(Boolean).join(' ');
+        if (n) agNameMap[p.user_id] = n;
+      });
+    }
+  }
+
   // Nachrichten-Info laden (latest + unread)
   const bewIds = bewerbungen.map(b => b.id);
   const { data: msgs } = await odojSb
@@ -433,7 +457,17 @@ async function loadConversations() {
     const job      = jobMap[b.job_id];
     const lastMsg  = msgLatest[b.id];
     const hasUnread = msgUnread[b.id];
-    const name     = _chatRolle === 'arbeitgeber' ? b.jobber_name || 'Unbekannt' : (job?.firmenname || 'Arbeitgeber');
+    let name;
+    if (_chatRolle === 'arbeitgeber') {
+      if (jobberNameMap[b.jobber_id]) {
+        name = jobberNameMap[b.jobber_id];
+      } else {
+        const raw = b.jobber_name || '';
+        name = raw.includes('@') ? raw.split('@')[0] : (raw || 'Unbekannt');
+      }
+    } else {
+      name = agNameMap[b.arbeitgeber_id] || job?.firmenname || 'Unbekannter Betrieb';
+    }
     const sub      = job?.titel || '–';
     const preview  = lastMsg ? lastMsg.nachricht : 'Noch keine Nachrichten';
     const time     = lastMsg ? formatConvTime(lastMsg.erstellt_am) : '';
@@ -475,8 +509,26 @@ async function openConversation(bewId) {
     job = data;
   }
 
-  // Header setzen
-  const name = _chatRolle === 'arbeitgeber' ? bew.jobber_name || 'Unbekannt' : (job?.firmenname || 'Arbeitgeber');
+  // Header setzen – echten Namen aus Profile laden
+  let name;
+  if (_chatRolle === 'arbeitgeber' && bew.jobber_id) {
+    const { data: jp } = await odojSb.from('Profile').select('vorname,nachname').eq('user_id', bew.jobber_id).maybeSingle();
+    const realName = [jp?.vorname, jp?.nachname].filter(Boolean).join(' ');
+    if (realName) {
+      name = realName;
+    } else {
+      const raw = bew.jobber_name || '';
+      name = raw.includes('@') ? raw.split('@')[0] : (raw || 'Unbekannt');
+    }
+  } else if (bew.arbeitgeber_id) {
+    const { data: ap } = await odojSb.from('Profile').select('firmenname,vorname,nachname').eq('user_id', bew.arbeitgeber_id).maybeSingle();
+    name = ap?.firmenname
+      || [ap?.vorname, ap?.nachname].filter(Boolean).join(' ')
+      || job?.firmenname
+      || 'Unbekannter Betrieb';
+  } else {
+    name = job?.firmenname || 'Unbekannter Betrieb';
+  }
   document.getElementById('chat-win-name').textContent = name;
   document.getElementById('chat-win-sub').textContent  = job?.titel || '–';
 
