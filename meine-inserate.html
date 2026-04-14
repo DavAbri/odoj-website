@@ -255,6 +255,34 @@
   font-size: 14px; font-weight: 500; padding: 12px 16px;
   border-radius: var(--r-sm); margin-bottom: 12px; text-align: center;
 }
+.uid-warning {
+  background: #FFFBEC;
+  border: 2px solid var(--accent);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.uid-warning-icon { font-size: 24px; flex-shrink: 0; line-height: 1.2; }
+.uid-warning-body { flex: 1; }
+.uid-warning-body strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+.uid-warning-body p { font-size: 13px; color: var(--text); margin-bottom: 10px; line-height: 1.5; }
+.uid-warning-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent); color: var(--navy);
+  font-size: 13px; font-weight: 700;
+  padding: 8px 18px; border-radius: var(--r-sm);
+  text-decoration: none; transition: background .2s;
+}
+.uid-warning-link:hover { background: var(--accent-lt); }
 
 /* ── BEWERBUNGEN OVERLAY ── */
 .bew-overlay {
@@ -501,14 +529,14 @@
     <!-- Tab-Leiste -->
     <div class="dash-tabs-bar">
       <button class="dash-tab active" data-tab="inserate" onclick="showTab('inserate')">📋 Meine Inserate</button>
-      <button class="dash-tab"        data-tab="inserieren" onclick="showTab('inserieren')">➕ Job inserieren</button>
+      <button class="dash-tab"        data-tab="inserieren" id="tab-btn-inserieren" onclick="showTab('inserieren')">➕ Job inserieren</button>
     </div>
 
     <!-- Panel: Meine Inserate -->
     <div id="panel-inserate" class="dash-panel active">
       <div class="inserate-header">
         <h2>Meine Inserate</h2>
-        <button class="dash-tab" style="background:var(--navy);border-color:var(--navy);color:var(--white)" onclick="showTab('inserieren')">+ Neuer Job</button>
+        <button class="dash-tab" id="btn-neuer-job" style="background:var(--navy);border-color:var(--navy);color:var(--white)" onclick="showTab('inserieren')">+ Neuer Job</button>
       </div>
       <div class="inserate-grid" id="inserate-grid">
         <div class="dash-loading">Lade Inserate…</div>
@@ -517,6 +545,17 @@
 
     <!-- Panel: Job inserieren -->
     <div id="panel-inserieren" class="dash-panel">
+
+      <!-- UID-Warnung (wird per JS ein-/ausgeblendet) -->
+      <div id="uid-warning" class="uid-warning" style="display:none;max-width:760px;margin:0 auto 28px">
+        <div class="uid-warning-icon">⚠️</div>
+        <div class="uid-warning-body">
+          <strong>UID-Nummer fehlt</strong>
+          <p>Um Jobs zu inserieren musst du zuerst deine UID-Nummer in deinem Profil hinterlegen.</p>
+          <a href="profil.html" class="uid-warning-link">→ Jetzt UID-Nummer hinterlegen</a>
+        </div>
+      </div>
+
       <div class="insert-wrap">
         <div class="insert-card">
           <h2>Job inserieren</h2>
@@ -669,8 +708,25 @@
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
-let _agSession   = null;
+let _agSession    = null;
 let _agFirmenname = '';
+let _agUidNummer  = '';
+
+function applyUidCheck(uid) {
+  const hasUid = !!(uid && uid.trim());
+  const warningEl      = document.getElementById('uid-warning');
+  const btnNeuerJob    = document.getElementById('btn-neuer-job');
+  const tabBtnInsert   = document.getElementById('tab-btn-inserieren');
+  const insForm        = document.getElementById('ins-form');
+  const insBtn         = document.getElementById('ins-btn');
+
+  if (warningEl)    warningEl.style.display    = hasUid ? 'none' : 'flex';
+  if (btnNeuerJob)  btnNeuerJob.disabled        = !hasUid;
+  if (tabBtnInsert) tabBtnInsert.disabled       = !hasUid;
+  if (insForm)      insForm.style.opacity       = hasUid ? '1' : '0.4';
+  if (insForm)      insForm.style.pointerEvents = hasUid ? '' : 'none';
+  if (insBtn)       insBtn.disabled             = !hasUid;
+}
 
 // ── TAB WECHSEL ──
 function showTab(tab) {
@@ -1101,6 +1157,20 @@ async function submitInserat(e) {
   errEl.style.display = 'none';
   successEl.style.display = 'none';
 
+  // UID-Nummer serverseitig prüfen
+  if (_agSession) {
+    const { data: uidCheck } = await odojSb
+      .from('Profile').select('uid_nummer').eq('user_id', _agSession.user.id).single();
+    _agUidNummer = uidCheck?.uid_nummer || '';
+  }
+  if (!_agUidNummer || !_agUidNummer.trim()) {
+    applyUidCheck('');
+    showTab('inserieren');
+    errEl.textContent = 'Bitte hinterlege zuerst deine UID-Nummer im Profil.';
+    errEl.style.display = 'block';
+    return;
+  }
+
   const titel   = document.getElementById('ins-titel').value.trim();
   const branche = document.getElementById('ins-branche').value;
   const datum   = document.getElementById('ins-datum').value;
@@ -1178,11 +1248,12 @@ async function submitInserat(e) {
     try {
       const { data: profile } = await odojSb
         .from('Profile')
-        .select('rolle, firmenname')
+        .select('rolle, firmenname, uid_nummer')
         .eq('user_id', session.user.id)
         .single();
       if (profile?.rolle)      rolle      = profile.rolle;
       if (profile?.firmenname) firmenname = profile.firmenname;
+      if (profile?.uid_nummer) _agUidNummer = profile.uid_nummer;
     } catch (_) {}
 
     odojSaveRolle(rolle);
@@ -1193,6 +1264,7 @@ async function submitInserat(e) {
       const fnEl = document.getElementById('mi-firmenname');
       if (fnEl && firmenname) fnEl.textContent = firmenname;
       document.getElementById('mi-dashboard').style.display = 'block';
+      applyUidCheck(_agUidNummer);
       loadInserate();
       if (window.odojNotifications) {
         window.odojNotifications.markAllRead(session.user.id).catch(() => {});
