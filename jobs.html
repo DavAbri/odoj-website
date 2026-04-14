@@ -603,7 +603,7 @@ function renderJobCard(job, locked) {
   } else if (_appliedJobIds.has(job.id)) {
     applyHtml = '<button class="job-apply job-applied" style="background:#1a7a50;cursor:default" disabled onclick="event.stopPropagation()">Beworben ✓</button>';
   } else {
-    applyHtml = `<button class="job-apply" data-job-id="${job.id}" data-ag-id="${job.arbeitgeber_id || ''}" data-titel="${job.titel}" data-firma="${job.firmenname || ''}" data-datum="${datum}" data-gehalt="${job.tagesgehalt || ''}" onclick="event.stopPropagation();handleApplyClick(this)">Bewerben</button>`;
+    applyHtml = `<button class="job-apply" data-job-id="${job.id}" data-ag-id="${job.arbeitgeber_id || ''}" data-titel="${job.titel}" data-firma="${job._agName || job.firmenname || ''}" data-datum="${datum}" data-gehalt="${job.tagesgehalt || ''}" onclick="event.stopPropagation();handleApplyClick(this)">Bewerben</button>`;
   }
 
   return `
@@ -613,7 +613,7 @@ function renderJobCard(job, locked) {
         <span class="job-date">${datum} · ${job.ort}</span>
       </div>
       <h3>${job.titel}</h3>
-      <div class="job-company">${job.firmenname || ''}</div>
+      ${(job._agName || job.firmenname) ? `<div class="job-company">🏢 ${job._agName || job.firmenname}</div>` : ''}
       <div class="job-metas">
         <span class="job-meta">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -683,6 +683,30 @@ async function checkJobsAuth() {
     .select('*')
     .eq('status', 'aktiv')
     .order('datum', { ascending: true });
+
+  // Echte Firmennamen aus Profile laden
+  if (allJobs?.length) {
+    const agIds = [...new Set(allJobs.map(j => j.arbeitgeber_id).filter(Boolean))];
+    if (agIds.length) {
+      const { data: profiles } = await odojSb
+        .from('Profile')
+        .select('user_id, firmenname, vorname, nachname')
+        .in('user_id', agIds);
+      const agNameMap = {};
+      profiles?.forEach(p => {
+        agNameMap[p.user_id] = p.firmenname ||
+          [p.vorname, p.nachname].filter(Boolean).join(' ') || null;
+      });
+      allJobs.forEach(j => {
+        const profileName = agNameMap[j.arbeitgeber_id];
+        if (profileName) {
+          j._agName = profileName;
+        } else if (j.firmenname && j.firmenname.includes('@')) {
+          j._agName = j.firmenname.split('@')[0];
+        }
+      });
+    }
+  }
 
   const session = await odojGetSession();
   _odojJobsSession = session;
