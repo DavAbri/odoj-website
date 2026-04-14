@@ -284,6 +284,76 @@
 }
 .uid-warning-link:hover { background: var(--accent-lt); }
 
+/* ── BEWERTUNGS-MODAL ── */
+.bew-rate-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.bew-rate-modal {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  padding: 40px 36px 32px;
+  max-width: 440px; width: 100%;
+  position: relative;
+  box-shadow: var(--sh-lg);
+  text-align: center;
+}
+.bew-rate-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; font-size: 20px;
+  color: var(--text-lt); cursor: pointer; line-height: 1;
+}
+.bew-rate-emoji { font-size: 40px; margin-bottom: 12px; }
+.bew-rate-title { font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.bew-rate-sub   { font-size: 13px; color: var(--text-lt); margin-bottom: 24px; }
+.bew-sterne-row {
+  display: flex; justify-content: center; gap: 8px;
+  margin-bottom: 24px;
+}
+.bew-stern {
+  font-size: 36px; cursor: pointer; color: #d0d0d0;
+  transition: color .15s, transform .1s;
+  user-select: none; line-height: 1;
+}
+.bew-stern.active { color: var(--accent); }
+.bew-stern:hover  { transform: scale(1.15); }
+.bew-kommentar-wrap { text-align: left; margin-bottom: 20px; }
+.bew-kommentar-wrap label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  color: var(--text-lt); margin-bottom: 6px;
+}
+.bew-kommentar-wrap textarea {
+  width: 100%; box-sizing: border-box;
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm); padding: 10px 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; color: var(--text); resize: vertical;
+  min-height: 80px; outline: none;
+}
+.bew-kommentar-wrap textarea:focus { border-color: var(--accent); }
+.bew-rate-btns { display: flex; flex-direction: column; gap: 10px; }
+.bew-submit-btn {
+  background: var(--accent); color: var(--navy);
+  border: none; border-radius: var(--r-sm);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  padding: 13px 28px; cursor: pointer; transition: background .2s;
+}
+.bew-submit-btn:hover    { background: var(--accent-lt); }
+.bew-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+.bew-skip-btn {
+  background: none; border: none; color: var(--text-lt);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; cursor: pointer; text-decoration: underline;
+}
+.bew-rate-success {
+  font-size: 15px; color: #1A7A50; font-weight: 600; margin-top: 16px;
+}
+
 /* ── BEWERBUNGEN OVERLAY ── */
 .bew-overlay {
   position: fixed; inset: 0;
@@ -702,6 +772,33 @@
   </div>
 </div>
 
+<!-- BEWERTUNGS-MODAL (AG bewertet Jobber) -->
+<div id="bew-rate-overlay" class="bew-rate-overlay" style="display:none" onclick="closeBewRateModal(event)">
+  <div class="bew-rate-modal" onclick="event.stopPropagation()">
+    <button class="bew-rate-close" onclick="closeBewRateModal()">✕</button>
+    <div class="bew-rate-emoji">⭐</div>
+    <div class="bew-rate-title" id="bew-rate-title">Wie war der Einsatz?</div>
+    <div class="bew-rate-sub"  id="bew-rate-sub">Deine Bewertung hilft anderen Arbeitgebern.</div>
+    <div class="bew-sterne-row" id="bew-sterne-row">
+      <span class="bew-stern" data-val="1" onmouseenter="hoverStern(1)" onmouseleave="resetSternHover()" onclick="clickStern(1)">★</span>
+      <span class="bew-stern" data-val="2" onmouseenter="hoverStern(2)" onmouseleave="resetSternHover()" onclick="clickStern(2)">★</span>
+      <span class="bew-stern" data-val="3" onmouseenter="hoverStern(3)" onmouseleave="resetSternHover()" onclick="clickStern(3)">★</span>
+      <span class="bew-stern" data-val="4" onmouseenter="hoverStern(4)" onmouseleave="resetSternHover()" onclick="clickStern(4)">★</span>
+      <span class="bew-stern" data-val="5" onmouseenter="hoverStern(5)" onmouseleave="resetSternHover()" onclick="clickStern(5)">★</span>
+    </div>
+    <div class="bew-kommentar-wrap">
+      <label>Kommentar (optional, max. 300 Zeichen)</label>
+      <textarea id="bew-kommentar" maxlength="300" placeholder="Kurzes Feedback zum Einsatz…"></textarea>
+    </div>
+    <div id="bew-rate-error" style="display:none;color:#C0392B;font-size:13px;margin-bottom:12px"></div>
+    <div class="bew-rate-btns">
+      <button class="bew-submit-btn" id="bew-submit-btn" onclick="submitAgBewertung()">Bewertung abschicken</button>
+      <button class="bew-skip-btn"   onclick="closeBewRateModal()">Überspringen</button>
+    </div>
+    <div class="bew-rate-success" id="bew-rate-success" style="display:none">✓ Danke für deine Bewertung!</div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
 <script src="notifications.js"></script>
@@ -724,6 +821,107 @@ function applyUidCheck(uid) {
   if (insForm)   insForm.style.opacity       = hasUid ? '1' : '0.4';
   if (insForm)   insForm.style.pointerEvents = hasUid ? '' : 'none';
   if (insBtn)    insBtn.disabled             = !hasUid;
+}
+
+// ── BEWERTUNGS-MODAL ──
+let _bewRateData     = null; // { bewId, jobberId, jobId, jobberName }
+let _bewSelectedStern = 0;
+
+function openBewRateModal(bewId, jobberId, jobId, jobberName) {
+  _bewRateData      = { bewId, jobberId, jobId, jobberName };
+  _bewSelectedStern = 0;
+  document.getElementById('bew-rate-title').textContent =
+    'Wie war der Einsatz von ' + (jobberName || 'dem Jobber') + '?';
+  document.getElementById('bew-rate-sub').textContent =
+    'Deine ehrliche Bewertung hilft anderen Arbeitgebern.';
+  document.getElementById('bew-kommentar').value = '';
+  document.getElementById('bew-rate-error').style.display   = 'none';
+  document.getElementById('bew-rate-success').style.display = 'none';
+  document.getElementById('bew-submit-btn').disabled = false;
+  document.getElementById('bew-submit-btn').textContent = 'Bewertung abschicken';
+  renderSternRow(0);
+  document.getElementById('bew-rate-overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBewRateModal(e) {
+  if (e && e.target !== document.getElementById('bew-rate-overlay')) return;
+  document.getElementById('bew-rate-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function renderSternRow(active) {
+  document.querySelectorAll('#bew-sterne-row .bew-stern').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.val) <= active);
+  });
+}
+function hoverStern(val)    { renderSternRow(val); }
+function resetSternHover()  { renderSternRow(_bewSelectedStern); }
+function clickStern(val)    { _bewSelectedStern = val; renderSternRow(val); }
+
+async function submitAgBewertung() {
+  const errEl = document.getElementById('bew-rate-error');
+  const btn   = document.getElementById('bew-submit-btn');
+  errEl.style.display = 'none';
+
+  if (!_bewSelectedStern) {
+    errEl.textContent = 'Bitte wähle eine Sternebewertung.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Speichern…';
+  const kommentar = document.getElementById('bew-kommentar').value.trim();
+
+  // Prüfen ob bereits bewertet
+  const { data: existing } = await odojSb.from('bewertungen')
+    .select('id').eq('job_id', _bewRateData.jobId)
+    .eq('bewerter_id', _agSession.user.id).maybeSingle();
+  if (existing) {
+    document.getElementById('bew-rate-success').textContent = 'Du hast diesen Einsatz bereits bewertet.';
+    document.getElementById('bew-rate-success').style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Bewertung abschicken'; return;
+  }
+
+  const { error } = await odojSb.from('bewertungen').insert({
+    job_id:        _bewRateData.jobId,
+    bewerter_id:   _agSession.user.id,
+    bewertet_id:   _bewRateData.jobberId,
+    sterne:        _bewSelectedStern,
+    kommentar:     kommentar || null,
+    rolle_bewerter: 'arbeitgeber'
+  });
+
+  if (error) {
+    errEl.textContent = 'Fehler: ' + error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Bewertung abschicken'; return;
+  }
+
+  // ag_bewertung_abgegeben markieren
+  await odojSb.from('jobs').update({ ag_bewertung_abgegeben: true }).eq('id', _bewRateData.jobId);
+
+  // Nachricht an Jobber: Bewertungsaufforderung
+  const bewReqPayload = JSON.stringify({
+    jobId:      _bewRateData.jobId,
+    bewId:      _bewRateData.bewId,
+    agId:       _agSession.user.id,
+    firmenname: _agFirmenname
+  });
+  await odojSb.from('nachrichten').insert({
+    bewerbung_id:  _bewRateData.bewId,
+    sender_id:     _agSession.user.id,
+    empfaenger_id: _bewRateData.jobberId,
+    nachricht:     '[BEW_REQ:' + bewReqPayload + ']',
+    gelesen:       false,
+    erstellt_am:   new Date().toISOString()
+  });
+
+  document.getElementById('bew-rate-success').style.display = 'block';
+  btn.style.display = 'none';
+  setTimeout(() => {
+    document.getElementById('bew-rate-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }, 1800);
 }
 
 // ── TAB WECHSEL ──
@@ -1017,6 +1215,13 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     btn.textContent = '✓ Anwesenheit bestätigt';
     btn.className = 'bew-btn bew-btn-presence-done';
     btn.disabled = true;
+  }
+
+  // Bewertungs-Modal öffnen (falls noch keine Bewertung abgegeben)
+  const { data: jobForBew } = await odojSb.from('jobs')
+    .select('id, ag_bewertung_abgegeben').eq('id', bewData?.job_id).maybeSingle();
+  if (jobForBew && !jobForBew.ag_bewertung_abgegeben && jobberId) {
+    setTimeout(() => openBewRateModal(bewId, jobberId, jobForBew.id, jobberName), 600);
   }
 }
 

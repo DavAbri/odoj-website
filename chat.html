@@ -208,6 +208,81 @@
   word-break: break-word;
 }
 .msg-system .msg-time { text-align: left; opacity: .5; margin-top: 6px; }
+.msg-bew-req {
+  align-self: stretch;
+  background: #FFFBEC;
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.msg-bew-req .msg-time { text-align: left; opacity: .5; margin-top: 6px; }
+.bew-req-btn {
+  display: inline-block; margin-top: 10px;
+  background: var(--accent); color: var(--navy);
+  border: none; border-radius: var(--r-sm);
+  padding: 8px 18px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: background .2s;
+}
+.bew-req-btn:hover { background: var(--accent-lt); }
+/* Bewertungs-Modal (Jobber bewertet AG) */
+.jb-bew-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.jb-bew-modal {
+  background: var(--white); border-radius: 18px;
+  padding: 40px 36px 32px; max-width: 440px; width: 100%;
+  position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  text-align: center;
+}
+.jb-bew-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; font-size: 20px;
+  color: var(--text-lt); cursor: pointer;
+}
+.jb-bew-emoji { font-size: 40px; margin-bottom: 12px; }
+.jb-bew-title { font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.jb-bew-sub   { font-size: 13px; color: var(--text-lt); margin-bottom: 24px; }
+.jb-sterne-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+.jb-stern {
+  font-size: 36px; cursor: pointer; color: #d0d0d0;
+  transition: color .15s, transform .1s; user-select: none; line-height: 1;
+}
+.jb-stern.active { color: var(--accent); }
+.jb-stern:hover  { transform: scale(1.15); }
+.jb-kommentar-wrap { text-align: left; margin-bottom: 20px; }
+.jb-kommentar-wrap label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px; color: var(--text-lt); margin-bottom: 6px;
+}
+.jb-kommentar-wrap textarea {
+  width: 100%; box-sizing: border-box;
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: 8px; padding: 10px 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; color: var(--text); resize: vertical; min-height: 80px; outline: none;
+}
+.jb-kommentar-wrap textarea:focus { border-color: var(--accent); }
+.jb-bew-btns { display: flex; flex-direction: column; gap: 10px; }
+.jb-submit-btn {
+  background: var(--accent); color: var(--navy); border: none;
+  border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; padding: 13px 28px;
+  cursor: pointer; transition: background .2s;
+}
+.jb-submit-btn:hover    { background: var(--accent-lt); }
+.jb-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+.jb-skip-btn {
+  background: none; border: none; color: var(--text-lt);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px;
+  cursor: pointer; text-decoration: underline;
+}
+.jb-bew-success { font-size: 15px; color: #1A7A50; font-weight: 600; margin-top: 16px; }
 
 /* Input bar */
 .chat-input-bar {
@@ -334,6 +409,33 @@
     </div>
   </div>
 
+</div>
+
+<!-- BEWERTUNGS-MODAL (Jobber bewertet AG) -->
+<div id="jb-bew-overlay" class="jb-bew-overlay" style="display:none" onclick="closeJbBewModal(event)">
+  <div class="jb-bew-modal" onclick="event.stopPropagation()">
+    <button class="jb-bew-close" onclick="closeJbBewModal()">✕</button>
+    <div class="jb-bew-emoji">⭐</div>
+    <div class="jb-bew-title" id="jb-bew-title">Wie war dein Einsatz?</div>
+    <div class="jb-bew-sub"  id="jb-bew-sub">Deine Bewertung hilft anderen Jobbern.</div>
+    <div class="jb-sterne-row" id="jb-sterne-row">
+      <span class="jb-stern" data-val="1" onmouseenter="jbHoverStern(1)" onmouseleave="jbResetSternHover()" onclick="jbClickStern(1)">★</span>
+      <span class="jb-stern" data-val="2" onmouseenter="jbHoverStern(2)" onmouseleave="jbResetSternHover()" onclick="jbClickStern(2)">★</span>
+      <span class="jb-stern" data-val="3" onmouseenter="jbHoverStern(3)" onmouseleave="jbResetSternHover()" onclick="jbClickStern(3)">★</span>
+      <span class="jb-stern" data-val="4" onmouseenter="jbHoverStern(4)" onmouseleave="jbResetSternHover()" onclick="jbClickStern(4)">★</span>
+      <span class="jb-stern" data-val="5" onmouseenter="jbHoverStern(5)" onmouseleave="jbResetSternHover()" onclick="jbClickStern(5)">★</span>
+    </div>
+    <div class="jb-kommentar-wrap">
+      <label>Kommentar (optional, max. 300 Zeichen)</label>
+      <textarea id="jb-bew-kommentar" maxlength="300" placeholder="Kurzes Feedback zum Einsatz…"></textarea>
+    </div>
+    <div id="jb-bew-error" style="display:none;color:#C0392B;font-size:13px;margin-bottom:12px"></div>
+    <div class="jb-bew-btns">
+      <button class="jb-submit-btn" id="jb-submit-btn" onclick="submitJbBewertung()">Bewertung abschicken</button>
+      <button class="jb-skip-btn" onclick="closeJbBewModal()">Überspringen</button>
+    </div>
+    <div class="jb-bew-success" id="jb-bew-success" style="display:none">✓ Danke für deine Bewertung!</div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -473,7 +575,8 @@ async function loadConversations() {
       name = agNameMap[b.arbeitgeber_id] || job?.firmenname || 'Unbekannter Betrieb';
     }
     const sub      = job?.titel || '–';
-    const preview  = lastMsg ? lastMsg.nachricht : 'Noch keine Nachrichten';
+    const rawPrev  = lastMsg?.nachricht || '';
+    const preview  = rawPrev.startsWith('[BEW_REQ:') ? '⭐ Einsatz bewerten →' : (rawPrev || 'Noch keine Nachrichten');
     const time     = lastMsg ? formatConvTime(lastMsg.erstellt_am) : '';
     const stCls    = b.status === 'angenommen' ? 'cs-angenommen' : b.status === 'abgelehnt' ? 'cs-abgelehnt' : 'cs-ausstehend';
     const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
@@ -613,12 +716,33 @@ async function loadMessages(silent) {
     }
     const isMine    = m.sender_id === _chatSession.user.id;
     const isSystem  = m.nachricht && m.nachricht.startsWith('✅ Einsatz erfolgreich');
+    const isBewReq  = m.nachricht && m.nachricht.startsWith('[BEW_REQ:');
     const time      = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
-    const cls       = isSystem ? 'msg-system' : (isMine ? 'msg-mine' : 'msg-theirs');
-    html += `<div class="msg-bubble ${cls}">
-      ${escHtml(m.nachricht)}
-      <div class="msg-time">${time}</div>
-    </div>`;
+
+    if (isBewReq && _chatRolle === 'jobber') {
+      // Rating-Aufforderung an Jobber rendern
+      let bewData = {};
+      try { bewData = JSON.parse(m.nachricht.slice('[BEW_REQ:'.length, -1)); } catch (_) {}
+      const firmenname = escHtml(bewData.firmenname || 'dem Arbeitgeber');
+      html += `<div class="msg-bubble msg-bew-req">
+        <div>👉 <strong>Wie war dein Einsatz bei ${firmenname}?</strong><br>
+        Teile deine Erfahrung – deine Bewertung hilft anderen Jobbern.</div>
+        <button class="bew-req-btn" onclick="openJbBewModal('${escHtml(bewData.jobId||'')}','${escHtml(bewData.bewId||'')}','${escHtml(bewData.agId||'')}','${firmenname}')">⭐ Jetzt bewerten →</button>
+        <div class="msg-time">${time}</div>
+      </div>`;
+    } else if (isBewReq) {
+      // AG sieht die Aufforderung nur als Info
+      html += `<div class="msg-bubble msg-system">
+        ✅ Bewertungsaufforderung an Jobber gesendet.
+        <div class="msg-time">${time}</div>
+      </div>`;
+    } else {
+      const cls = isSystem ? 'msg-system' : (isMine ? 'msg-mine' : 'msg-theirs');
+      html += `<div class="msg-bubble ${cls}">
+        ${escHtml(m.nachricht)}
+        <div class="msg-time">${time}</div>
+      </div>`;
+    }
   });
   area.innerHTML = html;
 
@@ -734,6 +858,83 @@ function formatConvTime(iso) {
     return d.toLocaleTimeString('de-AT', { hour:'2-digit', minute:'2-digit' });
   }
   return d.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' });
+}
+
+// ── JOBBER BEWERTET ARBEITGEBER ──
+let _jbBewData      = null; // { jobId, bewId, agId, firmenname }
+let _jbSelectedStern = 0;
+
+function openJbBewModal(jobId, bewId, agId, firmenname) {
+  _jbBewData       = { jobId, bewId, agId, firmenname };
+  _jbSelectedStern = 0;
+  document.getElementById('jb-bew-title').textContent =
+    'Wie war dein Einsatz bei ' + (firmenname || 'dem Arbeitgeber') + '?';
+  document.getElementById('jb-bew-kommentar').value = '';
+  document.getElementById('jb-bew-error').style.display   = 'none';
+  document.getElementById('jb-bew-success').style.display = 'none';
+  document.getElementById('jb-submit-btn').disabled = false;
+  document.getElementById('jb-submit-btn').textContent = 'Bewertung abschicken';
+  jbRenderSternRow(0);
+  document.getElementById('jb-bew-overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeJbBewModal(e) {
+  if (e && e.target !== document.getElementById('jb-bew-overlay')) return;
+  document.getElementById('jb-bew-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function jbRenderSternRow(active) {
+  document.querySelectorAll('#jb-sterne-row .jb-stern').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.val) <= active);
+  });
+}
+function jbHoverStern(val)   { jbRenderSternRow(val); }
+function jbResetSternHover() { jbRenderSternRow(_jbSelectedStern); }
+function jbClickStern(val)   { _jbSelectedStern = val; jbRenderSternRow(val); }
+
+async function submitJbBewertung() {
+  const errEl = document.getElementById('jb-bew-error');
+  const btn   = document.getElementById('jb-submit-btn');
+  errEl.style.display = 'none';
+
+  if (!_jbSelectedStern) {
+    errEl.textContent = 'Bitte wähle eine Sternebewertung.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Speichern…';
+  const kommentar = document.getElementById('jb-bew-kommentar').value.trim();
+
+  // Prüfen ob bereits bewertet
+  const { data: existing } = await odojSb.from('bewertungen')
+    .select('id').eq('job_id', _jbBewData.jobId)
+    .eq('bewerter_id', _chatSession.user.id).maybeSingle();
+  if (existing) {
+    document.getElementById('jb-bew-success').textContent = 'Du hast diesen Einsatz bereits bewertet.';
+    document.getElementById('jb-bew-success').style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Bewertung abschicken'; return;
+  }
+
+  const { error } = await odojSb.from('bewertungen').insert({
+    job_id:         _jbBewData.jobId,
+    bewerter_id:    _chatSession.user.id,
+    bewertet_id:    _jbBewData.agId,
+    sterne:         _jbSelectedStern,
+    kommentar:      kommentar || null,
+    rolle_bewerter: 'jobber'
+  });
+
+  if (error) {
+    errEl.textContent = 'Fehler: ' + error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Bewertung abschicken'; return;
+  }
+
+  await odojSb.from('jobs').update({ jb_bewertung_abgegeben: true }).eq('id', _jbBewData.jobId);
+
+  document.getElementById('jb-bew-success').style.display = 'block';
+  btn.style.display = 'none';
+  setTimeout(() => closeJbBewModal(), 2000);
 }
 
 // Start

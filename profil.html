@@ -50,6 +50,37 @@
 .profil-name { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
 .profil-email { font-size: 14px; color: var(--text-lt); margin-bottom: 20px; }
 
+/* ── Bewertungen ── */
+.bew-section-title {
+  font-size: 18px; font-weight: 800; color: var(--navy);
+  margin-bottom: 18px; padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--gray-lt);
+}
+.bew-avg {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+}
+.bew-avg-stars { font-size: 22px; color: var(--accent); letter-spacing: 2px; }
+.bew-avg-num   { font-size: 28px; font-weight: 800; color: var(--navy); }
+.bew-avg-count { font-size: 13px; color: var(--text-lt); }
+.bew-stats-grid {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px;
+}
+.bew-stat-pill {
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: 100px; padding: 6px 16px;
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.bew-list { display: flex; flex-direction: column; gap: 14px; }
+.bew-item {
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md); padding: 16px 20px;
+}
+.bew-item-stars { color: var(--accent); font-size: 16px; margin-bottom: 4px; }
+.bew-item-text  { font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+.bew-item-meta  { font-size: 12px; color: var(--text-lt); }
+.bew-empty { font-size: 14px; color: var(--text-lt); font-style: italic; padding: 8px 0; }
+
 .profil-info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -537,6 +568,12 @@ function renderArbeitgeber(session, profile) {
       </div>
     </div>
 
+    <!-- Bewertungen (von Jobbern) -->
+    <div class="profil-card" id="ag-bew-card">
+      <h2 class="bew-section-title">Bewertungen von Jobbern</h2>
+      <div id="ag-bew-body"><div class="bew-empty">Lade Bewertungen…</div></div>
+    </div>
+
     <!-- Rechnungen -->
     <div class="profil-card">
       <h2 class="profil-section-title">Meine Rechnungen</h2>
@@ -549,6 +586,7 @@ function renderArbeitgeber(session, profile) {
     ${renderPasswortCard()}`;
 
   loadRechnungen(session.user.id);
+  loadAgBewertungen(session.user.id);
 }
 
 function toggleAgEdit(show) {
@@ -914,8 +952,16 @@ function renderJobber(session, profile) {
       </div>
     </div>
 
+    <!-- Bewertungen von Arbeitgebern -->
+    <div class="profil-card" id="jb-bew-card">
+      <h2 class="bew-section-title">Meine Bewertungen</h2>
+      <div id="jb-bew-body"><div class="bew-empty">Lade Bewertungen…</div></div>
+    </div>
+
     <!-- Passwort ändern -->
     ${renderPasswortCard()}`;
+
+  loadJobberBewertungen(session.user.id);
 }
 
 function renderPasswortCard() {
@@ -1285,6 +1331,130 @@ async function printRechnung(r) {
 function escH(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── BEWERTUNGEN LADEN ──
+function renderSterneStatic(n) {
+  return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+
+async function loadJobberBewertungen(userId) {
+  const el = document.getElementById('jb-bew-body');
+  if (!el) return;
+
+  const { data: bews } = await odojSb
+    .from('bewertungen')
+    .select('sterne, kommentar, created_at, bewerter_id')
+    .eq('bewertet_id', userId)
+    .eq('rolle_bewerter', 'arbeitgeber')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // Branchenstatistik aus Jobs
+  const { data: jobs } = await odojSb
+    .from('bewerbungen')
+    .select('job_id')
+    .eq('jobber_id', userId)
+    .eq('anwesenheit_bestaetigt', true);
+
+  let branchenMap = {};
+  if (jobs?.length) {
+    const jobIds = jobs.map(j => j.job_id).filter(Boolean);
+    const { data: jobData } = await odojSb.from('jobs').select('branche').in('id', jobIds);
+    jobData?.forEach(j => {
+      if (j.branche) branchenMap[j.branche] = (branchenMap[j.branche] || 0) + 1;
+    });
+  }
+
+  const BRANCHEN_LABEL = { gastro:'🍽 Gastronomie & Hotel', bau:'🏗 Bau & Handwerk', lager:'📦 Lager & Logistik', events:'🎤 Events & Veranstaltungen' };
+  const totalEinsaetze = Object.values(branchenMap).reduce((a, b) => a + b, 0);
+
+  if (!bews?.length && !totalEinsaetze) {
+    el.innerHTML = '<div class="bew-empty">Noch keine Bewertungen vorhanden.</div>'; return;
+  }
+
+  const avg = bews?.length
+    ? (bews.reduce((s, b) => s + b.sterne, 0) / bews.length).toFixed(1)
+    : null;
+
+  // Firmenname der Bewerter laden
+  const bewerterIds = [...new Set((bews || []).map(b => b.bewerter_id).filter(Boolean))];
+  let firmaMap = {};
+  if (bewerterIds.length) {
+    const { data: profiles } = await odojSb.from('Profile').select('user_id,firmenname').in('user_id', bewerterIds);
+    profiles?.forEach(p => { firmaMap[p.user_id] = p.firmenname || 'Arbeitgeber'; });
+  }
+
+  el.innerHTML = `
+    ${avg ? `<div class="bew-avg">
+      <div class="bew-avg-stars">${renderSterneStatic(Math.round(parseFloat(avg)))}</div>
+      <div class="bew-avg-num">${avg}</div>
+      <div class="bew-avg-count">${bews.length} Bewertung${bews.length !== 1 ? 'en' : ''}</div>
+    </div>` : ''}
+    ${totalEinsaetze ? `<div class="bew-stats-grid">
+      ${Object.entries(branchenMap).map(([k,v]) =>
+        `<span class="bew-stat-pill">${BRANCHEN_LABEL[k] || k}: ${v} Einsatz${v !== 1 ? 'e' : ''}</span>`
+      ).join('')}
+    </div>` : ''}
+    ${bews?.length ? `<div class="bew-list">
+      ${bews.map(b => {
+        const dat = new Date(b.created_at).toLocaleDateString('de-AT', { month:'long', year:'numeric' });
+        const firma = escH(firmaMap[b.bewerter_id] || 'Arbeitgeber');
+        return `<div class="bew-item">
+          <div class="bew-item-stars">${renderSterneStatic(b.sterne)}</div>
+          ${b.kommentar ? `<div class="bew-item-text">"${escH(b.kommentar)}"</div>` : ''}
+          <div class="bew-item-meta">${firma} · ${dat}</div>
+        </div>`;
+      }).join('')}
+    </div>` : '<div class="bew-empty">Noch keine Kommentare.</div>'}`;
+}
+
+async function loadAgBewertungen(userId) {
+  const el = document.getElementById('ag-bew-body');
+  if (!el) return;
+
+  const { data: bews } = await odojSb
+    .from('bewertungen')
+    .select('sterne, kommentar, created_at, bewerter_id')
+    .eq('bewertet_id', userId)
+    .eq('rolle_bewerter', 'jobber')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (!bews?.length) {
+    el.innerHTML = '<div class="bew-empty">Noch keine Bewertungen von Jobbern.</div>'; return;
+  }
+
+  const avg = (bews.reduce((s, b) => s + b.sterne, 0) / bews.length).toFixed(1);
+
+  // Namen der Bewerter laden
+  const bewerterIds = [...new Set(bews.map(b => b.bewerter_id).filter(Boolean))];
+  let nameMap = {};
+  if (bewerterIds.length) {
+    const { data: profiles } = await odojSb.from('Profile').select('user_id,vorname,nachname').in('user_id', bewerterIds);
+    profiles?.forEach(p => {
+      const n = [p.vorname, p.nachname].filter(Boolean).join(' ');
+      nameMap[p.user_id] = n || 'Jobber';
+    });
+  }
+
+  el.innerHTML = `
+    <div class="bew-avg">
+      <div class="bew-avg-stars">${renderSterneStatic(Math.round(parseFloat(avg)))}</div>
+      <div class="bew-avg-num">${avg}</div>
+      <div class="bew-avg-count">${bews.length} Bewertung${bews.length !== 1 ? 'en' : ''}</div>
+    </div>
+    <div class="bew-list">
+      ${bews.map(b => {
+        const dat = new Date(b.created_at).toLocaleDateString('de-AT', { month:'long', year:'numeric' });
+        const name = escH(nameMap[b.bewerter_id] || 'Jobber');
+        return `<div class="bew-item">
+          <div class="bew-item-stars">${renderSterneStatic(b.sterne)}</div>
+          ${b.kommentar ? `<div class="bew-item-text">"${escH(b.kommentar)}"</div>` : ''}
+          <div class="bew-item-meta">${name} · ${dat}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 async function initProfil() {
