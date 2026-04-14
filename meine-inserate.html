@@ -714,18 +714,16 @@ let _agUidNummer  = '';
 
 function applyUidCheck(uid) {
   const hasUid = !!(uid && uid.trim());
-  const warningEl      = document.getElementById('uid-warning');
-  const btnNeuerJob    = document.getElementById('btn-neuer-job');
-  const tabBtnInsert   = document.getElementById('tab-btn-inserieren');
-  const insForm        = document.getElementById('ins-form');
-  const insBtn         = document.getElementById('ins-btn');
+  const warningEl = document.getElementById('uid-warning');
+  const insForm   = document.getElementById('ins-form');
+  const insBtn    = document.getElementById('ins-btn');
 
-  if (warningEl)    warningEl.style.display    = hasUid ? 'none' : 'flex';
-  if (btnNeuerJob)  btnNeuerJob.disabled        = !hasUid;
-  if (tabBtnInsert) tabBtnInsert.disabled       = !hasUid;
-  if (insForm)      insForm.style.opacity       = hasUid ? '1' : '0.4';
-  if (insForm)      insForm.style.pointerEvents = hasUid ? '' : 'none';
-  if (insBtn)       insBtn.disabled             = !hasUid;
+  // Warnbox ein-/ausblenden (Buttons bleiben klickbar – User kommt zur Warnbox)
+  if (warningEl) warningEl.style.display    = hasUid ? 'none' : 'flex';
+  // Formular sperren aber sichtbar lassen
+  if (insForm)   insForm.style.opacity       = hasUid ? '1' : '0.4';
+  if (insForm)   insForm.style.pointerEvents = hasUid ? '' : 'none';
+  if (insBtn)    insBtn.disabled             = !hasUid;
 }
 
 // ── TAB WECHSEL ──
