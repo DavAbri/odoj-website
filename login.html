@@ -366,12 +366,44 @@
       <!-- Arbeitgeber-Felder -->
       <div id="reg-ag-fields" style="display:none">
         <div class="lf-field">
-          <label>Firmenname</label>
+          <label>Firmenname *</label>
           <input type="text" id="reg-firmenname" placeholder="Ihr Unternehmen" autocomplete="organization">
         </div>
+        <div style="display:flex;gap:10px">
+          <div class="lf-field" style="flex:1">
+            <label>Vorname *</label>
+            <input type="text" id="reg-ag-vorname" placeholder="Vorname" autocomplete="given-name">
+          </div>
+          <div class="lf-field" style="flex:1">
+            <label>Nachname *</label>
+            <input type="text" id="reg-ag-nachname" placeholder="Nachname" autocomplete="family-name">
+          </div>
+        </div>
         <div class="lf-field">
-          <label>Ansprechperson</label>
-          <input type="text" id="reg-ansprechperson" placeholder="Vor- und Nachname" autocomplete="name">
+          <label>Telefonnummer *</label>
+          <input type="tel" id="reg-ag-telefon" placeholder="+43 660 1234567" autocomplete="tel">
+        </div>
+        <div class="lf-field">
+          <label>Straße &amp; Hausnummer *</label>
+          <input type="text" id="reg-ag-adresse" placeholder="Musterstraße 1" autocomplete="street-address">
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="lf-field" style="flex:0 0 100px">
+            <label>PLZ *</label>
+            <input type="text" id="reg-ag-plz" placeholder="6800" autocomplete="postal-code" maxlength="6">
+          </div>
+          <div class="lf-field" style="flex:1">
+            <label>Ort *</label>
+            <input type="text" id="reg-ag-ort" placeholder="Feldkirch" autocomplete="address-level2">
+          </div>
+        </div>
+        <div class="lf-field">
+          <label>UID-Nummer <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input type="text" id="reg-ag-uid" placeholder="ATU12345678">
+        </div>
+        <div class="lf-field">
+          <label>Website <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input type="url" id="reg-ag-website" placeholder="https://ihr-unternehmen.at" autocomplete="url">
         </div>
       </div>
 
@@ -548,12 +580,33 @@ async function doRegister(e) {
     profileData.nachname     = nachname;
     profileData.geburtsdatum = gebDat;
   } else {
-    const firmenname     = document.getElementById('reg-firmenname').value.trim();
-    const ansprechperson = document.getElementById('reg-ansprechperson').value.trim();
-    if (!firmenname)     { showRegError('Bitte Firmenname eingeben.'); return; }
-    if (!ansprechperson) { showRegError('Bitte Ansprechperson eingeben.'); return; }
-    profileData.firmenname = firmenname;
-    profileData.vorname    = ansprechperson;
+    const firmenname = document.getElementById('reg-firmenname').value.trim();
+    const agVorname  = document.getElementById('reg-ag-vorname').value.trim();
+    const agNachname = document.getElementById('reg-ag-nachname').value.trim();
+    const agTelefon  = document.getElementById('reg-ag-telefon').value.trim();
+    const agAdresse  = document.getElementById('reg-ag-adresse').value.trim();
+    const agPlz      = document.getElementById('reg-ag-plz').value.trim();
+    const agOrt      = document.getElementById('reg-ag-ort').value.trim();
+    const agUid      = document.getElementById('reg-ag-uid').value.trim();
+    const agWebsite  = document.getElementById('reg-ag-website').value.trim();
+
+    if (!firmenname) { showRegError('Bitte Firmenname eingeben.'); return; }
+    if (!agVorname)  { showRegError('Bitte Vorname der Ansprechperson eingeben.'); return; }
+    if (!agNachname) { showRegError('Bitte Nachname der Ansprechperson eingeben.'); return; }
+    if (!agTelefon)  { showRegError('Bitte Telefonnummer eingeben.'); return; }
+    if (!agAdresse)  { showRegError('Bitte Straße und Hausnummer eingeben.'); return; }
+    if (!agPlz)      { showRegError('Bitte PLZ eingeben.'); return; }
+    if (!agOrt)      { showRegError('Bitte Ort eingeben.'); return; }
+
+    profileData.firmenname  = firmenname;
+    profileData.vorname     = agVorname;
+    profileData.nachname    = agNachname;
+    profileData.telefon     = agTelefon;
+    profileData.adresse     = agAdresse;
+    profileData.plz         = agPlz;
+    profileData.ort         = agOrt;
+    if (agUid)     profileData.uid_nummer = agUid;
+    if (agWebsite) profileData.website    = agWebsite;
   }
 
   btn.textContent = 'Registrieren…';
