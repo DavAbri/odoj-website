@@ -48,14 +48,16 @@
 
 /* Konversations-Item */
 .conv-item {
-  padding: 14px 18px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--gray-lt);
   cursor: pointer;
   transition: background .15s;
   position: relative;
   text-decoration: none;
   display: block;
-  min-height: 88px;
+  height: 96px;
+  max-height: 96px;
+  overflow: hidden;
   box-sizing: border-box;
 }
 .conv-item:hover { background: var(--off); }
