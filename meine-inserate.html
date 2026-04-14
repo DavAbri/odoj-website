@@ -897,8 +897,8 @@ async function submitAgBewertung() {
     btn.disabled = false; btn.textContent = 'Bewertung abschicken'; return;
   }
 
-  // ag_bewertung_abgegeben markieren
-  await odojSb.from('jobs').update({ ag_bewertung_abgegeben: true }).eq('id', _bewRateData.jobId);
+  // ag_bewertung_abgegeben markieren (non-fatal — Spalte muss in DB existieren)
+  odojSb.from('jobs').update({ ag_bewertung_abgegeben: true }).eq('id', _bewRateData.jobId).then(() => {}).catch(() => {});
 
   // Nachricht an Jobber: Bewertungsaufforderung
   const bewReqPayload = JSON.stringify({
@@ -1147,7 +1147,7 @@ function renderBewItem(b, profile, bew) {
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
         ? `<button class="bew-btn bew-btn-presence-done" disabled>✓ Anwesenheit & Bezahlung bestätigt</button>`
-        : `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${(b.jobber_name || '').replace(/'/g,"\\'")}')">✓ Anwesenheit & Bezahlung bestätigen</button>`)
+        : `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')">✓ Anwesenheit & Bezahlung bestätigen</button>`)
     : '';
 
   let gebStr = '';
@@ -1249,10 +1249,16 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   }
 
   // Bewertungs-Modal öffnen (falls noch keine Bewertung abgegeben)
-  const { data: jobForBew } = await odojSb.from('jobs')
-    .select('id, ag_bewertung_abgegeben').eq('id', bewData?.job_id).maybeSingle();
-  if (jobForBew && !jobForBew.ag_bewertung_abgegeben && jobberId) {
-    setTimeout(() => openBewRateModal(bewId, jobberId, jobForBew.id, jobberName), 600);
+  // Prüfung direkt über bewertungen-Tabelle — robuster als ag_bewertung_abgegeben-Spalte
+  if (jobberId && bewData?.job_id) {
+    const { data: existingBew } = await odojSb.from('bewertungen')
+      .select('id')
+      .eq('job_id', bewData.job_id)
+      .eq('bewerter_id', _agSession.user.id)
+      .maybeSingle();
+    if (!existingBew) {
+      setTimeout(() => openBewRateModal(bewId, jobberId, bewData.job_id, jobberName), 600);
+    }
   }
 }
 

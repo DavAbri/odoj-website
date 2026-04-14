@@ -932,7 +932,7 @@ async function submitJbBewertung() {
     btn.disabled = false; btn.textContent = 'Bewertung abschicken'; return;
   }
 
-  await odojSb.from('jobs').update({ jb_bewertung_abgegeben: true }).eq('id', _jbBewData.jobId);
+  odojSb.from('jobs').update({ jb_bewertung_abgegeben: true }).eq('id', _jbBewData.jobId).then(() => {}).catch(() => {});
 
   document.getElementById('jb-bew-success').style.display = 'block';
   btn.style.display = 'none';
