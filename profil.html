@@ -247,6 +247,65 @@
 }
 .profil-toast.show { opacity: 1; }
 
+/* ── Textarea ── */
+.profil-field textarea {
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color .2s;
+  resize: vertical;
+  min-height: 100px;
+}
+.profil-field textarea:focus { border-color: var(--accent); }
+
+/* ── Checkbox-Gruppen ── */
+.profil-check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+.profil-check-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  user-select: none;
+}
+.profil-check-label input[type=checkbox] { display: none; }
+.profil-check-label.checked {
+  background: var(--navy);
+  color: var(--white);
+  border-color: var(--navy);
+}
+.profil-check-sublabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--text-lt);
+  margin: 14px 0 6px;
+}
+.profil-bio-preview {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
   .profil-body { padding: 32px 20px 60px; }
   .profil-card { padding: 24px 20px; }
@@ -610,55 +669,119 @@ async function loadRechnungen(agId) {
 // ─────────────────────────────────────────
 function renderJobber(session, profile) {
   const body = document.getElementById('profil-body');
-  const vorname  = profile?.vorname || '';
+
+  const vorname  = profile?.vorname  || '';
   const nachname = profile?.nachname || '';
   const fullName = [vorname, nachname].filter(Boolean).join(' ') || session.user.email;
 
-  const svn      = profile?.svnummer || '';
-  const strasse  = profile?.adresse || '';
-  const plz      = profile?.adresse_plz || '';
-  const ort      = profile?.adresse_ort || '';
+  const svn      = profile?.svnummer     || '';
+  const strasse  = profile?.adresse      || '';
+  const plz      = profile?.adresse_plz  || '';
+  const ort      = profile?.adresse_ort  || '';
   const addrFull = strasse ? `${strasse}, ${plz} ${ort}`.trim() : '';
+  const telefon  = profile?.telefon      || '';
+  const geburt   = profile?.geburtsdatum || '';
+  const bio      = profile?.bio          || '';
+  const verfueg  = Array.isArray(profile?.verfuegbarkeit) ? profile.verfuegbarkeit : [];
+  const branchen = Array.isArray(profile?.branchen)       ? profile.branchen       : [];
+
+  const geburtDisplay = geburt
+    ? new Date(geburt + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '';
+
+  const WOCHENTAGE = ['montag','dienstag','mittwoch','donnerstag','freitag','samstag','sonntag'];
+  const W_LABEL    = { montag:'Mo', dienstag:'Di', mittwoch:'Mi', donnerstag:'Do', freitag:'Fr', samstag:'Sa', sonntag:'So' };
+  const ZEITEN     = ['ganztags','halbtags','flexibel'];
+  const Z_LABEL    = { ganztags:'Ganztags', halbtags:'Halbtags', flexibel:'Flexibel' };
+  const BRANCHEN_LIST = [
+    { val: 'gastro', label: '🍽 Gastronomie & Hotel' },
+    { val: 'bau',    label: '🏗 Bau & Handwerk' },
+    { val: 'lager',  label: '📦 Lager & Logistik' },
+    { val: 'events', label: '🎤 Events & Veranstaltungen' },
+  ];
+
+  const verfuegDisplay  = [
+    ...WOCHENTAGE.filter(d => verfueg.includes(d)).map(d => W_LABEL[d]),
+    ...ZEITEN.filter(z => verfueg.includes(z)).map(z => Z_LABEL[z]),
+  ].join(', ');
+  const branchenDisplay = BRANCHEN_LIST.filter(b => branchen.includes(b.val)).map(b => b.label).join(', ');
+
+  function chkBox(groupName, val, label, isChecked) {
+    return `<label class="profil-check-label${isChecked ? ' checked' : ''}" onclick="toggleCheck(this,'${groupName}')">
+      <input type="checkbox" name="${groupName}" value="${val}"${isChecked ? ' checked' : ''}>
+      ${label}
+    </label>`;
+  }
+
+  const empty = '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>';
 
   body.innerHTML = `
     <!-- Profilkarte -->
     <div class="profil-card">
-      <div class="profil-avatar">${fullName.charAt(0).toUpperCase()}</div>
-      <div class="profil-name">${escH(fullName)}</div>
+      <div class="profil-avatar" id="jb-avatar">${fullName.charAt(0).toUpperCase()}</div>
+      <div class="profil-name"  id="jb-name">${escH(fullName)}</div>
       <div class="profil-email">${escH(session.user.email)}</div>
     </div>
 
-    <!-- SVNummer -->
+    <!-- Persönliche Daten -->
     <div class="profil-card">
-      <h2 class="profil-section-title">Sozialversicherungsnummer</h2>
-      <div id="svn-group">
-        ${!svn ? '<div class="pflicht-badge">⚠ Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
-        <div class="profil-field-group">
-          <div class="profil-field-group-head">
-            <div>
-              <div class="profil-field-group-title">SV-Nummer</div>
-              <div class="profil-field-value" id="svn-display">${svn ? escH(svn) : '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>'}</div>
-            </div>
-            <button class="btn-edit" onclick="toggleSvnEdit(true)">Bearbeiten</button>
+      <h2 class="profil-section-title">Persönliche Daten</h2>
+      ${!vorname || !nachname ? '<div class="pflicht-badge">⚠ Bitte trage deinen echten Namen ein – er wird Arbeitgebern angezeigt</div>' : ''}
+
+      <div id="jb-pers-view">
+        <div class="profil-info-grid">
+          <div class="profil-info-item">
+            <label>Vorname</label>
+            <span id="jb-info-vorname">${escH(vorname) || '–'}</span>
           </div>
-          <div id="svn-edit-form" style="display:none" class="profil-field-form">
-            <div class="profil-form">
-              <div class="profil-field">
-                <label>Sozialversicherungsnummer</label>
-                <input type="text" id="svn-input" value="${escH(svn)}" placeholder="1234 010190" maxlength="15">
-                <small>10 Ziffern, z.B. 1234 010190</small>
-              </div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn-save" onclick="saveSvn('${session.user.id}')">Speichern</button>
-                <button class="btn-edit" onclick="toggleSvnEdit(false)">Abbrechen</button>
-              </div>
+          <div class="profil-info-item">
+            <label>Nachname</label>
+            <span id="jb-info-nachname">${escH(nachname) || '–'}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>Geburtsdatum</label>
+            <span id="jb-info-geburt">${geburtDisplay || '–'}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>Telefon</label>
+            <span id="jb-info-telefon">${escH(telefon) || '–'}</span>
+          </div>
+        </div>
+        <button class="btn-edit" onclick="toggleJbPers(true)">Bearbeiten</button>
+      </div>
+
+      <div id="jb-pers-edit" style="display:none">
+        <div class="profil-form">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="profil-field">
+              <label>Vorname *</label>
+              <input type="text" id="jb-edit-vorname" value="${escH(vorname)}" placeholder="Max">
             </div>
+            <div class="profil-field">
+              <label>Nachname *</label>
+              <input type="text" id="jb-edit-nachname" value="${escH(nachname)}" placeholder="Mustermann">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="profil-field">
+              <label>Geburtsdatum</label>
+              <input type="date" id="jb-edit-geburt" value="${escH(geburt)}">
+            </div>
+            <div class="profil-field">
+              <label>Telefonnummer</label>
+              <input type="tel" id="jb-edit-telefon" value="${escH(telefon)}" placeholder="+43 660 ...">
+            </div>
+          </div>
+          <div id="jb-pers-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-save" id="jb-pers-btn" onclick="saveJbPers('${session.user.id}')">Speichern</button>
+            <button class="btn-edit" onclick="toggleJbPers(false)">Abbrechen</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Adresse -->
+    <!-- Wohnadresse -->
     <div class="profil-card">
       <h2 class="profil-section-title">Wohnadresse</h2>
       <div id="addr-group">
@@ -667,7 +790,7 @@ function renderJobber(session, profile) {
           <div class="profil-field-group-head">
             <div>
               <div class="profil-field-group-title">Adresse</div>
-              <div class="profil-field-value" id="addr-display">${addrFull ? escH(addrFull) : '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>'}</div>
+              <div class="profil-field-value" id="addr-display">${addrFull ? escH(addrFull) : empty}</div>
             </div>
             <button class="btn-edit" onclick="toggleAddrEdit(true)">Bearbeiten</button>
           </div>
@@ -691,6 +814,100 @@ function renderJobber(session, profile) {
                 <button class="btn-save" onclick="saveAddr('${session.user.id}')">Speichern</button>
                 <button class="btn-edit" onclick="toggleAddrEdit(false)">Abbrechen</button>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sozialversicherungsnummer -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Sozialversicherungsnummer</h2>
+      <div id="svn-group">
+        ${!svn ? '<div class="pflicht-badge">⚠ Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
+        <div class="profil-field-group">
+          <div class="profil-field-group-head">
+            <div>
+              <div class="profil-field-group-title">SV-Nummer</div>
+              <div class="profil-field-value" id="svn-display">${svn ? escH(svn) : empty}</div>
+            </div>
+            <button class="btn-edit" onclick="toggleSvnEdit(true)">Bearbeiten</button>
+          </div>
+          <div id="svn-edit-form" style="display:none" class="profil-field-form">
+            <div class="profil-form">
+              <div class="profil-field">
+                <label>Sozialversicherungsnummer</label>
+                <input type="text" id="svn-input" value="${escH(svn)}" placeholder="1234 010190" maxlength="15">
+                <small>10 Ziffern, z.B. 1234 010190</small>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn-save" onclick="saveSvn('${session.user.id}')">Speichern</button>
+                <button class="btn-edit" onclick="toggleSvnEdit(false)">Abbrechen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Über mich -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Über mich</h2>
+      <div class="profil-field-group">
+        <div class="profil-field-group-head">
+          <div style="flex:1;min-width:0">
+            <div class="profil-field-group-title">Kurzbeschreibung</div>
+            <div class="profil-bio-preview" id="bio-display" style="margin-top:6px">${bio ? escH(bio) : empty}</div>
+          </div>
+          <button class="btn-edit" onclick="toggleBioEdit(true)" style="flex-shrink:0">Bearbeiten</button>
+        </div>
+        <div id="bio-edit-form" style="display:none" class="profil-field-form">
+          <div class="profil-form">
+            <div class="profil-field">
+              <label>Beschreibung</label>
+              <textarea id="bio-input" rows="4" placeholder="Erzähl Arbeitgebern etwas über dich, deine Erfahrungen und Stärken…">${escH(bio)}</textarea>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn-save" onclick="saveBio('${session.user.id}')">Speichern</button>
+              <button class="btn-edit" onclick="toggleBioEdit(false)">Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verfügbarkeit & Branchen -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Verfügbarkeit &amp; Branchen</h2>
+      <div class="profil-field-group">
+        <div class="profil-field-group-head">
+          <div style="flex:1;min-width:0">
+            <div class="profil-field-group-title">Wochentage</div>
+            <div class="profil-field-value" id="vb-verf-display" style="margin-top:4px">${verfuegDisplay || empty}</div>
+            <div class="profil-field-group-title" style="margin-top:14px">Bevorzugte Branchen</div>
+            <div class="profil-field-value" id="vb-branch-display" style="margin-top:4px">${branchenDisplay || empty}</div>
+          </div>
+          <button class="btn-edit" onclick="toggleVbEdit(true)" style="flex-shrink:0">Bearbeiten</button>
+        </div>
+        <div id="vb-edit-form" style="display:none" class="profil-field-form">
+          <div class="profil-form">
+            <div>
+              <div class="profil-check-sublabel">Wochentage</div>
+              <div class="profil-check-group" id="vb-tage-group">
+                ${WOCHENTAGE.map(d => chkBox('vb-tage', d, W_LABEL[d], verfueg.includes(d))).join('')}
+              </div>
+              <div class="profil-check-sublabel" style="margin-top:18px">Zeitrahmen</div>
+              <div class="profil-check-group" id="vb-zeit-group">
+                ${ZEITEN.map(z => chkBox('vb-zeit', z, Z_LABEL[z], verfueg.includes(z))).join('')}
+              </div>
+              <div class="profil-check-sublabel" style="margin-top:18px">Bevorzugte Branchen</div>
+              <div class="profil-check-group" id="vb-branch-group">
+                ${BRANCHEN_LIST.map(b => chkBox('vb-branch', b.val, b.label, branchen.includes(b.val))).join('')}
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+              <button class="btn-save" onclick="saveVerfBranch('${session.user.id}')">Speichern</button>
+              <button class="btn-edit" onclick="toggleVbEdit(false)">Abbrechen</button>
             </div>
           </div>
         </div>
@@ -742,6 +959,98 @@ function toggleSvnEdit(show) {
 }
 function toggleAddrEdit(show) {
   document.getElementById('addr-edit-form').style.display = show ? 'block' : 'none';
+}
+function toggleJbPers(show) {
+  document.getElementById('jb-pers-view').style.display = show ? 'none'  : 'block';
+  document.getElementById('jb-pers-edit').style.display = show ? 'block' : 'none';
+}
+function toggleBioEdit(show) {
+  document.getElementById('bio-edit-form').style.display = show ? 'block' : 'none';
+}
+function toggleVbEdit(show) {
+  document.getElementById('vb-edit-form').style.display = show ? 'block' : 'none';
+}
+
+// Checkbox-Kacheln umschalten
+function toggleCheck(label) {
+  label.classList.toggle('checked');
+  const cb = label.querySelector('input[type=checkbox]');
+  if (cb) cb.checked = !cb.checked;
+}
+
+async function saveJbPers(userId) {
+  const vorname  = document.getElementById('jb-edit-vorname').value.trim();
+  const nachname = document.getElementById('jb-edit-nachname').value.trim();
+  const geburt   = document.getElementById('jb-edit-geburt').value;
+  const telefon  = document.getElementById('jb-edit-telefon').value.trim();
+  const errEl    = document.getElementById('jb-pers-error');
+  const btn      = document.getElementById('jb-pers-btn');
+  errEl.style.display = 'none';
+
+  if (!vorname || !nachname) {
+    errEl.textContent = 'Bitte Vor- und Nachname ausfüllen.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Speichern…';
+  const { error } = await _saveProfileFields(userId, { vorname, nachname, geburtsdatum: geburt || null, telefon });
+  btn.disabled = false; btn.textContent = 'Speichern';
+
+  if (error) { errEl.textContent = 'Fehler: ' + error.message; errEl.style.display = 'block'; return; }
+
+  const newFull = [vorname, nachname].filter(Boolean).join(' ');
+  document.getElementById('jb-name').textContent           = newFull;
+  document.getElementById('jb-avatar').textContent         = newFull.charAt(0).toUpperCase();
+  document.getElementById('jb-info-vorname').textContent   = vorname || '–';
+  document.getElementById('jb-info-nachname').textContent  = nachname || '–';
+  document.getElementById('jb-info-telefon').textContent   = telefon || '–';
+  if (geburt) {
+    document.getElementById('jb-info-geburt').textContent =
+      new Date(geburt + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+  } else {
+    document.getElementById('jb-info-geburt').textContent = '–';
+  }
+
+  toggleJbPers(false);
+  showToast('✓ Persönliche Daten gespeichert');
+  const badge = document.querySelector('#jb-pers-view + #jb-pers-edit ~ .pflicht-badge, .profil-card .pflicht-badge');
+  if (badge && vorname && nachname) badge.remove();
+}
+
+async function saveBio(userId) {
+  const bio = document.getElementById('bio-input').value.trim();
+  const { error } = await _saveProfileFields(userId, { bio });
+  if (error) { alert('Fehler: ' + error.message); return; }
+  const display = document.getElementById('bio-display');
+  display.textContent = bio || '';
+  if (!bio) display.innerHTML = '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>';
+  toggleBioEdit(false);
+  showToast('✓ Beschreibung gespeichert');
+}
+
+async function saveVerfBranch(userId) {
+  const verfueg  = Array.from(document.querySelectorAll('#vb-tage-group input:checked, #vb-zeit-group input:checked')).map(cb => cb.value);
+  const branchen = Array.from(document.querySelectorAll('#vb-branch-group input:checked')).map(cb => cb.value);
+
+  const W_LABEL = { montag:'Mo', dienstag:'Di', mittwoch:'Mi', donnerstag:'Do', freitag:'Fr', samstag:'Sa', sonntag:'So' };
+  const Z_LABEL = { ganztags:'Ganztags', halbtags:'Halbtags', flexibel:'Flexibel' };
+  const BRANCHEN_LIST = [
+    { val:'gastro', label:'🍽 Gastronomie & Hotel' }, { val:'bau', label:'🏗 Bau & Handwerk' },
+    { val:'lager',  label:'📦 Lager & Logistik' },    { val:'events', label:'🎤 Events & Veranstaltungen' },
+  ];
+
+  const { error } = await _saveProfileFields(userId, { verfuegbarkeit: verfueg, branchen });
+  if (error) { alert('Fehler: ' + error.message); return; }
+
+  const verfDisplay  = [...verfueg.filter(v => W_LABEL[v]).map(v => W_LABEL[v]), ...verfueg.filter(v => Z_LABEL[v]).map(v => Z_LABEL[v])].join(', ');
+  const branchDisplay = BRANCHEN_LIST.filter(b => branchen.includes(b.val)).map(b => b.label).join(', ');
+  const empty = '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>';
+  document.getElementById('vb-verf-display').innerHTML   = verfDisplay   || empty;
+  document.getElementById('vb-branch-display').innerHTML = branchDisplay || empty;
+
+  toggleVbEdit(false);
+  showToast('✓ Verfügbarkeit & Branchen gespeichert');
 }
 
 // ── Hilfsfunktion: Profile-Row für userId laden (gibt null zurück wenn nicht gefunden) ──
