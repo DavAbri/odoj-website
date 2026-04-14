@@ -678,11 +678,19 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 
 // ── AUTH CHECK + JOBS LADEN ──
 async function checkJobsAuth() {
-  const { data: allJobs } = await odojSb
+  const heuteDatum = new Date().toISOString().split('T')[0];
+  console.log('[ODOJ] Datum-Filter aktiv ab:', heuteDatum);
+
+  const { data: rawJobs } = await odojSb
     .from('jobs')
     .select('*')
     .eq('status', 'aktiv')
+    .gte('datum', heuteDatum)
     .order('datum', { ascending: true });
+
+  // Client-seitiger Filter als Sicherheitsnetz (falls DB-Vergleich abweicht)
+  const allJobs = (rawJobs || []).filter(j => !j.datum || j.datum >= heuteDatum);
+  console.log('[ODOJ] Jobs nach Server-Filter:', rawJobs?.length, '→ nach Client-Filter:', allJobs.length);
 
   // Echte Firmennamen aus Profile laden
   if (allJobs?.length) {

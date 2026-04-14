@@ -208,6 +208,19 @@
   word-break: break-word;
 }
 .msg-system .msg-time { text-align: left; opacity: .5; margin-top: 6px; }
+.msg-sys-info {
+  align-self: center;
+  max-width: 78%;
+  background: var(--off);
+  color: var(--text-lt);
+  border: 1px solid var(--gray-lt);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  text-align: center;
+  line-height: 1.5;
+}
+.msg-sys-info .msg-time { opacity: .45; font-size: 11px; margin-top: 3px; }
 .msg-bew-req {
   align-self: stretch;
   background: #FFFBEC;
@@ -716,6 +729,7 @@ async function loadMessages(silent) {
     }
     const isMine    = m.sender_id === _chatSession.user.id;
     const isSystem  = m.nachricht && m.nachricht.startsWith('✅ Einsatz erfolgreich');
+    const isSysInfo = m.nachricht && (m.nachricht.startsWith('📋 Dein Inserat') || m.nachricht.startsWith('📋 '));
     const isBewReq  = m.nachricht && m.nachricht.startsWith('[BEW_REQ:');
     const time      = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
 
@@ -734,6 +748,11 @@ async function loadMessages(silent) {
       // AG sieht die Aufforderung nur als Info
       html += `<div class="msg-bubble msg-system">
         ✅ Bewertungsaufforderung an Jobber gesendet.
+        <div class="msg-time">${time}</div>
+      </div>`;
+    } else if (isSysInfo) {
+      html += `<div class="msg-bubble msg-sys-info">
+        ${escHtml(m.nachricht)}
         <div class="msg-time">${time}</div>
       </div>`;
     } else {

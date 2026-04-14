@@ -344,6 +344,7 @@ function renderCard(b, job, opts = {}) {
         ${job.uhrzeit_von} – ${job.uhrzeit_bis || '–'}
       </div>` : ''}
       ${gehalt ? `<div class="mj-card-pay">€ ${gehalt} <span>/ Tag</span></div>` : ''}
+      ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-bottom:8px">✅ Job erledigt</div>` : ''}
       <div class="mj-card-actions">
         ${opts.showChat ? `<a href="${chatHref}" class="mj-card-btn mj-card-btn-chat" onclick="event.stopPropagation()">💬 Chat</a>` : ''}
         <a href="${jobDetailHref}" class="mj-card-btn mj-card-btn-detail" onclick="event.stopPropagation()">Details →</a>
@@ -425,9 +426,9 @@ async function loadMeineBewerbungen() {
 
   // In Spalten aufteilen
   const offen        = bewerbungen.filter(b => b.status === 'ausstehend' && !b.anwesenheit_bestaetigt);
-  const anstehend    = bewerbungen.filter(b => b.status === 'angenommen' && !b.anwesenheit_bestaetigt);
+  const anstehend    = bewerbungen.filter(b => b.status === 'angenommen' && !b.anwesenheit_bestaetigt && b.status !== 'abgeschlossen');
   const abgelehnt    = bewerbungen.filter(b => b.status === 'abgelehnt');
-  const abgeschlossen = bewerbungen.filter(b => b.anwesenheit_bestaetigt);
+  const abgeschlossen = bewerbungen.filter(b => b.anwesenheit_bestaetigt || b.status === 'abgeschlossen');
 
   const total = offen.length + anstehend.length;
   document.getElementById('mj-title').textContent =

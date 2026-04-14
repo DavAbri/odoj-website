@@ -1,5 +1,5 @@
 // ── ODOJ Service Worker ───────────────────────────────────────
-const CACHE   = 'odoj-v2';
+const CACHE   = 'odoj-v3';
 
 // Statische Assets cachen (nur Dateien die tatsächlich existieren)
 const PRECACHE = [

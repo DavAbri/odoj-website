@@ -124,11 +124,42 @@
   font-weight: 800;
   color: var(--navy);
 }
-.inserate-grid {
+.inserate-grid { display: block; }
+
+/* ── INSERAT-SEKTIONEN ── */
+.ins-section { margin-bottom: 32px; }
+.ins-section-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.ins-section-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+}
+.ins-section-toggle {
+  font-size: 12px; font-weight: 600; color: var(--text-lt);
+  background: none; border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm); padding: 4px 12px;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all .2s;
+}
+.ins-section-toggle:hover { border-color: var(--navy); color: var(--navy); }
+.ins-sub-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 18px;
 }
+.ins-section-vergangen .inserat-card { opacity: 0.6; }
+
+/* ── ABLAUF-BANNER ── */
+.ins-ablauf-banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: #FFF8E8; border: 1.5px solid #F5BE5A;
+  border-radius: var(--r-md); padding: 14px 18px;
+  margin-bottom: 20px; font-size: 14px; color: #7A4A00;
+  line-height: 1.5;
+}
+.ins-ablauf-banner strong { display: block; font-weight: 700; margin-bottom: 4px; }
 .inserat-card {
   background: var(--white);
   border: 1.5px solid var(--gray-lt);
@@ -536,7 +567,7 @@
   .dash-panel { padding: 28px 24px 60px; }
   .if-row, .if-row-3 { grid-template-columns: 1fr; }
   .insert-card { padding: 28px 24px; }
-  .inserate-grid { grid-template-columns: 1fr; }
+  .ins-sub-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 540px) {
   .mi-page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -666,14 +697,14 @@
               </div>
               <div class="if-field">
                 <label>Stundenanzahl</label>
-                <input type="number" id="ins-stunden" step="0.5" min="0" placeholder="Auto">
-                <div class="if-hint">Wird automatisch berechnet</div>
+                <input type="number" id="ins-stunden" step="0.5" min="0.5" placeholder="Auto">
+                <div class="if-hint">Wird automatisch berechnet (Arbeitszeit minus Pause)</div>
               </div>
             </div>
             <div class="if-row">
               <div class="if-field">
                 <label>Pause *</label>
-                <select id="ins-pause" required onchange="checkPauseWarning()">
+                <select id="ins-pause" required onchange="calcStunden()">
                   <option value="0">Keine Pause</option>
                   <option value="15">15 Minuten</option>
                   <option value="30" selected>30 Minuten</option>
@@ -924,6 +955,31 @@ async function submitAgBewertung() {
   }, 1800);
 }
 
+// ── ABGELAUFENE INSERATE PRÜFEN ──
+async function pruefeAbgelaufeneInserate() {
+  if (!_agSession) return;
+  const gestern = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+  const { data: abgelaufene } = await odojSb
+    .from('jobs')
+    .select('id, titel, datum')
+    .eq('arbeitgeber_id', _agSession.user.id)
+    .eq('datum', gestern);
+
+  if (!abgelaufene?.length) return;
+
+  const grid = document.getElementById('inserate-grid');
+  if (!grid) return;
+
+  const namen = abgelaufene.map(j => `„${j.titel}"`).join(', ');
+  const banner = document.createElement('div');
+  banner.className = 'ins-ablauf-banner';
+  banner.innerHTML = `<span style="font-size:20px">🗂</span>
+    <div><strong>${abgelaufene.length === 1 ? 'Inserat abgelaufen' : abgelaufene.length + ' Inserate abgelaufen'}</strong>
+    ${namen} ${abgelaufene.length === 1 ? 'ist' : 'sind'} gestern abgelaufen und nicht mehr öffentlich sichtbar. Du findest ${abgelaufene.length === 1 ? 'es' : 'sie'} unter <strong>„Vergangene Inserate"</strong>.</div>`;
+  grid.parentElement.insertBefore(banner, grid);
+}
+
 // ── TAB WECHSEL ──
 function showTab(tab) {
   document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
@@ -996,7 +1052,60 @@ async function loadInserate() {
     }
   }
 
-  grid.innerHTML = jobs.map(j => renderInseratCard(j, countMap[j.id] || 0, acceptedMap[j.id] || 0, ausstehendMap[j.id] || 0)).join('');
+  const heute = new Date().toISOString().split('T')[0];
+
+  // Sortierung: aktuelle aufsteigend, vergangene absteigend nach Datum
+  const aktuelle  = jobs
+    .filter(j => !j.datum || j.datum >= heute)
+    .sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
+  const vergangene = jobs
+    .filter(j => j.datum && j.datum < heute)
+    .sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
+
+  function renderSubGrid(list) {
+    return `<div class="ins-sub-grid">${list.map(j => renderInseratCard(j, countMap[j.id]||0, acceptedMap[j.id]||0, ausstehendMap[j.id]||0)).join('')}</div>`;
+  }
+
+  let html = '';
+
+  // Sektion 1: Aktuelle Inserate
+  html += `<div class="ins-section">
+    <div class="ins-section-hdr">
+      <span class="ins-section-label" style="color:var(--accent)">📋 Aktuelle Inserate (${aktuelle.length})</span>
+    </div>`;
+  if (aktuelle.length === 0) {
+    html += `<div style="text-align:center;padding:32px;color:var(--text-lt);font-size:14px;background:var(--white);border:1.5px solid var(--gray-lt);border-radius:var(--r-md)">
+      Keine aktuellen Inserate vorhanden. Erstelle ein neues Inserat mit
+      <button class="btn btn-accent" style="font-size:13px;padding:8px 16px;margin-left:8px" onclick="showTab('inserieren')">+ Job Inserieren</button>
+    </div>`;
+  } else {
+    html += renderSubGrid(aktuelle);
+  }
+  html += `</div>`;
+
+  // Sektion 2: Vergangene Inserate (collapsed, nur wenn vorhanden)
+  if (vergangene.length > 0) {
+    html += `<div class="ins-section ins-section-vergangen">
+      <hr style="border:none;border-top:1.5px solid var(--gray-lt);margin:0 0 24px">
+      <div class="ins-section-hdr" style="cursor:pointer" onclick="toggleVergangene(document.getElementById('ins-verg-toggle'))">
+        <span class="ins-section-label" style="color:#888">🗂 Vergangene Inserate (${vergangene.length})</span>
+        <button class="ins-section-toggle" id="ins-verg-toggle" onclick="event.stopPropagation();toggleVergangene(this)">Anzeigen ▾</button>
+      </div>
+      <div id="ins-verg-body" style="display:none;overflow:hidden;transition:opacity .25s">
+        ${renderSubGrid(vergangene)}
+      </div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function toggleVergangene(btn) {
+  const body = document.getElementById('ins-verg-body');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? 'Anzeigen ▾' : 'Ausblenden ▴';
 }
 
 function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
@@ -1017,6 +1126,9 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
     : '';
 
   const remaining = (j.plaetze || 0) - acceptedCount;
+  const ausgebuchtBadge = remaining <= 0
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#FDE8E8;color:#c0392b;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">⛔ Ausgebucht</span>`
+    : '';
   const remainingHtml = `<span class="inserat-meta">🟢 ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
 
   return `
@@ -1025,6 +1137,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
           <div class="inserat-titel">${j.titel}</div>
           ${vergebenBadge}
+          ${ausgebuchtBadge}
           <div class="inserat-firma" style="width:100%">${j.firmenname || ''}</div>
         </div>
         <span class="status-badge ${statusCls}">${j.status || 'aktiv'}</span>
@@ -1046,8 +1159,8 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
         <div class="inserat-card-footer-actions">
           <a href="job-detail.html?id=${j.id}" class="inserat-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
           <button class="bew-count-badge"
-            data-job-id="${j.id}" data-job-titel="${titelEsc}"
-            onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel)">
+            data-job-id="${j.id}" data-job-titel="${titelEsc}" data-job-datum="${j.datum || ''}"
+            onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel, this.dataset.jobDatum)">
             👤 ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
             ${ausstehendCount > 0 ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:0 4px;margin-left:4px">${ausstehendCount} neu</span>` : ''}
           </button>
@@ -1058,7 +1171,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
 }
 
 // ── BEWERBUNGEN OVERLAY ──
-async function openBewerbungen(jobId, jobTitel) {
+async function openBewerbungen(jobId, jobTitel, jobDatum) {
   document.getElementById('bew-overlay-titel').textContent = jobTitel;
   document.getElementById('bew-overlay').style.display = 'block';
   document.body.style.overflow = 'hidden';
@@ -1113,10 +1226,10 @@ async function openBewerbungen(jobId, jobTitel) {
     });
   }
 
-  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id])).join('');
+  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], jobDatum)).join('');
 }
 
-function renderBewItem(b, profile, bew) {
+function renderBewItem(b, profile, bew, jobDatum) {
   // Echter Name aus Profile, Fallback auf gespeicherten jobber_name, dann E-Mail-Prefix
   const vorname  = profile?.vorname  || '';
   const nachname = profile?.nachname || '';
@@ -1144,10 +1257,14 @@ function renderBewItem(b, profile, bew) {
   const rejectBtn = b.status !== 'abgelehnt'
     ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">✕ Ablehnen</button>` : '';
 
+  const heute = new Date().toISOString().split('T')[0];
+  const jobDatumErreicht = !jobDatum || jobDatum <= heute;
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
         ? `<button class="bew-btn bew-btn-presence-done" disabled>✓ Anwesenheit & Bezahlung bestätigt</button>`
-        : `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')">✓ Anwesenheit & Bezahlung bestätigen</button>`)
+        : jobDatumErreicht
+          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')">✓ Anwesenheit & Bezahlung bestätigen</button>`
+          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">⏳ Erst ab ${new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
     : '';
 
   let gebStr = '';
@@ -1196,7 +1313,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
 
   const now = new Date().toISOString();
   const { error: bewErr } = await odojSb.from('bewerbungen')
-    .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now })
+    .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now, status: 'abgeschlossen' })
     .eq('id', bewId);
   if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen ✓'; } return; }
 
@@ -1364,9 +1481,13 @@ function calcStunden() {
   if (!von || !bis) return;
   const [h1, m1] = von.split(':').map(Number);
   const [h2, m2] = bis.split(':').map(Number);
-  let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
-  if (mins < 0) mins += 24 * 60;
-  document.getElementById('ins-stunden').value = Math.round(mins / 60 * 10) / 10;
+  let brutto = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (brutto < 0) brutto += 24 * 60;
+  const pause = parseInt(document.getElementById('ins-pause').value, 10) || 0;
+  const netto = brutto - pause;
+  if (netto <= 0) { document.getElementById('ins-stunden').value = ''; return; }
+  // Auf 0.5 Schritte runden
+  document.getElementById('ins-stunden').value = Math.round(netto / 60 * 2) / 2;
   checkPauseWarning();
 }
 
@@ -1506,6 +1627,7 @@ async function submitInserat(e) {
       document.getElementById('mi-dashboard').style.display = 'block';
       applyUidCheck(_agUidNummer);
       loadInserate();
+      pruefeAbgelaufeneInserate();
       if (window.odojNotifications) {
         window.odojNotifications.markAllRead(session.user.id).catch(() => {});
       }
