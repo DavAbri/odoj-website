@@ -138,12 +138,13 @@ async function odojInitNav() {
                     || 'jobber';
     odojSaveRolle(rolle);
 
-    // Anzeigename
-    let displayName = session.user.email;
+    // Anzeigename (niemals E-Mail — E-Mail-Prefix als letzter Fallback)
+    const emailPrefix = session.user.email ? session.user.email.split('@')[0] : 'Mein Konto';
+    let displayName = emailPrefix;
     if (profile) {
       displayName = (rolle === 'arbeitgeber' && profile.firmenname)
         ? profile.firmenname
-        : (profile.vorname || session.user.email);
+        : (profile.vorname || emailPrefix);
     }
     if (displayName.length > 20) displayName = displayName.substring(0, 18) + '\u2026';
 

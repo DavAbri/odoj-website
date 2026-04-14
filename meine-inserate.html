@@ -1090,18 +1090,46 @@ async function openBewerbungen(jobId, jobTitel) {
 
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
   let profileMap = {};
+  let bewMap = {};   // jobber_id → { avg, count }
   if (jobberIds.length) {
-    const { data: profiles } = await odojSb
-      .from('Profile')
-      .select('user_id, adresse, svnummer, geburtsdatum')
-      .in('user_id', jobberIds);
-    profiles?.forEach(p => { profileMap[p.user_id] = p; });
+    const [profRes, ratRes] = await Promise.all([
+      odojSb.from('Profile')
+        .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum')
+        .in('user_id', jobberIds),
+      odojSb.from('bewertungen')
+        .select('bewertet_id, sterne')
+        .in('bewertet_id', jobberIds)
+        .eq('rolle_bewerter', 'arbeitgeber')
+    ]);
+    profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
+    // Ratings gruppieren
+    const rawRatings = {};
+    ratRes.data?.forEach(r => {
+      if (!rawRatings[r.bewertet_id]) rawRatings[r.bewertet_id] = [];
+      rawRatings[r.bewertet_id].push(r.sterne);
+    });
+    Object.entries(rawRatings).forEach(([uid, sterne]) => {
+      bewMap[uid] = { avg: sterne.reduce((a,b)=>a+b,0)/sterne.length, count: sterne.length };
+    });
   }
 
-  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id])).join('');
+  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id])).join('');
 }
 
-function renderBewItem(b, profile) {
+function renderBewItem(b, profile, bew) {
+  // Echter Name aus Profile, Fallback auf gespeicherten jobber_name, dann E-Mail-Prefix
+  const vorname  = profile?.vorname  || '';
+  const nachname = profile?.nachname || '';
+  const realName = (vorname + ' ' + nachname).trim()
+    || b.jobber_name
+    || (b.jobber_email ? b.jobber_email.split('@')[0] : 'Unbekannt');
+  const initials = realName.split(' ').map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 2) || '?';
+
+  // Rating-Badge
+  const bewBadge = bew
+    ? `<span style="font-size:12px;color:#e6a01e;font-weight:600;margin-left:8px">★ ${bew.avg.toFixed(1)} <span style="color:var(--text-lt);font-weight:300">(${bew.count})</span></span>`
+    : '';
+
   const dateStr = b.erstellt_am
     ? new Date(b.erstellt_am).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
     : '–';
@@ -1142,11 +1170,14 @@ function renderBewItem(b, profile) {
   return `
     <div class="bew-item" id="bew-item-${b.id}">
       <div class="bew-item-header">
-        <div>
-          <div class="bew-item-name" onclick="showJobberProfile('${b.jobber_id || ''}', '${(b.jobber_name || 'Unbekannt').replace(/'/g,"\\'")}', '${(b.jobber_email || '').replace(/'/g,"\\'")}')">
-            ${b.jobber_name || 'Unbekannt'}
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${initials}</div>
+          <div>
+            <div class="bew-item-name" onclick="showJobberProfile('${b.jobber_id || ''}', '${realName.replace(/'/g,"\\'")}')">
+              ${realName}${bewBadge}
+            </div>
+            <div class="bew-item-date">Beworben am ${dateStr}</div>
           </div>
-          <div class="bew-item-date">Beworben am ${dateStr}</div>
         </div>
         <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
       </div>
@@ -1507,14 +1538,14 @@ function _berechneAlter(geburtsdatum) {
   return alter;
 }
 
-async function showJobberProfile(jobberId, jobberName, jobberEmail) {
+async function showJobberProfile(jobberId, jobberName) {
   const overlay = document.getElementById('jp-overlay');
   const body    = document.getElementById('jp-modal-body');
 
-  const initials = (jobberName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const initials = (jobberName || '?').split(' ').map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 2);
   document.getElementById('jp-avatar').textContent     = initials;
   document.getElementById('jp-modal-name').textContent  = jobberName || 'Unbekannt';
-  document.getElementById('jp-modal-email').textContent = jobberEmail || '';
+  document.getElementById('jp-modal-email').textContent = 'Jobber-Profil';
   body.innerHTML = '<div class="jp-loading">Daten werden geladen…</div>';
 
   overlay.classList.add('open');
@@ -1541,7 +1572,6 @@ async function showJobberProfile(jobberId, jobberName, jobberEmail) {
   const adresseStr = adresseTeile.length ? adresseTeile.join(', ') : (profile?.adresse || null);
   if (adresseStr) fields.push({ icon: '📍', label: 'Wohnadresse', value: escJ(adresseStr) });
   if (profile?.svnummer) fields.push({ icon: '🪪', label: 'SV-Nummer', value: escJ(profile.svnummer) });
-  if (jobberEmail) fields.push({ icon: '✉️', label: 'E-Mail', value: escJ(jobberEmail) });
 
   if (fields.length === 0) {
     body.innerHTML = `<p style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px 0">Dieser Bewerber hat noch keine weiteren Profildaten hinterlegt.</p>`;

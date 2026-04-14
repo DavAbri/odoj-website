@@ -809,8 +809,10 @@ async function sendMessage() {
     const job = document.getElementById('chat-win-sub')?.textContent || '';
     const senderProfile = await odojGetProfile(_chatSession.user.id);
     const senderName = senderProfile
-      ? ((senderProfile.vorname || '') + ' ' + (senderProfile.nachname || '')).trim() || _chatSession.user.email
-      : _chatSession.user.email;
+      ? ((senderProfile.vorname || '') + ' ' + (senderProfile.nachname || '')).trim()
+        || senderProfile.firmenname
+        || (_chatSession.user.email ? _chatSession.user.email.split('@')[0] : 'Unbekannt')
+      : (_chatSession.user.email ? _chatSession.user.email.split('@')[0] : 'Unbekannt');
     odojSb.functions.invoke('send-email', {
       body: { type: 'new_message', recipientId: empfaengerId, senderName, jobTitel: job, bewId: _activeBewId }
     }).catch(() => {});
