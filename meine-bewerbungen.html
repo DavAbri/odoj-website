@@ -327,11 +327,14 @@ function renderCard(b, job, opts = {}) {
 
   const branche = job?.branche ? (BRANCHEN[job.branche] || null) : null;
 
+  // Firmenname: prefer profile-loaded name, fallback to jobs.firmenname, then email prefix
+  const firmaAnzeige = job?._agName || job?.firmenname || '–';
+
   return `
     <div class="mj-card fade-in" onclick="window.location.href='${jobDetailHref}'" style="${opts.muted ? 'opacity:.75' : ''}">
       ${branche ? `<span class="tag ${branche.cls}" style="font-size:11px;padding:3px 10px;margin-bottom:8px;display:inline-block">${branche.label}</span>` : ''}
       <div class="mj-card-titel">${escH(job?.titel || 'Unbekannter Job')}</div>
-      <div class="mj-card-firma">${escH(job?.firmenname || '–')}</div>
+      <div class="mj-card-firma">${escH(firmaAnzeige)}</div>
       <div class="mj-card-meta">
         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         ${jobDat}${job?.ort ? ' · ' + escH(job.ort) : ''}
@@ -390,9 +393,34 @@ async function loadMeineBewerbungen() {
   if (jobIds.length) {
     const { data: jobs } = await odojSb
       .from('jobs')
-      .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,uhrzeit_von,uhrzeit_bis,plaetze,mindestalter')
+      .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,uhrzeit_von,uhrzeit_bis,plaetze,mindestalter,arbeitgeber_id')
       .in('id', jobIds);
     jobs?.forEach(j => { jobMap[j.id] = j; });
+  }
+
+  // Echte Firmennamen aus Profile laden (Jobber sieht Firmenname des Arbeitgebers)
+  const agIds = [...new Set(Object.values(jobMap).map(j => j.arbeitgeber_id).filter(Boolean))];
+  if (agIds.length) {
+    const { data: profiles } = await odojSb
+      .from('Profile')
+      .select('user_id, firmenname, vorname, nachname')
+      .in('user_id', agIds);
+    const agNameMap = {};
+    profiles?.forEach(p => {
+      agNameMap[p.user_id] = p.firmenname ||
+        [p.vorname, p.nachname].filter(Boolean).join(' ') || null;
+    });
+    // Fallback: email prefix wenn kein Profilname vorhanden
+    Object.values(jobMap).forEach(j => {
+      if (j.arbeitgeber_id) {
+        const profileName = agNameMap[j.arbeitgeber_id];
+        if (profileName) {
+          j._agName = profileName;
+        } else if (j.firmenname && j.firmenname.includes('@')) {
+          j._agName = j.firmenname.split('@')[0];
+        }
+      }
+    });
   }
 
   // In Spalten aufteilen
