@@ -239,6 +239,12 @@
   font-size: 13px; font-weight: 700; cursor: pointer; transition: background .2s;
 }
 .bew-req-btn:hover { background: var(--accent-lt); }
+.bew-already-done {
+  display: inline-block; margin-top: 10px;
+  color: #1A7A50; font-size: 13px; font-weight: 700;
+  background: #E6F5EE; border-radius: var(--r-sm);
+  padding: 7px 14px;
+}
 /* Bewertungs-Modal (Jobber bewertet AG) */
 .jb-bew-overlay {
   position: fixed; inset: 0;
@@ -718,6 +724,22 @@ async function loadMessages(silent) {
     return;
   }
 
+  // Vorab prüfen welche Jobs der Jobber bereits bewertet hat
+  let alreadyRatedJobIds = new Set();
+  if (_chatRolle === 'jobber' && _chatSession) {
+    const bewReqMsgs = msgs.filter(m => m.nachricht && m.nachricht.startsWith('[BEW_REQ:'));
+    if (bewReqMsgs.length) {
+      const jobIds = bewReqMsgs.map(m => {
+        try { return JSON.parse(m.nachricht.slice('[BEW_REQ:'.length, -1)).jobId; } catch { return null; }
+      }).filter(Boolean);
+      if (jobIds.length) {
+        const { data: existing } = await odojSb.from('bewertungen')
+          .select('job_id').in('job_id', jobIds).eq('bewerter_id', _chatSession.user.id);
+        existing?.forEach(r => alreadyRatedJobIds.add(r.job_id));
+      }
+    }
+  }
+
   let html = '';
   let lastDate = '';
   msgs.forEach(m => {
@@ -738,10 +760,13 @@ async function loadMessages(silent) {
       let bewData = {};
       try { bewData = JSON.parse(m.nachricht.slice('[BEW_REQ:'.length, -1)); } catch (_) {}
       const firmenname = escHtml(bewData.firmenname || 'dem Arbeitgeber');
+      const bereitsBewertet = alreadyRatedJobIds.has(bewData.jobId);
       html += `<div class="msg-bubble msg-bew-req">
         <div>👉 <strong>Wie war dein Einsatz bei ${firmenname}?</strong><br>
         Teile deine Erfahrung – deine Bewertung hilft anderen Jobbern.</div>
-        <button class="bew-req-btn" onclick="openJbBewModal('${escHtml(bewData.jobId||'')}','${escHtml(bewData.bewId||'')}','${escHtml(bewData.agId||'')}','${firmenname}')">⭐ Jetzt bewerten →</button>
+        ${bereitsBewertet
+          ? `<div class="bew-already-done">✓ Bewertung bereits abgegeben</div>`
+          : `<button class="bew-req-btn" onclick="openJbBewModal('${escHtml(bewData.jobId||'')}','${escHtml(bewData.bewId||'')}','${escHtml(bewData.agId||'')}','${firmenname}')">⭐ Jetzt bewerten →</button>`}
         <div class="msg-time">${time}</div>
       </div>`;
     } else if (isBewReq) {
@@ -955,7 +980,7 @@ async function submitJbBewertung() {
 
   document.getElementById('jb-bew-success').style.display = 'block';
   btn.style.display = 'none';
-  setTimeout(() => closeJbBewModal(), 2000);
+  setTimeout(() => { closeJbBewModal(); loadMessages(true); }, 2000);
 }
 
 // Start

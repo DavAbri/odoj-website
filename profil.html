@@ -37,18 +37,60 @@
   color: var(--navy);
 }
 .profil-avatar {
-  width: 64px; height: 64px;
+  width: 72px; height: 72px;
   background: var(--navy);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px;
+  font-size: 28px;
   color: var(--white);
   font-weight: 700;
   flex-shrink: 0;
-  margin-bottom: 16px;
 }
-.profil-name { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
-.profil-email { font-size: 14px; color: var(--text-lt); margin-bottom: 20px; }
+.profil-name  { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+.profil-email { font-size: 13px; color: #999; }
+
+/* ── Profil-Karte Flexbox ── */
+.profil-karte {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.profil-karte-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.profil-karte-rechts {
+  text-align: right;
+  flex-shrink: 0;
+}
+.profil-sterne-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.profil-sterne       { color: #e6a01e; font-size: 18px; }
+.profil-durchschnitt { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--navy); }
+.profil-anzahl-bewertungen { font-size: 12px; color: #999; margin-bottom: 10px; }
+.profil-branche-badges {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  justify-content: flex-end;
+}
+.profil-branche-badge {
+  background: #f3f3f3; border: 1px solid #e8e8e8;
+  border-radius: 100px; padding: 4px 10px;
+  font-size: 11px; color: #555;
+}
+.profil-no-bew { font-size: 13px; color: #ccc; }
+@media (max-width: 600px) {
+  .profil-karte { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .profil-karte-rechts { text-align: left; width: 100%; }
+  .profil-sterne-zeile { justify-content: flex-start; }
+  .profil-branche-badges { justify-content: flex-start; }
+}
 
 /* ── Bewertungen ── */
 .bew-section-title {
@@ -756,9 +798,18 @@ function renderJobber(session, profile) {
   body.innerHTML = `
     <!-- Profilkarte -->
     <div class="profil-card">
-      <div class="profil-avatar" id="jb-avatar">${fullName.charAt(0).toUpperCase()}</div>
-      <div class="profil-name"  id="jb-name">${escH(fullName)}</div>
-      <div class="profil-email">${escH(session.user.email)}</div>
+      <div class="profil-karte">
+        <div class="profil-karte-links">
+          <div class="profil-avatar" id="jb-avatar">${fullName.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="profil-name" id="jb-name">${escH(fullName)}</div>
+            <div class="profil-email">${escH(session.user.email)}</div>
+          </div>
+        </div>
+        <div class="profil-karte-rechts" id="profil-bewertung-rechts">
+          <div class="profil-no-bew">Noch keine Bewertungen</div>
+        </div>
+      </div>
     </div>
 
     <!-- Persönliche Daten -->
@@ -817,6 +868,12 @@ function renderJobber(session, profile) {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Meine Bewertungen -->
+    <div class="profil-card" id="jb-bew-card">
+      <h2 class="bew-section-title">Meine Bewertungen</h2>
+      <div id="jb-bew-body"><div class="bew-empty">Lade Bewertungen…</div></div>
     </div>
 
     <!-- Wohnadresse -->
@@ -950,12 +1007,6 @@ function renderJobber(session, profile) {
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Bewertungen von Arbeitgebern -->
-    <div class="profil-card" id="jb-bew-card">
-      <h2 class="bew-section-title">Meine Bewertungen</h2>
-      <div id="jb-bew-body"><div class="bew-empty">Lade Bewertungen…</div></div>
     </div>
 
     <!-- Passwort ändern -->
@@ -1369,15 +1420,39 @@ async function loadJobberBewertungen(userId) {
   const BRANCHEN_LABEL = { gastro:'🍽 Gastronomie & Hotel', bau:'🏗 Bau & Handwerk', lager:'📦 Lager & Logistik', events:'🎤 Events & Veranstaltungen' };
   const totalEinsaetze = Object.values(branchenMap).reduce((a, b) => a + b, 0);
 
-  if (!bews?.length && !totalEinsaetze) {
-    el.innerHTML = '<div class="bew-empty">Noch keine Bewertungen vorhanden.</div>'; return;
-  }
+  const rechtsEl = document.getElementById('profil-bewertung-rechts');
 
   const avg = bews?.length
     ? (bews.reduce((s, b) => s + b.sterne, 0) / bews.length).toFixed(1)
     : null;
 
-  // Firmenname der Bewerter laden
+  // ── Rechte Profilkarte: kompakte Kurzansicht ──
+  if (rechtsEl) {
+    const sternAnzahl = avg ? Math.round(parseFloat(avg)) : 0;
+    const sterneHtml  = '★'.repeat(sternAnzahl) + '☆'.repeat(5 - sternAnzahl);
+    const badgesHtml  = totalEinsaetze
+      ? `<div class="profil-branche-badges">
+           ${Object.entries(branchenMap).map(([k, v]) =>
+             `<span class="profil-branche-badge">${BRANCHEN_LABEL[k] || k}: ${v} Einsatz${v !== 1 ? 'e' : ''}</span>`
+           ).join('')}
+         </div>`
+      : '';
+    rechtsEl.innerHTML = avg
+      ? `<div class="profil-sterne-zeile">
+           <span class="profil-sterne">${sterneHtml}</span>
+           <span class="profil-durchschnitt">${avg}</span>
+         </div>
+         <div class="profil-anzahl-bewertungen">${bews.length} Bewertung${bews.length !== 1 ? 'en' : ''}</div>
+         ${badgesHtml}`
+      : badgesHtml || '<div class="profil-no-bew">Noch keine Bewertungen</div>';
+  }
+
+  // ── Bewertungs-Karte: volle Ansicht mit Sterne + Badges + Kommentare ──
+  if (!bews?.length && !totalEinsaetze) {
+    el.innerHTML = '<div class="bew-empty">Noch keine Bewertungen vorhanden.</div>';
+    return;
+  }
+
   const bewerterIds = [...new Set((bews || []).map(b => b.bewerter_id).filter(Boolean))];
   let firmaMap = {};
   if (bewerterIds.length) {
@@ -1385,20 +1460,21 @@ async function loadJobberBewertungen(userId) {
     profiles?.forEach(p => { firmaMap[p.user_id] = p.firmenname || 'Arbeitgeber'; });
   }
 
+  const sternAnzahlFull = avg ? Math.round(parseFloat(avg)) : 0;
   el.innerHTML = `
-    ${avg ? `<div class="bew-avg">
-      <div class="bew-avg-stars">${renderSterneStatic(Math.round(parseFloat(avg)))}</div>
-      <div class="bew-avg-num">${avg}</div>
-      <div class="bew-avg-count">${bews.length} Bewertung${bews.length !== 1 ? 'en' : ''}</div>
-    </div>` : ''}
-    ${totalEinsaetze ? `<div class="bew-stats-grid">
-      ${Object.entries(branchenMap).map(([k,v]) =>
+    <div class="bew-avg" style="margin-bottom:16px">
+      <div class="bew-avg-stars">${'★'.repeat(sternAnzahlFull) + '☆'.repeat(5 - sternAnzahlFull)}</div>
+      <div class="bew-avg-num">${avg || '–'}</div>
+      <div class="bew-avg-count">${bews?.length || 0} Bewertung${(bews?.length || 0) !== 1 ? 'en' : ''}</div>
+    </div>
+    ${totalEinsaetze ? `<div class="bew-stats-grid" style="margin-bottom:20px">
+      ${Object.entries(branchenMap).map(([k, v]) =>
         `<span class="bew-stat-pill">${BRANCHEN_LABEL[k] || k}: ${v} Einsatz${v !== 1 ? 'e' : ''}</span>`
       ).join('')}
     </div>` : ''}
     ${bews?.length ? `<div class="bew-list">
       ${bews.map(b => {
-        const dat = new Date(b.created_at).toLocaleDateString('de-AT', { month:'long', year:'numeric' });
+        const dat   = new Date(b.created_at).toLocaleDateString('de-AT', { month: 'long', year: 'numeric' });
         const firma = escH(firmaMap[b.bewerter_id] || 'Arbeitgeber');
         return `<div class="bew-item">
           <div class="bew-item-stars">${renderSterneStatic(b.sterne)}</div>
@@ -1406,7 +1482,7 @@ async function loadJobberBewertungen(userId) {
           <div class="bew-item-meta">${firma} · ${dat}</div>
         </div>`;
       }).join('')}
-    </div>` : '<div class="bew-empty">Noch keine Kommentare.</div>'}`;
+    </div>` : ''}`;
 }
 
 async function loadAgBewertungen(userId) {

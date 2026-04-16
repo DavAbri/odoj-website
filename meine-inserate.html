@@ -931,22 +931,6 @@ async function submitAgBewertung() {
   // ag_bewertung_abgegeben markieren (non-fatal — Spalte muss in DB existieren)
   odojSb.from('jobs').update({ ag_bewertung_abgegeben: true }).eq('id', _bewRateData.jobId).then(() => {}).catch(() => {});
 
-  // Nachricht an Jobber: Bewertungsaufforderung
-  const bewReqPayload = JSON.stringify({
-    jobId:      _bewRateData.jobId,
-    bewId:      _bewRateData.bewId,
-    agId:       _agSession.user.id,
-    firmenname: _agFirmenname
-  });
-  await odojSb.from('nachrichten').insert({
-    bewerbung_id:  _bewRateData.bewId,
-    sender_id:     _agSession.user.id,
-    empfaenger_id: _bewRateData.jobberId,
-    nachricht:     '[BEW_REQ:' + bewReqPayload + ']',
-    gelesen:       false,
-    erstellt_am:   new Date().toISOString()
-  });
-
   document.getElementById('bew-rate-success').style.display = 'block';
   btn.style.display = 'none';
   setTimeout(() => {
@@ -1311,6 +1295,15 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   const btn = document.getElementById('pres-btn-' + bewId);
   if (btn) { btn.disabled = true; btn.textContent = 'Speichern…'; }
 
+  // Falls jobberId/agId nicht übergeben: aus DB nachladen
+  if (!jobberId || !agId) {
+    const { data: bFull } = await odojSb.from('bewerbungen')
+      .select('jobber_id, arbeitgeber_id').eq('id', bewId).maybeSingle();
+    if (!jobberId) jobberId = bFull?.jobber_id || '';
+    if (!agId)     agId     = bFull?.arbeitgeber_id || _agSession?.user?.id || '';
+  }
+  if (!agId) agId = _agSession?.user?.id || '';
+
   const now = new Date().toISOString();
   const { error: bewErr } = await odojSb.from('bewerbungen')
     .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now, status: 'abgeschlossen' })
@@ -1345,6 +1338,24 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     erstellt_am:   new Date().toISOString()
   });
   if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
+
+  // BEW_REQ sofort senden — Jobber kann immer bewerten, unabhängig vom AG-Rating
+  if (jobberId && bewData?.job_id) {
+    const bewReqPayload = JSON.stringify({
+      jobId:      bewData.job_id,
+      bewId:      bewId,
+      agId:       agId,
+      firmenname: _agFirmenname
+    });
+    await odojSb.from('nachrichten').insert({
+      bewerbung_id:  bewId,
+      sender_id:     agId,
+      empfaenger_id: jobberId,
+      nachricht:     '[BEW_REQ:' + bewReqPayload + ']',
+      gelesen:       false,
+      erstellt_am:   new Date().toISOString()
+    });
+  }
 
   if (jobberId) {
     const { data: agProfile } = await odojSb.from('Profile').select('firmenname').eq('user_id', agId).single();
@@ -1448,10 +1459,31 @@ async function updateBewStatus(bewId, newStatus) {
     }
     const actEl = document.getElementById('bew-actions-' + bewId);
     if (actEl) {
+      const jobberId = bew?.jobber_id || '';
+      const agId     = _agSession?.user?.id || '';
+      // Jobber-Namen laden für confirmPresence
+      let jobberName = '';
+      if (jobberId) {
+        const { data: prof } = await odojSb.from('Profile')
+          .select('vorname, nachname').eq('user_id', jobberId).maybeSingle();
+        jobberName = [prof?.vorname, prof?.nachname].filter(Boolean).join(' ') || 'Jobber';
+      }
+      // Job-Datum laden für Datumssperre
+      let jobDatumErreicht = true;
+      if (bew?.job_id) {
+        const { data: jobD } = await odojSb.from('jobs').select('datum').eq('id', bew.job_id).maybeSingle();
+        const heute = new Date().toISOString().split('T')[0];
+        if (jobD?.datum && jobD.datum > heute) {
+          jobDatumErreicht = false;
+        }
+      }
+      const nameEsc = jobberName.replace(/'/g, "\\'");
       actEl.innerHTML =
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">✕ Ablehnen</button>` +
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')">💬 Nachricht senden</button>` +
-        `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '', '', '')">✓ Anwesenheit & Bezahlung bestätigen</button>`;
+        (jobDatumErreicht
+          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')">✓ Anwesenheit & Bezahlung bestätigen</button>`
+          : `<button class="bew-btn bew-btn-presence-done" disabled>⏳ Erst ab Einsatzdatum verfügbar</button>`);
     }
   }
   loadInserate();
