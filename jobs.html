@@ -470,6 +470,54 @@ function showJobsToast(msg, type) {
   setTimeout(() => t.remove(), 3000);
 }
 
+function zeigeBewerbungsToast() {
+  const alt = document.getElementById('bewerbungs-toast');
+  if (alt) alt.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'bewerbungs-toast';
+  toast.style.cssText = `
+    position:fixed; bottom:28px; left:50%;
+    transform:translateX(-50%);
+    background:#0B1628; color:#fff;
+    padding:16px 24px; border-radius:12px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);
+    z-index:9999; display:flex; align-items:center;
+    gap:16px; font-size:14px;
+    font-family:'Plus Jakarta Sans',sans-serif;
+    white-space:nowrap; animation:bToastUp 0.3s ease;
+  `;
+  toast.innerHTML = `
+    <span>✅ Bewerbung erfolgreich abgeschickt!</span>
+    <a href="meine-bewerbungen.html" style="background:#e6a01e;color:#0B1628;padding:8px 16px;border-radius:8px;font-weight:700;text-decoration:none;font-size:13px;white-space:nowrap">Meine Bewerbungen →</a>
+    <button onclick="document.getElementById('bewerbungs-toast').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:0;line-height:1">×</button>
+  `;
+
+  if (!document.getElementById('bewerbungs-toast-css')) {
+    const s = document.createElement('style');
+    s.id = 'bewerbungs-toast-css';
+    s.textContent = `
+      @keyframes bToastUp {
+        from { opacity:0; transform:translateX(-50%) translateY(20px); }
+        to   { opacity:1; transform:translateX(-50%) translateY(0); }
+      }
+      @media (max-width:600px) {
+        #bewerbungs-toast {
+          left:16px; right:16px; bottom:16px;
+          transform:none; white-space:normal; flex-wrap:wrap;
+        }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    const el = document.getElementById('bewerbungs-toast');
+    if (el) { el.style.transition = 'opacity 0.3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }
+  }, 8000);
+}
+
 // ── FILTER STATE ──
 let _activeBranche = 'alle';
 let _activeAlter   = null;   // null = alle, 16 / 18 / 21
@@ -584,7 +632,7 @@ async function applyForJob(jobId, agId, btnEl) {
   btnEl.style.background = '#1a7a50';
   btnEl.style.cursor = 'default';
   btnEl.disabled = true;
-  showJobsToast('Bewerbung erfolgreich gesendet!', 'success');
+  zeigeBewerbungsToast();
 }
 
 // ── JOB CARD HTML ──
