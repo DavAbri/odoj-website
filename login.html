@@ -548,11 +548,35 @@ async function doLogin(e) {
     return;
   }
 
-  const rolle = data.user.user_metadata?.rolle
-    || localStorage.getItem('odoj_rolle')
-    || 'jobber';
-  odojSaveRolle(rolle);
-  redirectAfterAuth(rolle);
+  // Tatsächliche Rolle ermitteln (user_metadata → Profile-Tabelle → Fallback)
+  let tatsaechlicheRolle = data.user.user_metadata?.rolle;
+  if (!tatsaechlicheRolle) {
+    const { data: profile } = await odojSb
+      .from('Profile').select('rolle').eq('user_id', data.user.id).single();
+    tatsaechlicheRolle = profile?.rolle || 'jobber';
+  }
+
+  // Rollen-Mismatch: erst ausloggen, dann Fehlermeldung zeigen
+  if (tatsaechlicheRolle !== _currentRole) {
+    await odojSb.auth.signOut();
+    const labelMap = { jobber: 'Jobber', arbeitgeber: 'Arbeitgeber' };
+    const richtig  = labelMap[tatsaechlicheRolle] || tatsaechlicheRolle;
+    errEl.textContent = `Dieses Konto ist als ${richtig} registriert. Bitte klicke auf „Ich bin ${richtig}" und melde dich erneut an.`;
+    errEl.style.display = 'block';
+    btn.textContent = 'Anmelden';
+    btn.disabled = false;
+    // Richtigen Tab wechseln + hervorheben
+    setRole(tatsaechlicheRolle);
+    const richtigerTab = document.getElementById('tab-' + tatsaechlicheRolle);
+    if (richtigerTab) {
+      richtigerTab.classList.add('highlight');
+      richtigerTab.addEventListener('click', () => richtigerTab.classList.remove('highlight'), { once: true });
+    }
+    return;
+  }
+
+  odojSaveRolle(tatsaechlicheRolle);
+  redirectAfterAuth(tatsaechlicheRolle);
 }
 
 // ── REGISTRIERUNG ──
