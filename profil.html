@@ -934,6 +934,7 @@ function renderJobber(session, profile) {
                 <label>Sozialversicherungsnummer</label>
                 <input type="text" id="svn-input" value="${escH(svn)}" placeholder="1234 010190" maxlength="15">
                 <small>10 Ziffern, z.B. 1234 010190</small>
+                <div id="svn-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px;margin-top:8px;"></div>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <button class="btn-save" onclick="saveSvn('${session.user.id}')">Speichern</button>
@@ -1053,6 +1054,16 @@ async function changePassword() {
 
 function toggleSvnEdit(show) {
   document.getElementById('svn-edit-form').style.display = show ? 'block' : 'none';
+  if (show) {
+    const svnInput = document.getElementById('svn-input');
+    if (svnInput && !svnInput._fmtBound) {
+      svnInput.addEventListener('input', function() {
+        const z = this.value.replace(/\D/g,'');
+        this.value = z.length > 4 ? z.slice(0,4)+' '+z.slice(4,10) : z;
+      });
+      svnInput._fmtBound = true;
+    }
+  }
 }
 function toggleAddrEdit(show) {
   document.getElementById('addr-edit-form').style.display = show ? 'block' : 'none';
@@ -1208,13 +1219,45 @@ async function _saveProfileFields(userId, fields) {
   return result;
 }
 
+function validiereOesterreichischeSVN(svn, geburtsdatum) {
+  const z = svn.replace(/\D/g, '');
+
+  if (z.length !== 10)
+    return { gueltig: false, fehler: 'SVN muss genau 10 Ziffern haben (z.B. 1234 010190).' };
+
+  if (parseInt(z.substring(4,6)) < 1 || parseInt(z.substring(4,6)) > 31)
+    return { gueltig: false, fehler: 'Ungültiger Tag im Geburtsdatum der SVN.' };
+
+  if (parseInt(z.substring(6,8)) < 1 || parseInt(z.substring(6,8)) > 12)
+    return { gueltig: false, fehler: 'Ungültiger Monat im Geburtsdatum der SVN.' };
+
+  const mult = [3,7,9,0,5,8,4,2,1,6];
+  const pruef = [].reduce.call(z, (s,c,i) => s + parseInt(c)*mult[i], 0) % 11;
+
+  if (pruef !== parseInt(z[3]))
+    return { gueltig: false, fehler: 'Pruefziffer falsch. Bitte SVN von der e-card pruefen.' };
+
+  if (geburtsdatum) {
+    const t = geburtsdatum.split('-');
+    if (z.substring(4,6) !== t[2] || z.substring(6,8) !== t[1] || z.substring(8,10) !== t[0].substring(2))
+      return { gueltig: false, fehler: 'Geburtsdatum in SVN stimmt nicht mit deinem Profil ueberein.' };
+  }
+
+  return { gueltig: true, fehler: null };
+}
+
 async function saveSvn(userId) {
-  const svn = document.getElementById('svn-input').value.trim();
-  const digits = svn.replace(/\D/g, '');
-  if (digits.length !== 10) {
-    alert('Bitte eine gültige 10-stellige Sozialversicherungsnummer eingeben (Beispiel: 1234 010190).');
+  const svn    = document.getElementById('svn-input').value.trim();
+  const errEl  = document.getElementById('svn-error');
+
+  const profil = await _loadProfileRow(userId);
+  const v = validiereOesterreichischeSVN(svn, profil?.geburtsdatum);
+  if (!v.gueltig) {
+    errEl.textContent = v.fehler;
+    errEl.style.display = 'block';
     return;
   }
+  errEl.style.display = 'none';
 
   const { data, error } = await _saveProfileFields(userId, { svnummer: svn });
 
