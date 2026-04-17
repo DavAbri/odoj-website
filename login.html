@@ -70,8 +70,9 @@
   text-align: center;
   line-height: 1.5;
 }
-.login-msg.info { background: #EBF5FF; color: #1A5FA0; border: 1px solid #A8CBE5; }
-.login-msg.warn { background: #FFF4E0; color: #A05000; border: 1px solid #F5BE5A; }
+.login-msg.info  { background: #EBF5FF; color: #1A5FA0; border: 1px solid #A8CBE5; }
+.login-msg.warn  { background: #FFF4E0; color: #A05000; border: 1px solid #F5BE5A; }
+.login-msg.error { background: #FEE2E2; color: #991B1B; border: 1px solid #F87171; font-weight: 600; }
 
 /* Role tabs */
 .role-tabs {
@@ -101,6 +102,15 @@
   background: var(--navy);
   color: var(--white);
   box-shadow: var(--sh-sm);
+}
+@keyframes tab-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(220,38,38,0); }
+}
+.role-tab.highlight {
+  outline: 2px solid #DC2626;
+  outline-offset: 2px;
+  animation: tab-pulse 1s ease-in-out 4;
 }
 
 /* Auth mode tabs */
@@ -538,11 +548,35 @@ async function doLogin(e) {
     return;
   }
 
-  const rolle = data.user.user_metadata?.rolle
-    || localStorage.getItem('odoj_rolle')
-    || 'jobber';
-  odojSaveRolle(rolle);
-  redirectAfterAuth(rolle);
+  // Tatsächliche Rolle ermitteln (user_metadata → Profile-Tabelle → Fallback)
+  let tatsaechlicheRolle = data.user.user_metadata?.rolle;
+  if (!tatsaechlicheRolle) {
+    const { data: profile } = await odojSb
+      .from('Profile').select('rolle').eq('user_id', data.user.id).single();
+    tatsaechlicheRolle = profile?.rolle || 'jobber';
+  }
+
+  // Rollen-Mismatch: erst ausloggen, dann Fehlermeldung zeigen
+  if (tatsaechlicheRolle !== _currentRole) {
+    await odojSb.auth.signOut();
+    const labelMap = { jobber: 'Jobber', arbeitgeber: 'Arbeitgeber' };
+    const richtig  = labelMap[tatsaechlicheRolle] || tatsaechlicheRolle;
+    errEl.textContent = `Dieses Konto ist als ${richtig} registriert. Bitte klicke auf „Ich bin ${richtig}" und melde dich erneut an.`;
+    errEl.style.display = 'block';
+    btn.textContent = 'Anmelden';
+    btn.disabled = false;
+    // Richtigen Tab wechseln + hervorheben
+    setRole(tatsaechlicheRolle);
+    const richtigerTab = document.getElementById('tab-' + tatsaechlicheRolle);
+    if (richtigerTab) {
+      richtigerTab.classList.add('highlight');
+      richtigerTab.addEventListener('click', () => richtigerTab.classList.remove('highlight'), { once: true });
+    }
+    return;
+  }
+
+  odojSaveRolle(tatsaechlicheRolle);
+  redirectAfterAuth(tatsaechlicheRolle);
 }
 
 // ── REGISTRIERUNG ──
@@ -661,10 +695,16 @@ async function doRegister(e) {
   const msg    = params.get('msg');
   const msgEl  = document.getElementById('login-msg');
   if (msg === 'restricted') {
-    msgEl.textContent   = 'Diese Seite ist nur für Arbeitgeber. Bitte melde dich mit einem Arbeitgeber-Konto an.';
-    msgEl.className     = 'login-msg info';
+    msgEl.textContent   = '⚠️ Diese Seite ist nur für Arbeitgeber. Bitte wähle „Ich bin Arbeitgeber" und melde dich mit deinem Arbeitgeber-Konto an.';
+    msgEl.className     = 'login-msg error';
     msgEl.style.display = 'block';
     setRole('arbeitgeber');
+    // Arbeitgeber-Tab optisch hervorheben
+    const agTab = document.getElementById('tab-arbeitgeber');
+    if (agTab) {
+      agTab.classList.add('highlight');
+      agTab.addEventListener('click', () => agTab.classList.remove('highlight'), { once: true });
+    }
   }
 })();
 
