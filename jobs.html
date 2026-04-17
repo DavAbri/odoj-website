@@ -178,7 +178,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  color: var(--accent);
   margin-bottom: 18px;
 }
 .step h3 {
@@ -332,10 +332,10 @@
 <div class="filter-bar">
   <span class="filter-lbl">Branche:</span>
   <button class="fbtn on" id="fbtn-branche-alle" onclick="filterBranche('alle', this)">Alle</button>
-  <button class="fbtn" onclick="filterBranche('gastro', this)">🍽 Gastronomie</button>
-  <button class="fbtn" onclick="filterBranche('bau', this)">🏗 Bau &amp; Handwerk</button>
-  <button class="fbtn" onclick="filterBranche('lager', this)">📦 Lager &amp; Logistik</button>
-  <button class="fbtn" onclick="filterBranche('events', this)">🎤 Events</button>
+  <button class="fbtn" onclick="filterBranche('gastro', this)">Gastronomie</button>
+  <button class="fbtn" onclick="filterBranche('bau', this)">Bau &amp; Handwerk</button>
+  <button class="fbtn" onclick="filterBranche('lager', this)">Lager &amp; Logistik</button>
+  <button class="fbtn" onclick="filterBranche('events', this)">Events</button>
   <div class="filter-divider"></div>
   <span class="filter-lbl">Mindestalter:</span>
   <button class="fbtn on" id="fbtn-alter-alle" onclick="filterAlter(null, this)">Alle</button>
@@ -347,7 +347,7 @@
 
 <!-- ARBEITGEBER INFO BANNER (wird per JS eingeblendet) -->
 <div id="ag-info-banner" class="ag-info-banner">
-  <p>🏢 Du bist als Arbeitgeber eingeloggt – hier findest du keine Stellen für dein Unternehmen.</p>
+  <p>Du bist als Arbeitgeber eingeloggt – hier findest du keine Stellen für dein Unternehmen.</p>
   <a href="arbeitgeber.html">Zur Arbeitgeber-Seite &rarr;</a>
 </div>
 
@@ -359,7 +359,7 @@
 
   <!-- LOCK BANNER (erscheint wenn nicht eingeloggt) -->
   <div id="jobs-lock-banner" class="jobs-lock-banner">
-    <div class="lock-icon-wrap">🔒</div>
+    <div class="lock-icon-wrap"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
     <h3>Alle Jobs freischalten</h3>
     <p>Melde dich an, um alle verfügbaren Stellen in Vorarlberg zu sehen und dich direkt zu bewerben – kostenlos.</p>
     <a href="login.html" class="btn btn-accent">
@@ -382,21 +382,21 @@
   <div class="steps">
     <div class="step fade-in">
       <span class="step-num">01</span>
-      <div class="step-ico">📋</div>
+      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
       <h3>Profil erstellen</h3>
       <p>In wenigen Minuten Profil anlegen und direkt starten.</p>
       <div class="step-line"></div>
     </div>
     <div class="step fade-in">
       <span class="step-num">02</span>
-      <div class="step-ico">🎯</div>
+      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
       <h3>Passender Job auswählen</h3>
       <p>Wähle Branche und Datum, dann bewirb dich mit einem Klick.</p>
       <div class="step-line"></div>
     </div>
     <div class="step fade-in">
       <span class="step-num">03</span>
-      <div class="step-ico">✅</div>
+      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
       <h3>Loslegen und Geld verdienen</h3>
       <p>Einsatz annehmen, vor Ort arbeiten - dein Geld zeitnah erhalten.</p>
       <div class="step-line"></div>
@@ -454,10 +454,10 @@ function _berechneAlter(geburtsdatum) {
 
 // ── BRANCHE MAP ──
 const JOB_BRANCHEN = {
-  gastro: { label: '🍽 Gastronomie',       cls: 'tag-gastro' },
-  bau:    { label: '🏗 Bau & Handwerk',    cls: 'tag-bau'    },
-  lager:  { label: '📦 Lager & Logistik',  cls: 'tag-lager'  },
-  events: { label: '🎤 Events',            cls: 'tag-events' },
+  gastro: { label: 'Gastronomie',      cls: 'tag-gastro' },
+  bau:    { label: 'Bau & Handwerk',   cls: 'tag-bau'    },
+  lager:  { label: 'Lager & Logistik', cls: 'tag-lager'  },
+  events: { label: 'Events',           cls: 'tag-events' },
 };
 
 // ── TOAST ──
@@ -488,7 +488,7 @@ function zeigeBewerbungsToast() {
     white-space:nowrap; animation:bToastUp 0.3s ease;
   `;
   toast.innerHTML = `
-    <span>✅ Bewerbung erfolgreich abgeschickt!</span>
+    <span>Bewerbung erfolgreich abgeschickt!</span>
     <a href="meine-bewerbungen.html" style="background:#e6a01e;color:#0B1628;padding:8px 16px;border-radius:8px;font-weight:700;text-decoration:none;font-size:13px;white-space:nowrap">Meine Bewerbungen →</a>
     <button onclick="document.getElementById('bewerbungs-toast').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:0;line-height:1">×</button>
   `;
@@ -627,7 +627,7 @@ async function applyForJob(jobId, agId, btnEl) {
   }
 
   _appliedJobIds.add(jobId);
-  btnEl.textContent = 'Beworben ✓';
+  btnEl.textContent = 'Beworben';
   btnEl.classList.add('job-applied');
   btnEl.style.background = '#1a7a50';
   btnEl.style.cursor = 'default';
@@ -649,7 +649,7 @@ function renderJobCard(job, locked) {
   if (locked) {
     applyHtml = '<a href="login.html" class="job-apply" onclick="event.stopPropagation()">Bewerben</a>';
   } else if (_appliedJobIds.has(job.id)) {
-    applyHtml = '<button class="job-apply job-applied" style="background:#1a7a50;cursor:default" disabled onclick="event.stopPropagation()">Beworben ✓</button>';
+    applyHtml = '<button class="job-apply job-applied" style="background:#1a7a50;cursor:default" disabled onclick="event.stopPropagation()">Beworben</button>';
   } else {
     applyHtml = `<button class="job-apply" data-job-id="${job.id}" data-ag-id="${job.arbeitgeber_id || ''}" data-titel="${job.titel}" data-firma="${job._agName || job.firmenname || ''}" data-datum="${datum}" data-gehalt="${job.tagesgehalt || ''}" onclick="event.stopPropagation();handleApplyClick(this)">Bewerben</button>`;
   }
@@ -661,7 +661,7 @@ function renderJobCard(job, locked) {
         <span class="job-date">${datum} · ${job.ort}</span>
       </div>
       <h3>${job.titel}</h3>
-      ${(job._agName || job.firmenname) ? `<div class="job-company">🏢 ${job._agName || job.firmenname}</div>` : ''}
+      ${(job._agName || job.firmenname) ? `<div class="job-company">${job._agName || job.firmenname}</div>` : ''}
       <div class="job-metas">
         <span class="job-meta">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -695,7 +695,7 @@ function renderJobs(jobs, unlocked) {
   if (loadEl) loadEl.remove();
 
   if (!jobs || jobs.length === 0) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:64px 32px;color:var(--text-lt)"><div style="font-size:48px;margin-bottom:16px">🔍</div><p style="font-size:16px">Aktuell sind keine Jobs verfügbar.<br>Schau bald wieder vorbei!</p></div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:64px 32px;color:var(--text-lt)"><div style="display:flex;justify-content:center;margin-bottom:16px;opacity:.35"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><p style="font-size:16px">Aktuell sind keine Jobs verfügbar.<br>Schau bald wieder vorbei!</p></div>';
     document.getElementById('jobCount').textContent = '0 Jobs gefunden';
     return;
   }

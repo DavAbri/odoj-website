@@ -304,10 +304,10 @@
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
 const BRANCHEN = {
-  gastro: { label: '🍽 Gastronomie',      cls: 'tag-gastro' },
-  bau:    { label: '🏗 Bau & Handwerk',   cls: 'tag-bau'    },
-  lager:  { label: '📦 Lager & Logistik', cls: 'tag-lager'  },
-  events: { label: '🎤 Events',           cls: 'tag-events' },
+  gastro: { label: 'Gastronomie',        cls: 'tag-gastro' },
+  bau:    { label: 'Bau & Handwerk',     cls: 'tag-bau'    },
+  lager:  { label: 'Lager & Logistik',   cls: 'tag-lager'  },
+  events: { label: 'Events',             cls: 'tag-events' },
 };
 
 function escH(s) {
@@ -344,9 +344,9 @@ function renderCard(b, job, opts = {}) {
         ${job.uhrzeit_von} – ${job.uhrzeit_bis || '–'}
       </div>` : ''}
       ${gehalt ? `<div class="mj-card-pay">€ ${gehalt} <span>/ Tag</span></div>` : ''}
-      ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-bottom:8px">✅ Job erledigt</div>` : ''}
+      ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-bottom:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Job erledigt</div>` : ''}
       <div class="mj-card-actions">
-        ${opts.showChat ? `<a href="${chatHref}" class="mj-card-btn mj-card-btn-chat" onclick="event.stopPropagation()">💬 Chat</a>` : ''}
+        ${opts.showChat ? `<a href="${chatHref}" class="mj-card-btn mj-card-btn-chat" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Chat</a>` : ''}
         <a href="${jobDetailHref}" class="mj-card-btn mj-card-btn-detail" onclick="event.stopPropagation()">Details →</a>
       </div>
     </div>`;
@@ -382,7 +382,7 @@ async function loadMeineBewerbungen() {
   if (!bewerbungen || bewerbungen.length === 0) {
     document.getElementById('mj-board').style.display = 'grid';
     ['offen','anstehend','abgelehnt','abgeschlossen'].forEach(k => {
-      document.getElementById('col-' + k).innerHTML = renderEmpty('📭', 'Keine Einträge');
+      document.getElementById('col-' + k).innerHTML = renderEmpty('', 'Keine Einträge');
     });
     document.getElementById('mj-title').textContent = '0 Bewerbungen';
     return;
@@ -452,10 +452,10 @@ async function loadMeineBewerbungen() {
       : '');
   }
 
-  fillCol('col-offen',        offen,        '✅', 'Keine offenen Bewerbungen',         {});
-  fillCol('col-anstehend',    anstehend,    '📅', 'Noch keine angenommenen Einsätze',  { showChat: true });
-  fillCol('col-abgelehnt',    abgelehnt,    '–',  'Keine abgelehnten Bewerbungen',     { muted: true });
-  fillCol('col-abgeschlossen',abgeschlossen,'🏁', 'Noch keine abgeschlossenen Einsätze',{ showChat: true, muted: true });
+  fillCol('col-offen',        offen,        '', 'Keine offenen Bewerbungen',         {});
+  fillCol('col-anstehend',    anstehend,    '', 'Noch keine angenommenen Einsätze',  { showChat: true });
+  fillCol('col-abgelehnt',    abgelehnt,    '', 'Keine abgelehnten Bewerbungen',     { muted: true });
+  fillCol('col-abgeschlossen',abgeschlossen,'', 'Noch keine abgeschlossenen Einsätze',{ showChat: true, muted: true });
 
   document.getElementById('mj-board').style.display = 'grid';
 

@@ -126,8 +126,9 @@
   color: var(--text-lt);
 }
 .chat-empty-icon {
-  font-size: 52px;
   margin-bottom: 18px;
+  display: flex; justify-content: center;
+  color: var(--text-lt); opacity: .4;
 }
 .chat-empty h3 {
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -403,7 +404,7 @@
   <div class="chat-main">
     <!-- Leer-State -->
     <div class="chat-empty" id="chat-empty">
-      <div class="chat-empty-icon">💬</div>
+      <div class="chat-empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
       <h3>Keine Konversation ausgewählt</h3>
       <p>Wähle links einen Chat aus oder starte ein Gespräch über eine Bewerbung.</p>
     </div>
@@ -434,7 +435,7 @@
 <div id="jb-bew-overlay" class="jb-bew-overlay" style="display:none" onclick="closeJbBewModal(event)">
   <div class="jb-bew-modal" onclick="event.stopPropagation()">
     <button class="jb-bew-close" onclick="closeJbBewModal()">✕</button>
-    <div class="jb-bew-emoji">⭐</div>
+    <div class="jb-bew-emoji"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
     <div class="jb-bew-title" id="jb-bew-title">Wie war dein Einsatz?</div>
     <div class="jb-bew-sub"  id="jb-bew-sub">Deine Bewertung hilft anderen Jobbern.</div>
     <div class="jb-sterne-row" id="jb-sterne-row">
@@ -453,7 +454,7 @@
       <button class="jb-submit-btn" id="jb-submit-btn" onclick="submitJbBewertung()">Bewertung abschicken</button>
       <button class="jb-skip-btn" onclick="closeJbBewModal()">Überspringen</button>
     </div>
-    <div class="jb-bew-success" id="jb-bew-success" style="display:none">✓ Danke für deine Bewertung!</div>
+    <div class="jb-bew-success" id="jb-bew-success" style="display:none">Danke für deine Bewertung!</div>
   </div>
 </div>
 
@@ -595,7 +596,7 @@ async function loadConversations() {
     }
     const sub      = job?.titel || '–';
     const rawPrev  = lastMsg?.nachricht || '';
-    const preview  = rawPrev.startsWith('[BEW_REQ:') ? '⭐ Einsatz bewerten →' : (rawPrev || 'Noch keine Nachrichten');
+    const preview  = rawPrev.startsWith('[BEW_REQ:') ? 'Einsatz bewerten →' : (rawPrev || 'Noch keine Nachrichten');
     const time     = lastMsg ? formatConvTime(lastMsg.erstellt_am) : '';
     const stCls    = b.status === 'angenommen' ? 'cs-angenommen' : b.status === 'abgelehnt' ? 'cs-abgelehnt' : 'cs-ausstehend';
     const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
@@ -750,7 +751,7 @@ async function loadMessages(silent) {
       lastDate = dateKey;
     }
     const isMine    = m.sender_id === _chatSession.user.id;
-    const isSystem  = m.nachricht && m.nachricht.startsWith('✅ Einsatz erfolgreich');
+    const isSystem  = m.nachricht && (m.nachricht.startsWith('✅ Einsatz erfolgreich') || m.nachricht.startsWith('Einsatz erfolgreich abgeschlossen'));
     const isSysInfo = m.nachricht && (m.nachricht.startsWith('📋 Dein Inserat') || m.nachricht.startsWith('📋 '));
     const isBewReq  = m.nachricht && m.nachricht.startsWith('[BEW_REQ:');
     const time      = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
@@ -762,17 +763,17 @@ async function loadMessages(silent) {
       const firmenname = escHtml(bewData.firmenname || 'dem Arbeitgeber');
       const bereitsBewertet = alreadyRatedJobIds.has(bewData.jobId);
       html += `<div class="msg-bubble msg-bew-req">
-        <div>👉 <strong>Wie war dein Einsatz bei ${firmenname}?</strong><br>
+        <div><strong>Wie war dein Einsatz bei ${firmenname}?</strong><br>
         Teile deine Erfahrung – deine Bewertung hilft anderen Jobbern.</div>
         ${bereitsBewertet
-          ? `<div class="bew-already-done">✓ Bewertung bereits abgegeben</div>`
-          : `<button class="bew-req-btn" onclick="openJbBewModal('${escHtml(bewData.jobId||'')}','${escHtml(bewData.bewId||'')}','${escHtml(bewData.agId||'')}','${firmenname}')">⭐ Jetzt bewerten →</button>`}
+          ? `<div class="bew-already-done">Bewertung bereits abgegeben</div>`
+          : `<button class="bew-req-btn" onclick="openJbBewModal('${escHtml(bewData.jobId||'')}','${escHtml(bewData.bewId||'')}','${escHtml(bewData.agId||'')}','${firmenname}')">Jetzt bewerten →</button>`}
         <div class="msg-time">${time}</div>
       </div>`;
     } else if (isBewReq) {
       // AG sieht die Aufforderung nur als Info
       html += `<div class="msg-bubble msg-system">
-        ✅ Bewertungsaufforderung an Jobber gesendet.
+        Bewertungsaufforderung an Jobber gesendet.
         <div class="msg-time">${time}</div>
       </div>`;
     } else if (isSysInfo) {
@@ -826,7 +827,7 @@ async function sendMessage() {
   if (!text || !_activeBewId || !_activeBew) return;
 
   if (containsContactInfo(text)) {
-    showInputWarning('⚠️ Telefonnummern und E-Mail-Adressen dürfen nicht geteilt werden. Die Kommunikation läuft ausschließlich über ODOJ.');
+    showInputWarning('Telefonnummern und E-Mail-Adressen dürfen nicht geteilt werden. Die Kommunikation läuft ausschließlich über ODOJ.');
     return;
   }
 
