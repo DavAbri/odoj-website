@@ -784,6 +784,30 @@
   </div>
 </footer>
 
+<!-- STAMMKRÄFTE-MODAL -->
+<div id="stammkraefte-overlay" style="display:none;position:fixed;inset:0;background:rgba(13,27,46,.6);backdrop-filter:blur(2px);z-index:900;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:32px;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="width:44px;height:44px;background:#FFF4E0;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy)">Stammkräfte benachrichtigen</div>
+      </div>
+      <button onclick="closeStammkraefteModal()" style="background:var(--gray-lt);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text-lt);display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <p style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:20px">Folgende Jobber haben bereits erfolgreich bei Ihnen gearbeitet. Möchten Sie diese über Ihr neues Inserat informieren?</p>
+    <div id="stammkraefte-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+      <div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>
+    </div>
+    <div id="stammkraefte-success" style="display:none;background:#d1fae5;color:#065f46;border-radius:10px;padding:14px 16px;font-size:14px;font-weight:600;text-align:center;margin-bottom:16px">Benachrichtigungen erfolgreich gesendet!</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeStammkraefteModal()" style="padding:10px 20px;border-radius:10px;background:transparent;border:1.5px solid var(--gray-lt);font-family:inherit;font-size:14px;font-weight:600;color:var(--text-lt);cursor:pointer">Überspringen</button>
+      <button id="stammkraefte-send-btn" onclick="sendStammkraefteNachrichten()" style="padding:10px 20px;border-radius:10px;background:var(--accent);border:none;font-family:inherit;font-size:14px;font-weight:700;color:var(--navy);cursor:pointer">Auswahl benachrichtigen</button>
+    </div>
+  </div>
+</div>
+
 <!-- BEWERBER-PROFIL-MODAL -->
 <div class="jp-overlay" id="jp-overlay" onclick="closeJobberProfile(event)">
   <div class="jp-modal" id="jp-modal">
@@ -1591,7 +1615,7 @@ async function submitInserat(e) {
   btn.textContent = 'Speichern…';
   btn.disabled    = true;
 
-  const { error } = await odojSb.from('jobs').insert({
+  const { data: newJob, error } = await odojSb.from('jobs').insert({
     arbeitgeber_id: _agSession.user.id,
     firmenname:     _agFirmenname,
     titel, branche, datum,
@@ -1602,7 +1626,7 @@ async function submitInserat(e) {
     adresse, ort, plaetze, mindestalter, pause,
     beschreibung:  beschr,
     status:        'aktiv'
-  });
+  }).select('id').single();
 
   btn.textContent = 'Job speichern';
   btn.disabled    = false;
@@ -1614,10 +1638,11 @@ async function submitInserat(e) {
 
   document.getElementById('ins-form').reset();
   successEl.style.display = 'block';
-  setTimeout(() => {
-    successEl.style.display = 'none';
-    showTab('inserate');
-  }, 1500);
+  setTimeout(() => successEl.style.display = 'none', 2000);
+
+  // Stammkräfte benachrichtigen
+  _neuesJobData = { titel, datum, ort, gehalt, jobId: newJob?.id };
+  await openStammkraefteModal();
 }
 
 // ── AUTH GUARD ──
@@ -1758,6 +1783,104 @@ function closeJobberProfile(e) {
   document.getElementById('jp-overlay').classList.remove('open');
   document.body.style.overflow = '';
   if (document._jpEsc) { document.removeEventListener('keydown', document._jpEsc); delete document._jpEsc; }
+}
+
+// ── STAMMKRÄFTE MODAL ──
+let _neuesJobData = null;
+let _stammkraefteList = [];
+
+async function openStammkraefteModal() {
+  const overlay = document.getElementById('stammkraefte-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('stammkraefte-success').style.display = 'none';
+  document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>';
+
+  try {
+    // Alle bestätigten (anwesenheit_bestaetigt = true) Bewerbungen des AG laden
+    const { data: bews } = await odojSb
+      .from('bewerbungen')
+      .select('jobber_id, created_at')
+      .eq('arbeitgeber_id', _agSession.user.id)
+      .eq('status', 'angenommen')
+      .eq('anwesenheit_bestaetigt', true);
+
+    if (!bews || bews.length === 0) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Noch keine Stammkräfte vorhanden.</div>';
+      return;
+    }
+
+    // Unique Jobber IDs + letzten Einsatz
+    const jobberMap = {};
+    bews.forEach(b => {
+      if (!jobberMap[b.jobber_id] || b.created_at > jobberMap[b.jobber_id]) {
+        jobberMap[b.jobber_id] = b.created_at;
+      }
+    });
+    const jobberIds = Object.keys(jobberMap);
+
+    // Profile laden
+    const { data: profiles } = await odojSb
+      .from('Profile')
+      .select('user_id, vorname, nachname')
+      .in('user_id', jobberIds);
+
+    _stammkraefteList = (profiles || []).map(p => ({
+      userId:      p.user_id,
+      name:        ((p.vorname || '') + ' ' + (p.nachname || '')).trim() || 'Jobber',
+      letzterEinsatz: jobberMap[p.user_id],
+    }));
+
+    if (!_stammkraefteList.length) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Keine Stammkräfte gefunden.</div>';
+      return;
+    }
+
+    document.getElementById('stammkraefte-list').innerHTML = _stammkraefteList.map((jb, i) => `
+      <label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--gray-lt);border-radius:10px;cursor:pointer;transition:border-color .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--gray-lt)'">
+        <input type="checkbox" id="sk-cb-${i}" value="${jb.userId}" style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0" checked>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px;color:var(--navy)">${jb.name}</div>
+          <div style="font-size:12px;color:var(--text-lt)">Letzter Einsatz: ${jb.letzterEinsatz ? new Date(jb.letzterEinsatz).toLocaleDateString('de-AT') : '–'}</div>
+        </div>
+      </label>`).join('');
+  } catch (_) {
+    document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Fehler beim Laden.</div>';
+  }
+}
+
+async function sendStammkraefteNachrichten() {
+  const btn = document.getElementById('stammkraefte-send-btn');
+  btn.textContent = 'Wird gesendet…';
+  btn.disabled = true;
+
+  const checked = Array.from(document.querySelectorAll('#stammkraefte-list input[type=checkbox]:checked')).map(cb => cb.value);
+  if (!checked.length) { btn.textContent = 'Auswahl benachrichtigen'; btn.disabled = false; return; }
+
+  const j = _neuesJobData || {};
+  const datum  = j.datum  ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+  const betrag = j.gehalt ? '€ ' + j.gehalt : '';
+  const nachricht = `Neues Inserat für Sie! ${_agFirmenname} hat ein neues Inserat erstellt: ${j.titel || 'Neuer Job'} am ${datum} in ${j.ort || ''} – Tagesgehalt: ${betrag}. Sie wurden als bevorzugte Arbeitskraft ausgewählt! Jetzt bewerben: jobs.html`;
+
+  for (const empfaengerId of checked) {
+    try {
+      await odojSb.from('nachrichten').insert({
+        sender_id:    _agSession.user.id,
+        empfaenger_id: empfaengerId,
+        nachricht,
+        gelesen: false,
+      });
+    } catch (_) {}
+  }
+
+  document.getElementById('stammkraefte-success').style.display = 'block';
+  btn.textContent = 'Auswahl benachrichtigen';
+  btn.disabled = false;
+  setTimeout(() => closeStammkraefteModal(), 1800);
+}
+
+function closeStammkraefteModal() {
+  document.getElementById('stammkraefte-overlay').style.display = 'none';
+  showTab('inserate');
 }
 </script>
 <script src="cookies.js"></script>

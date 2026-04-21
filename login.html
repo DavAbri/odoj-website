@@ -548,13 +548,22 @@ async function doLogin(e) {
     return;
   }
 
-  // Tatsächliche Rolle ermitteln (user_metadata → Profile-Tabelle → Fallback)
-  let tatsaechlicheRolle = data.user.user_metadata?.rolle;
-  if (!tatsaechlicheRolle) {
-    const { data: profile } = await odojSb
-      .from('Profile').select('rolle').eq('user_id', data.user.id).single();
-    tatsaechlicheRolle = profile?.rolle || 'jobber';
+  // Profil laden (Rolle + Gesperrt-Status)
+  const { data: profile } = await odojSb
+    .from('Profile').select('rolle, gesperrt').eq('user_id', data.user.id).single();
+
+  // Gesperrt-Prüfung
+  if (profile?.gesperrt) {
+    await odojSb.auth.signOut();
+    errEl.textContent = 'Dein Konto wurde gesperrt. Bitte kontaktiere den Support.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Anmelden';
+    btn.disabled = false;
+    return;
   }
+
+  // Tatsächliche Rolle ermitteln (user_metadata → Profile-Tabelle → Fallback)
+  let tatsaechlicheRolle = data.user.user_metadata?.rolle || profile?.rolle || 'jobber';
 
   // Rollen-Mismatch: erst ausloggen, dann Fehlermeldung zeigen
   if (tatsaechlicheRolle !== _currentRole) {
@@ -813,5 +822,6 @@ odojSb.auth.getSession().then(({ data }) => {
 });
 </script>
 <script src="cookies.js"></script>
+<script src="chatbot.js"></script>
 </body>
 </html>

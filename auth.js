@@ -18,7 +18,7 @@ async function odojGetProfile(userId) {
   try {
     const { data } = await odojSb
       .from('Profile')
-      .select('vorname, nachname, firmenname, rolle')
+      .select('vorname, nachname, firmenname, rolle, gesperrt')
       .eq('user_id', userId)
       .single();
     return data;
