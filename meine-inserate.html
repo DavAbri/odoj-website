@@ -607,7 +607,7 @@
 <!-- FALSCHER ROLE -->
 <div id="mi-wrong-role" class="wrong-role-banner">
   <div class="wrong-role-card">
-    <div class="wrong-role-icon">🔒</div>
+    <div class="wrong-role-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
     <h2>Nur für Arbeitgeber</h2>
     <p>Diese Seite ist ausschließlich für registrierte Arbeitgeber zugänglich. Dein Konto ist als Jobber registriert.</p>
     <a href="jobs.html" class="btn btn-accent" style="display:inline-block;text-decoration:none">Zur Jobsuche</a>
@@ -621,7 +621,7 @@
   <div class="mi-page-header">
     <a href="arbeitgeber.html" class="mi-back-btn">← Arbeitgeber-Info</a>
     <div>
-      <h1 class="mi-page-title">📋 Meine Inserate</h1>
+      <h1 class="mi-page-title">Meine Inserate</h1>
       <p class="mi-page-sub" id="mi-firmenname"></p>
     </div>
   </div>
@@ -629,8 +629,8 @@
   <div class="dash-area">
     <!-- Tab-Leiste -->
     <div class="dash-tabs-bar">
-      <button class="dash-tab active" data-tab="inserate" onclick="showTab('inserate')">📋 Meine Inserate</button>
-      <button class="dash-tab"        data-tab="inserieren" id="tab-btn-inserieren" onclick="showTab('inserieren')">➕ Job inserieren</button>
+      <button class="dash-tab active" data-tab="inserate" onclick="showTab('inserate')">Meine Inserate</button>
+      <button class="dash-tab"        data-tab="inserieren" id="tab-btn-inserieren" onclick="showTab('inserieren')">+ Job inserieren</button>
     </div>
 
     <!-- Panel: Meine Inserate -->
@@ -649,7 +649,7 @@
 
       <!-- UID-Warnung (wird per JS ein-/ausgeblendet) -->
       <div id="uid-warning" class="uid-warning" style="display:none;max-width:760px;margin:0 auto 28px">
-        <div class="uid-warning-icon">⚠️</div>
+        <div class="uid-warning-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
         <div class="uid-warning-body">
           <strong>UID-Nummer fehlt</strong>
           <p>Um Jobs zu inserieren musst du zuerst deine UID-Nummer in deinem Profil hinterlegen.</p>
@@ -662,7 +662,7 @@
           <h2>Job inserieren</h2>
           <p>Fülle das Formular aus – dein Inserat erscheint sofort in der Jobsuche.</p>
 
-          <div id="ins-success" class="if-success" style="display:none">✓ Job erfolgreich gespeichert!</div>
+          <div id="ins-success" class="if-success" style="display:none">Job erfolgreich gespeichert!</div>
           <div id="ins-error"   class="if-error"   style="display:none"></div>
 
           <form id="ins-form" onsubmit="submitInserat(event)">
@@ -784,6 +784,30 @@
   </div>
 </footer>
 
+<!-- STAMMKRÄFTE-MODAL -->
+<div id="stammkraefte-overlay" style="display:none;position:fixed;inset:0;background:rgba(13,27,46,.6);backdrop-filter:blur(2px);z-index:900;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:32px;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="width:44px;height:44px;background:#FFF4E0;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy)">Stammkräfte benachrichtigen</div>
+      </div>
+      <button onclick="closeStammkraefteModal()" style="background:var(--gray-lt);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text-lt);display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <p style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:20px">Folgende Jobber haben bereits erfolgreich bei Ihnen gearbeitet. Möchten Sie diese über Ihr neues Inserat informieren?</p>
+    <div id="stammkraefte-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+      <div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>
+    </div>
+    <div id="stammkraefte-success" style="display:none;background:#d1fae5;color:#065f46;border-radius:10px;padding:14px 16px;font-size:14px;font-weight:600;text-align:center;margin-bottom:16px">Benachrichtigungen erfolgreich gesendet!</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeStammkraefteModal()" style="padding:10px 20px;border-radius:10px;background:transparent;border:1.5px solid var(--gray-lt);font-family:inherit;font-size:14px;font-weight:600;color:var(--text-lt);cursor:pointer">Überspringen</button>
+      <button id="stammkraefte-send-btn" onclick="sendStammkraefteNachrichten()" style="padding:10px 20px;border-radius:10px;background:var(--accent);border:none;font-family:inherit;font-size:14px;font-weight:700;color:var(--navy);cursor:pointer">Auswahl benachrichtigen</button>
+    </div>
+  </div>
+</div>
+
 <!-- BEWERBER-PROFIL-MODAL -->
 <div class="jp-overlay" id="jp-overlay" onclick="closeJobberProfile(event)">
   <div class="jp-modal" id="jp-modal">
@@ -807,7 +831,7 @@
 <div id="bew-rate-overlay" class="bew-rate-overlay" style="display:none" onclick="closeBewRateModal(event)">
   <div class="bew-rate-modal" onclick="event.stopPropagation()">
     <button class="bew-rate-close" onclick="closeBewRateModal()">✕</button>
-    <div class="bew-rate-emoji">⭐</div>
+    <div class="bew-rate-emoji"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
     <div class="bew-rate-title" id="bew-rate-title">Wie war der Einsatz?</div>
     <div class="bew-rate-sub"  id="bew-rate-sub">Deine Bewertung hilft anderen Arbeitgebern.</div>
     <div class="bew-sterne-row" id="bew-sterne-row">
@@ -826,7 +850,7 @@
       <button class="bew-submit-btn" id="bew-submit-btn" onclick="submitAgBewertung()">Bewertung abschicken</button>
       <button class="bew-skip-btn"   onclick="closeBewRateModal()">Überspringen</button>
     </div>
-    <div class="bew-rate-success" id="bew-rate-success" style="display:none">✓ Danke für deine Bewertung!</div>
+    <div class="bew-rate-success" id="bew-rate-success" style="display:none">Danke für deine Bewertung!</div>
   </div>
 </div>
 
@@ -958,7 +982,7 @@ async function pruefeAbgelaufeneInserate() {
   const namen = abgelaufene.map(j => `„${j.titel}"`).join(', ');
   const banner = document.createElement('div');
   banner.className = 'ins-ablauf-banner';
-  banner.innerHTML = `<span style="font-size:20px">🗂</span>
+  banner.innerHTML = `<span style="display:flex;align-items:center;color:var(--accent)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
     <div><strong>${abgelaufene.length === 1 ? 'Inserat abgelaufen' : abgelaufene.length + ' Inserate abgelaufen'}</strong>
     ${namen} ${abgelaufene.length === 1 ? 'ist' : 'sind'} gestern abgelaufen und nicht mehr öffentlich sichtbar. Du findest ${abgelaufene.length === 1 ? 'es' : 'sie'} unter <strong>„Vergangene Inserate"</strong>.</div>`;
   grid.parentElement.insertBefore(banner, grid);
@@ -975,10 +999,10 @@ function showTab(tab) {
 
 // ── BRANCHE → Label + Tag-Klasse ──
 const BRANCHEN = {
-  gastro: { label: '🍽 Gastronomie',       cls: 'tag-gastro' },
-  bau:    { label: '🏗 Bau & Handwerk',    cls: 'tag-bau'    },
-  lager:  { label: '📦 Lager & Logistik',  cls: 'tag-lager'  },
-  events: { label: '🎤 Events',            cls: 'tag-events' },
+  gastro: { label: 'Gastronomie',          cls: 'tag-gastro' },
+  bau:    { label: 'Bau & Handwerk',       cls: 'tag-bau'    },
+  lager:  { label: 'Lager & Logistik',     cls: 'tag-lager'  },
+  events: { label: 'Events',               cls: 'tag-events' },
 };
 
 // ── INSERATE LADEN ──
@@ -1000,7 +1024,7 @@ async function loadInserate() {
   if (!jobs || jobs.length === 0) {
     grid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.35"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>
         <h3>Noch keine Inserate</h3>
         <p>Erstelle deinen ersten Job und finde passende Mitarbeitende in ganz Vorarlberg.</p>
         <button class="btn btn-accent" onclick="showTab('inserieren')">Jetzt Job inserieren</button>
@@ -1055,7 +1079,7 @@ async function loadInserate() {
   // Sektion 1: Aktuelle Inserate
   html += `<div class="ins-section">
     <div class="ins-section-hdr">
-      <span class="ins-section-label" style="color:var(--accent)">📋 Aktuelle Inserate (${aktuelle.length})</span>
+      <span class="ins-section-label" style="color:var(--accent)">Aktuelle Inserate (${aktuelle.length})</span>
     </div>`;
   if (aktuelle.length === 0) {
     html += `<div style="text-align:center;padding:32px;color:var(--text-lt);font-size:14px;background:var(--white);border:1.5px solid var(--gray-lt);border-radius:var(--r-md)">
@@ -1072,7 +1096,7 @@ async function loadInserate() {
     html += `<div class="ins-section ins-section-vergangen">
       <hr style="border:none;border-top:1.5px solid var(--gray-lt);margin:0 0 24px">
       <div class="ins-section-hdr" style="cursor:pointer" onclick="toggleVergangene(document.getElementById('ins-verg-toggle'))">
-        <span class="ins-section-label" style="color:#888">🗂 Vergangene Inserate (${vergangene.length})</span>
+        <span class="ins-section-label" style="color:#888">Vergangene Inserate (${vergangene.length})</span>
         <button class="ins-section-toggle" id="ins-verg-toggle" onclick="event.stopPropagation();toggleVergangene(this)">Anzeigen ▾</button>
       </div>
       <div id="ins-verg-body" style="display:none;overflow:hidden;transition:opacity .25s">
@@ -1106,14 +1130,14 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
   const titelEsc  = (j.titel || '').replace(/"/g, '&quot;');
 
   const vergebenBadge = acceptedCount > 0
-    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">✓ ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben</span>`
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben</span>`
     : '';
 
   const remaining = (j.plaetze || 0) - acceptedCount;
   const ausgebuchtBadge = remaining <= 0
-    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#FDE8E8;color:#c0392b;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">⛔ Ausgebucht</span>`
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#FDE8E8;color:#c0392b;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Ausgebucht</span>`
     : '';
-  const remainingHtml = `<span class="inserat-meta">🟢 ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
+  const remainingHtml = `<span class="inserat-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#22c55e"><circle cx="12" cy="12" r="10"/></svg> ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
 
   return `
     <div class="inserat-card" onclick="window.location.href='job-detail.html?id=${j.id}'">
@@ -1128,12 +1152,12 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
       </div>
       <span class="tag ${b.cls}" style="display:inline-block;margin-bottom:8px">${b.label}</span>
       <div class="inserat-metas">
-        <span class="inserat-meta">📅 ${datum}</span>
-        <span class="inserat-meta">🕐 ${j.uhrzeit_von || '–'} – ${j.uhrzeit_bis || '–'}</span>
-        <span class="inserat-meta">📍 ${j.ort || '–'}</span>
-        <span class="inserat-meta">👥 ${j.plaetze || '–'} Platz/Plätze gesamt</span>
+        <span class="inserat-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${datum}</span>
+        <span class="inserat-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${j.uhrzeit_von || '–'} – ${j.uhrzeit_bis || '–'}</span>
+        <span class="inserat-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${j.ort || '–'}</span>
+        <span class="inserat-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> ${j.plaetze || '–'} Platz/Plätze gesamt</span>
         ${remainingHtml}
-        <span class="inserat-meta">🔞 Ab ${j.mindestalter || 18} Jahren</span>
+        <span class="inserat-meta">Ab ${j.mindestalter || 18} Jahren</span>
       </div>
       <div class="inserat-footer">
         <div>
@@ -1145,7 +1169,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
           <button class="bew-count-badge"
             data-job-id="${j.id}" data-job-titel="${titelEsc}" data-job-datum="${j.datum || ''}"
             onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel, this.dataset.jobDatum)">
-            👤 ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
             ${ausstehendCount > 0 ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:0 4px;margin-left:4px">${ausstehendCount} neu</span>` : ''}
           </button>
           <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}')">Löschen</button>
@@ -1179,7 +1203,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   if (bewerbungen.length === 0) {
     bodyEl.innerHTML = `
       <div style="text-align:center;padding:56px 32px;color:var(--text-lt)">
-        <div style="font-size:42px;margin-bottom:14px">📭</div>
+        <div style="margin-bottom:14px;display:flex;justify-content:center;opacity:.3"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
         <p style="font-size:15px">Keine aktiven Bewerbungen für dieses Inserat.</p>
       </div>`;
     return;
@@ -1237,18 +1261,18 @@ function renderBewItem(b, profile, bew, jobDatum) {
                 : b.status === 'abgelehnt'  ? 'Abgelehnt'
                 : 'Ausstehend';
   const acceptBtn = b.status !== 'angenommen'
-    ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${b.id}','angenommen')">✓ Annehmen</button>` : '';
+    ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${b.id}','angenommen')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
   const rejectBtn = b.status !== 'abgelehnt'
-    ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">✕ Ablehnen</button>` : '';
+    ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '';
 
   const heute = new Date().toISOString().split('T')[0];
   const jobDatumErreicht = !jobDatum || jobDatum <= heute;
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
-        ? `<button class="bew-btn bew-btn-presence-done" disabled>✓ Anwesenheit & Bezahlung bestätigt</button>`
+        ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigt</button>`
         : jobDatumErreicht
-          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')">✓ Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">⏳ Erst ab ${new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
+          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
+          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">Erst ab ${new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
     : '';
 
   let gebStr = '';
@@ -1263,9 +1287,9 @@ function renderBewItem(b, profile, bew, jobDatum) {
 
   const profileDetails = (profile?.adresse || profile?.svnummer || gebStr) ? `
     <div class="bew-item-profile">
-      ${gebStr             ? `<span class="bew-profile-field">🎂 ${gebStr}</span>` : ''}
-      ${profile?.adresse   ? `<span class="bew-profile-field">📍 ${profile.adresse}</span>` : ''}
-      ${profile?.svnummer  ? `<span class="bew-profile-field">🪪 SV-Nr.: ${profile.svnummer}</span>` : ''}
+      ${gebStr             ? `<span class="bew-profile-field">${gebStr}</span>` : ''}
+      ${profile?.adresse   ? `<span class="bew-profile-field">${profile.adresse}</span>` : ''}
+      ${profile?.svnummer  ? `<span class="bew-profile-field">SV-Nr.: ${profile.svnummer}</span>` : ''}
     </div>` : '';
 
   return `
@@ -1285,7 +1309,7 @@ function renderBewItem(b, profile, bew, jobDatum) {
       ${profileDetails}
       <div class="bew-item-actions" id="bew-actions-${b.id}">
         ${acceptBtn}${rejectBtn}
-        <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')">💬 Nachricht senden</button>
+        <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
         ${presenceBtn}
       </div>
     </div>`;
@@ -1308,7 +1332,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   const { error: bewErr } = await odojSb.from('bewerbungen')
     .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now, status: 'abgeschlossen' })
     .eq('id', bewId);
-  if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen ✓'; } return; }
+  if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen'; } return; }
 
   const { data: bewData } = await odojSb.from('bewerbungen').select('job_id').eq('id', bewId).single();
   let jobTitel = 'Tagesjob';
@@ -1328,7 +1352,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     datum:          today
   });
 
-  const systemMsg = `✅ Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben! 🙌\n\n– Team ODOJ`;
+  const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
   const { error: msgErr } = await odojSb.from('nachrichten').insert({
     bewerbung_id:  bewId,
     sender_id:     agId,
@@ -1371,7 +1395,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   }
 
   if (btn) {
-    btn.textContent = '✓ Anwesenheit bestätigt';
+    btn.textContent = 'Anwesenheit bestätigt';
     btn.className = 'bew-btn bew-btn-presence-done';
     btn.disabled = true;
   }
@@ -1418,8 +1442,8 @@ async function updateBewStatus(bewId, newStatus) {
     const agId     = _agSession?.user?.id;
 
     const nachricht = newStatus === 'angenommen'
-      ? `🎉 Herzlichen Glückwunsch! Deine Bewerbung für ${jobTitel} bei ${firma} wurde angenommen! Wir freuen uns auf deinen Einsatz. Bei Fragen kannst du uns hier direkt schreiben. Bis bald! 👋`
-      : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche! 🍀`;
+      ? `Herzlichen Glückwunsch! Deine Bewerbung für ${jobTitel} bei ${firma} wurde angenommen! Wir freuen uns auf deinen Einsatz. Bei Fragen kannst du uns hier direkt schreiben. Bis bald!`
+      : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche!`;
 
     if (agId) {
       const { error: msgErr } = await odojSb.from('nachrichten').insert({
@@ -1445,7 +1469,7 @@ async function updateBewStatus(bewId, newStatus) {
         if (body && !body.querySelector('.bew-item')) {
           body.innerHTML = `
             <div style="text-align:center;padding:56px 32px;color:var(--text-lt)">
-              <div style="font-size:42px;margin-bottom:14px">📭</div>
+              <div style="margin-bottom:14px;display:flex;justify-content:center;opacity:.3"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
               <p style="font-size:15px">Keine aktiven Bewerbungen für dieses Inserat.</p>
             </div>`;
         }
@@ -1479,11 +1503,11 @@ async function updateBewStatus(bewId, newStatus) {
       }
       const nameEsc = jobberName.replace(/'/g, "\\'");
       actEl.innerHTML =
-        `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">✕ Ablehnen</button>` +
-        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')">💬 Nachricht senden</button>` +
+        `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
+        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>` +
         (jobDatumErreicht
-          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')">✓ Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled>⏳ Erst ab Einsatzdatum verfügbar</button>`);
+          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
+          : `<button class="bew-btn bew-btn-presence-done" disabled>Erst ab Einsatzdatum verfügbar</button>`);
     }
   }
   loadInserate();
@@ -1531,10 +1555,10 @@ function checkPauseWarning() {
   if (!warnEl) return true;
 
   if (stunden >= 9 && pause < 45) {
-    warnEl.innerHTML = '⚠️ <strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von mehr als 9 Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>45 Minuten</strong> vor.';
+    warnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle;margin-right:6px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von mehr als 9 Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>45 Minuten</strong> vor.';
     warnEl.style.display = 'block'; return false;
   } else if (stunden >= 6 && pause < 30) {
-    warnEl.innerHTML = '⚠️ <strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von 6 oder mehr Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>30 Minuten</strong> vor.';
+    warnEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle;margin-right:6px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Gesetzliche Pause erforderlich:</strong> Bei einer Arbeitszeit von 6 oder mehr Stunden schreibt das österreichische Arbeitszeitgesetz (§11 AZG) eine Pause von mindestens <strong>30 Minuten</strong> vor.';
     warnEl.style.display = 'block'; return false;
   }
   warnEl.style.display = 'none';
@@ -1591,7 +1615,7 @@ async function submitInserat(e) {
   btn.textContent = 'Speichern…';
   btn.disabled    = true;
 
-  const { error } = await odojSb.from('jobs').insert({
+  const { data: newJob, error } = await odojSb.from('jobs').insert({
     arbeitgeber_id: _agSession.user.id,
     firmenname:     _agFirmenname,
     titel, branche, datum,
@@ -1602,7 +1626,7 @@ async function submitInserat(e) {
     adresse, ort, plaetze, mindestalter, pause,
     beschreibung:  beschr,
     status:        'aktiv'
-  });
+  }).select('id').single();
 
   btn.textContent = 'Job speichern';
   btn.disabled    = false;
@@ -1614,10 +1638,11 @@ async function submitInserat(e) {
 
   document.getElementById('ins-form').reset();
   successEl.style.display = 'block';
-  setTimeout(() => {
-    successEl.style.display = 'none';
-    showTab('inserate');
-  }, 1500);
+  setTimeout(() => successEl.style.display = 'none', 2000);
+
+  // Stammkräfte benachrichtigen
+  _neuesJobData = { titel, datum, ort, gehalt, jobId: newJob?.id };
+  await openStammkraefteModal();
 }
 
 // ── AUTH GUARD ──
@@ -1725,13 +1750,13 @@ async function showJobberProfile(jobberId, jobberName) {
   if (profile?.geburtsdatum) {
     const alter = _berechneAlter(profile.geburtsdatum);
     const gebFormatted = new Date(profile.geburtsdatum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    fields.push({ icon: '🎂', label: 'Geburtsdatum', value: gebFormatted, sub: alter !== null ? `${alter} Jahre alt` : '' });
+    fields.push({ icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', label: 'Geburtsdatum', value: gebFormatted, sub: alter !== null ? `${alter} Jahre alt` : '' });
   }
 
   const adresseTeile = [profile?.adresse, profile?.adresse_plz, profile?.adresse_ort].filter(Boolean);
   const adresseStr = adresseTeile.length ? adresseTeile.join(', ') : (profile?.adresse || null);
-  if (adresseStr) fields.push({ icon: '📍', label: 'Wohnadresse', value: escJ(adresseStr) });
-  if (profile?.svnummer) fields.push({ icon: '🪪', label: 'SV-Nummer', value: escJ(profile.svnummer) });
+  if (adresseStr) fields.push({ icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>', label: 'Wohnadresse', value: escJ(adresseStr) });
+  if (profile?.svnummer) fields.push({ icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>', label: 'SV-Nummer', value: escJ(profile.svnummer) });
 
   if (fields.length === 0) {
     body.innerHTML = `<p style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px 0">Dieser Bewerber hat noch keine weiteren Profildaten hinterlegt.</p>`;
@@ -1758,6 +1783,104 @@ function closeJobberProfile(e) {
   document.getElementById('jp-overlay').classList.remove('open');
   document.body.style.overflow = '';
   if (document._jpEsc) { document.removeEventListener('keydown', document._jpEsc); delete document._jpEsc; }
+}
+
+// ── STAMMKRÄFTE MODAL ──
+let _neuesJobData = null;
+let _stammkraefteList = [];
+
+async function openStammkraefteModal() {
+  const overlay = document.getElementById('stammkraefte-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('stammkraefte-success').style.display = 'none';
+  document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>';
+
+  try {
+    // Alle bestätigten (anwesenheit_bestaetigt = true) Bewerbungen des AG laden
+    const { data: bews } = await odojSb
+      .from('bewerbungen')
+      .select('jobber_id, created_at')
+      .eq('arbeitgeber_id', _agSession.user.id)
+      .eq('status', 'angenommen')
+      .eq('anwesenheit_bestaetigt', true);
+
+    if (!bews || bews.length === 0) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Noch keine Stammkräfte vorhanden.</div>';
+      return;
+    }
+
+    // Unique Jobber IDs + letzten Einsatz
+    const jobberMap = {};
+    bews.forEach(b => {
+      if (!jobberMap[b.jobber_id] || b.created_at > jobberMap[b.jobber_id]) {
+        jobberMap[b.jobber_id] = b.created_at;
+      }
+    });
+    const jobberIds = Object.keys(jobberMap);
+
+    // Profile laden
+    const { data: profiles } = await odojSb
+      .from('Profile')
+      .select('user_id, vorname, nachname')
+      .in('user_id', jobberIds);
+
+    _stammkraefteList = (profiles || []).map(p => ({
+      userId:      p.user_id,
+      name:        ((p.vorname || '') + ' ' + (p.nachname || '')).trim() || 'Jobber',
+      letzterEinsatz: jobberMap[p.user_id],
+    }));
+
+    if (!_stammkraefteList.length) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Keine Stammkräfte gefunden.</div>';
+      return;
+    }
+
+    document.getElementById('stammkraefte-list').innerHTML = _stammkraefteList.map((jb, i) => `
+      <label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--gray-lt);border-radius:10px;cursor:pointer;transition:border-color .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--gray-lt)'">
+        <input type="checkbox" id="sk-cb-${i}" value="${jb.userId}" style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0" checked>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px;color:var(--navy)">${jb.name}</div>
+          <div style="font-size:12px;color:var(--text-lt)">Letzter Einsatz: ${jb.letzterEinsatz ? new Date(jb.letzterEinsatz).toLocaleDateString('de-AT') : '–'}</div>
+        </div>
+      </label>`).join('');
+  } catch (_) {
+    document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Fehler beim Laden.</div>';
+  }
+}
+
+async function sendStammkraefteNachrichten() {
+  const btn = document.getElementById('stammkraefte-send-btn');
+  btn.textContent = 'Wird gesendet…';
+  btn.disabled = true;
+
+  const checked = Array.from(document.querySelectorAll('#stammkraefte-list input[type=checkbox]:checked')).map(cb => cb.value);
+  if (!checked.length) { btn.textContent = 'Auswahl benachrichtigen'; btn.disabled = false; return; }
+
+  const j = _neuesJobData || {};
+  const datum  = j.datum  ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+  const betrag = j.gehalt ? '€ ' + j.gehalt : '';
+  const nachricht = `Neues Inserat für Sie! ${_agFirmenname} hat ein neues Inserat erstellt: ${j.titel || 'Neuer Job'} am ${datum} in ${j.ort || ''} – Tagesgehalt: ${betrag}. Sie wurden als bevorzugte Arbeitskraft ausgewählt! Jetzt bewerben: jobs.html`;
+
+  for (const empfaengerId of checked) {
+    try {
+      await odojSb.from('nachrichten').insert({
+        sender_id:    _agSession.user.id,
+        empfaenger_id: empfaengerId,
+        nachricht,
+        gelesen: false,
+      });
+    } catch (_) {}
+  }
+
+  document.getElementById('stammkraefte-success').style.display = 'block';
+  btn.textContent = 'Auswahl benachrichtigen';
+  btn.disabled = false;
+  setTimeout(() => closeStammkraefteModal(), 1800);
+}
+
+function closeStammkraefteModal() {
+  document.getElementById('stammkraefte-overlay').style.display = 'none';
+  showTab('inserate');
 }
 </script>
 <script src="cookies.js"></script>

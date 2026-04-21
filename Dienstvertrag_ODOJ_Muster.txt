@@ -1,0 +1,140 @@
+================================================================================
+UNVERBINDLICHE MUSTER-VORLAGE
+Dieses Dokument dient ausschließlich als Orientierungshilfe.
+ODOJ übernimmt keine Haftung für die rechtliche Vollständigkeit.
+Wir empfehlen die Prüfung durch einen Rechtsexperten
+(z.B. WKO Vorarlberg oder AK Vorarlberg).
+================================================================================
+
+
+DIENSTVERTRAG FÜR FALLWEISE BESCHÄFTIGUNG (TAGESJOB) – ÖSTERREICH
+
+
+1. VERTRAGSPARTEIEN
+
+Arbeitgeber:
+Name/Firma: _______________________________________________
+Adresse:   _______________________________________________
+Firmenbuchnummer (falls vorhanden): _______________________
+
+Arbeitnehmer:
+Name:          _______________________________________________
+Adresse:       _______________________________________________
+Geburtsdatum:  _______________________________________________
+SV-Nummer:     _______________________________________________
+
+
+2. ART DES DIENSTVERHÄLTNISSES
+
+Der Arbeitnehmer wird als fallweise beschäftigter Dienstnehmer gemäß
+österreichischem Arbeitsrecht beschäftigt. Es besteht kein durchgehendes
+Dienstverhältnis, sondern einzelne Einsätze nach Bedarf und gegenseitigem
+Einverständnis.
+
+
+3. TÄTIGKEIT
+
+Tätigkeitsbeschreibung:
+[genaue Beschreibung, z.B. Servicekraft, Eventhelfer, Lagerhilfe]
+
+Einsatzort:
+_______________________________________________
+
+
+4. EINSATZZEIT / ARBEITSZEIT
+
+Einsatzdatum:  _______________________________________________
+Arbeitsbeginn: _______________________________________________
+Arbeitsende:   _______________________________________________
+
+Pausen werden gemäß Arbeitszeitgesetz (AZG) eingehalten.
+Bei einer Arbeitszeit von mehr als 6 Stunden gebührt eine unbezahlte Pause
+von mindestens 30 Minuten.
+
+
+5. ENTGELT
+
+Stundenlohn (brutto): € _____________
+
+Es gelten die kollektivvertraglichen Mindestlöhne des jeweils anzuwendenden
+Kollektivvertrags. Bei Unklarheit über den anzuwendenden Kollektivvertrag
+empfiehlt sich eine Rückfrage bei der WKO Vorarlberg.
+
+Auszahlung erfolgt über: Stripe (Online-Überweisung über die ODOJ-Plattform)
+Zeitpunkt der Auszahlung: direkt nach Bestätigung der Anwesenheit durch
+den Arbeitgeber auf der ODOJ-Plattform.
+
+
+6. ANMELDUNG & SOZIALVERSICHERUNG
+
+Der Arbeitgeber verpflichtet sich, den Arbeitnehmer VOR Arbeitsbeginn bei
+der Österreichischen Gesundheitskasse (ÖGK) anzumelden (ELDA-Voranmeldung).
+Die gesetzlichen Sozialversicherungsbeiträge werden ordnungsgemäß abgeführt.
+
+Hinweis: Auch für geringfügige Beschäftigungen (unter der monatlichen
+Geringfügigkeitsgrenze) besteht Anmeldepflicht.
+
+
+7. URLAUB / URLAUBSERSATZ
+
+Bei fallweiser Beschäftigung besteht für den einzelnen Einsatz in der Regel
+kein aufbauender Urlaubsanspruch. Allfällige Urlaubsansprüche werden
+entsprechend den gesetzlichen Bestimmungen (Urlaubsgesetz) abgerechnet.
+
+
+8. WEISUNGSGEBUNDENHEIT
+
+Der Arbeitnehmer unterliegt während des Einsatzes den fachlichen und
+persönlichen Weisungen des Arbeitgebers.
+
+
+9. HAFTUNG
+
+Der Arbeitnehmer haftet für Schäden nur bei Vorsatz oder grober
+Fahrlässigkeit gemäß Dienstnehmerhaftpflichtgesetz (DHG).
+
+
+10. BEENDIGUNG
+
+Das Dienstverhältnis endet automatisch mit Abschluss des vereinbarten
+Einsatzes. Eine gesonderte Kündigung ist nicht erforderlich.
+
+
+11. DATENSCHUTZ (DSGVO)
+
+Die im Rahmen dieses Vertrages erhobenen personenbezogenen Daten werden
+ausschließlich zur Abwicklung des Dienstverhältnisses verarbeitet und nicht
+an Dritte weitergegeben, soweit dies nicht gesetzlich erforderlich ist
+(z.B. ÖGK-Meldung, Finanzamt). Es gelten die Bestimmungen der
+DSGVO sowie des österreichischen Datenschutzgesetzes (DSG).
+
+
+12. SONSTIGE VEREINBARUNGEN
+
+[z.B. Arbeitskleidung, Verhalten, Verschwiegenheitspflicht]
+
+_______________________________________________
+_______________________________________________
+
+
+13. SCHLUSSBESTIMMUNGEN
+
+Es gilt österreichisches Recht (ABGB, AngG, AZG).
+Gerichtsstand ist der Sitz des Arbeitgebers.
+Änderungen dieses Vertrages bedürfen der Schriftform.
+
+
+__________________, den __________________
+(Ort)                    (Datum)
+
+
+Unterschrift Arbeitgeber:         Unterschrift Arbeitnehmer:
+
+___________________________       ___________________________
+[Name in Druckbuchstaben]         [Name in Druckbuchstaben]
+
+
+================================================================================
+MUSTER-VORLAGE – nicht rechtsverbindlich | Stand: 2026
+Erstellt mit Unterstützung der ODOJ-Plattform | www.odoj.at
+================================================================================

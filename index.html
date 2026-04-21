@@ -232,7 +232,7 @@
   transition: transform .3s;
 }
 .teaser:hover .teaser-bar { transform: scaleX(1); }
-.teaser-icon { font-size: 30px; margin-bottom: 18px; display: block; }
+.teaser-icon { width: 48px; height: 48px; background: var(--accent-pale); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; color: var(--accent); margin-bottom: 18px; }
 .teaser h3 {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 19px;
@@ -349,7 +349,7 @@
   border-color: rgba(255,255,255,.18);
   transform: translateY(-3px);
 }
-.branche-pill-icon { font-size: 28px; margin-bottom: 14px; display: block; }
+.branche-pill-icon { width: 44px; height: 44px; background: rgba(255,255,255,.08); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.8); margin-bottom: 14px; }
 .branche-pill h4 {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 15px;
@@ -451,7 +451,7 @@
       <!-- Card 1 – oben, vorne -->
       <div class="hv-card hv-card-1">
         <div class="hv-card-row">
-          <span class="hv-tag hv-tag-gastro">🍽 Gastronomie</span>
+          <span class="hv-tag hv-tag-gastro">Gastronomie</span>
           <span class="hv-badge-new">Neu</span>
         </div>
         <div class="hv-titel">Servicekraft (m/w/d)</div>
@@ -475,7 +475,7 @@
       <!-- Card 2 – Mitte, leicht rotiert -->
       <div class="hv-card hv-card-2">
         <div class="hv-card-row">
-          <span class="hv-tag hv-tag-bau">🏗 Bau &amp; Handwerk</span>
+          <span class="hv-tag hv-tag-bau">Bau &amp; Handwerk</span>
         </div>
         <div class="hv-titel">Hilfsarbeiter Baustelle</div>
         <div class="hv-firma">Rüf Bau GmbH, Dornbirn</div>
@@ -493,7 +493,7 @@
 
       <!-- Card 3 – unten, fast verdeckt -->
       <div class="hv-card hv-card-3">
-        <span class="hv-tag hv-tag-events">🎤 Events</span>
+        <span class="hv-tag hv-tag-events">Events</span>
         <div class="hv-titel">Veranstaltungshelfer</div>
         <div class="hv-firma">Messe Dornbirn</div>
         <div class="hv-footer">
@@ -529,21 +529,21 @@
 <div class="teasers">
   <a href="jobs.html" class="teaser fade-in">
     <div class="teaser-bar"></div>
-    <span class="teaser-icon">🔍</span>
+    <span class="teaser-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
     <h3>Jobs finden</h3>
     <p>Tagesjobs in Vorarlberg durchstöbern und in einem Klick bewerben.</p>
     <div class="teaser-link">Zur Stellenbörse <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
   </a>
   <a href="arbeitgeber.html" class="teaser fade-in">
     <div class="teaser-bar"></div>
-    <span class="teaser-icon">🏢</span>
+    <span class="teaser-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg></span>
     <h3>Personal anfragen</h3>
     <p>Kurzfristig qualifiziertes Personal für Tageseinsätze anfragen – ohne Aufwand.</p>
     <div class="teaser-link">Für Arbeitgeber <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
   </a>
   <a href="ueber-uns.html" class="teaser fade-in">
     <div class="teaser-bar"></div>
-    <span class="teaser-icon">💡</span>
+    <span class="teaser-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
     <h3>Was ist ODOJ?</h3>
     <p>Ein junges Unternehmen aus Vorarlberg mit der Mission, flexible Arbeit einfach zu machen.</p>
     <div class="teaser-link">Mehr erfahren <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
@@ -564,21 +564,21 @@
   <div class="steps">
     <div class="step fade-in">
       <span class="step-num">01</span>
-      <div class="step-ico">📋</div>
+      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
       <h3>Profil erstellen</h3>
       <p>In wenigen Minuten Profil anlegen und direkt starten.</p>
       <div class="step-line"></div>
     </div>
     <div class="step fade-in">
       <span class="step-num">02</span>
-      <div class="step-ico">🎯</div>
+      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
       <h3>Passender Job auswählen</h3>
       <p>Wähle Branche und Datum, dann bewirb dich mit einem Klick.</p>
       <div class="step-line"></div>
     </div>
     <div class="step fade-in">
       <span class="step-num">03</span>
-      <div class="step-ico">✅</div>
+      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
       <h3>Loslegen und Geld verdienen</h3>
       <p>Einsatz annehmen, vor Ort arbeiten - dein Geld zeitnah erhalten.</p>
       <div class="step-line"></div>
@@ -595,22 +595,22 @@
   </div>
   <div class="branchen-grid">
     <a href="jobs.html?b=gastro" class="branche-pill fade-in">
-      <span class="branche-pill-icon">🍽</span>
+      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></span>
       <h4>Gastronomie &amp; Hotel</h4>
       <p>Service, Küche, Reinigung</p>
     </a>
     <a href="jobs.html?b=bau" class="branche-pill fade-in">
-      <span class="branche-pill-icon">🏗</span>
+      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5a2.12 2.12 0 1 1-3-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"/></svg></span>
       <h4>Bau &amp; Handwerk</h4>
       <p>Hilfsarbeiter, Maler, Montage</p>
     </a>
     <a href="jobs.html?b=lager" class="branche-pill fade-in">
-      <span class="branche-pill-icon">📦</span>
+      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
       <h4>Lager &amp; Logistik</h4>
       <p>Kommissionierung, Versand</p>
     </a>
     <a href="jobs.html?b=events" class="branche-pill fade-in">
-      <span class="branche-pill-icon">🎤</span>
+      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></span>
       <h4>Veranstaltungen &amp; Events</h4>
       <p>Konzerte, Messen, Festivals</p>
     </a>
@@ -679,5 +679,6 @@ const obs = new IntersectionObserver((entries) => {
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 </script>
 <script src="cookies.js"></script>
+<script src="chatbot.js"></script>
 </body>
 </html>

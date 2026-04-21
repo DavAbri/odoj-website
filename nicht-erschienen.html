@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobber nicht erschienen – Meldung einreichen | ODOJ</title>
+<meta name="description" content="Melden Sie einen nicht erschienenen Jobber über das ODOJ-Formular.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1f3d">
+<link rel="stylesheet" href="shared.css">
+<style>
+
+.ne-hero {
+  background: var(--navy);
+  padding: calc(var(--nav-h) + 60px) 60px 72px;
+  text-align: center;
+}
+.ne-hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.28);
+  color: #f87171; font-size: 13px; font-weight: 500;
+  padding: 6px 16px; border-radius: 100px; margin-bottom: 24px;
+}
+.ne-hero h1 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(28px, 4vw, 48px); font-weight: 800;
+  color: var(--white); line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 16px;
+}
+.ne-hero p {
+  font-size: 16px; color: rgba(255,255,255,.55); max-width: 520px;
+  margin: 0 auto; line-height: 1.65; font-weight: 300;
+}
+
+.ne-main {
+  background: var(--off); padding: 72px 24px;
+  min-height: 60vh;
+}
+.ne-form-wrap {
+  max-width: 700px; margin: 0 auto;
+  background: var(--white); border-radius: 20px;
+  padding: 48px; box-shadow: 0 8px 40px rgba(11,31,58,.08);
+}
+.ne-form-wrap h2 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px;
+}
+.ne-form-wrap > p { font-size: 14px; color: var(--text-lt); margin-bottom: 32px; }
+
+.ne-field { margin-bottom: 18px; }
+.ne-field label {
+  display: block; font-size: 11px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase;
+  color: var(--text-lt); margin-bottom: 6px;
+}
+.ne-field input, .ne-field select, .ne-field textarea {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--gray-lt); border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px;
+  color: var(--text); background: var(--white); outline: none;
+  transition: border-color .2s; box-sizing: border-box;
+}
+.ne-field input:focus, .ne-field select:focus, .ne-field textarea:focus { border-color: var(--accent); }
+.ne-field input[readonly], .ne-field input[disabled] { background: var(--off); color: var(--text-lt); cursor: not-allowed; }
+.ne-field textarea { resize: vertical; min-height: 120px; line-height: 1.5; }
+.ne-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.ne-radio-group { display: flex; gap: 14px; margin-top: 4px; }
+.ne-radio-label {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border: 1.5px solid var(--gray-lt); border-radius: 10px;
+  cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text);
+  transition: border-color .2s, background .2s; user-select: none;
+}
+.ne-radio-label:hover { border-color: var(--accent); }
+.ne-radio-label input[type=radio] { accent-color: var(--accent); width: 16px; height: 16px; }
+.ne-radio-label.checked { border-color: var(--accent); background: var(--accent-pale); }
+
+.ne-btn-submit {
+  width: 100%; background: var(--accent); color: var(--navy);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
+  padding: 16px; border-radius: 10px; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .2s, transform .15s; margin-top: 8px;
+}
+.ne-btn-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
+.ne-btn-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.ne-success {
+  display: none; background: #d1fae5; border: 1px solid #a7f3d0;
+  border-radius: 12px; padding: 20px 24px; margin-top: 20px;
+  text-align: center;
+}
+.ne-success-title { font-weight: 800; color: #065f46; font-size: 16px; margin-bottom: 4px; }
+.ne-success-text  { font-size: 14px; color: #065f46; line-height: 1.6; }
+
+.ne-note {
+  background: #FFF8E8; border: 1px solid rgba(232,160,32,.3);
+  border-radius: 10px; padding: 14px 16px;
+  font-size: 13px; color: #7A4A00; line-height: 1.6;
+  margin-bottom: 28px; display: flex; gap: 10px; align-items: flex-start;
+}
+
+@media (max-width: 640px) {
+  .ne-hero { padding: calc(var(--nav-h) + 32px) 20px 48px; }
+  .ne-form-wrap { padding: 28px 20px; }
+  .ne-field-row { grid-template-columns: 1fr; }
+  .ne-radio-group { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ</a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- HERO -->
+<div class="ne-hero">
+  <div class="ne-hero-badge">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Für Arbeitgeber
+  </div>
+  <h1>Jobber nicht erschienen –<br>Meldung einreichen</h1>
+  <p>Füllen Sie das Formular aus, damit wir den Vorfall dokumentieren und gegebenenfalls Maßnahmen einleiten können.</p>
+</div>
+
+<!-- FORM -->
+<div class="ne-main">
+  <div class="ne-form-wrap" id="ne-form-wrap">
+    <h2>Meldeformular</h2>
+    <p>Alle mit * markierten Felder sind Pflichtfelder.</p>
+
+    <div class="ne-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Der Jobber wird erst bezahlt, wenn Sie die Anwesenheit bestätigen. Bitte dokumentieren Sie den Vorfall hier, damit wir entsprechende Maßnahmen einleiten können.</span>
+    </div>
+
+    <form id="ne-form" onsubmit="submitMeldung(event)">
+      <div class="ne-field-row">
+        <div class="ne-field">
+          <label>Firmenname</label>
+          <input type="text" id="ne-firma" readonly placeholder="Wird aus Profil geladen…">
+        </div>
+        <div class="ne-field">
+          <label>Ansprechperson</label>
+          <input type="text" id="ne-person" readonly placeholder="Wird aus Profil geladen…">
+        </div>
+      </div>
+
+      <div class="ne-field">
+        <label>Job-Auswahl *</label>
+        <select id="ne-job" required>
+          <option value="">– Job auswählen –</option>
+        </select>
+      </div>
+
+      <div class="ne-field-row">
+        <div class="ne-field">
+          <label>Name des Jobbers *</label>
+          <input type="text" id="ne-jobber-name" placeholder="Vor- und Nachname" required>
+        </div>
+        <div class="ne-field">
+          <label>Datum des Einsatzes *</label>
+          <input type="date" id="ne-datum" required>
+        </div>
+      </div>
+
+      <div class="ne-field">
+        <label>Vereinbarte Uhrzeit *</label>
+        <input type="time" id="ne-uhrzeit" required style="max-width:200px">
+      </div>
+
+      <div class="ne-field">
+        <label>Was ist passiert? * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(Beschreibung des Vorfalls)</span></label>
+        <textarea id="ne-beschr" placeholder="Bitte beschreiben Sie, was vorgefallen ist…" required></textarea>
+      </div>
+
+      <div class="ne-field">
+        <label>Wurde der Jobber vorher kontaktiert? *</label>
+        <div class="ne-radio-group" id="ne-kontakt-group">
+          <label class="ne-radio-label" id="ne-label-ja">
+            <input type="radio" name="ne-kontakt" value="ja" onchange="onKontaktChange('ja')"> Ja
+          </label>
+          <label class="ne-radio-label" id="ne-label-nein">
+            <input type="radio" name="ne-kontakt" value="nein" onchange="onKontaktChange('nein')"> Nein
+          </label>
+        </div>
+      </div>
+
+      <div class="ne-field" id="ne-wie-feld" style="display:none">
+        <label>Wie wurde kontaktiert?</label>
+        <input type="text" id="ne-wie" placeholder="z.B. Telefon, WhatsApp, E-Mail…">
+      </div>
+
+      <button type="submit" class="ne-btn-submit" id="ne-submit-btn">
+        Meldung einreichen
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </form>
+
+    <div class="ne-success" id="ne-success">
+      <div class="ne-success-title">Meldung erfolgreich eingereicht</div>
+      <div class="ne-success-text">Ihre Meldung wurde erfolgreich eingereicht. Wir werden den Fall prüfen und uns bei Bedarf melden.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>OJ</a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
+    </div>
+    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li></ul></div>
+    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="meine-inserate.html">Meine Inserate</a></li></ul></div>
+    <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOJ – One Day One Job.</span>
+    <div class="footer-legal"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="agb.html">AGB</a></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+function onKontaktChange(val) {
+  document.getElementById('ne-wie-feld').style.display = val === 'ja' ? 'block' : 'none';
+  document.getElementById('ne-label-ja').classList.toggle('checked', val === 'ja');
+  document.getElementById('ne-label-nein').classList.toggle('checked', val === 'nein');
+}
+
+// ── AUTH GUARD (nur Arbeitgeber) ──
+(async () => {
+  const session = await odojGetSession();
+  if (!session) { window.location.href = 'login.html?redirect=nicht-erschienen.html'; return; }
+  let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+  try {
+    const { data: profile } = await odojSb
+      .from('Profile')
+      .select('rolle, firmenname, vorname, nachname')
+      .eq('user_id', session.user.id)
+      .single();
+    if (profile?.rolle) rolle = profile.rolle;
+    if (rolle !== 'arbeitgeber') { window.location.href = 'index.html'; return; }
+
+    // Felder vorbefüllen
+    document.getElementById('ne-firma').value  = profile.firmenname || '';
+    document.getElementById('ne-person').value = ((profile.vorname || '') + ' ' + (profile.nachname || '')).trim();
+  } catch (_) {}
+
+  // Jobs des AG laden
+  try {
+    const { data: jobs } = await odojSb
+      .from('jobs')
+      .select('id, titel, datum')
+      .eq('arbeitgeber_id', session.user.id)
+      .order('datum', { ascending: false })
+      .limit(50);
+    const sel = document.getElementById('ne-job');
+    (jobs || []).forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j.id;
+      const d = j.datum ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+      opt.textContent = j.titel + (d ? ' (' + d + ')' : '');
+      sel.appendChild(opt);
+    });
+  } catch (_) {}
+})();
+
+function submitMeldung(e) {
+  e.preventDefault();
+  const btn = document.getElementById('ne-submit-btn');
+  const kontakt = document.querySelector('input[name="ne-kontakt"]:checked')?.value;
+  if (!kontakt) { alert('Bitte angeben, ob der Jobber kontaktiert wurde.'); return; }
+
+  const firma      = document.getElementById('ne-firma').value;
+  const person     = document.getElementById('ne-person').value;
+  const job        = document.getElementById('ne-job').options[document.getElementById('ne-job').selectedIndex]?.text || '';
+  const jobberName = document.getElementById('ne-jobber-name').value;
+  const datum      = document.getElementById('ne-datum').value;
+  const uhrzeit    = document.getElementById('ne-uhrzeit').value;
+  const beschr     = document.getElementById('ne-beschr').value;
+  const wie        = document.getElementById('ne-wie').value;
+
+  const body = encodeURIComponent(
+    `Firmenname: ${firma}\n` +
+    `Ansprechperson: ${person}\n` +
+    `Job: ${job}\n` +
+    `Jobber: ${jobberName}\n` +
+    `Datum des Einsatzes: ${datum}\n` +
+    `Vereinbarte Uhrzeit: ${uhrzeit}\n\n` +
+    `Was ist passiert:\n${beschr}\n\n` +
+    `Jobber vorher kontaktiert: ${kontakt}` +
+    (wie ? `\nArt der Kontaktaufnahme: ${wie}` : '')
+  );
+
+  const mailto = `mailto:ODOJ_EMAIL_HIER_EINFUEGEN@example.com?subject=${encodeURIComponent('Meldung: Jobber nicht erschienen – ' + firma)}&body=${body}`;
+  window.location.href = mailto;
+
+  // Erfolgsmeldung
+  btn.disabled = true;
+  document.getElementById('ne-form').style.opacity = '.4';
+  document.getElementById('ne-success').style.display = 'block';
+  document.getElementById('ne-success').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+</script>
+<script src="cookies.js"></script>
+</body>
+</html>

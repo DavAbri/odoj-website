@@ -491,10 +491,10 @@ function renderArbeitgeber(session, profile) {
   const adresseFull = [profile?.adresse, profile?.adresse_plz, profile?.adresse_ort].filter(Boolean).join(', ') || '–';
 
   const BRANCHEN_LABEL = {
-    gastro: '🍽 Gastronomie & Hotel',
-    bau:    '🏗 Bau & Handwerk',
-    lager:  '📦 Lager & Logistik',
-    events: '🎤 Veranstaltungen & Events',
+    gastro: 'Gastronomie & Hotel',
+    bau:    'Bau & Handwerk',
+    lager:  'Lager & Logistik',
+    events: 'Veranstaltungen & Events',
   };
 
   body.innerHTML = `
@@ -587,10 +587,10 @@ function renderArbeitgeber(session, profile) {
             <label>Branche</label>
             <select id="ag-edit-branche">
               <option value="">Bitte wählen</option>
-              <option value="gastro" ${profile?.branche === 'gastro' ? 'selected' : ''}>🍽 Gastronomie &amp; Hotel</option>
-              <option value="bau"    ${profile?.branche === 'bau'    ? 'selected' : ''}>🏗 Bau &amp; Handwerk</option>
-              <option value="lager"  ${profile?.branche === 'lager'  ? 'selected' : ''}>📦 Lager &amp; Logistik</option>
-              <option value="events" ${profile?.branche === 'events' ? 'selected' : ''}>🎤 Veranstaltungen &amp; Events</option>
+              <option value="gastro" ${profile?.branche === 'gastro' ? 'selected' : ''}>Gastronomie &amp; Hotel</option>
+              <option value="bau"    ${profile?.branche === 'bau'    ? 'selected' : ''}>Bau &amp; Handwerk</option>
+              <option value="lager"  ${profile?.branche === 'lager'  ? 'selected' : ''}>Lager &amp; Logistik</option>
+              <option value="events" ${profile?.branche === 'events' ? 'selected' : ''}>Veranstaltungen &amp; Events</option>
             </select>
           </div>
           <div class="profil-field">
@@ -674,7 +674,7 @@ async function saveAgProfil(userId) {
   }
 
   // View aktualisieren
-  const BRANCHEN_LABEL = { gastro:'🍽 Gastronomie & Hotel', bau:'🏗 Bau & Handwerk', lager:'📦 Lager & Logistik', events:'🎤 Veranstaltungen & Events' };
+  const BRANCHEN_LABEL = { gastro:'Gastronomie & Hotel', bau:'Bau & Handwerk', lager:'Lager & Logistik', events:'Veranstaltungen & Events' };
   const adresseFull = [adresse, plz, ort].filter(Boolean).join(', ') || '–';
   document.getElementById('ag-info-firma').textContent    = firma || '–';
   document.getElementById('ag-info-person').textContent   = [vorname, nachname].filter(Boolean).join(' ') || '–';
@@ -685,7 +685,7 @@ async function saveAgProfil(userId) {
   document.getElementById('ag-info-uid').textContent      = uid_nummer || '–';
 
   toggleAgEdit(false);
-  showToast('✓ Firmenprofil gespeichert');
+  showToast('Firmenprofil gespeichert');
 }
 
 async function loadRechnungen(agId) {
@@ -700,7 +700,7 @@ async function loadRechnungen(agId) {
 
   if (!rechnungen || rechnungen.length === 0) {
     bodyEl.innerHTML = `<div class="profil-empty">
-      <div style="font-size:42px;margin-bottom:14px">🧾</div>
+      <div style="margin-bottom:14px;display:flex;justify-content:center"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-lt)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
       <p>Noch keine Rechnungen vorhanden.</p>
     </div>`;
     return;
@@ -774,10 +774,10 @@ function renderJobber(session, profile) {
   const ZEITEN     = ['ganztags','halbtags','flexibel'];
   const Z_LABEL    = { ganztags:'Ganztags', halbtags:'Halbtags', flexibel:'Flexibel' };
   const BRANCHEN_LIST = [
-    { val: 'gastro', label: '🍽 Gastronomie & Hotel' },
-    { val: 'bau',    label: '🏗 Bau & Handwerk' },
-    { val: 'lager',  label: '📦 Lager & Logistik' },
-    { val: 'events', label: '🎤 Events & Veranstaltungen' },
+    { val: 'gastro', label: 'Gastronomie & Hotel' },
+    { val: 'bau',    label: 'Bau & Handwerk' },
+    { val: 'lager',  label: 'Lager & Logistik' },
+    { val: 'events', label: 'Events & Veranstaltungen' },
   ];
 
   const verfuegDisplay  = [
@@ -815,7 +815,7 @@ function renderJobber(session, profile) {
     <!-- Persönliche Daten -->
     <div class="profil-card">
       <h2 class="profil-section-title">Persönliche Daten</h2>
-      ${!vorname || !nachname ? '<div class="pflicht-badge">⚠ Bitte trage deinen echten Namen ein – er wird Arbeitgebern angezeigt</div>' : ''}
+      ${!vorname || !nachname ? '<div class="pflicht-badge">Bitte trage deinen echten Namen ein – er wird Arbeitgebern angezeigt</div>' : ''}
 
       <div id="jb-pers-view">
         <div class="profil-info-grid">
@@ -880,7 +880,7 @@ function renderJobber(session, profile) {
     <div class="profil-card">
       <h2 class="profil-section-title">Wohnadresse</h2>
       <div id="addr-group">
-        ${!addrFull ? '<div class="pflicht-badge">⚠ Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
+        ${!addrFull ? '<div class="pflicht-badge">Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
         <div class="profil-field-group">
           <div class="profil-field-group-head">
             <div>
@@ -919,7 +919,7 @@ function renderJobber(session, profile) {
     <div class="profil-card">
       <h2 class="profil-section-title">Sozialversicherungsnummer</h2>
       <div id="svn-group">
-        ${!svn ? '<div class="pflicht-badge">⚠ Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
+        ${!svn ? '<div class="pflicht-badge">Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
         <div class="profil-field-group">
           <div class="profil-field-group-head">
             <div>
@@ -934,6 +934,7 @@ function renderJobber(session, profile) {
                 <label>Sozialversicherungsnummer</label>
                 <input type="text" id="svn-input" value="${escH(svn)}" placeholder="1234 010190" maxlength="15">
                 <small>10 Ziffern, z.B. 1234 010190</small>
+                <div id="svn-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px;margin-top:8px;"></div>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <button class="btn-save" onclick="saveSvn('${session.user.id}')">Speichern</button>
@@ -1048,11 +1049,21 @@ async function changePassword() {
 
   document.getElementById('pw-new').value  = '';
   document.getElementById('pw-new2').value = '';
-  showToast('✓ Passwort erfolgreich geändert');
+  showToast('Passwort erfolgreich geändert');
 }
 
 function toggleSvnEdit(show) {
   document.getElementById('svn-edit-form').style.display = show ? 'block' : 'none';
+  if (show) {
+    const svnInput = document.getElementById('svn-input');
+    if (svnInput && !svnInput._fmtBound) {
+      svnInput.addEventListener('input', function() {
+        const z = this.value.replace(/\D/g,'');
+        this.value = z.length > 4 ? z.slice(0,4)+' '+z.slice(4,10) : z;
+      });
+      svnInput._fmtBound = true;
+    }
+  }
 }
 function toggleAddrEdit(show) {
   document.getElementById('addr-edit-form').style.display = show ? 'block' : 'none';
@@ -1110,7 +1121,7 @@ async function saveJbPers(userId) {
   }
 
   toggleJbPers(false);
-  showToast('✓ Persönliche Daten gespeichert');
+  showToast('Persönliche Daten gespeichert');
   const badge = document.querySelector('#jb-pers-view + #jb-pers-edit ~ .pflicht-badge, .profil-card .pflicht-badge');
   if (badge && vorname && nachname) badge.remove();
 }
@@ -1123,7 +1134,7 @@ async function saveBio(userId) {
   display.textContent = bio || '';
   if (!bio) display.innerHTML = '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>';
   toggleBioEdit(false);
-  showToast('✓ Beschreibung gespeichert');
+  showToast('Beschreibung gespeichert');
 }
 
 async function saveVerfBranch(userId) {
@@ -1133,8 +1144,8 @@ async function saveVerfBranch(userId) {
   const W_LABEL = { montag:'Mo', dienstag:'Di', mittwoch:'Mi', donnerstag:'Do', freitag:'Fr', samstag:'Sa', sonntag:'So' };
   const Z_LABEL = { ganztags:'Ganztags', halbtags:'Halbtags', flexibel:'Flexibel' };
   const BRANCHEN_LIST = [
-    { val:'gastro', label:'🍽 Gastronomie & Hotel' }, { val:'bau', label:'🏗 Bau & Handwerk' },
-    { val:'lager',  label:'📦 Lager & Logistik' },    { val:'events', label:'🎤 Events & Veranstaltungen' },
+    { val:'gastro', label:'Gastronomie & Hotel' }, { val:'bau', label:'Bau & Handwerk' },
+    { val:'lager',  label:'Lager & Logistik' },    { val:'events', label:'Events & Veranstaltungen' },
   ];
 
   const { error } = await _saveProfileFields(userId, { verfuegbarkeit: verfueg, branchen });
@@ -1147,7 +1158,7 @@ async function saveVerfBranch(userId) {
   document.getElementById('vb-branch-display').innerHTML = branchDisplay || empty;
 
   toggleVbEdit(false);
-  showToast('✓ Verfügbarkeit & Branchen gespeichert');
+  showToast('Verfügbarkeit & Branchen gespeichert');
 }
 
 // ── Hilfsfunktion: Profile-Row für userId laden (gibt null zurück wenn nicht gefunden) ──
@@ -1208,13 +1219,45 @@ async function _saveProfileFields(userId, fields) {
   return result;
 }
 
+function validiereOesterreichischeSVN(svn, geburtsdatum) {
+  const z = svn.replace(/\D/g, '');
+
+  if (z.length !== 10)
+    return { gueltig: false, fehler: 'SVN muss genau 10 Ziffern haben (z.B. 1234 010190).' };
+
+  if (parseInt(z.substring(4,6)) < 1 || parseInt(z.substring(4,6)) > 31)
+    return { gueltig: false, fehler: 'Ungültiger Tag im Geburtsdatum der SVN.' };
+
+  if (parseInt(z.substring(6,8)) < 1 || parseInt(z.substring(6,8)) > 12)
+    return { gueltig: false, fehler: 'Ungültiger Monat im Geburtsdatum der SVN.' };
+
+  const mult = [3,7,9,0,5,8,4,2,1,6];
+  const pruef = [].reduce.call(z, (s,c,i) => s + parseInt(c)*mult[i], 0) % 11;
+
+  if (pruef !== parseInt(z[3]))
+    return { gueltig: false, fehler: 'Pruefziffer falsch. Bitte SVN von der e-card pruefen.' };
+
+  if (geburtsdatum) {
+    const t = geburtsdatum.split('-');
+    if (z.substring(4,6) !== t[2] || z.substring(6,8) !== t[1] || z.substring(8,10) !== t[0].substring(2))
+      return { gueltig: false, fehler: 'Geburtsdatum in SVN stimmt nicht mit deinem Profil ueberein.' };
+  }
+
+  return { gueltig: true, fehler: null };
+}
+
 async function saveSvn(userId) {
-  const svn = document.getElementById('svn-input').value.trim();
-  const digits = svn.replace(/\D/g, '');
-  if (digits.length !== 10) {
-    alert('Bitte eine gültige 10-stellige Sozialversicherungsnummer eingeben (Beispiel: 1234 010190).');
+  const svn    = document.getElementById('svn-input').value.trim();
+  const errEl  = document.getElementById('svn-error');
+
+  const profil = await _loadProfileRow(userId);
+  const v = validiereOesterreichischeSVN(svn, profil?.geburtsdatum);
+  if (!v.gueltig) {
+    errEl.textContent = v.fehler;
+    errEl.style.display = 'block';
     return;
   }
+  errEl.style.display = 'none';
 
   const { data, error } = await _saveProfileFields(userId, { svnummer: svn });
 
@@ -1229,7 +1272,7 @@ async function saveSvn(userId) {
 
   document.getElementById('svn-display').textContent = svn;
   toggleSvnEdit(false);
-  showToast('✓ SV-Nummer erfolgreich gespeichert');
+  showToast('SV-Nummer erfolgreich gespeichert');
   await checkProfilVollstaendig(userId);
   const badge = document.querySelector('#svn-group .pflicht-badge');
   if (badge) badge.remove();
@@ -1259,7 +1302,7 @@ async function saveAddr(userId) {
 
   document.getElementById('addr-display').textContent = `${strasse}, ${plz} ${ort}`;
   toggleAddrEdit(false);
-  showToast('✓ Adresse erfolgreich gespeichert');
+  showToast('Adresse erfolgreich gespeichert');
   await checkProfilVollstaendig(userId);
   const badge = document.querySelector('#addr-group .pflicht-badge');
   if (badge) badge.remove();
@@ -1370,7 +1413,7 @@ async function printRechnung(r) {
   Bei Fragen: hallo@odoj.at
 </div>
 
-<button class="btn-print" onclick="window.print()">🖨 Drucken / Speichern als PDF</button>
+<button class="btn-print" onclick="window.print()" style="display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Drucken / Speichern als PDF</button>
 </body>
 </html>`);
   win.document.close();
@@ -1417,7 +1460,7 @@ async function loadJobberBewertungen(userId) {
     });
   }
 
-  const BRANCHEN_LABEL = { gastro:'🍽 Gastronomie & Hotel', bau:'🏗 Bau & Handwerk', lager:'📦 Lager & Logistik', events:'🎤 Events & Veranstaltungen' };
+  const BRANCHEN_LABEL = { gastro:'Gastronomie & Hotel', bau:'Bau & Handwerk', lager:'Lager & Logistik', events:'Events & Veranstaltungen' };
   const totalEinsaetze = Object.values(branchenMap).reduce((a, b) => a + b, 0);
 
   const rechtsEl = document.getElementById('profil-bewertung-rechts');
@@ -1571,5 +1614,6 @@ async function initProfil() {
 initProfil();
 </script>
 <script src="cookies.js"></script>
+<script src="chatbot.js"></script>
 </body>
 </html>

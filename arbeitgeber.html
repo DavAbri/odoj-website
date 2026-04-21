@@ -160,7 +160,7 @@
 .vorteil:hover { border-color: var(--accent); box-shadow: 0 8px 32px rgba(232,160,32,.12); transform: translateY(-4px); }
 .vorteil-ico {
   width: 48px; height: 48px; background: var(--accent-pale); border-radius: var(--r-sm);
-  display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center; color: var(--accent); margin-bottom: 16px;
 }
 .vorteil h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 .vorteil p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
@@ -193,7 +193,7 @@
 }
 .info-section-alt .info-card { background: var(--white); }
 .info-card:hover { border-color: var(--accent); box-shadow: 0 8px 28px rgba(232,160,32,.1); transform: translateY(-3px); }
-.info-card-ico { font-size: 22px; margin-bottom: 14px; display: block; }
+.info-card-ico { width: 40px; height: 40px; background: var(--accent-pale); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; color: var(--accent); margin-bottom: 14px; }
 .info-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .info-card p   { font-size: 13px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
 .info-card-note {
@@ -223,7 +223,7 @@
 .tipp-ico {
   width: 46px; height: 46px; background: var(--accent-pale);
   border-radius: var(--r-sm); display: flex; align-items: center;
-  justify-content: center; font-size: 20px; flex-shrink: 0;
+  justify-content: center; color: var(--accent); flex-shrink: 0;
 }
 .tipp-body h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
 .tipp-body p  { font-size: 13px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
@@ -249,7 +249,7 @@
   line-height: 1.8; font-weight: 300;
   transition: max-height .35s ease, padding-bottom .3s;
 }
-.faq-item.open .faq-answer { max-height: 400px; padding-bottom: 22px; }
+.faq-item.open .faq-answer { max-height: 600px; padding-bottom: 22px; }
 
 /* CTA Band */
 .ag-cta-band {
@@ -362,7 +362,7 @@
       <span>Du hast ein aktives Arbeitgeber-Konto – verwalte deine Inserate und Bewerbungen.</span>
     </div>
     <a href="meine-inserate.html" class="btn btn-navy" style="white-space:nowrap;text-decoration:none">
-      📋 Meine Inserate verwalten →
+      Meine Inserate verwalten →
     </a>
   </div>
 </div>
@@ -370,7 +370,7 @@
 <!-- ── FALSCHER ROLE BANNER ── -->
 <div id="ag-wrong-role-banner" class="wrong-role-banner">
   <div class="wrong-role-card">
-    <div class="wrong-role-icon">🔒</div>
+    <div class="wrong-role-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
     <h2>Nur für Arbeitgeber</h2>
     <p>Diese Seite ist für registrierte Arbeitgeber. Dein Konto ist als Jobber registriert.</p>
     <a href="jobs.html" class="btn btn-accent" style="display:inline-block;text-decoration:none">Zur Jobsuche</a>
@@ -390,7 +390,7 @@
     <div>
       <div class="ag-hero-badge">Für Arbeitgeber in Vorarlberg</div>
       <h1>Personal wenn<br>du es brauchst.<br><em>Nicht mehr, nicht weniger.</em></h1>
-      <p class="ag-hero-sub">Kurzfristiger Ausfall, Saisonspitze oder Sondereinsatz? ODOJ liefert geprüfte Arbeitskräfte – schnell, unkompliziert und rechtssicher.</p>
+      <p class="ag-hero-sub">Kurzfristiger Ausfall, Saisonspitze oder Sondereinsatz? ODOJ liefert Arbeitskräfte – schnell und unkompliziert.</p>
       <div class="ag-hero-btns">
         <button onclick="goToInserate()" class="btn btn-accent">
           Zu meinen Inseraten
@@ -403,7 +403,7 @@
     <!-- Floating Cards -->
     <div class="ag-hero-visual" aria-hidden="true">
       <div class="ag-card ag-card-1">
-        <span class="ag-card-tag ag-card-tag-gastro">🍽 Gastronomie</span>
+        <span class="ag-card-tag ag-card-tag-gastro">Gastronomie</span>
         <div class="ag-card-title">Servicekraft gesucht</div>
         <div class="ag-card-sub">Bergrestaurant Hohenems · Sa, 11. April</div>
         <div class="ag-card-row">
@@ -412,7 +412,7 @@
         </div>
       </div>
       <div class="ag-card ag-card-2">
-        <span class="ag-card-tag ag-card-tag-bau">🏗 Bau &amp; Handwerk</span>
+        <span class="ag-card-tag ag-card-tag-bau">Bau &amp; Handwerk</span>
         <div class="ag-card-title">Hilfsarbeiter Baustelle</div>
         <div class="ag-card-sub">Rüf Bau GmbH · Mo, 14. April</div>
         <div class="ag-card-row">
@@ -421,7 +421,7 @@
         </div>
       </div>
       <div class="ag-card ag-card-3">
-        <span class="ag-card-tag ag-card-tag-lager">📦 Lager</span>
+        <span class="ag-card-tag ag-card-tag-lager">Lager</span>
         <div class="ag-card-title">Lagermitarbeiter</div>
         <div class="ag-card-sub">Messe Dornbirn · Fr, 18. April</div>
       </div>
@@ -457,34 +457,59 @@
   </div>
   <div class="vorteile-grid">
     <div class="vorteil fade-in">
-      <div class="vorteil-ico">⚡</div>
+      <div class="vorteil-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
       <h3>Kurzfristig verfügbar</h3>
-      <p>Inserat heute, Personal morgen. Für Notfälle auch am selben Tag – auch an Wochenenden und Feiertagen.</p>
+      <p>Inserat heute, Personal morgen. Für Notfälle auch an Wochenenden und Feiertagen.</p>
     </div>
     <div class="vorteil fade-in">
-      <div class="vorteil-ico">✅</div>
+      <div class="vorteil-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
       <h3>Geprüfte Profile</h3>
-      <p>Alle Bewerber durchlaufen einen Verifizierungsprozess. Erfahrung, Zuverlässigkeit und Referenzen werden geprüft.</p>
+      <p>Verifizierte Adresse, E-Mail und Sozialversicherungsnummer. Bewertungen von Arbeitgebern sorgen für zusätzliche Transparenz.</p>
     </div>
     <div class="vorteil fade-in">
       <div class="vorteil-ico">📄</div>
       <h3>Rechtssicher &amp; einfach</h3>
-      <p>ODOJ übernimmt die Vermittlung – vollständig konform mit österreichischem Arbeitsrecht.</p>
+      <p>ODOJ übernimmt die Vermittlung – <a href="#rechtliches" style="color:var(--accent);font-weight:600;text-decoration:none">rechtliche Hinweise findest du hier</a>. Vollständig konform mit österreichischem Arbeitsrecht.</p>
     </div>
-    <div class="vorteil fade-in">
-      <div class="vorteil-ico">🔁</div>
-      <h3>Stammkräfte aufbauen</h3>
-      <p>Bewährte Mitarbeiter jederzeit wieder anfragen. Schritt für Schritt ein verlässliches Kurzzeit-Team aufbauen.</p>
+  </div>
+</section>
+
+<!-- SEKTION: VERMITTLUNGSGEBÜHR -->
+<section class="info-section info-section-alt" id="gebuehr">
+  <div class="info-section-inner">
+    <div class="fade-in">
+      <span class="section-label">Transparente Kosten</span>
+      <h2 class="section-title">Unsere Vermittlungsgebühr –<br>transparent erklärt</h2>
     </div>
-    <div class="vorteil fade-in">
-      <div class="vorteil-ico">🗺</div>
-      <h3>Regional vernetzt</h3>
-      <p>ODOJ ist in Vorarlberg zu Hause. Wir kennen die lokalen Betriebe, Besonderheiten und die Menschen dahinter.</p>
+    <div style="margin-top:40px;background:var(--accent);border-radius:20px;padding:36px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:20px">
+      <div style="width:60px;height:60px;background:rgba(11,31,58,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(11,31,58,.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;color:var(--navy);line-height:1">€ 15,00</div>
+        <div style="font-size:15px;color:rgba(11,31,58,.65);font-weight:500;margin-top:3px">pro erfolgreich abgeschlossenem Einsatz</div>
+      </div>
+      <div style="flex:1;min-width:220px">
+        <p style="font-size:14px;color:rgba(11,31,58,.7);line-height:1.65;font-weight:300">Diese Gebühr fällt erst an, wenn Sie als Arbeitgeber die Anwesenheit des Jobbers bestätigt haben – also nur bei tatsächlich erbrachter Leistung. <strong style="color:var(--navy)">Keine versteckten Kosten.</strong></p>
+      </div>
     </div>
-    <div class="vorteil fade-in">
-      <div class="vorteil-ico">💬</div>
-      <h3>Persönliche Betreuung</h3>
-      <p>Kein Ticketsystem. Ein persönlicher Ansprechpartner – per Telefon, WhatsApp oder E-Mail, wann immer du ihn brauchst.</p>
+    <div class="info-grid">
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <h3>Wann wird die Gebühr fällig?</h3>
+        <p>Die Gebühr wird automatisch nach Bestätigung der Anwesenheit durch den Arbeitgeber per Stripe eingezogen. Der Lohn wird direkt an den Jobber überwiesen. Sie erhalten eine Rechnung über die Vermittlungsgebühr.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+        <h3>Wie setzt sich die Gebühr zusammen?</h3>
+        <p>Die Vermittlungsgebühr deckt die Plattformkosten: Zahlungsabwicklung (Stripe, ca. 1,5–2 % + € 0,25), Plattform- &amp; Serverkosten, Entwicklung &amp; Wartung sowie Support.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+        <h3>Das Inserieren ist kostenlos</h3>
+        <p>Das Erstellen und Veröffentlichen eines Jobinserats ist für Arbeitgeber vollständig kostenlos. Pro erfolgreich abgeschlossenem Einsatz wird eine Vermittlungsgebühr von € 15,00 fällig.</p>
+        <div class="info-card-note">Keine monatlichen Gebühren, keine Abonnements, keine versteckten Kosten.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -494,7 +519,7 @@
   <div class="fade-in">
     <span class="section-label">So funktioniert's</span>
     <h2 class="section-title">In 4 Schritten zum<br>einsatzbereiten Personal</h2>
-    <p class="section-sub">Von der Registrierung bis zum ersten Arbeitstag – in unter 24 Stunden.</p>
+    <p class="section-sub">Von der Registrierung bis zum ersten Arbeitstag – schnell und unkompliziert.</p>
   </div>
   <div class="ablauf-steps">
     <div class="ablauf-step fade-in">
@@ -507,6 +532,7 @@
       <span class="ablauf-num">SCHRITT 02</span>
       <h4>Job inserieren</h4>
       <p>Datum, Uhrzeit, Branche, Anforderungen und Tagesgehalt angeben – fertig.</p>
+      <p style="font-size:11px;color:var(--accent);font-weight:700;margin-top:8px">Kostenlos inserieren – € 15 Gebühr nur bei Erfolg</p>
       <div class="ablauf-line"></div>
     </div>
     <div class="ablauf-step fade-in">
@@ -518,7 +544,7 @@
     <div class="ablauf-step fade-in">
       <span class="ablauf-num">SCHRITT 04</span>
       <h4>Personal erscheint</h4>
-      <p>Der Mitarbeiter kommt vorbereitet. Abrechnung und Abwicklung direkt über ODOJ.</p>
+      <p>Der Mitarbeiter führt Arbeit aus. Abrechnung und Abwicklung direkt über ODOJ.</p>
       <div class="ablauf-line"></div>
     </div>
   </div>
@@ -535,14 +561,17 @@
 
     <!-- ELDA Info-Block -->
     <div style="background:#EAF4FF;border:1.5px solid #B5D4F4;border-radius:16px;padding:28px 32px;margin:40px 0 8px;display:flex;align-items:flex-start;gap:20px;">
-      <div style="font-size:36px;flex-shrink:0">🛡</div>
+      <div style="flex-shrink:0;width:44px;height:44px;background:#D0E9FF;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#2A6EA6">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
       <div style="flex:1">
         <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#0B1628;margin-bottom:10px">Arbeitnehmer vor dem Einsatz versichern</h3>
         <p style="font-size:14px;color:#3A5070;line-height:1.7;margin-bottom:16px">
           Als Arbeitgeber sind Sie gesetzlich verpflichtet, jeden Mitarbeiter <strong>vor dem ersten Arbeitstag</strong> bei der Sozialversicherung anzumelden. Dies gilt auch für Tageseinsätze über ODOJ. Die Anmeldung erfolgt einfach und schnell über das ELDA-Portal der österreichischen Sozialversicherung.
         </p>
         <a href="https://www.elda.at/eldamamol/" target="_blank" rel="noopener noreferrer" class="elda-btn" style="display:inline-flex;align-items:center;gap:8px;background:#0B1628;color:#fff;padding:12px 24px;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;text-decoration:none;transition:background 0.2s,color 0.2s">
-          🔗 Jetzt auf ELDA anmelden
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Jetzt auf ELDA anmelden
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </a>
         <div style="margin-top:10px;font-size:12px;color:#7A8FA8">elda.at – Offizielles Portal der österreichischen Sozialversicherung</div>
@@ -551,40 +580,49 @@
 
     <div class="info-grid">
       <div class="info-card fade-in">
-        <span class="info-card-ico">📋</span>
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>
         <h3>Anmeldung bei der ÖGK</h3>
         <p>Jeder Tagesarbeiter muss <strong>vor Arbeitsbeginn</strong> bei der Österreichischen Gesundheitskasse (ÖGK) angemeldet werden. Eine Vorabanmeldung am Vortag bis 23:59 Uhr ist möglich.</p>
-        <div class="info-card-note">⚠️ Anmeldung muss vor dem ersten Arbeitstag erfolgen – nicht danach!</div>
+        <div class="info-card-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Anmeldung muss vor dem ersten Arbeitstag erfolgen – nicht danach!</div>
       </div>
       <div class="info-card fade-in">
-        <span class="info-card-ico">🔒</span>
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
         <h3>Pflichtversicherungen</h3>
         <p>Für alle unselbständig Beschäftigten gilt: Kranken-, Unfall-, Pensions- und Arbeitslosenversicherung sind in Österreich gesetzlich vorgeschrieben und müssen vom Arbeitgeber abgeführt werden.</p>
       </div>
       <div class="info-card fade-in">
-        <span class="info-card-ico">📄</span>
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span>
         <h3>Werkvertrag vs. Dienstvertrag</h3>
         <p>Tagesarbeitskräfte werden in der Regel über einen freien Dienstvertrag oder als geringfügig Beschäftigte angestellt. Ein Werkvertrag ist unzulässig, wenn echte Weisungsgebundenheit besteht.</p>
         <div class="info-card-note">ℹ️ Bei Unsicherheit: Rechtsberatung der WKO nutzen.</div>
       </div>
       <div class="info-card fade-in">
-        <span class="info-card-ico">⏱</span>
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
         <h3>Arbeitszeitgesetz (AZG)</h3>
         <p>Ab <strong>6 Stunden</strong> Arbeitszeit sind 30 Minuten Pause Pflicht. Ab <strong>9 Stunden</strong> sind es 45 Minuten. ODOJ weist im Inserierformular automatisch auf Verstöße hin.</p>
       </div>
       <div class="info-card fade-in">
-        <span class="info-card-ico">🏛</span>
-        <h3>WKO Vorarlberg</h3>
-        <p>Die Wirtschaftskammer Vorarlberg bietet kostenlose Rechtsberatung für Betriebe – ideal für Fragen zu Vertragsformen, Kollektivverträgen und kurzfristigen Anstellungen.</p>
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span>
+        <h3><a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">WKO Vorarlberg</a></h3>
+        <p>Die <a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none">Wirtschaftskammer Vorarlberg</a> bietet kostenlose Rechtsberatung für Betriebe – ideal für Fragen zu Vertragsformen, Kollektivverträgen und kurzfristigen Anstellungen.</p>
       </div>
       <div class="info-card fade-in">
-        <span class="info-card-ico">🤝</span>
-        <h3>AK Vorarlberg</h3>
-        <p>Die Arbeiterkammer berät zu Mindestlöhnen, Überstundenregelungen und Urlaubsanspruch. Auch als Arbeitgeber können Sie sich dort über Ihre Pflichten informieren.</p>
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 11l-5-5-5 5"/><path d="M7 17l2.5-2.5a3.536 3.536 0 0 1 5 0L17 17"/><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/></svg></span>
+        <h3><a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">AK Vorarlberg</a></h3>
+        <p>Die <a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none">Arbeiterkammer Vorarlberg</a> berät zu Mindestlöhnen, Überstundenregelungen und Urlaubsanspruch. Auch als Arbeitgeber können Sie sich dort über Ihre Pflichten informieren.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span>
+        <h3>Dienstvertrag Vorlage</h3>
+        <p>Laden Sie unsere kostenlose Muster-Vorlage herunter, füllen Sie die Felder aus und drucken Sie den Vertrag für jeden Einsatz aus. Bitte beachten Sie, dass es sich um eine unverbindliche Vorlage handelt – eine Prüfung durch einen Rechtsexperten wird empfohlen.</p>
+        <a href="Dienstvertrag_ODOJ_Muster.txt" download style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;background:var(--accent-pale);color:var(--accent);border:1px solid rgba(232,160,32,.3);padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Vorlage herunterladen, ausfüllen &amp; ausdrucken
+        </a>
       </div>
     </div>
     <p class="info-disclaimer fade-in">
-      <strong>Wichtiger Hinweis:</strong> ODOJ ist eine Vermittlungsplattform und übernimmt keine Arbeitgeberstellung. Die rechtlich korrekte Anmeldung, Versicherung und Abmeldung der vermittelten Arbeitskräfte liegt ausschließlich in der Verantwortung des Arbeitgebers. Wir empfehlen, bei Unsicherheiten einen Steuerberater, die WKO oder die AK Vorarlberg zu kontaktieren.
+      <strong>Wichtiger Hinweis:</strong> ODOJ ist eine Vermittlungsplattform und übernimmt keine Arbeitgeberstellung. Die rechtlich korrekte Anmeldung, Versicherung und Abmeldung der vermittelten Arbeitskräfte liegt ausschließlich in der Verantwortung des Arbeitgebers. Wir empfehlen, bei Unsicherheiten einen Steuerberater, die <a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600">WKO Vorarlberg</a> oder die <a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600">AK Vorarlberg</a> zu kontaktieren.
     </p>
   </div>
 </section>
@@ -599,42 +637,42 @@
     </div>
     <div class="tipps-grid">
       <div class="tipp-card fade-in">
-        <div class="tipp-ico">📝</div>
+        <div class="tipp-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
         <div class="tipp-body">
           <h3>Klares Briefing vor dem Einsatz</h3>
           <p>Teile dem Jobber vorab mit, wo er erscheinen soll, was er mitbringen muss, welche Kleiderordnung gilt und wer sein Ansprechpartner vor Ort ist. Je klarer das Briefing, desto besser der Start.</p>
         </div>
       </div>
       <div class="tipp-card fade-in">
-        <div class="tipp-ico">💰</div>
+        <div class="tipp-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
         <div class="tipp-body">
-          <h3>Pünktliche Bezahlung</h3>
-          <p>Bezahle den vereinbarten Lohn pünktlich und vollständig. Zuverlässige Bezahlung stärkt deine Reputation auf ODOJ und sorgt dafür, dass gute Jobber wieder bei dir arbeiten möchten.</p>
+          <h3>Automatische Abwicklung</h3>
+          <p>Lohn und Vermittlungsgebühr werden automatisch über Stripe abgewickelt – direkt nach Bestätigung der Anwesenheit. Keine manuelle Überweisung nötig.</p>
         </div>
       </div>
       <div class="tipp-card fade-in">
-        <div class="tipp-ico">⭐</div>
+        <div class="tipp-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
         <div class="tipp-body">
           <h3>Faire Behandlung = bessere Bewertungen</h3>
           <p>Jobber, die sich wertgeschätzt fühlen, geben bessere Bewertungen ab. Ein gutes Rating auf ODOJ hilft dir, bei zukünftigen Inseraten schneller qualifizierte Bewerber zu gewinnen.</p>
         </div>
       </div>
       <div class="tipp-card fade-in">
-        <div class="tipp-ico">🔁</div>
+        <div class="tipp-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
         <div class="tipp-body">
           <h3>Stammkräfte systematisch aufbauen</h3>
-          <p>Merke dir bewährte Jobber und frage sie gezielt für Folgeeinsätze an. Stammkräfte kennen deine Abläufe, brauchen weniger Einarbeitung und sind zuverlässiger als Erstkräfte.</p>
+          <p>Jobber die bereits erfolgreich bei Ihnen gearbeitet haben, können Sie beim nächsten Inserat direkt als Präferenz auswählen. Diese erhalten automatisch eine persönliche Benachrichtigung über Ihr neues Inserat.</p>
         </div>
       </div>
       <div class="tipp-card fade-in">
-        <div class="tipp-ico">📍</div>
+        <div class="tipp-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
         <div class="tipp-body">
           <h3>Genaue Adresse im Inserat</h3>
           <p>Gib im Inserat die genaue Einsatzadresse an. Jobber, die den Weg nicht finden oder zu weit fahren müssen, sagen eher ab. Eine klare Adresse erhöht die Bewerbungsquote spürbar.</p>
         </div>
       </div>
       <div class="tipp-card fade-in">
-        <div class="tipp-ico">🗓</div>
+        <div class="tipp-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
         <div class="tipp-body">
           <h3>Früh inserieren lohnt sich</h3>
           <p>Inserate, die mindestens 3–5 Tage im Voraus veröffentlicht werden, erhalten deutlich mehr Bewerbungen. In dringenden Fällen ist auch eine kurzfristige Besetzung möglich – aber Vorlauf hilft.</p>
@@ -665,56 +703,32 @@
           Was passiert, wenn ein Jobber nicht erscheint?
           <span class="faq-chevron">▾</span>
         </button>
-        <div class="faq-answer">Sollte ein bestätigter Jobber nicht erscheinen, kontaktiere uns sofort über betriebe@odoj.at oder telefonisch. Wir versuchen, kurzfristig einen Ersatz zu organisieren. Jobber, die Einsätze unentschuldigt absagen, werden auf unserer Plattform bewertet und können bei Wiederholung gesperrt werden.</div>
+        <div class="faq-answer">Der Jobber wird erst bezahlt, wenn Sie als Arbeitgeber die Anwesenheit bestätigen. Sollte ein Jobber nicht erscheinen, bitten wir Sie, unser Meldeformular auszufüllen, damit wir den Vorfall dokumentieren können. Bei wiederholten Vorfällen sperren wir den Benutzer von der Plattform.<br><br><a href="nicht-erschienen.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--navy);font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;text-decoration:none;margin-top:4px">Jetzt melden →</a></div>
       </div>
       <div class="faq-item fade-in">
         <button class="faq-question" onclick="toggleFaq(this)">
           Wie funktioniert die Abrechnung?
           <span class="faq-chevron">▾</span>
         </button>
-        <div class="faq-answer">Du gibst im Inserat das Tagesgehalt an, das direkt an den Jobber ausbezahlt wird – dies ist deine Verantwortung als Arbeitgeber. ODOJ stellt nach Bestätigung der Anwesenheit eine separate Vermittlungsrechnung aus. So bleibt alles klar und nachvollziehbar getrennt.</div>
+        <div class="faq-answer">Nach Ihrer Bestätigung der Anwesenheit wird der Lohn des Jobbers sowie die Vermittlungsgebühr von € 15,00 automatisch über Stripe von Ihrem hinterlegten Konto eingezogen. Der Lohn wird direkt an den Jobber überwiesen. Sie erhalten eine Rechnung über die Vermittlungsgebühr.</div>
       </div>
       <div class="faq-item fade-in">
         <button class="faq-question" onclick="toggleFaq(this)">
           Kann ich denselben Jobber wieder buchen?
           <span class="faq-chevron">▾</span>
         </button>
-        <div class="faq-answer">Ja! Du kannst in deinen vergangenen Inseraten sehen, welche Jobber bei dir gearbeitet haben, und sie direkt für neue Inserate anfragen. Gute Jobber zu Stammkräften zu machen ist eines der wichtigsten Features von ODOJ – so sparst du Einarbeitungszeit und hast verlässliche Unterstützung.</div>
-      </div>
-      <div class="faq-item fade-in">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Wie schnell bekomme ich Personal?
-          <span class="faq-chevron">▾</span>
-        </button>
-        <div class="faq-answer">In der Regel innerhalb von 24 Stunden nach Veröffentlichung deines Inserats. Bei kurzfristigen Einsätzen (selber oder nächster Tag) ist es sinnvoll, das Inserat frühzeitig zu veröffentlichen. In dringenden Fällen hilft auch ein direkter Anruf bei uns – wir versuchen, schnell eine Lösung zu finden.</div>
-      </div>
-      <div class="faq-item fade-in">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Welche Branchen kann ich auf ODOJ bedienen?
-          <span class="faq-chevron">▾</span>
-        </button>
-        <div class="faq-answer">Aktuell bietet ODOJ Personal für Gastronomie &amp; Hotel, Bau &amp; Handwerk, Lager &amp; Logistik sowie Veranstaltungen &amp; Events. Das Angebot wird laufend erweitert. Wenn deine Branche noch nicht dabei ist, kontaktiere uns – wir prüfen gerne, ob wir helfen können.</div>
+        <div class="faq-answer">Ja! Beim Erstellen eines neuen Inserats können Sie Jobber die bereits erfolgreich bei Ihnen gearbeitet haben als Präferenz auswählen. Diese erhalten dann automatisch eine persönliche Benachrichtigung über Ihr neues Inserat.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA BAND -->
-<div class="ag-cta-band fade-in">
-  <div>
-    <h2>Bereit, dein erstes Inserat aufzugeben?</h2>
-    <p>Kostenlos registrieren und sofort loslegen.</p>
-  </div>
-  <button onclick="goToInserate()" class="btn btn-navy" style="white-space:nowrap">
-    Zu meinen Inseraten →
-  </button>
-</div>
 
 <!-- ANFRAGE FORM -->
 <section class="anfrage" id="anfrage">
   <span class="section-label">Kontakt</span>
   <h2 class="section-title section-title-white">Persönlich anfragen</h2>
-  <p class="section-sub section-sub-white">Lieber direkt? Füllen Sie das Formular aus – wir melden uns innerhalb von 2 Stunden.</p>
+  <p class="section-sub section-sub-white">Lieber direkt? Füllen Sie das Formular aus – wir melden uns so schnell wie möglich.</p>
   <div class="anfrage-layout">
     <div class="anfrage-card fade-in">
       <h3>Anfrage senden</h3>
@@ -740,15 +754,15 @@
       <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;color:var(--white);margin-bottom:10px;letter-spacing:-.5px">Lieber persönlich?</h3>
       <p style="color:rgba(255,255,255,.5);font-size:15px;font-weight:300;line-height:1.65;max-width:360px">Rufen Sie uns an oder schreiben Sie eine E-Mail. Wir sind für Sie da.</p>
       <div class="contact-list">
-        <div class="contact-item"><div class="ci-icon">📞</div><div><div class="ci-main">+43 (0) 5572 – ODOJ</div><div class="ci-sub">Mo – Fr, 08:00 – 18:00 Uhr</div></div></div>
-        <div class="contact-item"><div class="ci-icon">✉️</div><div><div class="ci-main">betriebe@odoj.at</div><div class="ci-sub">Antwort innerhalb von 2 Stunden</div></div></div>
+        <div class="contact-item"><div class="ci-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.94-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17v-.08z"/></svg></div><div><div class="ci-main">+43 (0) 5572 – ODOJ</div><div class="ci-sub">Mo – Fr, 08:00 – 18:00 Uhr</div></div></div>
+        <div class="contact-item"><div class="ci-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div><div class="ci-main">betriebe@odoj.at</div><div class="ci-sub">Wir melden uns so schnell wie möglich</div></div></div>
       </div>
       <div class="guarantee">
         <h4>Unsere Versprechen</h4>
-        <div class="guarantee-item"><span>✓</span><span>Rückmeldung innerhalb von 2 Stunden</span></div>
-        <div class="guarantee-item"><span>✓</span><span>Nur geprüfte, zuverlässige Mitarbeitende</span></div>
-        <div class="guarantee-item"><span>✓</span><span>Faire, transparente Abrechnung</span></div>
-        <div class="guarantee-item"><span>✓</span><span>Persönlicher Ansprechpartner für Ihr Unternehmen</span></div>
+        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Schnelle Rückmeldung</span></div>
+        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Nur geprüfte, zuverlässige Mitarbeitende</span></div>
+        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Faire, transparente Abrechnung</span></div>
+        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Persönlicher Ansprechpartner für Ihr Unternehmen</span></div>
       </div>
     </div>
   </div>
@@ -843,7 +857,7 @@ function toggleFaq(btn) {
 function submitAnfrage(e) {
   e.preventDefault();
   const btn = document.getElementById('anfBtn');
-  btn.textContent = '✓ Anfrage erhalten! Wir melden uns.';
+  btn.textContent = 'Anfrage erhalten! Wir melden uns.';
   btn.style.background = '#1a8c5c';
   btn.disabled = true;
 }
@@ -854,5 +868,6 @@ const obs = new IntersectionObserver((entries) => {
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 </script>
 <script src="cookies.js"></script>
+<script src="chatbot.js"></script>
 </body>
 </html>
