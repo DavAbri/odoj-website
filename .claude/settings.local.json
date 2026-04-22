@@ -12,7 +12,10 @@
       "Bash(done)",
       "Bash(do)",
       "Bash(sed -i 's|<script src=\"\"auth.js\"\"></script>|<script src=\"\"auth.js\"\"></script>\\\\n<script src=\"\"notifications.js\"\"></script>|' \"$f\")",
-      "Bash(echo \"notifications.js added: $f\")"
+      "Bash(echo \"notifications.js added: $f\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
