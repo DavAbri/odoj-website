@@ -720,42 +720,265 @@ async function loadRechnungen(agId) {
     return;
   }
 
-  const summe = rechnungen.reduce((s, r) => s + Number(r.betrag || 0), 0);
+  const summeLohn    = rechnungen.reduce((s, r) => s + Number(r.lohn_betrag || 0), 0);
+  const summeGebuehr = rechnungen.reduce((s, r) => s + Number(r.vermittlungsgebuehr || r.betrag || 15), 0);
+  const summeGesamt  = rechnungen.reduce((s, r) => s + Number(r.gesamt_betrag || (Number(r.lohn_betrag||0) + Number(r.betrag||15))), 0);
+
+  const fmt = n => Number(n).toLocaleString('de-AT', { minimumFractionDigits: 2 });
 
   bodyEl.innerHTML = `
+    <!-- Summary Cards -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;">
+      <div style="background:var(--off);border:1.5px solid var(--gray-lt);border-radius:12px;padding:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-lt);margin-bottom:8px;">Gezahlte Löhne gesamt</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:var(--navy);">€ ${fmt(summeLohn)}</div>
+      </div>
+      <div style="background:var(--off);border:1.5px solid var(--gray-lt);border-radius:12px;padding:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-lt);margin-bottom:8px;">Vermittlungsgebühren gesamt</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:var(--accent);">€ ${fmt(summeGebuehr)}</div>
+      </div>
+      <div style="background:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.5);margin-bottom:8px;">Gesamtausgaben</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:#fff;">€ ${fmt(summeGesamt)}</div>
+      </div>
+    </div>
+    <!-- Tabelle -->
     <div class="rechnung-table-wrap">
       <table class="rechnung-table">
         <thead>
           <tr>
+            <th>Rechnungsnr.</th>
             <th>Datum</th>
-            <th>Job-Titel</th>
-            <th>Arbeitskraft</th>
-            <th>Betrag</th>
+            <th>Jobber</th>
+            <th>Job</th>
+            <th>Lohn (€)</th>
+            <th>Gebühr (€)</th>
+            <th>Gesamt (€)</th>
             <th>Status</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          ${rechnungen.map(r => {
+          ${rechnungen.map((r, i) => {
             const dat = r.datum
               ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
               : '–';
-            const betrag = Number(r.betrag || 0).toLocaleString('de-AT', { minimumFractionDigits: 2 });
-            return `<tr>
+            const lohn    = fmt(r.lohn_betrag || 0);
+            const gebuehr = fmt(r.vermittlungsgebuehr || r.betrag || 15);
+            const gesamt  = fmt(r.gesamt_betrag || (Number(r.lohn_betrag||0) + Number(r.betrag||15)));
+            const rnr     = r.rechnungsnummer || ('ODOJ-' + String(r.id || i+1).padStart(5,'0'));
+            const bg      = i % 2 === 0 ? '' : 'background:#fafbfd';
+            return `<tr style="${bg}">
+              <td style="font-size:12px;color:var(--text-lt);font-weight:600;">${escH(rnr)}</td>
               <td>${dat}</td>
-              <td>${escH(r.job_titel || '–')}</td>
               <td>${escH(r.jobber_name || '–')}</td>
-              <td class="rechnung-betrag">€ ${betrag}</td>
+              <td>${escH(r.job_titel || '–')}</td>
+              <td class="rechnung-betrag">€ ${lohn}</td>
+              <td style="color:var(--accent);font-weight:700;">€ ${gebuehr}</td>
+              <td class="rechnung-betrag">€ ${gesamt}</td>
               <td><span class="rechnung-status">Bezahlt</span></td>
-              <td><button class="btn-download" onclick='printRechnung(${JSON.stringify(r)})'>⬇ Herunterladen</button></td>
+              <td><button class="btn-download" onclick='printRechnung(${JSON.stringify(r)})'>⬇ PDF</button></td>
             </tr>`;
           }).join('')}
         </tbody>
       </table>
-    </div>
-    <div class="rechnung-summe">
-      Gesamt: <strong>€ ${summe.toLocaleString('de-AT', { minimumFractionDigits: 2 })}</strong>
     </div>`;
+}
+
+// ─────────────────────────────────────────
+// AUSZAHLUNGEN (JOBBER)
+// ─────────────────────────────────────────
+async function loadAuszahlungen(jobberId) {
+  const bodyEl = document.getElementById('auszahlungen-body');
+  if (!bodyEl) return;
+
+  const { data: auszahlungen, error } = await odojSb
+    .from('rechnungen')
+    .select('*')
+    .eq('jobber_id', jobberId)
+    .order('datum', { ascending: false });
+
+  if (error) { bodyEl.innerHTML = `<p style="color:#c0392b;padding:16px">Fehler: ${error.message}</p>`; return; }
+
+  if (!auszahlungen || auszahlungen.length === 0) {
+    bodyEl.innerHTML = `<div class="profil-empty">
+      <div style="margin-bottom:14px;display:flex;justify-content:center"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-lt)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <p>Noch keine Auszahlungen vorhanden.</p>
+    </div>`;
+    return;
+  }
+
+  const summeVerdient = auszahlungen.reduce((s, r) => s + Number(r.lohn_betrag || 0), 0);
+  const anzahlEinsaetze = auszahlungen.length;
+  const fmt = n => Number(n).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+
+  // Firmennamen der Arbeitgeber laden
+  const agIds = [...new Set(auszahlungen.map(r => r.arbeitgeber_id).filter(Boolean))];
+  let agMap = {};
+  if (agIds.length) {
+    const { data: agProfiles } = await odojSb.from('Profile').select('user_id, firmenname, vorname, nachname').in('user_id', agIds);
+    agProfiles?.forEach(p => {
+      agMap[p.user_id] = p.firmenname || [p.vorname, p.nachname].filter(Boolean).join(' ') || '–';
+    });
+  }
+
+  bodyEl.innerHTML = `
+    <!-- Summary Cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
+      <div style="background:var(--navy);border-radius:12px;padding:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.5);margin-bottom:8px;">Gesamt verdient</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;color:#fff;">€ ${fmt(summeVerdient)}</div>
+      </div>
+      <div style="background:var(--off);border:1.5px solid var(--gray-lt);border-radius:12px;padding:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-lt);margin-bottom:8px;">Anzahl Einsätze</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;color:var(--navy);">${anzahlEinsaetze}</div>
+      </div>
+    </div>
+    <!-- Tabelle -->
+    <div class="rechnung-table-wrap">
+      <table class="rechnung-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Arbeitgeber</th>
+            <th>Job</th>
+            <th>Betrag (€)</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${auszahlungen.map((r, i) => {
+            const dat = r.datum
+              ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+              : '–';
+            const betrag = fmt(r.lohn_betrag || 0);
+            const firma  = escH(agMap[r.arbeitgeber_id] || '–');
+            const bg     = i % 2 === 0 ? '' : 'background:#fafbfd';
+            return `<tr style="${bg}">
+              <td>${dat}</td>
+              <td>${firma}</td>
+              <td>${escH(r.job_titel || '–')}</td>
+              <td class="rechnung-betrag">€ ${betrag}</td>
+              <td><span class="rechnung-status">Ausbezahlt</span></td>
+              <td><button class="btn-download" onclick='printAuszahlung(${JSON.stringify(r)}, ${JSON.stringify(agMap[r.arbeitgeber_id]||'')})'>⬇ Nachweis</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function printAuszahlung(r, agFirmaName) {
+  // Jobber-Profil laden
+  let jobberName = r.jobber_name || '';
+  let jobberAdresse = '';
+  if (r.jobber_id) {
+    const { data: jP } = await odojSb.from('Profile').select('vorname,nachname,adresse,adresse_plz,adresse_ort').eq('user_id', r.jobber_id).single();
+    if (jP) {
+      jobberName = jobberName || [jP.vorname, jP.nachname].filter(Boolean).join(' ');
+      jobberAdresse = [jP.adresse, jP.adresse_plz, jP.adresse_ort].filter(Boolean).join(', ');
+    }
+  }
+
+  const datum = r.datum
+    ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+    : new Date().toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const lohnBetrag = Number(r.lohn_betrag || 0);
+  const fmt2 = n => Number(n).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Auszahlungsbestätigung – ${escH(jobberName)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0B1F3A; padding: 60px; max-width: 820px; margin: 0 auto; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; border-bottom: 3px solid #0B1F3A; padding-bottom: 28px; }
+  .logo { font-size: 30px; font-weight: 800; color: #0B1F3A; letter-spacing: -1px; margin-bottom: 8px; }
+  .logo span { color: #E8A020; }
+  .sender-info { font-size: 13px; color: #7A8FA8; line-height: 1.8; }
+  .doc-title { font-size: 30px; font-weight: 800; color: #0B1F3A; }
+  .doc-meta { font-size: 13px; color: #7A8FA8; line-height: 1.9; margin-top: 8px; text-align: right; }
+  .section { margin-bottom: 28px; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #7A8FA8; display: block; margin-bottom: 6px; }
+  .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 32px; }
+  .detail-item { background: #F4F7FB; border-radius: 10px; padding: 16px; }
+  .detail-item label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #7A8FA8; display: block; margin-bottom: 4px; }
+  .detail-item span { font-size: 14px; font-weight: 600; color: #0B1F3A; }
+  .betrag-box { background: #0B1F3A; border-radius: 12px; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+  .betrag-box .label { color: rgba(255,255,255,.6); font-size: 13px; font-weight: 500; }
+  .betrag-box .amount { font-size: 32px; font-weight: 800; color: #fff; }
+  .divider { border: none; border-top: 2px solid #E8EDF5; margin: 28px 0; }
+  .footer-note { font-size: 12px; color: #7A8FA8; line-height: 1.8; }
+  .badge { display: inline-block; background: #E6F5EE; color: #1A7A50; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 100px; text-transform: uppercase; margin-bottom: 24px; }
+  .btn-print { background: #0B1F3A; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 40px; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-print:hover { background: #E8A020; color: #0B1F3A; }
+  @media print { .btn-print { display: none; } body { padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="logo">O<span>D</span>OJ</div>
+    <div class="sender-info">ODOJ OG · Vorarlberg, Österreich<br>hallo@odoj.at · odojweb.netlify.app</div>
+  </div>
+  <div>
+    <div class="doc-title">Auszahlungsbestätigung</div>
+    <div class="doc-meta"><strong>Datum:</strong> ${datum}</div>
+  </div>
+</div>
+
+<span class="badge">✓ Ausbezahlt via Stripe</span>
+
+<div class="section">
+  <span class="section-label">Arbeitskraft</span>
+  <p><strong>${escH(jobberName || '–')}</strong>${jobberAdresse ? '<br>' + escH(jobberAdresse) : ''}</p>
+</div>
+
+<div class="details-grid">
+  <div class="detail-item">
+    <label>Arbeitgeber</label>
+    <span>${escH(agFirmaName || '–')}</span>
+  </div>
+  <div class="detail-item">
+    <label>Job</label>
+    <span>${escH(r.job_titel || '–')}</span>
+  </div>
+  <div class="detail-item">
+    <label>Datum des Einsatzes</label>
+    <span>${datum}</span>
+  </div>
+  <div class="detail-item">
+    <label>Auszahlungsart</label>
+    <span>Stripe (automatisch)</span>
+  </div>
+</div>
+
+<div class="betrag-box">
+  <div class="label">Ausgezahlter Betrag (Netto-Lohn)</div>
+  <div class="amount">€ ${fmt2(lohnBetrag)}</div>
+</div>
+
+<hr class="divider">
+<div class="footer-note">
+  Auszahlung erfolgt über Stripe durch ODOJ.<br>
+  Diese Bestätigung wurde automatisch über die ODOJ-Plattform erstellt.<br><br>
+  Bei Fragen: hallo@odoj.at
+</div>
+
+<button class="btn-print" onclick="window.print()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  Drucken / Speichern als PDF
+</button>
+</body>
+</html>`);
+  win.document.close();
 }
 
 // ─────────────────────────────────────────
@@ -1024,10 +1247,19 @@ function renderJobber(session, profile) {
       </div>
     </div>
 
+    <!-- Meine Auszahlungen -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Meine Auszahlungen</h2>
+      <div id="auszahlungen-body">
+        <div class="profil-loading">Lade Auszahlungen…</div>
+      </div>
+    </div>
+
     <!-- Passwort ändern -->
     ${renderPasswortCard()}`;
 
   loadJobberBewertungen(session.user.id);
+  loadAuszahlungen(session.user.id);
 }
 
 function renderPasswortCard() {
@@ -1345,8 +1577,21 @@ async function printRechnung(r) {
   const datum = r.datum
     ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
     : new Date().toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
-  const betrag = Number(r.betrag || 15).toLocaleString('de-AT', { minimumFractionDigits: 2 });
-  const rechnungsNr = 'ODOJ-' + String(r.id || 0).padStart(5, '0');
+
+  const lohnBetrag    = Number(r.lohn_betrag || 0);
+  const gebuehr       = Number(r.vermittlungsgebuehr || r.betrag || 15);
+  const gesamtBetrag  = Number(r.gesamt_betrag || (lohnBetrag + gebuehr));
+  const rechnungsNr   = r.rechnungsnummer || ('ODOJ-' + String(r.id || 0).padStart(5, '0'));
+
+  const fmt2 = n => Number(n).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+
+  // Adresse des Arbeitgebers laden
+  let agAdresse = '';
+  if (r.arbeitgeber_id) {
+    const { data: agP } = await odojSb.from('Profile').select('firmenname,vorname,nachname,adresse,adresse_plz,adresse_ort').eq('user_id', r.arbeitgeber_id).single();
+    agFirma = agP?.firmenname || [agP?.vorname, agP?.nachname].filter(Boolean).join(' ') || agFirma;
+    agAdresse = [agP?.adresse, agP?.adresse_plz, agP?.adresse_ort].filter(Boolean).join(', ');
+  }
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
@@ -1354,26 +1599,32 @@ async function printRechnung(r) {
 <head>
 <meta charset="UTF-8">
 <title>Rechnung ${rechnungsNr}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0B1F3A; padding: 60px; max-width: 800px; margin: 0 auto; }
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-  .logo { font-size: 28px; font-weight: 800; color: #0B1F3A; letter-spacing: -1px; margin-bottom: 40px; }
+  body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0B1F3A; padding: 60px; max-width: 820px; margin: 0 auto; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; border-bottom: 3px solid #0B1F3A; padding-bottom: 28px; }
+  .logo { font-size: 30px; font-weight: 800; color: #0B1F3A; letter-spacing: -1px; margin-bottom: 8px; }
   .logo span { color: #E8A020; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; }
-  .rechnung-title { font-size: 32px; font-weight: 800; }
-  .meta { font-size: 13px; color: #7A8FA8; line-height: 1.8; }
-  .meta strong { color: #0B1F3A; }
+  .sender-info { font-size: 13px; color: #7A8FA8; line-height: 1.8; }
+  .rechnung-title { font-size: 36px; font-weight: 800; color: #0B1F3A; }
+  .rechnung-meta { font-size: 13px; color: #7A8FA8; line-height: 1.9; margin-top: 8px; text-align: right; }
+  .rechnung-meta strong { color: #0B1F3A; }
   .section { margin-bottom: 32px; }
-  .section label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #7A8FA8; display: block; margin-bottom: 4px; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #7A8FA8; display: block; margin-bottom: 6px; }
   .section p { font-size: 15px; line-height: 1.6; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-  th { text-align: left; padding: 10px 14px; background: #F4F7FB; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #7A8FA8; }
-  td { padding: 14px; border-bottom: 1px solid #E8EDF5; font-size: 14px; }
-  .total-row td { font-size: 17px; font-weight: 700; color: #0B1F3A; border-bottom: none; padding-top: 18px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  th { text-align: left; padding: 11px 16px; background: #0B1F3A; color: #fff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+  th:last-child { text-align: right; }
+  td { padding: 14px 16px; border-bottom: 1px solid #E8EDF5; font-size: 14px; }
+  td:last-child { text-align: right; font-weight: 600; }
+  tr:nth-child(even) td { background: #F8FAFD; }
+  .total-row td { font-size: 18px; font-weight: 800; color: #0B1F3A; border-top: 2px solid #0B1F3A; border-bottom: none; background: #fff !important; padding-top: 18px; }
   .divider { border: none; border-top: 2px solid #E8EDF5; margin: 32px 0; }
-  .footer-note { font-size: 12px; color: #7A8FA8; line-height: 1.7; }
-  .btn-print { background: #0B1F3A; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 40px; font-family: inherit; }
+  .footer-note { font-size: 12px; color: #7A8FA8; line-height: 1.8; }
+  .badge { display: inline-block; background: #E6F5EE; color: #1A7A50; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 100px; text-transform: uppercase; margin-bottom: 24px; }
+  .btn-print { background: #0B1F3A; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 40px; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
   .btn-print:hover { background: #E8A020; color: #0B1F3A; }
   @media print { .btn-print { display: none; } body { padding: 20px; } }
 </style>
@@ -1382,52 +1633,58 @@ async function printRechnung(r) {
 <div class="header">
   <div>
     <div class="logo">O<span>D</span>OJ</div>
-    <div class="meta">
-      <strong>ODOJ OG</strong><br>
-      Vorarlberg, Österreich<br>
-      hallo@odoj.at
-    </div>
+    <div class="sender-info">ODOJ OG · Vorarlberg, Österreich<br>hallo@odoj.at · odojweb.netlify.app</div>
   </div>
-  <div style="text-align:right">
+  <div>
     <div class="rechnung-title">Rechnung</div>
-    <div class="meta" style="margin-top:8px">
+    <div class="rechnung-meta">
       <strong>Rechnungsnummer:</strong> ${rechnungsNr}<br>
       <strong>Datum:</strong> ${datum}
     </div>
   </div>
 </div>
 
+<span class="badge">✓ Bezahlt via Stripe</span>
+
 <div class="section">
-  <label>Rechnungsempfänger</label>
-  <p><strong>${agFirma || 'Arbeitgeber'}</strong></p>
+  <span class="section-label">Rechnungsempfänger</span>
+  <p><strong>${escH(agFirma || 'Arbeitgeber')}</strong>${agAdresse ? '<br>' + escH(agAdresse) : ''}</p>
 </div>
 
 <table>
   <thead>
     <tr>
       <th>Beschreibung</th>
-      <th style="text-align:right">Betrag</th>
+      <th>Betrag</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>Vermittlungsgebühr – ${escH(r.job_titel || 'Tagesjob')} – ${escH(r.jobber_name || '–')} – ${datum}</td>
-      <td style="text-align:right">€ ${betrag}</td>
+      <td>Lohn ${escH(r.jobber_name || '–')} – ${escH(r.job_titel || 'Tagesjob')} – ${datum}</td>
+      <td>€ ${fmt2(lohnBetrag)}</td>
+    </tr>
+    <tr>
+      <td>Vermittlungsgebühr ODOJ</td>
+      <td>€ ${fmt2(gebuehr)}</td>
     </tr>
     <tr class="total-row">
       <td>Gesamt</td>
-      <td style="text-align:right">€ ${betrag}</td>
+      <td>€ ${fmt2(gesamtBetrag)}</td>
     </tr>
   </tbody>
 </table>
 
 <hr class="divider">
 <div class="footer-note">
-  Zahlbar innerhalb von 14 Tagen. Vielen Dank für die Zusammenarbeit mit ODOJ!<br>
+  Zahlung erfolgt automatisch über Stripe.<br>
+  Diese Rechnung wurde automatisch über die ODOJ-Plattform erstellt.<br><br>
   Bei Fragen: hallo@odoj.at
 </div>
 
-<button class="btn-print" onclick="window.print()" style="display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Drucken / Speichern als PDF</button>
+<button class="btn-print" onclick="window.print()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  Drucken / Speichern als PDF
+</button>
 </body>
 </html>`);
   win.document.close();

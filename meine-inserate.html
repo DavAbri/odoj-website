@@ -1339,20 +1339,35 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
 
   const { data: bewData } = await odojSb.from('bewerbungen').select('job_id').eq('id', bewId).single();
   let jobTitel = 'Tagesjob';
+  let lohnBetrag = 0;
   if (bewData?.job_id) {
-    const { data: jobData } = await odojSb.from('jobs').select('titel').eq('id', bewData.job_id).single();
+    const { data: jobData } = await odojSb.from('jobs').select('titel, tagesgehalt').eq('id', bewData.job_id).single();
     if (jobData?.titel) jobTitel = jobData.titel;
+    if (jobData?.tagesgehalt) lohnBetrag = Number(jobData.tagesgehalt) || 0;
   }
+
+  // Rechnungsnummer generieren: ODOJ-YYYY-NNN
+  const year = new Date().getFullYear();
+  const { count: rCount } = await odojSb.from('rechnungen').select('*', { count: 'exact', head: true });
+  const laufNr = String((rCount || 0) + 1).padStart(3, '0');
+  const rechnungsnummer = `ODOJ-${year}-${laufNr}`;
+
+  const vermittlungsgebuehr = 15;
+  const gesamtBetrag = lohnBetrag + vermittlungsgebuehr;
 
   const today = new Date().toISOString().split('T')[0];
   await odojSb.from('rechnungen').insert({
-    arbeitgeber_id: agId,
-    jobber_id:      jobberId,
-    bewerbung_id:   bewId,
-    job_titel:      jobTitel,
-    jobber_name:    jobberName,
-    betrag:         15,
-    datum:          today
+    arbeitgeber_id:     agId,
+    jobber_id:          jobberId,
+    bewerbung_id:       bewId,
+    job_titel:          jobTitel,
+    jobber_name:        jobberName,
+    betrag:             vermittlungsgebuehr,
+    lohn_betrag:        lohnBetrag,
+    vermittlungsgebuehr: vermittlungsgebuehr,
+    gesamt_betrag:      gesamtBetrag,
+    rechnungsnummer:    rechnungsnummer,
+    datum:              today
   });
 
   const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
