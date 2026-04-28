@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dienstvertrag ansehen – ODOJ</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1f3d">
+<link rel="stylesheet" href="shared.css">
+<style>
+.va-body {
+  background: var(--off);
+  min-height: calc(100vh - var(--nav-h));
+  padding: 40px 60px 80px;
+}
+.va-container { max-width: 820px; margin: 0 auto; }
+
+/* Status badges */
+.va-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--r-sm);
+  font-size: 14px; font-weight: 700;
+  margin-bottom: 24px;
+}
+.va-badge-green { background: #E6F5EE; color: #1A7A50; border: 1.5px solid #B3E0CA; }
+.va-badge-orange { background: #FFF8E8; color: #7A4A00; border: 1.5px solid rgba(232,160,32,.3); }
+
+/* Contract document view */
+.va-doc {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-lg);
+  padding: 48px 52px;
+  margin-bottom: 24px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.va-doc-header {
+  text-align: center;
+  padding-bottom: 28px;
+  border-bottom: 2px solid var(--navy);
+  margin-bottom: 32px;
+}
+.va-doc-logo {
+  font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 4px;
+}
+.va-doc-logo span { color: var(--accent); }
+.va-doc-subtitle {
+  font-size: 11px; color: var(--text-lt); letter-spacing: 2px;
+  text-transform: uppercase; font-weight: 600;
+}
+.va-doc-title {
+  font-size: 22px; font-weight: 800; color: var(--navy);
+  margin-top: 20px; letter-spacing: -.5px;
+}
+.va-doc-disclaimer {
+  display: inline-block; margin-top: 8px;
+  background: #FFF8E8; border: 1px solid rgba(232,160,32,.3);
+  border-radius: 6px; padding: 5px 14px;
+  font-size: 11px; color: #7A4A00; font-weight: 600; letter-spacing: .3px;
+}
+
+/* Sections */
+.va-section { margin-bottom: 28px; }
+.va-section-title {
+  font-size: 11px; font-weight: 800; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid var(--gray-lt);
+}
+.va-row {
+  display: grid; grid-template-columns: 180px 1fr;
+  gap: 6px 16px; font-size: 14px;
+  margin-bottom: 6px;
+  align-items: baseline;
+}
+.va-row-label { color: var(--text-lt); font-weight: 600; }
+.va-row-val   { color: var(--text); font-weight: 400; line-height: 1.5; }
+.va-hint-box {
+  background: var(--off);
+  border: 1px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  font-size: 12px; color: var(--text-lt);
+  margin-top: 10px; line-height: 1.6;
+}
+
+/* Signature area */
+.va-sig-area {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 32px; margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1.5px solid var(--gray-lt);
+}
+.va-sig-box { text-align: center; }
+.va-sig-line {
+  height: 1px; background: var(--navy);
+  margin: 40px 0 8px;
+}
+.va-sig-label { font-size: 11px; color: var(--text-lt); font-weight: 600; letter-spacing: .3px; }
+
+/* Warning box */
+.va-warn {
+  background: #FFF8E8;
+  border: 1.5px solid rgba(232,160,32,.4);
+  border-radius: var(--r-md);
+  padding: 18px 22px;
+  font-size: 13px; color: #7A4A00;
+  line-height: 1.7; margin-bottom: 20px;
+}
+
+/* Action card */
+.va-action-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-lg);
+  padding: 32px 36px;
+  margin-bottom: 20px;
+}
+.va-check-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md); padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.va-check-row input[type="checkbox"] {
+  width: 18px; height: 18px; margin-top: 2px; cursor: pointer;
+  flex-shrink: 0; accent-color: var(--navy);
+}
+.va-check-row label { font-size: 14px; color: var(--text); line-height: 1.6; cursor: pointer; }
+.va-btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.va-btn-primary {
+  background: var(--accent); color: var(--navy);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  padding: 13px 24px; border: none;
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background .2s, transform .15s;
+}
+.va-btn-primary:hover { background: var(--accent-lt); transform: translateY(-1px); }
+.va-btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.va-btn-outline {
+  background: transparent; color: var(--navy);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  padding: 13px 24px; border: 2px solid var(--navy);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all .2s; text-decoration: none;
+}
+.va-btn-outline:hover { background: var(--navy); color: var(--white); }
+
+/* Loading */
+.va-loading {
+  min-height: calc(100vh - var(--nav-h));
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px; color: var(--text-lt);
+}
+.va-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--gray-lt); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Print styles */
+@media print {
+  nav, .nav-mobile, .page-hero, #va-actions, .va-warn,
+  footer, #odoj-chatbot, #odoj-cookie-banner { display: none !important; }
+  .va-body { padding: 0 !important; background: white !important; }
+  .va-container { max-width: 100% !important; }
+  .va-doc { border: none !important; padding: 20px !important; box-shadow: none !important; }
+  .va-doc-header { border-bottom: 2px solid #000 !important; }
+}
+
+@media (max-width: 760px) {
+  .va-body { padding: 24px 20px 60px; }
+  .va-doc { padding: 28px 22px; }
+  .va-row { grid-template-columns: 1fr; gap: 2px; }
+  .va-sig-area { grid-template-columns: 1fr; }
+  .va-btn-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ<em>One Day One Job</em></a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"></div>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Vertragsabschluss</span>
+    <h1>Dienstvertrag<br><em>ansehen</em></h1>
+    <p>Prüfen Sie den Vertragsinhalt und bestätigen Sie Ihre Zustimmung.</p>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="va-loading" class="va-loading">
+  <div class="va-spinner"></div>
+  <p>Vertrag wird geladen…</p>
+</div>
+
+<!-- MAIN -->
+<div id="va-main" class="va-body" style="display:none">
+  <div class="va-container">
+
+    <!-- Status Badge -->
+    <div id="va-status-badge"></div>
+
+    <!-- Vertragsdokument -->
+    <div class="va-doc" id="va-doc-content">
+      <div class="va-doc-header">
+        <div class="va-doc-logo">O<span>D</span>OJ</div>
+        <div class="va-doc-subtitle">One Day One Job · Tagesjobvermittlung Vorarlberg</div>
+        <div class="va-doc-title">Dienstvertrag (Tageseinsatz)</div>
+        <div class="va-doc-disclaimer">⚠ Unverbindliche Muster-Vorlage – Nicht rechtsverbindlich</div>
+      </div>
+
+      <!-- Vertragsparteien -->
+      <div class="va-section">
+        <div class="va-section-title">1. Vertragsparteien</div>
+        <p style="font-size:12px;font-weight:700;color:var(--text-lt);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Arbeitgeber</p>
+        <div class="va-row"><span class="va-row-label">Firmenname</span><span class="va-row-val" id="v-firma">–</span></div>
+        <div class="va-row"><span class="va-row-label">Adresse</span><span class="va-row-val" id="v-ag-adr">–</span></div>
+        <p style="font-size:12px;font-weight:700;color:var(--text-lt);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px">Arbeitnehmer</p>
+        <div class="va-row"><span class="va-row-label">Name</span><span class="va-row-val" id="v-jb-name">–</span></div>
+        <div class="va-row"><span class="va-row-label">Adresse</span><span class="va-row-val" id="v-jb-adr">–</span></div>
+        <div class="va-row"><span class="va-row-label">Geburtsdatum</span><span class="va-row-val" id="v-jb-geb">–</span></div>
+        <div class="va-row"><span class="va-row-label">SV-Nummer</span><span class="va-row-val" id="v-jb-sv">–</span></div>
+      </div>
+
+      <!-- Tätigkeit -->
+      <div class="va-section">
+        <div class="va-section-title">2. Tätigkeit &amp; Einsatzort</div>
+        <div class="va-row"><span class="va-row-label">Tätigkeit</span><span class="va-row-val" id="v-taetigkeit">–</span></div>
+        <div class="va-row"><span class="va-row-label">Einsatzort</span><span class="va-row-val" id="v-einsatzort">–</span></div>
+      </div>
+
+      <!-- Zeit -->
+      <div class="va-section">
+        <div class="va-section-title">3. Einsatzzeit</div>
+        <div class="va-row"><span class="va-row-label">Datum</span><span class="va-row-val" id="v-datum">–</span></div>
+        <div class="va-row"><span class="va-row-label">Arbeitsbeginn</span><span class="va-row-val" id="v-von">–</span></div>
+        <div class="va-row"><span class="va-row-label">Arbeitsende</span><span class="va-row-val" id="v-bis">–</span></div>
+        <div class="va-hint-box">
+          Pausenregelung gemäß AZG: Ab 6 Stunden Arbeitszeit sind 30 Minuten Pause Pflicht, ab 9 Stunden 45 Minuten.
+        </div>
+      </div>
+
+      <!-- Entgelt -->
+      <div class="va-section">
+        <div class="va-section-title">4. Entgelt</div>
+        <div class="va-row"><span class="va-row-label">Stundenlohn (brutto)</span><span class="va-row-val" id="v-stundenlohn">–</span></div>
+        <div class="va-hint-box">
+          Die Auszahlung erfolgt nach Einsatzbestätigung durch den Arbeitgeber über die ODOJ-Plattform per Stripe.
+        </div>
+      </div>
+
+      <!-- Sonstige Vereinbarungen -->
+      <div class="va-section" id="v-sonstige-section">
+        <div class="va-section-title">5. Sonstige Vereinbarungen</div>
+        <p id="v-sonstige" style="font-size:14px;color:var(--text);line-height:1.65">–</p>
+      </div>
+
+      <!-- Unterschriften -->
+      <div class="va-sig-area">
+        <div class="va-sig-box">
+          <div id="v-sig-ag-status" style="font-size:11px;color:var(--text-lt);min-height:24px"></div>
+          <div class="va-sig-line"></div>
+          <div class="va-sig-label">Arbeitgeber – Ort, Datum, Unterschrift</div>
+        </div>
+        <div class="va-sig-box">
+          <div id="v-sig-jb-status" style="font-size:11px;color:var(--text-lt);min-height:24px"></div>
+          <div class="va-sig-line"></div>
+          <div class="va-sig-label">Arbeitnehmer – Ort, Datum, Unterschrift</div>
+        </div>
+      </div>
+
+      <p style="margin-top:28px;font-size:11px;color:var(--text-lt);text-align:center;line-height:1.6">
+        ⚠ Unverbindliche Muster-Vorlage – ODOJ übernimmt keine Haftung für rechtliche Vollständigkeit.<br>
+        Bitte ausdrucken und von beiden Parteien <strong>handschriftlich unterschreiben</strong>.
+      </p>
+    </div>
+
+    <!-- AKTIONSBEREICH (für Jobber) -->
+    <div id="va-actions"></div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+let _vaVertrag = null;
+let _vaSession = null;
+let _vaRolle   = null;
+
+(async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const vertragId = params.get('id');
+  if (!vertragId) { alert('Keine Vertrags-ID angegeben.'); window.location.href = 'index.html'; return; }
+
+  const s = await odojGetSession();
+  if (!s) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href); return; }
+  _vaSession = s;
+  _vaRolle   = s.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+
+  const { data: vertrag, error } = await odojSb.from('vertraege').select('*').eq('id', vertragId).single();
+  if (error || !vertrag) { alert('Vertrag nicht gefunden.'); window.location.href = 'index.html'; return; }
+  _vaVertrag = vertrag;
+
+  // Prüfen ob der User Zugriff hat
+  if (vertrag.arbeitgeber_id !== s.user.id && vertrag.jobber_id !== s.user.id) {
+    alert('Sie haben keinen Zugriff auf diesen Vertrag.');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  renderVertrag(vertrag);
+
+  document.getElementById('va-loading').style.display = 'none';
+  document.getElementById('va-main').style.display = 'block';
+})();
+
+function renderVertrag(v) {
+  // Status badge
+  const badgeEl = document.getElementById('va-status-badge');
+  if (v.status === 'beide_zugestimmt') {
+    badgeEl.innerHTML = `<div class="va-badge va-badge-green">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Beide Parteien haben zugestimmt
+    </div>`;
+  } else if (v.status === 'warte_auf_jobber') {
+    badgeEl.innerHTML = `<div class="va-badge va-badge-orange">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Wartet auf Bestätigung durch den Jobber
+    </div>`;
+  }
+
+  // Felder befüllen
+  document.getElementById('v-firma').textContent    = v.firmenname || '–';
+  document.getElementById('v-ag-adr').textContent   = v.arbeitgeber_adresse || '–';
+  document.getElementById('v-jb-name').textContent  = v.jobber_name || '–';
+  document.getElementById('v-jb-adr').textContent   = v.jobber_adresse || '–';
+  document.getElementById('v-taetigkeit').textContent = v.taetigkeitsbeschreibung || '–';
+  document.getElementById('v-einsatzort').textContent = v.einsatzort || '–';
+  document.getElementById('v-von').textContent = v.arbeitszeit_von || '–';
+  document.getElementById('v-bis').textContent = v.arbeitszeit_bis || '–';
+
+  if (v.jobber_geburtsdatum) {
+    const geb = new Date(v.jobber_geburtsdatum);
+    document.getElementById('v-jb-geb').textContent = geb.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+  } else {
+    document.getElementById('v-jb-geb').textContent = '–';
+  }
+  document.getElementById('v-jb-sv').textContent = v.jobber_svnummer || '–';
+
+  if (v.einsatzdatum) {
+    const d = new Date(v.einsatzdatum + 'T00:00:00');
+    document.getElementById('v-datum').textContent = d.toLocaleDateString('de-AT', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  }
+  document.getElementById('v-stundenlohn').textContent = v.stundenlohn ? `€ ${parseFloat(v.stundenlohn).toFixed(2)} / Stunde` : '–';
+
+  if (v.sonstige_vereinbarungen) {
+    document.getElementById('v-sonstige').textContent = v.sonstige_vereinbarungen;
+  } else {
+    document.getElementById('v-sonstige-section').style.display = 'none';
+  }
+
+  // Unterschriften-Status
+  if (v.arbeitgeber_zugestimmt && v.arbeitgeber_zugestimmt_am) {
+    const dt = new Date(v.arbeitgeber_zugestimmt_am).toLocaleDateString('de-AT');
+    document.getElementById('v-sig-ag-status').innerHTML =
+      `<span style="color:#1A7A50;font-weight:700">✓ Digital bestätigt am ${dt}</span>`;
+  }
+  if (v.jobber_zugestimmt && v.jobber_zugestimmt_am) {
+    const dt = new Date(v.jobber_zugestimmt_am).toLocaleDateString('de-AT');
+    document.getElementById('v-sig-jb-status').innerHTML =
+      `<span style="color:#1A7A50;font-weight:700">✓ Digital bestätigt am ${dt}</span>`;
+  }
+
+  // Aktionsbereich
+  const actionsEl = document.getElementById('va-actions');
+  const isJobber = _vaSession?.user?.id === v.jobber_id;
+  const isAg     = _vaSession?.user?.id === v.arbeitgeber_id;
+
+  if (isJobber && !v.jobber_zugestimmt) {
+    actionsEl.innerHTML = `
+      <div class="va-warn">
+        ⚠ Diese digitale Zustimmung ersetzt keine handschriftliche Unterschrift.
+        Für einen rechtsgültigen Vertrag bitte ausdrucken und vor Ort unterschreiben.
+      </div>
+      <div class="va-action-card">
+        <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:16px">
+          Zustimmung zum Vertrag
+        </h2>
+        <div class="va-check-row">
+          <input type="checkbox" id="va-zustimmung">
+          <label for="va-zustimmung">
+            Ich habe den Vertrag gelesen und bestätige meine Zustimmung zum Vertragsinhalt.
+          </label>
+        </div>
+        <div class="va-btn-row">
+          <button class="va-btn-primary" id="va-confirm-btn" onclick="confirmJobberZustimmung()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Zustimmung bestätigen
+          </button>
+          <button class="va-btn-outline" onclick="printVertrag()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Vertrag drucken
+          </button>
+        </div>
+      </div>`;
+  } else if (isJobber && v.jobber_zugestimmt) {
+    actionsEl.innerHTML = `
+      <div class="va-action-card">
+        <div class="va-badge va-badge-green" style="margin-bottom:12px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Ihre Zustimmung wurde gespeichert
+        </div>
+        <p style="font-size:14px;color:var(--text-lt);margin-bottom:20px">
+          Bitte denken Sie daran, den Vertrag für die handschriftliche Unterschrift auszudrucken.
+        </p>
+        <button class="va-btn-outline" onclick="printVertrag()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Vertrag drucken / herunterladen
+        </button>
+      </div>`;
+  } else if (isAg) {
+    const bothConfirmed = v.status === 'beide_zugestimmt';
+    actionsEl.innerHTML = `
+      <div class="va-action-card">
+        ${bothConfirmed ? `<div class="va-badge va-badge-green" style="margin-bottom:16px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Beide Parteien haben zugestimmt
+        </div>` : `<p style="font-size:14px;color:var(--text-lt);margin-bottom:16px">Der Vertrag wartet noch auf die Zustimmung des Jobbers.</p>`}
+        <button class="va-btn-outline" onclick="printVertrag()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Vertrag drucken / herunterladen
+        </button>
+      </div>`;
+  }
+}
+
+async function confirmJobberZustimmung() {
+  const checkbox = document.getElementById('va-zustimmung');
+  if (!checkbox || !checkbox.checked) {
+    showToast('Bitte bestätigen Sie zuerst die Checkbox.', 'warn');
+    return;
+  }
+
+  const btn = document.getElementById('va-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = 'Wird gespeichert…';
+
+  const { error } = await odojSb.from('vertraege').update({
+    jobber_zugestimmt:    true,
+    jobber_zugestimmt_am: new Date().toISOString(),
+    status:               'beide_zugestimmt'
+  }).eq('id', _vaVertrag.id);
+
+  if (error) {
+    showToast('Fehler: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Zustimmung bestätigen';
+    return;
+  }
+
+  // Nachricht an Arbeitgeber senden
+  const vertragLink = window.location.href;
+  const v = _vaVertrag;
+  const nachricht = `✅ Vertragsbestätigung\n\n${v.jobber_name || 'Der Jobber'} hat dem Dienstvertrag für den Einsatz "${v.taetigkeitsbeschreibung || ''}" am ${v.einsatzdatum ? new Date(v.einsatzdatum + 'T00:00:00').toLocaleDateString('de-AT') : ''} zugestimmt.\n\nBitte beachten Sie: Für einen rechtsgültigen Vertrag muss dieser ausgedruckt und von beiden Parteien handschriftlich unterschrieben werden.\n\nVertrag ansehen: ${vertragLink}`;
+
+  await odojSb.from('nachrichten').insert({
+    bewerbung_id:  v.bewerbung_id,
+    sender_id:     _vaSession.user.id,
+    empfaenger_id: v.arbeitgeber_id,
+    nachricht,
+    gelesen:       false,
+    erstellt_am:   new Date().toISOString()
+  });
+
+  showToast('Ihre Zustimmung wurde gespeichert!', 'success');
+  setTimeout(() => window.location.reload(), 1500);
+}
+
+function printVertrag() {
+  window.print();
+}
+</script>
+<script src="cookies.js"></script>
+<script src="chatbot.js"></script>
+</body>
+</html>

@@ -638,6 +638,20 @@ function renderArbeitgeber(session, profile) {
       </div>
     </div>
 
+    <!-- Vertragsarchiv -->
+    <div class="profil-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:0">
+        <h2 class="profil-section-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none">Vertragsarchiv</h2>
+        <button onclick="toggleVertragsarchiv()" id="vertrag-toggle-btn" style="background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:var(--r-sm);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s">
+          <svg width="13" height="13" id="vertrag-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          Anzeigen
+        </button>
+      </div>
+      <div id="vertragsarchiv-body" style="display:none;margin-top:18px;padding-top:18px;border-top:1.5px solid var(--gray-lt)">
+        <div class="profil-loading">Lade Verträge…</div>
+      </div>
+    </div>
+
     <!-- Passwort ändern -->
     ${renderPasswortCard()}`;
 
@@ -1797,6 +1811,82 @@ async function loadJobberBewertungen(userId) {
         </div>`;
       }).join('')}
     </div>` : ''}`;
+}
+
+// ── VERTRAGSARCHIV ──
+let _vertragsarchivLoaded = false;
+let _vertragsarchivOpen = false;
+
+function toggleVertragsarchiv() {
+  const body = document.getElementById('vertragsarchiv-body');
+  const btn  = document.getElementById('vertrag-toggle-btn');
+  const icon = document.getElementById('vertrag-toggle-icon');
+  _vertragsarchivOpen = !_vertragsarchivOpen;
+  body.style.display = _vertragsarchivOpen ? 'block' : 'none';
+  btn.innerHTML = `<svg width="13" height="13" id="vertrag-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="${_vertragsarchivOpen ? '18 15 12 9 6 15' : '6 9 12 15 18 9'}"/></svg> ${_vertragsarchivOpen ? 'Einklappen' : 'Anzeigen'}`;
+  if (_vertragsarchivOpen && !_vertragsarchivLoaded) {
+    loadVertragsarchiv();
+  }
+}
+
+async function loadVertragsarchiv() {
+  const bodyEl = document.getElementById('vertragsarchiv-body');
+  if (!bodyEl) return;
+  _vertragsarchivLoaded = true;
+
+  const s = await odojGetSession();
+  if (!s) { bodyEl.innerHTML = '<p style="color:var(--text-lt);font-size:14px">Nicht eingeloggt.</p>'; return; }
+
+  const { data: vertraege, error } = await odojSb
+    .from('vertraege')
+    .select('id, jobber_name, taetigkeitsbeschreibung, einsatzdatum, status, erstellt_am')
+    .eq('arbeitgeber_id', s.user.id)
+    .order('erstellt_am', { ascending: false });
+
+  if (error) { bodyEl.innerHTML = `<p style="color:#c0392b;font-size:13px">Fehler: ${error.message}</p>`; return; }
+
+  if (!vertraege || vertraege.length === 0) {
+    bodyEl.innerHTML = `<p style="font-size:14px;color:var(--text-lt);padding:8px 0">Noch keine Verträge vorhanden.</p>`;
+    return;
+  }
+
+  const statusLabel = { entwurf: 'Entwurf', warte_auf_jobber: 'Wartet auf Jobber', beide_zugestimmt: 'Beide zugestimmt' };
+  const statusColor = { entwurf: '#7A8FA8', warte_auf_jobber: '#A05000', beide_zugestimmt: '#1A7A50' };
+  const statusBg    = { entwurf: '#F0F3F8', warte_auf_jobber: '#FFF8E8', beide_zugestimmt: '#E6F5EE' };
+
+  bodyEl.innerHTML = `
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 12px;background:var(--off);color:var(--text-lt);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--gray-lt)">Datum</th>
+            <th style="text-align:left;padding:8px 12px;background:var(--off);color:var(--text-lt);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--gray-lt)">Jobber</th>
+            <th style="text-align:left;padding:8px 12px;background:var(--off);color:var(--text-lt);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--gray-lt)">Job</th>
+            <th style="text-align:left;padding:8px 12px;background:var(--off);color:var(--text-lt);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--gray-lt)">Status</th>
+            <th style="text-align:left;padding:8px 12px;background:var(--off);color:var(--text-lt);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--gray-lt)"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${vertraege.map(v => {
+            const datum = v.einsatzdatum
+              ? new Date(v.einsatzdatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+              : new Date(v.erstellt_am).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+            const st    = v.status || 'entwurf';
+            return `<tr>
+              <td style="padding:12px;border-bottom:1px solid var(--gray-lt);color:var(--text)">${datum}</td>
+              <td style="padding:12px;border-bottom:1px solid var(--gray-lt);color:var(--text);font-weight:500">${escH(v.jobber_name || '–')}</td>
+              <td style="padding:12px;border-bottom:1px solid var(--gray-lt);color:var(--text-mid)">${escH(v.taetigkeitsbeschreibung || '–')}</td>
+              <td style="padding:12px;border-bottom:1px solid var(--gray-lt)">
+                <span style="display:inline-block;background:${statusBg[st] || '#F0F3F8'};color:${statusColor[st] || '#7A8FA8'};font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;text-transform:uppercase;letter-spacing:.3px">${statusLabel[st] || st}</span>
+              </td>
+              <td style="padding:12px;border-bottom:1px solid var(--gray-lt)">
+                <a href="vertrag-ansehen.html?id=${v.id}" style="font-size:12px;font-weight:700;color:var(--accent);text-decoration:none">Ansehen →</a>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 async function loadAgBewertungen(userId) {

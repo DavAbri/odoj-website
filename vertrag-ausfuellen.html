@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dienstvertrag ausfüllen – ODOJ</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1f3d">
+<link rel="stylesheet" href="shared.css">
+<style>
+.vf-body {
+  background: var(--off);
+  min-height: calc(100vh - var(--nav-h));
+  padding: 40px 60px 80px;
+}
+.vf-container { max-width: 820px; margin: 0 auto; }
+
+/* Section cards */
+.vf-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-lg);
+  padding: 32px 36px;
+  margin-bottom: 20px;
+}
+.vf-card-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.vf-card-num {
+  width: 26px; height: 26px;
+  background: var(--navy);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+
+/* Grid for fields */
+.vf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.vf-grid-full { grid-column: 1 / -1; }
+
+/* Field */
+.vf-field { display: flex; flex-direction: column; gap: 5px; }
+.vf-field label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase;
+  color: var(--text-lt);
+}
+.vf-field input, .vf-field textarea, .vf-field select {
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; color: var(--text);
+  padding: 11px 14px; outline: none;
+  transition: border-color .2s;
+  width: 100%;
+}
+.vf-field input:focus, .vf-field textarea:focus { border-color: var(--accent); }
+.vf-field input[readonly], .vf-field textarea[readonly] {
+  background: #F0F3F8;
+  color: var(--text-mid);
+  cursor: default;
+}
+.vf-field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+.vf-hint { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
+
+/* Warning box */
+.vf-warn {
+  background: #FFF8E8;
+  border: 1.5px solid rgba(232,160,32,.4);
+  border-radius: var(--r-md);
+  padding: 18px 22px;
+  font-size: 13px;
+  color: #7A4A00;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.vf-warn strong { color: #5A3000; }
+
+/* Checkbox row */
+.vf-check-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--off);
+  border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.vf-check-row input[type="checkbox"] {
+  width: 18px; height: 18px; margin-top: 2px; cursor: pointer; flex-shrink: 0;
+  accent-color: var(--navy);
+}
+.vf-check-row label { font-size: 14px; color: var(--text); line-height: 1.6; cursor: pointer; }
+
+/* Submit btn */
+.vf-submit {
+  width: 100%;
+  background: var(--accent);
+  color: var(--navy);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+  padding: 16px 24px;
+  border: none; border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: background .2s, transform .15s;
+}
+.vf-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
+.vf-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+/* Loading */
+.vf-loading {
+  min-height: calc(100vh - var(--nav-h) - 80px);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px; color: var(--text-lt);
+  padding-top: var(--nav-h);
+}
+.vf-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--gray-lt); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 760px) {
+  .vf-body { padding: 24px 20px 60px; }
+  .vf-card { padding: 24px 20px; }
+  .vf-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>OJ<em>One Day One Job</em></a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"></div>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Vertragsabschluss</span>
+    <h1>Dienstvertrag<br><em>ausfüllen</em></h1>
+    <p>Füllen Sie den Dienstvertrag aus. Die Daten wurden bereits vorausgefüllt.</p>
+  </div>
+</div>
+
+<!-- LOADING STATE -->
+<div id="vf-loading" class="vf-loading" style="display:none">
+  <div class="vf-spinner"></div>
+  <p>Daten werden geladen…</p>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="vf-main" class="vf-body" style="display:none">
+  <div class="vf-container">
+
+    <!-- Hinweis -->
+    <div class="vf-warn">
+      <strong>⚠ Unverbindliche Muster-Vorlage</strong><br>
+      Dieses Dokument dient als Orientierungshilfe. ODOJ übernimmt keine Haftung für die rechtliche Vollständigkeit.
+      Wir empfehlen die Prüfung durch einen Rechtsexperten (WKO Vorarlberg oder AK Vorarlberg).
+      Für eine rechtsgültige Unterschrift muss der Vertrag ausgedruckt und handschriftlich unterschrieben werden.
+    </div>
+
+    <!-- ABSCHNITT 1: VERTRAGSPARTEIEN -->
+    <div class="vf-card">
+      <div class="vf-card-title">
+        <span class="vf-card-num">1</span>
+        Vertragsparteien
+      </div>
+
+      <p style="font-size:13px;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Arbeitgeber</p>
+      <div class="vf-grid" style="margin-bottom:20px">
+        <div class="vf-field">
+          <label>Firmenname</label>
+          <input type="text" id="vf-firma" readonly>
+        </div>
+        <div class="vf-field">
+          <label>Firmenbuchnummer (editierbar)</label>
+          <input type="text" id="vf-firmenbuch" placeholder="z.B. FN 123456a">
+        </div>
+        <div class="vf-field vf-grid-full">
+          <label>Adresse des Arbeitgebers</label>
+          <input type="text" id="vf-ag-adresse" readonly>
+        </div>
+      </div>
+
+      <p style="font-size:13px;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Arbeitnehmer (Jobber)</p>
+      <div class="vf-grid">
+        <div class="vf-field">
+          <label>Vor- und Nachname</label>
+          <input type="text" id="vf-jobber-name" readonly>
+        </div>
+        <div class="vf-field">
+          <label>Geburtsdatum</label>
+          <input type="text" id="vf-jobber-geburtsdatum" readonly>
+        </div>
+        <div class="vf-field vf-grid-full">
+          <label>Adresse des Arbeitnehmers</label>
+          <input type="text" id="vf-jobber-adresse" readonly>
+        </div>
+        <div class="vf-field">
+          <label>Sozialversicherungsnummer</label>
+          <input type="text" id="vf-jobber-sv" readonly>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABSCHNITT 2: TÄTIGKEIT -->
+    <div class="vf-card">
+      <div class="vf-card-title">
+        <span class="vf-card-num">2</span>
+        Tätigkeit & Einsatzort
+      </div>
+      <div class="vf-grid">
+        <div class="vf-field vf-grid-full">
+          <label>Tätigkeitsbeschreibung</label>
+          <textarea id="vf-taetigkeit" rows="3" placeholder="Beschreibung der Tätigkeit"></textarea>
+        </div>
+        <div class="vf-field vf-grid-full">
+          <label>Einsatzort</label>
+          <input type="text" id="vf-einsatzort" placeholder="Adresse des Einsatzorts">
+        </div>
+      </div>
+    </div>
+
+    <!-- ABSCHNITT 3: EINSATZZEIT -->
+    <div class="vf-card">
+      <div class="vf-card-title">
+        <span class="vf-card-num">3</span>
+        Einsatzzeit
+      </div>
+      <div class="vf-grid">
+        <div class="vf-field">
+          <label>Einsatzdatum</label>
+          <input type="text" id="vf-datum" readonly>
+        </div>
+        <div class="vf-field">
+          <label>Arbeitsbeginn</label>
+          <input type="text" id="vf-von" readonly>
+        </div>
+        <div class="vf-field">
+          <label>Arbeitsende (geplant)</label>
+          <input type="text" id="vf-bis" readonly>
+        </div>
+      </div>
+      <p class="vf-hint" style="margin-top:12px">
+        ℹ Pausenregelung gemäß AZG: Ab 6 Stunden Arbeitszeit sind 30 Minuten Pause Pflicht, ab 9 Stunden 45 Minuten.
+      </p>
+    </div>
+
+    <!-- ABSCHNITT 4: ENTGELT -->
+    <div class="vf-card">
+      <div class="vf-card-title">
+        <span class="vf-card-num">4</span>
+        Entgelt
+      </div>
+      <div class="vf-grid">
+        <div class="vf-field">
+          <label>Tagesgehalt (brutto)</label>
+          <input type="text" id="vf-tagesgehalt" readonly>
+        </div>
+        <div class="vf-field">
+          <label>Stundenlohn (brutto)</label>
+          <input type="text" id="vf-stundenlohn" readonly>
+        </div>
+      </div>
+      <p class="vf-hint" style="margin-top:12px">
+        ℹ Die Auszahlung erfolgt nach Einsatzbestätigung direkt über die ODOJ-Plattform per Stripe.
+        Der Betrag wird nach Bestätigung der Anwesenheit durch den Arbeitgeber überwiesen.
+      </p>
+    </div>
+
+    <!-- ABSCHNITT 5: SONSTIGE VEREINBARUNGEN -->
+    <div class="vf-card">
+      <div class="vf-card-title">
+        <span class="vf-card-num">5</span>
+        Sonstige Vereinbarungen
+      </div>
+      <div class="vf-field">
+        <label>Weitere Vereinbarungen (optional)</label>
+        <textarea id="vf-sonstiges" rows="5"
+          placeholder="z.B. Arbeitskleidung (schwarze Hose, weißes Hemd), Verhalten am Arbeitsplatz, Verschwiegenheitspflicht, besondere Anforderungen…"></textarea>
+      </div>
+    </div>
+
+    <!-- ABSCHNITT 6: ZUSTIMMUNG -->
+    <div class="vf-check-row">
+      <input type="checkbox" id="vf-zustimmung">
+      <label for="vf-zustimmung">
+        Ich bestätige, dass alle eingetragenen Daten korrekt sind und stimme dem Vertragsinhalt zu.
+        Ich bin mir bewusst, dass diese digitale Zustimmung keine handschriftliche Unterschrift ersetzt.
+      </label>
+    </div>
+
+    <button class="vf-submit" id="vf-submit-btn" onclick="submitVertrag()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Vertrag speichern &amp; an Jobber senden
+    </button>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+const SUPABASE_URL = 'https://vixarulzbsfwnbfucbih.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9';
+
+let _vfSession = null;
+let _vfBewerbungId = null;
+let _vfJobId = null;
+let _vfJobberId = null;
+let _vfArbeitgeberId = null;
+let _vfJobData = null;
+let _vfAgProfile = null;
+let _vfJobberProfile = null;
+
+(async function init() {
+  document.getElementById('vf-loading').style.display = 'flex';
+
+  const params = new URLSearchParams(window.location.search);
+  _vfBewerbungId = params.get('bewerbung_id');
+  if (!_vfBewerbungId) {
+    alert('Keine Bewerbungs-ID angegeben.');
+    window.location.href = 'meine-inserate.html';
+    return;
+  }
+
+  const s = await odojGetSession();
+  if (!s) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href); return; }
+  _vfSession = s;
+
+  const rolle = s.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+  if (rolle !== 'arbeitgeber') {
+    alert('Diese Seite ist nur für Arbeitgeber zugänglich.');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  // Bewerbung laden
+  const { data: bew } = await odojSb.from('bewerbungen')
+    .select('jobber_id, job_id, arbeitgeber_id')
+    .eq('id', _vfBewerbungId).single();
+
+  if (!bew) { alert('Bewerbung nicht gefunden.'); window.location.href = 'meine-inserate.html'; return; }
+  _vfJobId       = bew.job_id;
+  _vfJobberId    = bew.jobber_id;
+  _vfArbeitgeberId = bew.arbeitgeber_id || s.user.id;
+
+  // Alle Daten parallel laden
+  const [agRes, jobberRes, jobRes] = await Promise.all([
+    odojSb.from('Profile').select('firmenname, adresse, adresse_plz, adresse_ort').eq('user_id', _vfArbeitgeberId).single(),
+    odojSb.from('Profile').select('vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum').eq('user_id', _vfJobberId).single(),
+    odojSb.from('jobs').select('titel, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundenanzahl, adresse, ort').eq('id', _vfJobId).single()
+  ]);
+
+  _vfAgProfile     = agRes.data;
+  _vfJobberProfile = jobberRes.data;
+  _vfJobData       = jobRes.data;
+
+  fillForm();
+
+  document.getElementById('vf-loading').style.display = 'none';
+  document.getElementById('vf-main').style.display = 'block';
+})();
+
+function fillForm() {
+  const ag = _vfAgProfile || {};
+  const jb = _vfJobberProfile || {};
+  const job = _vfJobData || {};
+
+  // Arbeitgeber
+  document.getElementById('vf-firma').value    = ag.firmenname || '';
+  const agAdr = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
+  document.getElementById('vf-ag-adresse').value = agAdr;
+
+  // Jobber
+  document.getElementById('vf-jobber-name').value = [jb.vorname, jb.nachname].filter(Boolean).join(' ');
+  document.getElementById('vf-jobber-sv').value   = jb.svnummer || '–';
+  if (jb.geburtsdatum) {
+    const geb = new Date(jb.geburtsdatum);
+    document.getElementById('vf-jobber-geburtsdatum').value =
+      geb.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+  const jbAdr = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
+  document.getElementById('vf-jobber-adresse').value = jbAdr;
+
+  // Tätigkeit
+  document.getElementById('vf-taetigkeit').value = job.titel || '';
+  document.getElementById('vf-einsatzort').value  = [job.adresse, job.ort].filter(Boolean).join(', ');
+
+  // Zeit
+  if (job.datum) {
+    const d = new Date(job.datum + 'T00:00:00');
+    document.getElementById('vf-datum').value = d.toLocaleDateString('de-AT', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  }
+  document.getElementById('vf-von').value = job.uhrzeit_von || '';
+  document.getElementById('vf-bis').value = job.uhrzeit_bis || '';
+
+  // Entgelt
+  const tagesgehalt = parseFloat(job.tagesgehalt) || 0;
+  const stunden = parseFloat(job.stundenanzahl) || 8;
+  const stundenlohn = stunden > 0 ? (tagesgehalt / stunden).toFixed(2) : '–';
+  document.getElementById('vf-tagesgehalt').value = `€ ${tagesgehalt.toFixed(2)}`;
+  document.getElementById('vf-stundenlohn').value = `€ ${stundenlohn} / Stunde`;
+}
+
+async function submitVertrag() {
+  const checkbox = document.getElementById('vf-zustimmung');
+  if (!checkbox.checked) {
+    showToast('Bitte bestätigen Sie zuerst die Checkbox.', 'warn');
+    return;
+  }
+
+  const btn = document.getElementById('vf-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Wird gespeichert…';
+
+  const ag = _vfAgProfile || {};
+  const jb = _vfJobberProfile || {};
+  const job = _vfJobData || {};
+
+  const agAdr = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
+  const jbAdr = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
+  const stunden = parseFloat(job.stundenanzahl) || 8;
+  const tagesgehalt = parseFloat(job.tagesgehalt) || 0;
+  const stundenlohn = stunden > 0 ? parseFloat((tagesgehalt / stunden).toFixed(2)) : 0;
+
+  const vertragData = {
+    bewerbung_id:            _vfBewerbungId,
+    job_id:                  _vfJobId,
+    arbeitgeber_id:          _vfArbeitgeberId,
+    jobber_id:               _vfJobberId,
+    firmenname:              ag.firmenname || '',
+    arbeitgeber_adresse:     agAdr,
+    jobber_name:             [jb.vorname, jb.nachname].filter(Boolean).join(' '),
+    jobber_adresse:          jbAdr,
+    jobber_geburtsdatum:     jb.geburtsdatum || '',
+    jobber_svnummer:         jb.svnummer || '',
+    taetigkeitsbeschreibung: document.getElementById('vf-taetigkeit').value.trim(),
+    einsatzort:              document.getElementById('vf-einsatzort').value.trim(),
+    einsatzdatum:            job.datum || '',
+    arbeitszeit_von:         job.uhrzeit_von || '',
+    arbeitszeit_bis:         job.uhrzeit_bis || '',
+    stundenlohn:             stundenlohn,
+    sonstige_vereinbarungen: document.getElementById('vf-sonstiges').value.trim(),
+    status:                  'warte_auf_jobber',
+    arbeitgeber_zugestimmt:  true,
+    arbeitgeber_zugestimmt_am: new Date().toISOString()
+  };
+
+  const { data: vertrag, error } = await odojSb.from('vertraege').insert(vertragData).select().single();
+
+  if (error) {
+    showToast('Fehler beim Speichern: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Vertrag speichern & an Jobber senden';
+    return;
+  }
+
+  // Nachricht an Jobber senden
+  const vertragLink = `${window.location.origin}/vertrag-ansehen.html?id=${vertrag.id}`;
+  const nachricht = `📋 Neuer Dienstvertrag zur Überprüfung\n\nDer Arbeitgeber ${ag.firmenname || 'ODOJ'} hat einen Dienstvertrag für Ihren Einsatz "${job.titel || 'Ihren Einsatz'}" am ${job.datum ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT') : ''} erstellt und zur Überprüfung freigegeben.\n\nBitte öffnen Sie den Vertrag, prüfen Sie die Daten und bestätigen Sie Ihre Zustimmung:\n${vertragLink}\n\n⚠ Für die rechtsgültige Unterschrift muss der Vertrag ausgedruckt und handschriftlich unterschrieben werden.`;
+
+  await odojSb.from('nachrichten').insert({
+    bewerbung_id:  _vfBewerbungId,
+    sender_id:     _vfSession.user.id,
+    empfaenger_id: _vfJobberId,
+    nachricht,
+    gelesen:       false,
+    erstellt_am:   new Date().toISOString()
+  });
+
+  showToast('Vertrag gespeichert und an Jobber gesendet!', 'success');
+  setTimeout(() => { window.location.href = 'meine-inserate.html?vertrag=gesendet'; }, 1800);
+}
+</script>
+<script src="cookies.js"></script>
+<script src="chatbot.js"></script>
+</body>
+</html>
