@@ -74,8 +74,20 @@ nav {
   letter-spacing: -.5px;
   text-decoration: none;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  gap: 4px;
 }
 .nav-logo span { color: var(--accent); }
+.nav-logo em {
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.4);
+}
 
 .nav-links {
   display: flex;
