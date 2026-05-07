@@ -33,7 +33,7 @@
   --sh-sm: 0 2px 12px rgba(11,31,58,.08);
   --sh-md: 0 8px 32px rgba(11,31,58,.14);
   --sh-lg: 0 20px 60px rgba(11,31,58,.18);
-  --nav-h: 68px;
+  --nav-h: 72px;
 }
 
 html { scroll-behavior: smooth; font-size: 16px; }
@@ -68,7 +68,7 @@ nav {
 
 .nav-logo {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 27px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--white);
   letter-spacing: -.5px;
@@ -77,22 +77,24 @@ nav {
   display: flex;
   flex-direction: column;
   line-height: 1;
-  gap: 4px;
+  gap: 5px;
+  white-space: nowrap;
 }
 .nav-logo span { color: var(--accent); }
 .nav-logo em {
   font-style: normal;
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 600;
-  letter-spacing: 2.5px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.4);
+  color: rgba(255,255,255,.38);
+  white-space: nowrap;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 28px;
   list-style: none;
 }
 
@@ -508,6 +510,16 @@ footer {
 /* ══════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  nav { padding: 0 36px; }
+  .nav-links { gap: 20px; }
+}
+@media (max-width: 1050px) {
+  nav { padding: 0 24px; }
+  .nav-links { gap: 16px; }
+  .nav-links a { font-size: 13px; }
+  .nav-cta { padding: 8px 16px !important; }
+}
 @media (max-width: 900px) {
   nav { padding: 0 24px; }
   .nav-links { display: none; }
