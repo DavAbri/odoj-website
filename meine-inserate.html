@@ -1546,10 +1546,25 @@ function overlayBgClick(e) {
   if (e.target === document.getElementById('bew-overlay')) closeBewOverlay();
 }
 
-async function deleteInserat(id) {
-  if (!confirm('Inserat wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
-  const { error } = await odojSb.from('jobs').delete().eq('id', id);
-  if (error) { alert('Fehler beim Löschen: ' + error.message); return; }
+let _deleteInseratId = null;
+
+function deleteInserat(id) {
+  _deleteInseratId = id;
+  document.getElementById('delete-overlay').style.display = 'flex';
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-overlay').style.display = 'none';
+  _deleteInseratId = null;
+}
+
+async function confirmDeleteInserat() {
+  if (!_deleteInseratId) return;
+  const btn = document.getElementById('delete-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Wird gelöscht…';
+  const { error } = await odojSb.from('jobs').delete().eq('id', _deleteInseratId);
+  if (error) { alert('Fehler beim Löschen: ' + error.message); btn.disabled = false; btn.textContent = 'Löschen'; return; }
+  closeDeleteModal();
   loadInserate();
 }
 
@@ -1908,6 +1923,21 @@ function closeStammkraefteModal() {
 </script>
 <script src="cookies.js"></script>
 <script src="chatbot.js"></script>
+
+<!-- LÖSCHEN BESTÄTIGEN MODAL -->
+<div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeDeleteModal()">
+  <div style="background:var(--white);border-radius:20px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:36px 32px;text-align:center">
+    <div style="width:56px;height:56px;background:#fff0f0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </div>
+    <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:var(--navy);margin-bottom:10px">Inserat löschen?</h3>
+    <p style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:28px">Das Inserat und alle zugehörigen Bewerbungen werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <div style="display:flex;gap:10px">
+      <button id="delete-confirm-btn" onclick="confirmDeleteInserat()" style="flex:1;background:#c0392b;color:#fff;border:none;border-radius:var(--r-sm);padding:14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s" onmouseover="this.style.background='#a93226'" onmouseout="this.style.background='#c0392b'">Löschen</button>
+      <button onclick="closeDeleteModal()" style="flex:1;background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);border-radius:var(--r-sm);padding:14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--navy)';this.style.color='var(--navy)'" onmouseout="this.style.borderColor='var(--gray-lt)';this.style.color='var(--text-mid)'">Abbrechen</button>
+    </div>
+  </div>
+</div>
 
 <!-- VERTRAGS-MODAL -->
 <div id="vertrag-modal" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1000;backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px">
