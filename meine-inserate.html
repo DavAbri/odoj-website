@@ -1870,12 +1870,11 @@ async function openStammkraefteModal() {
   document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>';
 
   try {
-    // Alle bestätigten (anwesenheit_bestaetigt = true) Bewerbungen des AG laden
+    // Alle abgeschlossenen Einsätze des AG laden (anwesenheit_bestaetigt = true)
     const { data: bews } = await odojSb
       .from('bewerbungen')
       .select('jobber_id, created_at')
       .eq('arbeitgeber_id', _agSession.user.id)
-      .eq('status', 'angenommen')
       .eq('anwesenheit_bestaetigt', true);
 
     if (!bews || bews.length === 0) {
