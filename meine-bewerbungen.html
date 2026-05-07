@@ -132,6 +132,73 @@
   border: 1.5px solid var(--gray-lt);
 }
 .mj-card-btn-detail:hover { border-color: var(--navy); color: var(--navy); }
+.mj-card-btn-withdraw {
+  background: transparent; color: #c0392b;
+  border: 1.5px solid #f5c6c0;
+}
+.mj-card-btn-withdraw:hover { background: #fff0f0; border-color: #c0392b; }
+
+/* ── ZURÜCKZIEHEN MODAL ── */
+.withdraw-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  z-index: 9100; display: flex;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.withdraw-modal {
+  background: var(--white); border-radius: 18px;
+  padding: 36px 32px; max-width: 480px; width: 100%;
+  box-shadow: 0 24px 80px rgba(0,0,0,.3);
+}
+.withdraw-modal h3 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 19px; font-weight: 800; color: var(--navy);
+  margin-bottom: 6px;
+}
+.withdraw-modal > p { font-size: 13px; color: var(--text-lt); margin-bottom: 20px; }
+.withdraw-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.withdraw-opt {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: var(--r-sm);
+  border: 1.5px solid var(--gray-lt); cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.withdraw-opt:hover { border-color: var(--navy); background: var(--off); }
+.withdraw-opt input[type="radio"] { margin-top: 2px; flex-shrink: 0; accent-color: var(--navy); }
+.withdraw-opt label { font-size: 14px; color: var(--text); cursor: pointer; line-height: 1.4; }
+.withdraw-custom-wrap { margin-bottom: 20px; }
+.withdraw-custom-wrap label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  color: var(--text-lt); margin-bottom: 6px;
+}
+.withdraw-custom-wrap textarea {
+  width: 100%; box-sizing: border-box;
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm); padding: 10px 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; resize: vertical; min-height: 80px;
+  outline: none; transition: border-color .2s;
+}
+.withdraw-custom-wrap textarea:focus { border-color: var(--accent); }
+.withdraw-modal-btns { display: flex; gap: 10px; }
+.withdraw-confirm-btn {
+  flex: 1; background: #c0392b; color: #fff; border: none;
+  border-radius: var(--r-sm); padding: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: background .2s;
+}
+.withdraw-confirm-btn:hover { background: #a93226; }
+.withdraw-confirm-btn:disabled { opacity: .6; cursor: not-allowed; }
+.withdraw-cancel-btn {
+  background: transparent; border: 1.5px solid var(--gray-lt);
+  color: var(--text-mid); border-radius: var(--r-sm); padding: 13px 20px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.withdraw-cancel-btn:hover { border-color: var(--navy); color: var(--navy); }
 
 /* ── MEHR ANZEIGEN ── */
 .mj-mehr-btn {
@@ -317,6 +384,8 @@
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
+let _bewMap = {}, _jobMap = {};
+
 const BRANCHEN = {
   gastro: { label: 'Gastronomie',        cls: 'tag-gastro' },
   bau:    { label: 'Bau & Handwerk',     cls: 'tag-bau'    },
@@ -362,6 +431,7 @@ function renderCard(b, job, opts = {}) {
       <div class="mj-card-actions">
         ${opts.showChat ? `<a href="${chatHref}" class="mj-card-btn mj-card-btn-chat" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Chat</a>` : ''}
         <a href="${jobDetailHref}" class="mj-card-btn mj-card-btn-detail" onclick="event.stopPropagation()">Details →</a>
+        ${opts.showWithdraw ? `<button class="mj-card-btn mj-card-btn-withdraw" onclick="event.stopPropagation();openZurueckziehenModal('${b.id}','${escH(job?.titel||'')}','${b.status}')">Zurückziehen</button>` : ''}
       </div>
     </div>`;
 }
@@ -402,6 +472,10 @@ async function loadMeineBewerbungen() {
     return;
   }
 
+  // Globale Map für Modal-Zugriff
+  _bewMap = {};
+  bewerbungen.forEach(b => { _bewMap[b.id] = b; });
+
   // Job-Details laden
   const jobIds = [...new Set(bewerbungen.map(b => b.job_id).filter(Boolean))];
   let jobMap = {};
@@ -411,6 +485,7 @@ async function loadMeineBewerbungen() {
       .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,uhrzeit_von,uhrzeit_bis,plaetze,mindestalter,arbeitgeber_id')
       .in('id', jobIds);
     jobs?.forEach(j => { jobMap[j.id] = j; });
+    _jobMap = jobMap;
   }
 
   // Echte Firmennamen aus Profile laden (Jobber sieht Firmenname des Arbeitgebers)
@@ -466,8 +541,8 @@ async function loadMeineBewerbungen() {
       : '');
   }
 
-  fillCol('col-offen',        offen,        '', 'Keine offenen Bewerbungen',         {});
-  fillCol('col-anstehend',    anstehend,    '', 'Noch keine angenommenen Einsätze',  { showChat: true });
+  fillCol('col-offen',        offen,        '', 'Keine offenen Bewerbungen',         { showWithdraw: true });
+  fillCol('col-anstehend',    anstehend,    '', 'Noch keine angenommenen Einsätze',  { showChat: true, showWithdraw: true });
   fillCol('col-abgelehnt',    abgelehnt,    '', 'Keine abgelehnten Bewerbungen',     { muted: true });
   fillCol('col-abgeschlossen',abgeschlossen,'', 'Noch keine abgeschlossenen Einsätze',{ showChat: true, muted: true });
 
@@ -486,8 +561,127 @@ function showMore(colId, btn) {
   if (btn)  btn.style.display  = 'none';
 }
 
+// ── ZURÜCKZIEHEN MODAL ──────────────────────────────────────
+let _withdrawBewId = null, _withdrawBewStatus = null;
+
+function openZurueckziehenModal(bewId, jobTitle, bewStatus) {
+  _withdrawBewId     = bewId;
+  _withdrawBewStatus = bewStatus;
+  document.getElementById('withdraw-job-name').textContent = jobTitle || 'diesen Job';
+  document.querySelectorAll('input[name="withdraw-reason"]').forEach(r => r.checked = false);
+  document.getElementById('withdraw-custom').value = '';
+  document.getElementById('withdraw-overlay').style.display = 'flex';
+}
+
+function closeZurueckziehenModal() {
+  document.getElementById('withdraw-overlay').style.display = 'none';
+}
+
+async function submitZurueckziehen() {
+  const selected = document.querySelector('input[name="withdraw-reason"]:checked');
+  const custom   = document.getElementById('withdraw-custom').value.trim();
+  const reason   = selected?.value === 'sonstiges' ? (custom || 'Kein Grund angegeben') : selected?.value;
+  if (!reason) { alert('Bitte wähle einen Grund aus.'); return; }
+
+  const btn = document.getElementById('withdraw-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Wird zurückgezogen…';
+
+  const session = await odojGetSession();
+  if (!session) return;
+
+  const bew = _bewMap[_withdrawBewId];
+  const job = bew ? _jobMap[bew.job_id] : null;
+  const wasAngenommen = _withdrawBewStatus === 'angenommen';
+
+  // 1. Bewerbung auf abgelehnt setzen
+  const { error: updErr } = await odojSb
+    .from('bewerbungen')
+    .update({ status: 'abgelehnt' })
+    .eq('id', _withdrawBewId);
+
+  if (updErr) { alert('Fehler: ' + updErr.message); btn.disabled = false; btn.textContent = 'Zurückziehen'; return; }
+
+  // 2. Wenn 'angenommen' war → Jobvertrag ggf. auch auf abgelehnt setzen
+  if (wasAngenommen) {
+    await odojSb
+      .from('vertraege')
+      .update({ status: 'abgelehnt_jobber' })
+      .eq('bewerbung_id', _withdrawBewId)
+      .neq('status', 'beide_zugestimmt');
+  }
+
+  // 3. Nachricht an Arbeitgeber senden
+  if (job?.arbeitgeber_id) {
+    // Chat-Raum finden oder erstellen
+    let raumId = null;
+    const { data: raeume } = await odojSb
+      .from('nachrichten_raeume')
+      .select('id')
+      .eq('bewerbung_id', _withdrawBewId)
+      .limit(1);
+    if (raeume && raeume.length > 0) {
+      raumId = raeume[0].id;
+    } else {
+      const { data: newRaum } = await odojSb
+        .from('nachrichten_raeume')
+        .insert({ bewerbung_id: _withdrawBewId, jobber_id: session.user.id, arbeitgeber_id: job.arbeitgeber_id })
+        .select('id').single();
+      raumId = newRaum?.id;
+    }
+    if (raumId) {
+      const jobTitle = job.titel || 'dem Job';
+      await odojSb.from('nachrichten').insert({
+        raum_id: raumId,
+        sender_id: session.user.id,
+        nachricht: `❌ Bewerbung zurückgezogen\n\nDer Jobber hat seine Bewerbung für „${jobTitle}" zurückgezogen.\n\nGrund: ${reason}`
+      });
+    }
+  }
+
+  closeZurueckziehenModal();
+  loadMeineBewerbungen();
+}
+
 loadMeineBewerbungen();
 </script>
+
+<!-- ZURÜCKZIEHEN OVERLAY -->
+<div id="withdraw-overlay" class="withdraw-overlay" style="display:none" onclick="if(event.target===this)closeZurueckziehenModal()">
+  <div class="withdraw-modal">
+    <h3>Bewerbung zurückziehen</h3>
+    <p>Warum möchtest du dich für „<span id="withdraw-job-name"></span>" zurückziehen?</p>
+    <div class="withdraw-options">
+      <label class="withdraw-opt">
+        <input type="radio" name="withdraw-reason" value="Ich habe einen anderen Job gefunden.">
+        <span>Ich habe einen anderen Job gefunden.</span>
+      </label>
+      <label class="withdraw-opt">
+        <input type="radio" name="withdraw-reason" value="Ich bin krank oder verhindert.">
+        <span>Ich bin krank oder verhindert.</span>
+      </label>
+      <label class="withdraw-opt">
+        <input type="radio" name="withdraw-reason" value="Der Job entspricht nicht meinen Erwartungen.">
+        <span>Der Job entspricht nicht meinen Erwartungen.</span>
+      </label>
+      <label class="withdraw-opt">
+        <input type="radio" name="withdraw-reason" value="Persönliche Gründe.">
+        <span>Persönliche Gründe.</span>
+      </label>
+      <label class="withdraw-opt">
+        <input type="radio" name="withdraw-reason" value="sonstiges">
+        <span>Sonstiges (eigener Grund)</span>
+      </label>
+    </div>
+    <div class="withdraw-custom-wrap">
+      <label for="withdraw-custom">Eigener Grund (optional)</label>
+      <textarea id="withdraw-custom" placeholder="Hier eigenen Grund eingeben…"></textarea>
+    </div>
+    <div class="withdraw-modal-btns">
+      <button class="withdraw-confirm-btn" id="withdraw-confirm-btn" onclick="submitZurueckziehen()">Zurückziehen</button>
+      <button class="withdraw-cancel-btn" onclick="closeZurueckziehenModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
 <script src="cookies.js"></script>
 <script src="chatbot.js"></script>
 </body>
