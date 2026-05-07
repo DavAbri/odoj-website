@@ -511,30 +511,17 @@ async function submitVertrag() {
       .from('vertraege').insert(vertragData).select().single();
     if (vertragErr) throw new Error('Vertrag: ' + vertragErr.message);
 
-    // Chat-Raum für diese Bewerbung finden oder anlegen
-    let raumId = null;
-    const { data: raeume } = await odojSb
-      .from('nachrichten_raeume').select('id')
-      .eq('bewerbung_id', _vfBewerbungId).limit(1);
-    if (raeume && raeume.length > 0) {
-      raumId = raeume[0].id;
-    } else {
-      const { data: newRaum, error: raumErr } = await odojSb
-        .from('nachrichten_raeume')
-        .insert({ bewerbung_id: _vfBewerbungId, jobber_id: _vfJobberId, arbeitgeber_id: _vfArbeitgeberId })
-        .select('id').single();
-      if (raumErr) throw new Error('Chat-Raum: ' + raumErr.message);
-      raumId = newRaum.id;
-    }
-
     // Nachricht an Jobber senden
     const vertragLink = `${window.location.origin}/vertrag-ansehen.html?id=${vertrag.id}`;
-    const nachricht = `📋 Neuer Dienstvertrag zur Überprüfung\n\nDer Arbeitgeber ${ag.firmenname || 'ODOJ'} hat einen Dienstvertrag für Ihren Einsatz „${job.titel || 'Ihren Einsatz'}" am ${job.datum ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT') : ''} erstellt.\n\nBitte öffnen Sie den Vertrag, prüfen Sie die Daten und bestätigen Sie Ihre Zustimmung:\n${vertragLink}\n\n⚠ Für die rechtsgültige Unterschrift muss der Vertrag ausgedruckt und handschriftlich unterschrieben werden.`;
+    const nachricht = `📋 Neuer Dienstvertrag\n\nvertrag-ansehen.html?id=${vertrag.id}`;
 
     const { error: msgErr } = await odojSb.from('nachrichten').insert({
-      raum_id:   raumId,
-      sender_id: _vfSession.user.id,
-      nachricht
+      bewerbung_id:  _vfBewerbungId,
+      sender_id:     _vfSession.user.id,
+      empfaenger_id: _vfJobberId,
+      nachricht,
+      gelesen:       false,
+      erstellt_am:   new Date().toISOString()
     });
     if (msgErr) throw new Error('Nachricht: ' + msgErr.message);
 

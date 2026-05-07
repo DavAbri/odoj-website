@@ -261,6 +261,123 @@
   background: #E6F5EE; border-radius: var(--r-sm);
   padding: 7px 14px;
 }
+
+/* ── VERTRAGS-NACHRICHT ── */
+.msg-vertrag {
+  align-self: stretch;
+  background: #EEF4FF;
+  border: 1.5px solid #B5CAEF;
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.msg-vertrag .msg-time { text-align: left; opacity: .5; margin-top: 8px; }
+.msg-vertrag-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800; color: var(--navy);
+  font-size: 15px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.msg-vertrag-body { color: var(--text-mid); font-size: 13px; line-height: 1.6; }
+.msg-vertrag-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.btn-vertrag-accept {
+  background: #1a7a50; color: #fff; border: none;
+  border-radius: var(--r-sm); padding: 9px 18px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .2s;
+}
+.btn-vertrag-accept:hover { background: #146040; }
+.btn-vertrag-reject {
+  background: transparent; color: #c0392b;
+  border: 1.5px solid #c0392b; border-radius: var(--r-sm);
+  padding: 8px 18px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .2s, color .2s;
+}
+.btn-vertrag-reject:hover { background: #c0392b; color: #fff; }
+.vertrag-done-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px; padding: 7px 14px;
+  border-radius: var(--r-sm); font-size: 13px; font-weight: 700;
+}
+.vertrag-done-accepted { background: #E6F5EE; color: #1A7A50; }
+.vertrag-done-rejected { background: #FFF0F0; color: #C0392B; }
+.btn-vertrag-open {
+  background: var(--navy); color: #fff; border: none;
+  border-radius: var(--r-sm); padding: 10px 20px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+  text-decoration: none; transition: background .2s;
+  margin-bottom: 4px; width: 100%; justify-content: center;
+}
+.btn-vertrag-open:hover { background: #1a3060; }
+
+/* ── ABLEHNEN / ZURÜCKZIEHEN MODAL ── */
+.reason-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  z-index: 9100; display: flex;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.reason-modal {
+  background: var(--white); border-radius: 18px;
+  padding: 36px 32px; max-width: 480px; width: 100%;
+  box-shadow: 0 24px 80px rgba(0,0,0,.3); position: relative;
+}
+.reason-modal h3 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 19px; font-weight: 800; color: var(--navy);
+  margin-bottom: 6px;
+}
+.reason-modal > p { font-size: 13px; color: var(--text-lt); margin-bottom: 20px; }
+.reason-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.reason-opt {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: var(--r-sm);
+  border: 1.5px solid var(--gray-lt); cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.reason-opt:hover { border-color: var(--navy); background: var(--off); }
+.reason-opt input[type="radio"] { margin-top: 2px; flex-shrink: 0; accent-color: var(--navy); }
+.reason-opt label { font-size: 14px; color: var(--text); cursor: pointer; line-height: 1.4; }
+.reason-custom-wrap { margin-bottom: 20px; }
+.reason-custom-wrap label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  color: var(--text-lt); margin-bottom: 6px;
+}
+.reason-custom-wrap textarea {
+  width: 100%; box-sizing: border-box;
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-sm); padding: 10px 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; color: var(--text); resize: vertical;
+  min-height: 80px; outline: none; transition: border-color .2s;
+}
+.reason-custom-wrap textarea:focus { border-color: var(--accent); }
+.reason-modal-btns { display: flex; gap: 10px; }
+.reason-confirm-btn {
+  flex: 1; background: #c0392b; color: #fff; border: none;
+  border-radius: var(--r-sm); padding: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: background .2s;
+}
+.reason-confirm-btn:hover { background: #a93226; }
+.reason-confirm-btn:disabled { opacity: .6; cursor: not-allowed; }
+.reason-cancel-btn {
+  background: transparent; border: 1.5px solid var(--gray-lt);
+  color: var(--text-mid); border-radius: var(--r-sm); padding: 13px 20px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.reason-cancel-btn:hover { border-color: var(--navy); color: var(--navy); }
 /* Bewertungs-Modal (Jobber bewertet AG) */
 .jb-bew-overlay {
   position: fixed; inset: 0;
@@ -756,6 +873,23 @@ async function loadMessages(silent) {
     }
   }
 
+  // Vorab Vertrags-Status laden (für Jobber: Annehmen/Ablehnen-Buttons)
+  let vertragStatusMap = {};
+  if (_chatRolle === 'jobber') {
+    const vertragMsgs = msgs.filter(m => m.nachricht && m.nachricht.startsWith('📋 Neuer Dienstvertrag'));
+    if (vertragMsgs.length) {
+      const vIds = vertragMsgs.map(m => {
+        const match = m.nachricht.match(/vertrag-ansehen\.html\?id=([a-f0-9-]{36})/i);
+        return match ? match[1] : null;
+      }).filter(Boolean);
+      if (vIds.length) {
+        const { data: vertraege } = await odojSb.from('vertraege')
+          .select('id, status, jobber_zugestimmt').in('id', vIds);
+        vertraege?.forEach(v => { vertragStatusMap[v.id] = v; });
+      }
+    }
+  }
+
   let html = '';
   let lastDate = '';
   msgs.forEach(m => {
@@ -765,13 +899,94 @@ async function loadMessages(silent) {
       html += `<div class="msg-date-sep">${dateKey}</div>`;
       lastDate = dateKey;
     }
-    const isMine    = m.sender_id === _chatSession.user.id;
-    const isSystem  = m.nachricht && (m.nachricht.startsWith('✅ Einsatz erfolgreich') || m.nachricht.startsWith('Einsatz erfolgreich abgeschlossen'));
-    const isSysInfo = m.nachricht && (m.nachricht.startsWith('📋 Dein Inserat') || m.nachricht.startsWith('📋 '));
-    const isBewReq  = m.nachricht && m.nachricht.startsWith('[BEW_REQ:');
-    const time      = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+    const isMine      = m.sender_id === _chatSession.user.id;
+    const isSystem       = m.nachricht && (m.nachricht.startsWith('✅ Einsatz erfolgreich') || m.nachricht.startsWith('Einsatz erfolgreich abgeschlossen'));
+    const isVertragMsg   = m.nachricht && m.nachricht.startsWith('📋 Neuer Dienstvertrag');
+    const isVertragOK    = m.nachricht && m.nachricht.startsWith('✅ Vertragsbestätigung');
+    const isVertragAbg   = m.nachricht && (m.nachricht.startsWith('❌ Vertrag abgelehnt') || m.nachricht.startsWith('❌ Bewerbung zurückgezogen'));
+    const isSysInfo      = m.nachricht && !isVertragMsg && !isVertragOK && !isVertragAbg && (m.nachricht.startsWith('📋 Dein Inserat') || m.nachricht.startsWith('📋 '));
+    const isBewReq    = m.nachricht && m.nachricht.startsWith('[BEW_REQ:');
+    const time        = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
 
-    if (isBewReq && _chatRolle === 'jobber') {
+    if (isVertragMsg && _chatRolle === 'jobber') {
+      const vMatch  = m.nachricht.match(/vertrag-ansehen\.html\?id=([a-f0-9-]{36})/i);
+      const vId     = vMatch ? vMatch[1] : null;
+      const vStatus = vId ? vertragStatusMap[vId] : null;
+
+      let actionHtml = '';
+      if (!vId) {
+        actionHtml = `<p style="font-size:12px;color:var(--text-lt);margin-top:8px">Kein gültiger Vertragslink gefunden.</p>`;
+      } else if (vStatus?.jobber_zugestimmt) {
+        actionHtml = `
+          <a href="vertrag-ansehen.html?id=${vId}" class="btn-vertrag-open" target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Vertrag ansehen
+          </a>
+          <div class="vertrag-done-badge vertrag-done-accepted"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Du hast diesem Vertrag bereits zugestimmt</div>`;
+      } else if (vStatus?.status === 'abgelehnt_jobber') {
+        actionHtml = `<div class="vertrag-done-badge vertrag-done-rejected"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Vertrag wurde abgelehnt</div>`;
+      } else {
+        actionHtml = `
+          <a href="vertrag-ansehen.html?id=${vId}" class="btn-vertrag-open" target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Vertrag öffnen &amp; prüfen
+          </a>
+          <div class="msg-vertrag-actions">
+            <button class="btn-vertrag-accept" onclick="acceptVertrag('${vId}','${_activeBewId}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Annehmen
+            </button>
+            <button class="btn-vertrag-reject" onclick="openRejectVertragModal('${vId}','${_activeBewId}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Ablehnen
+            </button>
+          </div>`;
+      }
+
+      html += `<div class="msg-bubble msg-vertrag">
+        <div class="msg-vertrag-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Neuer Dienstvertrag
+        </div>
+        <div class="msg-vertrag-body">Der Arbeitgeber hat einen Dienstvertrag für deinen Einsatz erstellt. Öffne ihn, prüfe die Daten und bestätige oder lehne ihn ab.</div>
+        ${actionHtml}
+        <div class="msg-time">${time}</div>
+      </div>`;
+    } else if (isVertragMsg && _chatRolle === 'arbeitgeber') {
+      const vMatch2 = m.nachricht.match(/vertrag-ansehen\.html\?id=([a-f0-9-]{36})/i);
+      const vId2    = vMatch2 ? vMatch2[1] : null;
+      html += `<div class="msg-bubble msg-vertrag">
+        <div class="msg-vertrag-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Dienstvertrag gesendet
+        </div>
+        <div class="msg-vertrag-body">Der Vertrag wurde an den Jobber gesendet und wartet auf dessen Zustimmung.</div>
+        ${vId2 ? `<a href="vertrag-ansehen.html?id=${vId2}" class="btn-vertrag-open" style="margin-top:12px" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>` : ''}
+        <div class="msg-time">${time}</div>
+      </div>`;
+    } else if (isVertragOK) {
+      const vMatch3 = m.nachricht.match(/vertrag-ansehen\.html\?id=([a-f0-9-]{36})/i);
+      const vId3    = vMatch3 ? vMatch3[1] : null;
+      html += `<div class="msg-bubble msg-vertrag" style="background:#E8F5EE;border-color:#A8D5BB">
+        <div class="msg-vertrag-title" style="color:#1a7a50">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Vertrag bestätigt
+        </div>
+        <div class="msg-vertrag-body">Der Jobber hat dem Dienstvertrag zugestimmt. Bitte drucken Sie den Vertrag aus und lassen Sie ihn handschriftlich unterschreiben.</div>
+        ${vId3 ? `<a href="vertrag-ansehen.html?id=${vId3}" class="btn-vertrag-open" style="margin-top:12px;background:#1a7a50" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h9l3 3v14H6v-3"/><path d="M6 18H3V8h3"/></svg> Vertrag drucken</a>` : ''}
+        <div class="msg-time">${time}</div>
+      </div>`;
+    } else if (isVertragAbg) {
+      const firstLine = (m.nachricht || '').split('\n')[0];
+      html += `<div class="msg-bubble msg-vertrag" style="background:#FFF0F0;border-color:#F5C6C0">
+        <div class="msg-vertrag-title" style="color:#c0392b">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          ${escHtml(firstLine)}
+        </div>
+        <div class="msg-vertrag-body" style="white-space:pre-line">${escHtml((m.nachricht || '').split('\n').slice(2).join('\n').trim())}</div>
+        <div class="msg-time">${time}</div>
+      </div>`;
+    } else if (isBewReq && _chatRolle === 'jobber') {
       // Rating-Aufforderung an Jobber rendern
       let bewData = {};
       try { bewData = JSON.parse(m.nachricht.slice('[BEW_REQ:'.length, -1)); } catch (_) {}
@@ -999,9 +1214,143 @@ async function submitJbBewertung() {
   setTimeout(() => { closeJbBewModal(); loadMessages(true); }, 2000);
 }
 
+// ── VERTRAG ANNEHMEN ──
+async function acceptVertrag(vertragId, bewId) {
+  const { data: vertrag } = await odojSb.from('vertraege').select('*').eq('id', vertragId).single();
+  if (!vertrag) { showToast('Vertrag nicht gefunden.', 'error'); return; }
+
+  const { error } = await odojSb.from('vertraege').update({
+    jobber_zugestimmt:    true,
+    jobber_zugestimmt_am: new Date().toISOString(),
+    status:               'beide_zugestimmt'
+  }).eq('id', vertragId);
+
+  if (error) { showToast('Fehler: ' + error.message, 'error'); return; }
+
+  // Nachricht an Arbeitgeber
+  const jobberProfile = await odojGetProfile(_chatSession.user.id);
+  const jobberName = jobberProfile
+    ? [jobberProfile.vorname, jobberProfile.nachname].filter(Boolean).join(' ') || 'Der Jobber'
+    : 'Der Jobber';
+  const vertragLink = `${window.location.origin}/vertrag-ansehen.html?id=${vertragId}`;
+  const nachricht = `✅ Vertragsbestätigung\n\n${jobberName} hat dem Dienstvertrag zugestimmt.\n\nBitte drucken Sie den Vertrag aus und lassen Sie ihn handschriftlich unterschreiben.\n\nvertrag-ansehen.html?id=${vertragId}`;
+
+  await odojSb.from('nachrichten').insert({
+    bewerbung_id:  bewId,
+    sender_id:     _chatSession.user.id,
+    empfaenger_id: vertrag.arbeitgeber_id,
+    nachricht,
+    gelesen: false,
+    erstellt_am: new Date().toISOString()
+  });
+
+  showToast('Vertrag angenommen! Arbeitgeber wurde benachrichtigt.', 'success');
+  await loadMessages(false);
+}
+
+// ── VERTRAG ABLEHNEN MODAL ──
+let _rejectVertragId = null;
+let _rejectBewId     = null;
+
+function openRejectVertragModal(vertragId, bewId) {
+  _rejectVertragId = vertragId;
+  _rejectBewId     = bewId;
+  document.getElementById('vertrag-reject-overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.querySelectorAll('#vertrag-reject-overlay input[type="radio"]').forEach(r => r.checked = false);
+  document.getElementById('vertrag-reject-custom').value = '';
+}
+function closeRejectVertragModal() {
+  document.getElementById('vertrag-reject-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function submitVertragAbgelehnt() {
+  const selected = document.querySelector('#vertrag-reject-overlay input[type="radio"]:checked');
+  const custom   = document.getElementById('vertrag-reject-custom').value.trim();
+  const reason   = selected?.value === 'sonstiges' ? custom : (selected?.value || '');
+  if (!reason) { showToast('Bitte einen Grund angeben.', 'warn'); return; }
+
+  const btn = document.getElementById('vertrag-reject-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Wird gesendet…';
+
+  const { data: vertrag } = await odojSb.from('vertraege').select('*').eq('id', _rejectVertragId).single();
+  if (!vertrag) { showToast('Vertrag nicht gefunden.', 'error'); btn.disabled = false; btn.textContent = 'Ablehnen'; return; }
+
+  // Vertrag als abgelehnt markieren
+  await odojSb.from('vertraege').update({ status: 'abgelehnt_jobber' }).eq('id', _rejectVertragId);
+
+  // Bewerbung wieder auf ausstehend setzen → Platz freigeben
+  await odojSb.from('bewerbungen').update({ status: 'ausstehend' }).eq('id', _rejectBewId);
+
+  // Job-Platz freigeben: prüfen ob Job wieder aktiv werden soll
+  if (vertrag.job_id) {
+    const { data: job } = await odojSb.from('jobs').select('id, plaetze, status').eq('id', vertrag.job_id).single();
+    if (job && job.status === 'inaktiv') {
+      const { count } = await odojSb.from('bewerbungen')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_id', vertrag.job_id).eq('status', 'angenommen');
+      if (count < job.plaetze) {
+        await odojSb.from('jobs').update({ status: 'aktiv' }).eq('id', vertrag.job_id);
+      }
+    }
+  }
+
+  // Nachricht an Arbeitgeber
+  const nachricht = `❌ Vertrag abgelehnt\n\nDer Jobber hat den Dienstvertrag abgelehnt.\n\nGrund: ${reason}\n\nDer Platz für diesen Job ist wieder verfügbar und kann neu besetzt werden.`;
+
+  await odojSb.from('nachrichten').insert({
+    bewerbung_id:  _rejectBewId,
+    sender_id:     _chatSession.user.id,
+    empfaenger_id: vertrag.arbeitgeber_id,
+    nachricht,
+    gelesen: false,
+    erstellt_am: new Date().toISOString()
+  });
+
+  closeRejectVertragModal();
+  showToast('Vertrag abgelehnt. Arbeitgeber wurde informiert.', 'warn');
+  btn.disabled = false; btn.textContent = 'Ablehnen';
+  await loadMessages(false);
+}
+
 // Start
 initChat();
 </script>
+<!-- VERTRAG ABLEHNEN MODAL -->
+<div id="vertrag-reject-overlay" class="reason-modal-overlay" style="display:none" onclick="if(event.target===this)closeRejectVertragModal()">
+  <div class="reason-modal">
+    <h3>Warum lehnst du den Vertrag ab?</h3>
+    <p>Bitte gib einen Grund an – dieser wird dem Arbeitgeber mitgeteilt.</p>
+    <div class="reason-options">
+      <div class="reason-opt">
+        <input type="radio" name="vertrag-reject-reason" id="vr1" value="Die Daten im Vertrag sind nicht korrekt.">
+        <label for="vr1">Die Daten im Vertrag sind nicht korrekt.</label>
+      </div>
+      <div class="reason-opt">
+        <input type="radio" name="vertrag-reject-reason" id="vr2" value="Ich bin an diesem Termin nicht mehr verfügbar.">
+        <label for="vr2">Ich bin an diesem Termin nicht mehr verfügbar.</label>
+      </div>
+      <div class="reason-opt">
+        <input type="radio" name="vertrag-reject-reason" id="vr3" value="Die Arbeitsbedingungen entsprechen nicht der Vereinbarung.">
+        <label for="vr3">Die Arbeitsbedingungen entsprechen nicht der Vereinbarung.</label>
+      </div>
+      <div class="reason-opt">
+        <input type="radio" name="vertrag-reject-reason" id="vr4" value="sonstiges">
+        <label for="vr4">Sonstiger Grund (bitte unten angeben)</label>
+      </div>
+    </div>
+    <div class="reason-custom-wrap">
+      <label>Eigener Grund (optional)</label>
+      <textarea id="vertrag-reject-custom" placeholder="Dein Grund…"></textarea>
+    </div>
+    <div class="reason-modal-btns">
+      <button class="reason-cancel-btn" onclick="closeRejectVertragModal()">Abbrechen</button>
+      <button class="reason-confirm-btn" id="vertrag-reject-confirm-btn" onclick="submitVertragAbgelehnt()">Ablehnen</button>
+    </div>
+  </div>
+</div>
+
 <script src="cookies.js"></script>
 <script src="chatbot.js"></script>
 </body>
