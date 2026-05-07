@@ -141,6 +141,19 @@
   .vf-card { padding: 24px 20px; }
   .vf-grid { grid-template-columns: 1fr; }
 }
+
+.odoj-toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--navy); color: #fff;
+  padding: 14px 28px; border-radius: 100px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 600;
+  z-index: 9999; pointer-events: none;
+  transition: opacity .5s; white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+.odoj-toast.toast-success { background: #1a7a50; }
+.odoj-toast.toast-error   { background: #c0392b; }
+.odoj-toast.toast-warn    { background: #c07a00; }
 </style>
 </head>
 <body>
@@ -440,6 +453,15 @@ function fillForm() {
   document.getElementById('vf-stundenlohn').value = `€ ${stundenlohn} / Stunde`;
 }
 
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'odoj-toast' + (type ? ' toast-' + type : '');
+  t.innerHTML = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; }, 2800);
+  setTimeout(() => t.remove(), 3300);
+}
+
 async function submitVertrag() {
   const checkbox = document.getElementById('vf-zustimmung');
   if (!checkbox.checked) {
@@ -449,65 +471,81 @@ async function submitVertrag() {
 
   const btn = document.getElementById('vf-submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Wird gespeichert…';
+  btn.innerHTML = 'Wird gespeichert…';
 
-  const ag = _vfAgProfile || {};
-  const jb = _vfJobberProfile || {};
-  const job = _vfJobData || {};
+  try {
+    const ag  = _vfAgProfile  || {};
+    const jb  = _vfJobberProfile || {};
+    const job = _vfJobData    || {};
 
-  const agAdr = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
-  const jbAdr = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
-  const stunden = parseFloat(job.stundenanzahl) || 8;
-  const tagesgehalt = parseFloat(job.tagesgehalt) || 0;
-  const stundenlohn = stunden > 0 ? parseFloat((tagesgehalt / stunden).toFixed(2)) : 0;
+    const agAdr = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
+    const jbAdr = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
+    const stunden     = parseFloat(job.stundenanzahl) || 8;
+    const tagesgehalt = parseFloat(job.tagesgehalt)   || 0;
+    const stundenlohn = stunden > 0 ? parseFloat((tagesgehalt / stunden).toFixed(2)) : 0;
 
-  const vertragData = {
-    bewerbung_id:            _vfBewerbungId,
-    job_id:                  _vfJobId,
-    arbeitgeber_id:          _vfArbeitgeberId,
-    jobber_id:               _vfJobberId,
-    firmenname:              ag.firmenname || '',
-    arbeitgeber_adresse:     agAdr,
-    jobber_name:             [jb.vorname, jb.nachname].filter(Boolean).join(' '),
-    jobber_adresse:          jbAdr,
-    jobber_geburtsdatum:     jb.geburtsdatum || '',
-    jobber_svnummer:         jb.svnummer || '',
-    taetigkeitsbeschreibung: document.getElementById('vf-taetigkeit').value.trim(),
-    einsatzort:              document.getElementById('vf-einsatzort').value.trim(),
-    einsatzdatum:            job.datum || '',
-    arbeitszeit_von:         job.uhrzeit_von || '',
-    arbeitszeit_bis:         job.uhrzeit_bis || '',
-    stundenlohn:             stundenlohn,
-    sonstige_vereinbarungen: document.getElementById('vf-sonstiges').value.trim(),
-    status:                  'warte_auf_jobber',
-    arbeitgeber_zugestimmt:  true,
-    arbeitgeber_zugestimmt_am: new Date().toISOString()
-  };
+    const vertragData = {
+      bewerbung_id:            _vfBewerbungId,
+      job_id:                  _vfJobId,
+      arbeitgeber_id:          _vfArbeitgeberId,
+      jobber_id:               _vfJobberId,
+      firmenname:              ag.firmenname || '',
+      arbeitgeber_adresse:     agAdr,
+      jobber_name:             [jb.vorname, jb.nachname].filter(Boolean).join(' '),
+      jobber_adresse:          jbAdr,
+      jobber_geburtsdatum:     jb.geburtsdatum || '',
+      jobber_svnummer:         jb.svnummer || '',
+      taetigkeitsbeschreibung: document.getElementById('vf-taetigkeit').value.trim(),
+      einsatzort:              document.getElementById('vf-einsatzort').value.trim(),
+      einsatzdatum:            job.datum || '',
+      arbeitszeit_von:         job.uhrzeit_von || '',
+      arbeitszeit_bis:         job.uhrzeit_bis || '',
+      stundenlohn,
+      sonstige_vereinbarungen: document.getElementById('vf-sonstiges').value.trim(),
+      status:                  'warte_auf_jobber',
+      arbeitgeber_zugestimmt:  true,
+      arbeitgeber_zugestimmt_am: new Date().toISOString()
+    };
 
-  const { data: vertrag, error } = await odojSb.from('vertraege').insert(vertragData).select().single();
+    const { data: vertrag, error: vertragErr } = await odojSb
+      .from('vertraege').insert(vertragData).select().single();
+    if (vertragErr) throw new Error('Vertrag: ' + vertragErr.message);
 
-  if (error) {
-    showToast('Fehler beim Speichern: ' + error.message, 'error');
+    // Chat-Raum für diese Bewerbung finden oder anlegen
+    let raumId = null;
+    const { data: raeume } = await odojSb
+      .from('nachrichten_raeume').select('id')
+      .eq('bewerbung_id', _vfBewerbungId).limit(1);
+    if (raeume && raeume.length > 0) {
+      raumId = raeume[0].id;
+    } else {
+      const { data: newRaum, error: raumErr } = await odojSb
+        .from('nachrichten_raeume')
+        .insert({ bewerbung_id: _vfBewerbungId, jobber_id: _vfJobberId, arbeitgeber_id: _vfArbeitgeberId })
+        .select('id').single();
+      if (raumErr) throw new Error('Chat-Raum: ' + raumErr.message);
+      raumId = newRaum.id;
+    }
+
+    // Nachricht an Jobber senden
+    const vertragLink = `${window.location.origin}/vertrag-ansehen.html?id=${vertrag.id}`;
+    const nachricht = `📋 Neuer Dienstvertrag zur Überprüfung\n\nDer Arbeitgeber ${ag.firmenname || 'ODOJ'} hat einen Dienstvertrag für Ihren Einsatz „${job.titel || 'Ihren Einsatz'}" am ${job.datum ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT') : ''} erstellt.\n\nBitte öffnen Sie den Vertrag, prüfen Sie die Daten und bestätigen Sie Ihre Zustimmung:\n${vertragLink}\n\n⚠ Für die rechtsgültige Unterschrift muss der Vertrag ausgedruckt und handschriftlich unterschrieben werden.`;
+
+    const { error: msgErr } = await odojSb.from('nachrichten').insert({
+      raum_id:   raumId,
+      sender_id: _vfSession.user.id,
+      nachricht
+    });
+    if (msgErr) throw new Error('Nachricht: ' + msgErr.message);
+
+    showToast('✓ Vertrag gespeichert und an Jobber gesendet!', 'success');
+    setTimeout(() => { window.location.href = 'meine-inserate.html?vertrag=gesendet'; }, 1800);
+
+  } catch (err) {
+    showToast('Fehler: ' + err.message, 'error');
     btn.disabled = false;
-    btn.textContent = 'Vertrag speichern & an Jobber senden';
-    return;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag speichern &amp; an Jobber senden';
   }
-
-  // Nachricht an Jobber senden
-  const vertragLink = `${window.location.origin}/vertrag-ansehen.html?id=${vertrag.id}`;
-  const nachricht = `📋 Neuer Dienstvertrag zur Überprüfung\n\nDer Arbeitgeber ${ag.firmenname || 'ODOJ'} hat einen Dienstvertrag für Ihren Einsatz "${job.titel || 'Ihren Einsatz'}" am ${job.datum ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT') : ''} erstellt und zur Überprüfung freigegeben.\n\nBitte öffnen Sie den Vertrag, prüfen Sie die Daten und bestätigen Sie Ihre Zustimmung:\n${vertragLink}\n\n⚠ Für die rechtsgültige Unterschrift muss der Vertrag ausgedruckt und handschriftlich unterschrieben werden.`;
-
-  await odojSb.from('nachrichten').insert({
-    bewerbung_id:  _vfBewerbungId,
-    sender_id:     _vfSession.user.id,
-    empfaenger_id: _vfJobberId,
-    nachricht,
-    gelesen:       false,
-    erstellt_am:   new Date().toISOString()
-  });
-
-  showToast('Vertrag gespeichert und an Jobber gesendet!', 'success');
-  setTimeout(() => { window.location.href = 'meine-inserate.html?vertrag=gesendet'; }, 1800);
 }
 </script>
 <script src="cookies.js"></script>
