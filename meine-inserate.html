@@ -1562,10 +1562,46 @@ async function confirmDeleteInserat() {
   if (!_deleteInseratId) return;
   const btn = document.getElementById('delete-confirm-btn');
   btn.disabled = true; btn.textContent = 'Wird gelöscht…';
-  const { error } = await odojSb.from('jobs').delete().eq('id', _deleteInseratId);
-  if (error) { alert('Fehler beim Löschen: ' + error.message); btn.disabled = false; btn.textContent = 'Löschen'; return; }
-  closeDeleteModal();
-  loadInserate();
+
+  try {
+    const jobId = _deleteInseratId;
+
+    // 1. Bewerbungs-IDs für diesen Job laden
+    const { data: bews } = await odojSb
+      .from('bewerbungen').select('id').eq('job_id', jobId);
+    const bewIds = (bews || []).map(b => b.id);
+
+    if (bewIds.length) {
+      // 2. Chat-Raum-IDs laden
+      const { data: raeume } = await odojSb
+        .from('nachrichten_raeume').select('id').in('bewerbung_id', bewIds);
+      const raumIds = (raeume || []).map(r => r.id);
+
+      // 3. Nachrichten löschen
+      if (raumIds.length) {
+        await odojSb.from('nachrichten').delete().in('raum_id', raumIds);
+      }
+
+      // 4. Chat-Räume löschen
+      await odojSb.from('nachrichten_raeume').delete().in('bewerbung_id', bewIds);
+
+      // 5. Verträge löschen
+      await odojSb.from('vertraege').delete().in('bewerbung_id', bewIds);
+    }
+
+    // 6. Bewerbungen löschen
+    await odojSb.from('bewerbungen').delete().eq('job_id', jobId);
+
+    // 7. Job löschen
+    const { error } = await odojSb.from('jobs').delete().eq('id', jobId);
+    if (error) throw error;
+
+    closeDeleteModal();
+    loadInserate();
+  } catch (err) {
+    alert('Fehler beim Löschen: ' + err.message);
+    btn.disabled = false; btn.textContent = 'Löschen';
+  }
 }
 
 // ── STUNDEN AUTO-BERECHNUNG ──
