@@ -11,15 +11,16 @@
 <meta name="author" content="ODOJ – One Day One Job">
 <meta name="geo.region" content="AT-8">
 <meta name="geo.placename" content="Vorarlberg, Österreich">
-<link rel="canonical" href="https://odojweb.netlify.app/arbeitgeber.html">
+<link rel="canonical" href="https://odoj.at/arbeitgeber.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ODOJ – One Day One Job">
-<meta property="og:url" content="https://odojweb.netlify.app/arbeitgeber.html">
+<meta property="og:url" content="https://odoj.at/arbeitgeber.html">
 <meta property="og:title" content="Personal finden Vorarlberg – Für Arbeitgeber | ODOJ">
 <meta property="og:description" content="Kurzfristig qualifiziertes Personal in Vorarlberg finden. Tagesjobber für Gastronomie, Bau, Lager und Events. Nur zahlen wenn der Einsatz erfolgreich war.">
 <meta property="og:locale" content="de_AT">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1f3d">
 <link rel="stylesheet" href="shared.css">
@@ -1015,5 +1016,31 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 </script>
 <script src="cookies.js"></script>
 <script src="chatbot.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "serviceType": "Personalvermittlung",
+  "name": "ODOJ Arbeitgeber – Personal für einen Tag",
+  "url": "https://odoj.at/arbeitgeber.html",
+  "provider": {
+    "@type": "LocalBusiness",
+    "@id": "https://odoj.at/#organization",
+    "name": "ODOJ – One Day One Job"
+  },
+  "areaServed": {
+    "@type": "State",
+    "name": "Vorarlberg",
+    "containedInPlace": { "@type": "Country", "name": "Österreich" }
+  },
+  "description": "Kurzfristig qualifiziertes Personal in Vorarlberg finden. Tagesjobber für Gastronomie, Bau, Lager und Events.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR",
+    "description": "Kostenlose Registrierung – nur zahlen wenn der Einsatz erfolgreich war."
+  }
+}
+</script>
 </body>
 </html>

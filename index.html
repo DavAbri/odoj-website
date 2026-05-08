@@ -11,12 +11,13 @@
 <meta name="author" content="ODOJ – One Day One Job">
 <meta name="geo.region" content="AT-8">
 <meta name="geo.placename" content="Vorarlberg, Österreich">
-<link rel="canonical" href="https://odojweb.netlify.app/index.html">
+<link rel="canonical" href="https://odoj.at/">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ODOJ – One Day One Job">
-<meta property="og:url" content="https://odojweb.netlify.app/index.html">
+<meta property="og:url" content="https://odoj.at/">
 <meta property="og:title" content="ODOJ – Tagesjobs in Vorarlberg | One Day One Job">
 <meta property="og:description" content="ODOJ vermittelt flexible Tagesjobs in Vorarlberg. Gastronomie, Bau, Lager & Events. Kostenlos registrieren und sofort loslegen. Jetzt bewerben!">
 <meta property="og:locale" content="de_AT">
@@ -696,28 +697,59 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 <script src="cookies.js"></script>
 <script src="chatbot.js"></script>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "ODOJ – One Day One Job",
-  "url": "https://odojweb.netlify.app",
-  "logo": "https://odojweb.netlify.app/logo.png",
-  "description": "ODOJ vermittelt flexible Tagesjobs in Vorarlberg in den Bereichen Gastronomie, Bau, Lager und Events.",
-  "address": {
-    "@type": "PostalAddress",
-    "addressRegion": "Vorarlberg",
-    "addressCountry": "AT"
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://odoj.at/#organization",
+    "name": "ODOJ – One Day One Job",
+    "url": "https://odoj.at",
+    "logo": "https://odoj.at/logo.png",
+    "image": "https://odoj.at/logo.png",
+    "description": "ODOJ vermittelt flexible Tagesjobs in Vorarlberg in den Bereichen Gastronomie, Bau, Lager und Events. Kostenlos registrieren und sofort loslegen.",
+    "email": "info@odoj.at",
+    "address": {
+      "@type": "PostalAddress",
+      "addressRegion": "Vorarlberg",
+      "addressCountry": "AT",
+      "addressLocality": "Vorarlberg"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "47.4148",
+      "longitude": "9.7396"
+    },
+    "areaServed": {
+      "@type": "State",
+      "name": "Vorarlberg",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "Österreich"
+      }
+    },
+    "serviceType": ["Personalvermittlung", "Tagesjobvermittlung", "Zeitarbeit"],
+    "priceRange": "kostenlos",
+    "sameAs": []
   },
-  "areaServed": {
-    "@type": "State",
-    "name": "Vorarlberg"
-  },
-  "serviceType": "Personalvermittlung",
-  "foundingLocation": {
-    "@type": "Place",
-    "name": "Vorarlberg, Österreich"
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://odoj.at/#website",
+    "url": "https://odoj.at",
+    "name": "ODOJ – One Day One Job",
+    "description": "Flexible Tagesjobs in Vorarlberg – Gastronomie, Bau, Lager & Events",
+    "publisher": { "@id": "https://odoj.at/#organization" },
+    "inLanguage": "de-AT",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://odoj.at/jobs.html?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
   }
-}
+]
 </script>
 </body>
 </html>

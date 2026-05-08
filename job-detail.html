@@ -10,15 +10,16 @@
 <meta name="author" content="ODOJ – One Day One Job">
 <meta name="geo.region" content="AT-8">
 <meta name="geo.placename" content="Vorarlberg, Österreich">
-<link rel="canonical" href="https://odojweb.netlify.app/job-detail.html">
+<link rel="canonical" href="https://odoj.at/job-detail.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ODOJ – One Day One Job">
-<meta property="og:url" content="https://odojweb.netlify.app/job-detail.html">
+<meta property="og:url" content="https://odoj.at/job-detail.html">
 <meta property="og:title" content="Job-Details – ODOJ">
 <meta property="og:description" content="Job-Details auf ODOJ – Tagesjobs in Vorarlberg.">
 <meta property="og:locale" content="de_AT">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1f3d">
 <link rel="stylesheet" href="shared.css">
@@ -366,7 +367,59 @@ async function initJobDetail() {
     }
   }
 
-  document.title = (job.titel || 'Job') + ' – ODOJ';
+  const jobTitel = job.titel || 'Job';
+  const jobOrt   = job.ort   || 'Vorarlberg';
+  const jobDatum = job.datum ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'long', year:'numeric' }) : '';
+  const agName   = _jdAgProfile?.firmenname || 'ODOJ';
+
+  document.title = `${jobTitel} in ${jobOrt} – ${jobDatum} | ODOJ`;
+
+  // Dynamic meta & OG tags
+  const desc = `${jobTitel} bei ${agName} in ${jobOrt}${jobDatum ? ' am ' + jobDatum : ''}. Jetzt kostenlos bewerben auf ODOJ – Tagesjobs in Vorarlberg.`;
+  document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', document.title);
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', desc);
+  const canonUrl = `https://odoj.at/job-detail.html?id=${job.id}`;
+  document.querySelector('link[rel="canonical"]')?.setAttribute('href', canonUrl);
+  document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonUrl);
+
+  // JobPosting structured data
+  const ldJson = document.createElement('script');
+  ldJson.type = 'application/ld+json';
+  ldJson.textContent = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    "title": jobTitel,
+    "description": job.beschreibung || `${jobTitel} in ${jobOrt}. Tagesjob über ODOJ – One Day One Job.`,
+    "datePosted": job.erstellt_am ? job.erstellt_am.split('T')[0] : new Date().toISOString().split('T')[0],
+    "validThrough": job.datum || undefined,
+    "employmentType": "TEMPORARY",
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": agName,
+      "sameAs": "https://odoj.at"
+    },
+    "jobLocation": {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": jobOrt,
+        "addressRegion": "Vorarlberg",
+        "addressCountry": "AT"
+      }
+    },
+    "baseSalary": job.tagesgehalt ? {
+      "@type": "MonetaryAmount",
+      "currency": "EUR",
+      "value": {
+        "@type": "QuantitativeValue",
+        "value": parseFloat(job.tagesgehalt),
+        "unitText": "DAY"
+      }
+    } : undefined,
+    "url": canonUrl
+  });
+  document.head.appendChild(ldJson);
 
   renderHero(job);
   renderMain(job);

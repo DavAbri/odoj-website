@@ -17,7 +17,17 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Bash(git checkout *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "WebFetch(domain:supabase.com)",
+      "Bash(npx supabase db query --project-ref vixarulzbsfwnbfucbih ' *)",
+      "Bash(npx supabase db query --linked ' *)",
+      "Bash(npx supabase *)",
+      "Read(//c/c/Users/mail4/OneDrive/Desktop/ODOJ/Webseite Codes/**)",
+      "Read(//c/c/Users/mail4/OneDrive/Desktop/ODOJ/**)",
+      "Bash(sed -i 's|<meta name=\"description\" content=\"Allgemeine Geschäftsbedingungen der ODOJ Plattform.*\"|&\\\\n<meta name=\"keywords\" content=\"ODOJ AGB, Tagesjobs Vorarlberg Bedingungen, Nutzungsbedingungen ODOJ\">|' agb.html)",
+      "Bash(sed -i 's|<meta name=\"description\" content=\"Datenschutzerklärung von ODOJ.*\"|&\\\\n<meta name=\"keywords\" content=\"ODOJ Datenschutz, Datenschutzerklärung Tagesjobs, DSGVO Vorarlberg\">|' datenschutz.html)",
+      "Bash(sed -i 's|<meta name=\"description\" content=\"Impressum der ODOJ.*\"|&\\\\n<meta name=\"keywords\" content=\"ODOJ Impressum, Tagesjobs Vorarlberg Impressum, One Day One Job Kontakt\">|' impressum.html)",
+      "Bash(sed -i 's|<meta name=\"description\" content=\".*Über uns.*\"|&\\\\n<meta name=\"keywords\" content=\"ODOJ Team, Tagesjobvermittlung Vorarlberg, Über ODOJ, One Day One Job Gründer\">|' ueber-uns.html)"
     ]
   }
 }
