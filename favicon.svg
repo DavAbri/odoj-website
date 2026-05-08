@@ -1,4 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" fill="#0B1F3A" rx="4"/>
-  <text x="16" y="22" font-family="Arial Black, Arial, sans-serif" font-size="14" font-weight="900" text-anchor="middle" fill="#ffffff">O<tspan fill="#E8A020">D</tspan>O<tspan fill="#E8A020">J</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#0B1F3A"/>
+  <text x="5" y="70"
+        font-family="Arial Black, Impact, sans-serif"
+        font-size="50"
+        font-weight="900"
+        fill="#ffffff"
+        textLength="90"
+        lengthAdjust="spacingAndGlyphs">O<tspan fill="#E8A020">D</tspan>O<tspan fill="#E8A020">J</tspan></text>
 </svg>
