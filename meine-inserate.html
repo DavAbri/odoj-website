@@ -1180,7 +1180,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
             ${ausstehendCount > 0 ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:0 4px;margin-left:4px">${ausstehendCount} neu</span>` : ''}
           </button>
-          <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}')">Löschen</button>
+          <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}', '${titelEsc}')">Löschen</button>
         </div>
       </div>
     </div>`;
@@ -1552,15 +1552,18 @@ function overlayBgClick(e) {
 }
 
 let _deleteInseratId = null;
+let _deleteInseratTitel = null;
 
-function deleteInserat(id) {
+function deleteInserat(id, titel) {
   _deleteInseratId = id;
+  _deleteInseratTitel = titel || 'dieses Inserat';
   document.getElementById('delete-overlay').style.display = 'flex';
 }
 
 function closeDeleteModal() {
   document.getElementById('delete-overlay').style.display = 'none';
   _deleteInseratId = null;
+  _deleteInseratTitel = null;
 }
 
 async function confirmDeleteInserat() {
@@ -1570,22 +1573,34 @@ async function confirmDeleteInserat() {
 
   try {
     const jobId = _deleteInseratId;
+    const jobTitel = _deleteInseratTitel;
+    const session = (await odojSb.auth.getSession()).data.session;
+    const agId = session?.user?.id;
 
-    // 1. Bewerbungs-IDs für diesen Job laden
+    // 1. Bewerbungen laden (inkl. jobber_id für Benachrichtigung)
     const { data: bews } = await odojSb
-      .from('bewerbungen').select('id').eq('job_id', jobId);
+      .from('bewerbungen').select('id, jobber_id').eq('job_id', jobId);
     const bewIds = (bews || []).map(b => b.id);
 
     if (bewIds.length) {
-      // 2. Chat-Raum-IDs laden
-      const { data: raeume } = await odojSb
-        .from('nachrichten_raeume').select('id').in('bewerbung_id', bewIds);
-      const raumIds = (raeume || []).map(r => r.id);
-
-      // 3. Nachrichten löschen
-      if (raumIds.length) {
-        await odojSb.from('nachrichten').delete().in('raum_id', raumIds);
+      // 2. Benachrichtigung an jeden Bewerber senden (vor dem Löschen)
+      const nachrichtText = `❌ Inserat gelöscht\n\nDas Inserat „${jobTitel}" wurde vom Arbeitgeber gelöscht. Deine Bewerbung ist damit leider nicht mehr gültig.`;
+      const jetzt = new Date().toISOString();
+      for (const bew of bews) {
+        if (bew.jobber_id) {
+          await odojSb.from('nachrichten').insert({
+            bewerbung_id: bew.id,
+            sender_id: agId,
+            empfaenger_id: bew.jobber_id,
+            nachricht: nachrichtText,
+            gelesen: false,
+            erstellt_am: jetzt
+          });
+        }
       }
+
+      // 3. Alle Nachrichten zu diesen Bewerbungen löschen
+      await odojSb.from('nachrichten').delete().in('bewerbung_id', bewIds);
 
       // 4. Chat-Räume löschen
       await odojSb.from('nachrichten_raeume').delete().in('bewerbung_id', bewIds);

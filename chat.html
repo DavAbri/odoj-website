@@ -904,7 +904,7 @@ async function loadMessages(silent) {
     const isSystem       = m.nachricht && (m.nachricht.startsWith('✅ Einsatz erfolgreich') || m.nachricht.startsWith('Einsatz erfolgreich abgeschlossen'));
     const isVertragMsg   = m.nachricht && m.nachricht.startsWith('📋 Neuer Dienstvertrag');
     const isVertragOK    = m.nachricht && m.nachricht.startsWith('✅ Vertragsbestätigung');
-    const isVertragAbg   = m.nachricht && (m.nachricht.startsWith('❌ Vertrag abgelehnt') || m.nachricht.startsWith('❌ Bewerbung zurückgezogen'));
+    const isVertragAbg   = m.nachricht && (m.nachricht.startsWith('❌ Vertrag abgelehnt') || m.nachricht.startsWith('❌ Bewerbung zurückgezogen') || m.nachricht.startsWith('❌ Inserat gelöscht'));
     const isSysInfo      = m.nachricht && !isVertragMsg && !isVertragOK && !isVertragAbg && (m.nachricht.startsWith('📋 Dein Inserat') || m.nachricht.startsWith('📋 '));
     const isBewReq    = m.nachricht && m.nachricht.startsWith('[BEW_REQ:');
     const time        = d.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
