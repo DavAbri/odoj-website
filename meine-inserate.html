@@ -1890,11 +1890,23 @@ async function openStammkraefteModal() {
   document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>';
 
   try {
-    // Alle abgeschlossenen Einsätze des AG laden (anwesenheit_bestaetigt = true)
+    // 1. Alle Jobs dieses Arbeitgebers holen
+    const { data: agJobs } = await odojSb
+      .from('jobs')
+      .select('id')
+      .eq('arbeitgeber_id', _agSession.user.id);
+
+    const agJobIds = (agJobs || []).map(j => j.id);
+    if (!agJobIds.length) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Noch keine Stammkräfte vorhanden.</div>';
+      return;
+    }
+
+    // 2. Abgeschlossene Bewerbungen (Anwesenheit bestätigt) für diese Jobs laden
     const { data: bews } = await odojSb
       .from('bewerbungen')
-      .select('jobber_id, created_at')
-      .eq('arbeitgeber_id', _agSession.user.id)
+      .select('jobber_id, job_id, created_at')
+      .in('job_id', agJobIds)
       .eq('anwesenheit_bestaetigt', true);
 
     if (!bews || bews.length === 0) {
@@ -1902,7 +1914,7 @@ async function openStammkraefteModal() {
       return;
     }
 
-    // Unique Jobber IDs + letzten Einsatz
+    // Unique Jobber: letzter Einsatz merken
     const jobberMap = {};
     bews.forEach(b => {
       if (!jobberMap[b.jobber_id] || b.created_at > jobberMap[b.jobber_id]) {
@@ -1911,15 +1923,37 @@ async function openStammkraefteModal() {
     });
     const jobberIds = Object.keys(jobberMap);
 
-    // Profile laden
+    // 3. Bewertungen dieses AG für diese Jobber laden
+    const { data: bewertungen } = await odojSb
+      .from('bewertungen')
+      .select('bewertet_id, sterne')
+      .eq('bewerter_id', _agSession.user.id)
+      .eq('rolle_bewerter', 'arbeitgeber')
+      .in('bewertet_id', jobberIds);
+
+    const bewertungMap = {};
+    (bewertungen || []).forEach(b => { bewertungMap[b.bewertet_id] = b.sterne; });
+
+    // 4. Filter: kein Rating abgegeben ODER Rating >= 3 Sterne
+    const geeigneteIds = jobberIds.filter(id => {
+      const sterne = bewertungMap[id];
+      return sterne === undefined || sterne === null || sterne >= 3;
+    });
+
+    if (!geeigneteIds.length) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Keine geeigneten Stammkräfte vorhanden.</div>';
+      return;
+    }
+
+    // 5. Profile laden
     const { data: profiles } = await odojSb
       .from('Profile')
       .select('user_id, vorname, nachname')
-      .in('user_id', jobberIds);
+      .in('user_id', geeigneteIds);
 
     _stammkraefteList = (profiles || []).map(p => ({
-      userId:      p.user_id,
-      name:        ((p.vorname || '') + ' ' + (p.nachname || '')).trim() || 'Jobber',
+      userId:         p.user_id,
+      name:           ((p.vorname || '') + ' ' + (p.nachname || '')).trim() || 'Jobber',
       letzterEinsatz: jobberMap[p.user_id],
     }));
 
@@ -1936,7 +1970,7 @@ async function openStammkraefteModal() {
           <div style="font-size:12px;color:var(--text-lt)">Letzter Einsatz: ${jb.letzterEinsatz ? new Date(jb.letzterEinsatz).toLocaleDateString('de-AT') : '–'}</div>
         </div>
       </label>`).join('');
-  } catch (_) {
+  } catch (err) {
     document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Fehler beim Laden.</div>';
   }
 }
@@ -1954,13 +1988,15 @@ async function sendStammkraefteNachrichten() {
   const betrag = j.gehalt ? '€ ' + j.gehalt : '';
   const nachricht = `Neues Inserat für Sie! ${_agFirmenname} hat ein neues Inserat erstellt: ${j.titel || 'Neuer Job'} am ${datum} in ${j.ort || ''} – Tagesgehalt: ${betrag}. Sie wurden als bevorzugte Arbeitskraft ausgewählt! Jetzt bewerben: jobs.html`;
 
+  const jetzt = new Date().toISOString();
   for (const empfaengerId of checked) {
     try {
       await odojSb.from('nachrichten').insert({
-        sender_id:    _agSession.user.id,
+        sender_id:     _agSession.user.id,
         empfaenger_id: empfaengerId,
         nachricht,
-        gelesen: false,
+        gelesen:       false,
+        erstellt_am:   jetzt,
       });
     } catch (_) {}
   }
