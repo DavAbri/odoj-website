@@ -100,9 +100,10 @@
 }
 .conv-unread-dot {
   display: inline-block;
-  width: 7px; height: 7px;
+  width: 8px; height: 8px;
   background: #e74c3c; border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 0 2px #fde8e8;
 }
 .conv-item-preview {
   font-size: 12px; color: var(--text-lt);
@@ -110,6 +111,15 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%;
 }
+.conv-item.unread {
+  background: #fffbf2;
+  border-left: 3px solid #e74c3c;
+  padding-left: 15px;
+}
+.conv-item.unread .conv-item-name { font-weight: 800; color: var(--navy); }
+.conv-item.unread .conv-item-preview { color: var(--text); font-weight: 500; }
+.conv-item.unread .conv-item-time { color: #e74c3c; font-weight: 700; }
+.conv-item.unread:hover { background: #fff5e0; }
 .conv-status-pill {
   display: inline-block;
   font-size: 10px; font-weight: 700;
@@ -735,7 +745,7 @@ async function loadConversations() {
     const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
 
     return `
-      <div class="conv-item${_activeBewId === b.id ? ' active' : ''}" id="conv-${b.id}" onclick="openConversation('${b.id}')">
+      <div class="conv-item${_activeBewId === b.id ? ' active' : ''}${hasUnread ? ' unread' : ''}" id="conv-${b.id}" onclick="openConversation('${b.id}')">
         <div class="conv-item-name">
           ${escHtml(name)}
           ${hasUnread ? '<span class="conv-unread-dot"></span>' : ''}
@@ -821,10 +831,11 @@ async function openConversation(bewId) {
     window.odojNotifications.markAllRead(_chatSession.user.id).catch(() => {});
   }
 
-  // Unread-Dot entfernen
+  // Unread-Markierung entfernen
   if (convEl) {
     const dot = convEl.querySelector('.conv-unread-dot');
     if (dot) dot.remove();
+    convEl.classList.remove('unread');
   }
 
   // Polling starten
