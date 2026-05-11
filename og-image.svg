@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Hintergrund -->
+  <rect width="1200" height="630" fill="#0B1F3A"/>
+
+  <!-- Dezenter Gradient-Akzent oben rechts -->
+  <radialGradient id="glow" cx="80%" cy="20%" r="50%">
+    <stop offset="0%" stop-color="#E8A020" stop-opacity="0.15"/>
+    <stop offset="100%" stop-color="#0B1F3A" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Oranger Akzent-Streifen links -->
+  <rect x="0" y="0" width="8" height="630" fill="#E8A020"/>
+
+  <!-- ODOJ Logo -->
+  <text x="100" y="310"
+        font-family="Arial Black, Impact, sans-serif"
+        font-size="180"
+        font-weight="900"
+        fill="#ffffff"
+        textLength="480"
+        lengthAdjust="spacingAndGlyphs">O<tspan fill="#E8A020">D</tspan>O<tspan fill="#E8A020">J</tspan></text>
+
+  <!-- Trennlinie -->
+  <rect x="100" y="345" width="480" height="3" fill="#E8A020" opacity="0.6"/>
+
+  <!-- Untertitel -->
+  <text x="100" y="400"
+        font-family="Arial, sans-serif"
+        font-size="28"
+        font-weight="400"
+        letter-spacing="6"
+        fill="#E8A020">ONE DAY ONE JOB</text>
+
+  <!-- Beschreibungstext -->
+  <text x="100" y="460"
+        font-family="Arial, sans-serif"
+        font-size="32"
+        fill="rgba(255,255,255,0.75)">Tagesjobs in Vorarlberg –</text>
+  <text x="100" y="505"
+        font-family="Arial, sans-serif"
+        font-size="32"
+        fill="rgba(255,255,255,0.75)">schnell, fair &amp; unkompliziert.</text>
+
+  <!-- Domain -->
+  <text x="100" y="575"
+        font-family="Arial, sans-serif"
+        font-size="22"
+        fill="rgba(255,255,255,0.4)">odoj.at</text>
+
+  <!-- Dekoratives Element rechts -->
+  <circle cx="950" cy="315" r="220" fill="none" stroke="#E8A020" stroke-width="2" opacity="0.1"/>
+  <circle cx="950" cy="315" r="160" fill="none" stroke="#E8A020" stroke-width="1.5" opacity="0.08"/>
+  <circle cx="950" cy="315" r="100" fill="#E8A020" opacity="0.05"/>
+  <text x="950" y="345"
+        font-family="Arial Black, Impact, sans-serif"
+        font-size="90"
+        font-weight="900"
+        text-anchor="middle"
+        fill="#E8A020"
+        opacity="0.15">OJ</text>
+</svg>

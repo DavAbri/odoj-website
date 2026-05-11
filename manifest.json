@@ -8,7 +8,9 @@
   "background_color": "#0f1f3d",
   "theme_color": "#0f1f3d",
   "orientation": "portrait-primary",
-  "icons": [],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
   "categories": ["business", "productivity"],
   "lang": "de"
 }
