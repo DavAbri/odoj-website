@@ -793,7 +793,7 @@
 </footer>
 
 <!-- STAMMKRÄFTE-MODAL -->
-<div id="stammkraefte-overlay" style="display:none;position:fixed;inset:0;background:rgba(13,27,46,.6);backdrop-filter:blur(2px);z-index:900;display:none;align-items:center;justify-content:center;padding:20px">
+<div id="stammkraefte-overlay" style="display:none;position:fixed;inset:0;background:rgba(13,27,46,.6);backdrop-filter:blur(2px);z-index:900;align-items:center;justify-content:center;padding:20px">
   <div style="background:#fff;border-radius:20px;padding:32px;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.3)">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
       <div style="width:44px;height:44px;background:#FFF4E0;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -804,7 +804,11 @@
       </div>
       <button onclick="closeStammkraefteModal()" style="background:var(--gray-lt);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:var(--text-lt);display:flex;align-items:center;justify-content:center">✕</button>
     </div>
-    <p style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:20px">Folgende Jobber haben bereits erfolgreich bei Ihnen gearbeitet. Möchten Sie diese über Ihr neues Inserat informieren?</p>
+    <p style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:16px">Folgende Jobber haben bereits erfolgreich bei Ihnen gearbeitet. Möchten Sie diese über Ihr neues Inserat informieren?</p>
+    <div id="stammkraefte-select-actions" style="display:none;gap:8px;margin-bottom:14px">
+      <button onclick="stammkraefteAlleAuswaehlen(true)" style="padding:6px 14px;border-radius:8px;background:var(--navy);border:none;font-family:inherit;font-size:12px;font-weight:600;color:#fff;cursor:pointer">Alle auswählen</button>
+      <button onclick="stammkraefteAlleAuswaehlen(false)" style="padding:6px 14px;border-radius:8px;background:transparent;border:1.5px solid var(--gray-lt);font-family:inherit;font-size:12px;font-weight:600;color:var(--text-lt);cursor:pointer">Auswahl aufheben</button>
+    </div>
     <div id="stammkraefte-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
       <div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>
     </div>
@@ -1883,38 +1887,65 @@ function closeJobberProfile(e) {
 let _neuesJobData = null;
 let _stammkraefteList = [];
 
+function _skAvatarColor(id) {
+  const colors = ['#2E86AB','#A23B72','#F18F01','#1A7A50','#5B2D9E','#C0392B','#1C6B8A'];
+  let hash = 0;
+  for (let i = 0; i < (id || '').length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff;
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function _skSterne(sterne) {
+  if (sterne == null) return '<span style="font-size:11px;color:var(--text-lt)">Noch keine Bewertung</span>';
+  let s = '';
+  for (let i = 1; i <= 5; i++) s += `<span style="color:${i <= sterne ? '#E8A020' : '#ddd'};font-size:13px">★</span>`;
+  return s;
+}
+
+function stammkraefteAlleAuswaehlen(checked) {
+  document.querySelectorAll('#stammkraefte-list input[type=checkbox]').forEach(cb => {
+    cb.checked = checked;
+    const label = cb.closest('label');
+    if (label) label.style.borderColor = checked ? 'var(--accent)' : 'var(--gray-lt)';
+    if (label) label.style.background  = checked ? 'var(--accent-pale)' : '';
+  });
+}
+
 async function openStammkraefteModal() {
   const overlay = document.getElementById('stammkraefte-overlay');
   overlay.style.display = 'flex';
   document.getElementById('stammkraefte-success').style.display = 'none';
+  document.getElementById('stammkraefte-select-actions').style.display = 'none';
   document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>';
 
   try {
-    // 1. Alle Jobs dieses Arbeitgebers holen
-    const { data: agJobs } = await odojSb
-      .from('jobs')
-      .select('id')
-      .eq('arbeitgeber_id', _agSession.user.id);
+    console.log('[Stammkräfte] Lade für AG:', _agSession?.user?.id);
+
+    // 1. Alle Jobs dieses Arbeitgebers
+    const { data: agJobs, error: jobErr } = await odojSb
+      .from('jobs').select('id').eq('arbeitgeber_id', _agSession.user.id);
+    if (jobErr) throw jobErr;
 
     const agJobIds = (agJobs || []).map(j => j.id);
+    console.log('[Stammkräfte] Jobs gefunden:', agJobIds.length);
+
     if (!agJobIds.length) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Noch keine Stammkräfte vorhanden.</div>';
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Du hast noch keine Stammkräfte.<br>Diese erscheinen nachdem du Jobber bestätigt hast.</div>';
       return;
     }
 
-    // 2. Abgeschlossene Bewerbungen (Anwesenheit bestätigt) für diese Jobs laden
-    const { data: bews } = await odojSb
-      .from('bewerbungen')
-      .select('jobber_id, job_id, created_at')
-      .in('job_id', agJobIds)
-      .eq('anwesenheit_bestaetigt', true);
+    // 2. Abgeschlossene Bewerbungen (Anwesenheit bestätigt)
+    const { data: bews, error: bewErr } = await odojSb
+      .from('bewerbungen').select('jobber_id, created_at')
+      .in('job_id', agJobIds).eq('anwesenheit_bestaetigt', true);
+    if (bewErr) throw bewErr;
 
-    if (!bews || bews.length === 0) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Noch keine Stammkräfte vorhanden.</div>';
+    console.log('[Stammkräfte] Bestätigte Einsätze:', (bews || []).length);
+
+    if (!bews || !bews.length) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Du hast noch keine Stammkräfte.<br>Diese erscheinen nachdem du Jobber bestätigt hast.</div>';
       return;
     }
 
-    // Unique Jobber: letzter Einsatz merken
     const jobberMap = {};
     bews.forEach(b => {
       if (!jobberMap[b.jobber_id] || b.created_at > jobberMap[b.jobber_id]) {
@@ -1923,38 +1954,41 @@ async function openStammkraefteModal() {
     });
     const jobberIds = Object.keys(jobberMap);
 
-    // 3. Bewertungen dieses AG für diese Jobber laden
+    // 3. Bewertungen laden
     const { data: bewertungen } = await odojSb
-      .from('bewertungen')
-      .select('bewertet_id, sterne')
+      .from('bewertungen').select('bewertet_id, sterne')
       .eq('bewerter_id', _agSession.user.id)
       .eq('rolle_bewerter', 'arbeitgeber')
       .in('bewertet_id', jobberIds);
 
     const bewertungMap = {};
     (bewertungen || []).forEach(b => { bewertungMap[b.bewertet_id] = b.sterne; });
+    console.log('[Stammkräfte] Bewertungen:', bewertungMap);
 
-    // 4. Filter: kein Rating abgegeben ODER Rating >= 3 Sterne
+    // 4. Filter: kein Rating ODER >= 3 Sterne
     const geeigneteIds = jobberIds.filter(id => {
-      const sterne = bewertungMap[id];
-      return sterne === undefined || sterne === null || sterne >= 3;
+      const s = bewertungMap[id];
+      return s === undefined || s === null || s >= 3;
     });
+    console.log('[Stammkräfte] Geeignete IDs:', geeigneteIds.length);
 
     if (!geeigneteIds.length) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Keine geeigneten Stammkräfte vorhanden.</div>';
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Keine geeigneten Stammkräfte vorhanden.<br>Jobber mit weniger als 3 Sternen werden nicht angezeigt.</div>';
       return;
     }
 
     // 5. Profile laden
-    const { data: profiles } = await odojSb
-      .from('Profile')
-      .select('user_id, vorname, nachname')
+    const { data: profiles, error: profErr } = await odojSb
+      .from('Profile').select('user_id, vorname, nachname')
       .in('user_id', geeigneteIds);
+    if (profErr) throw profErr;
 
     _stammkraefteList = (profiles || []).map(p => ({
       userId:         p.user_id,
       name:           ((p.vorname || '') + ' ' + (p.nachname || '')).trim() || 'Jobber',
+      initials:       ((p.vorname || '?').charAt(0) + (p.nachname || '').charAt(0)).toUpperCase(),
       letzterEinsatz: jobberMap[p.user_id],
+      sterne:         bewertungMap[p.user_id] ?? null,
     }));
 
     if (!_stammkraefteList.length) {
@@ -1962,17 +1996,33 @@ async function openStammkraefteModal() {
       return;
     }
 
+    document.getElementById('stammkraefte-select-actions').style.display = 'flex';
     document.getElementById('stammkraefte-list').innerHTML = _stammkraefteList.map((jb, i) => `
-      <label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--gray-lt);border-radius:10px;cursor:pointer;transition:border-color .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--gray-lt)'">
+      <label id="sk-label-${i}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--accent);border-radius:10px;cursor:pointer;transition:all .15s;background:var(--accent-pale)" onclick="setTimeout(()=>_skUpdateLabel(${i}),0)">
         <input type="checkbox" id="sk-cb-${i}" value="${jb.userId}" style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0" checked>
-        <div style="flex:1">
+        <div style="width:36px;height:36px;border-radius:50%;background:${_skAvatarColor(jb.userId)};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;color:#fff">${jb.initials}</div>
+        <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:14px;color:var(--navy)">${jb.name}</div>
-          <div style="font-size:12px;color:var(--text-lt)">Letzter Einsatz: ${jb.letzterEinsatz ? new Date(jb.letzterEinsatz).toLocaleDateString('de-AT') : '–'}</div>
+          <div style="margin-top:2px">${_skSterne(jb.sterne)}</div>
+          <div style="font-size:11px;color:var(--text-lt);margin-top:1px">Letzter Einsatz: ${jb.letzterEinsatz ? new Date(jb.letzterEinsatz).toLocaleDateString('de-AT') : '–'}</div>
         </div>
       </label>`).join('');
   } catch (err) {
-    document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Fehler beim Laden.</div>';
+    console.error('[Stammkräfte] Fehler:', err);
+    document.getElementById('stammkraefte-list').innerHTML = `
+      <div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">
+        Fehler beim Laden.<br>
+        <button onclick="openStammkraefteModal()" style="margin-top:10px;padding:7px 16px;border-radius:8px;background:var(--navy);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Erneut versuchen</button>
+      </div>`;
   }
+}
+
+function _skUpdateLabel(i) {
+  const cb = document.getElementById('sk-cb-' + i);
+  const label = document.getElementById('sk-label-' + i);
+  if (!cb || !label) return;
+  label.style.borderColor = cb.checked ? 'var(--accent)' : 'var(--gray-lt)';
+  label.style.background  = cb.checked ? 'var(--accent-pale)' : '';
 }
 
 async function sendStammkraefteNachrichten() {
@@ -1984,9 +2034,10 @@ async function sendStammkraefteNachrichten() {
   if (!checked.length) { btn.textContent = 'Auswahl benachrichtigen'; btn.disabled = false; return; }
 
   const j = _neuesJobData || {};
-  const datum  = j.datum  ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-  const betrag = j.gehalt ? '€ ' + j.gehalt : '';
-  const nachricht = `Neues Inserat für Sie! ${_agFirmenname} hat ein neues Inserat erstellt: ${j.titel || 'Neuer Job'} am ${datum} in ${j.ort || ''} – Tagesgehalt: ${betrag}. Sie wurden als bevorzugte Arbeitskraft ausgewählt! Jetzt bewerben: jobs.html`;
+  const jobTitel = j.titel || 'Neuer Job';
+  const datum    = j.datum ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+  const betrag   = j.gehalt ? '€ ' + j.gehalt : '';
+  const nachricht = `🌟 Neues Inserat von ${_agFirmenname}\n\nEin Arbeitgeber bei dem du bereits gearbeitet hast hat einen neuen Job inseriert: ${jobTitel}${datum ? ' am ' + datum : ''}${j.ort ? ' in ' + j.ort : ''}${betrag ? ' – ' + betrag : ''}.\n\nJetzt bewerben: jobs.html`;
 
   const jetzt = new Date().toISOString();
   for (const empfaengerId of checked) {
@@ -1998,6 +2049,10 @@ async function sendStammkraefteNachrichten() {
         gelesen:       false,
         erstellt_am:   jetzt,
       });
+      // E-Mail-Benachrichtigung auslösen
+      odojSb.functions.invoke('send-email', {
+        body: { type: 'stammkraft_benachrichtigung', recipientId: empfaengerId, jobTitel, firmenname: _agFirmenname }
+      }).catch(() => {});
     } catch (_) {}
   }
 
