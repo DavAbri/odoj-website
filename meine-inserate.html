@@ -1935,7 +1935,7 @@ async function openStammkraefteModal() {
 
     // 2. Abgeschlossene Bewerbungen (Anwesenheit bestätigt)
     const { data: bews, error: bewErr } = await odojSb
-      .from('bewerbungen').select('jobber_id, created_at')
+      .from('bewerbungen').select('jobber_id, erstellt_am')
       .in('job_id', agJobIds).eq('anwesenheit_bestaetigt', true);
     if (bewErr) throw bewErr;
 
@@ -1948,8 +1948,8 @@ async function openStammkraefteModal() {
 
     const jobberMap = {};
     bews.forEach(b => {
-      if (!jobberMap[b.jobber_id] || b.created_at > jobberMap[b.jobber_id]) {
-        jobberMap[b.jobber_id] = b.created_at;
+      if (!jobberMap[b.jobber_id] || b.erstellt_am > jobberMap[b.jobber_id]) {
+        jobberMap[b.jobber_id] = b.erstellt_am;
       }
     });
     const jobberIds = Object.keys(jobberMap);
@@ -2009,9 +2009,10 @@ async function openStammkraefteModal() {
       </label>`).join('');
   } catch (err) {
     console.error('[Stammkräfte] Fehler:', err);
+    const msg = err?.message || String(err) || 'Unbekannter Fehler';
     document.getElementById('stammkraefte-list').innerHTML = `
       <div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">
-        Fehler beim Laden.<br>
+        Fehler beim Laden: <em style="color:#c0392b">${msg}</em><br>
         <button onclick="openStammkraefteModal()" style="margin-top:10px;padding:7px 16px;border-radius:8px;background:var(--navy);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Erneut versuchen</button>
       </div>`;
   }
