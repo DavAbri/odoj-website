@@ -657,6 +657,15 @@ async function doApply() {
     btn.onclick  = null;
   }
   showToast('✓ Bewerbung erfolgreich gesendet!', 'success');
+
+  // Bestätigungs-E-Mail an Jobber senden (non-blocking)
+  odojSb.functions.invoke('send-email', {
+    body: {
+      type:        'bewerbung_bestaetigt',
+      recipientId: _jdSession.user.id,
+      jobTitel:    _jdJob?.titel || '',
+    }
+  }).catch(err => console.error('[E-Mail] Bewerbungsbestätigung fehlgeschlagen:', err));
 }
 
 function showToast(msg, type) {

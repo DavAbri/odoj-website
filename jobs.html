@@ -595,11 +595,11 @@ function handleApplyClick(btn) {
 
   showBewerbungsModal({
     titel, firma, datum, gehalt,
-    onConfirm: () => applyForJob(jobId, agId, btn)
+    onConfirm: () => applyForJob(jobId, agId, btn, titel)
   });
 }
 
-async function applyForJob(jobId, agId, btnEl) {
+async function applyForJob(jobId, agId, btnEl, jobTitel) {
   // Nicht eingeloggt
   if (!_odojJobsSession) {
     window.location.href = 'login.html';
@@ -654,6 +654,15 @@ async function applyForJob(jobId, agId, btnEl) {
   btnEl.style.cursor = 'default';
   btnEl.disabled = true;
   zeigeBewerbungsToast();
+
+  // Bestätigungs-E-Mail an Jobber senden (non-blocking)
+  odojSb.functions.invoke('send-email', {
+    body: {
+      type:        'bewerbung_bestaetigt',
+      recipientId: _odojJobsSession.user.id,
+      jobTitel:    jobTitel || '',
+    }
+  }).catch(err => console.error('[E-Mail] Bewerbungsbestätigung fehlgeschlagen:', err));
 }
 
 // ── JOB CARD HTML ──

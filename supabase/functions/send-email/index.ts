@@ -107,6 +107,32 @@ function workConfirmedTemplate(recipientName: string, firmenname: string, jobTit
   </td></tr>`);
 }
 
+function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string): string {
+  const dashboardUrl = `${SITE_URL}/meine-bewerbungen.html`;
+  const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1a7a50;text-transform:uppercase;letter-spacing:.8px">Bewerbung erfolgreich</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      Deine Bewerbung für den Job <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> wurde erfolgreich übermittelt.
+    </p>
+    <div style="background:#e6f5ee;border:1.5px solid #a8d9be;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#1a5c3a;line-height:1.6">
+      ✅ Der Arbeitgeber wurde benachrichtigt und wird deine Bewerbung so bald wie möglich prüfen.<br><br>
+      Sobald es ein Update gibt – ob Zusage, Absage oder Rückfrage – wirst du sofort per E-Mail und in der App benachrichtigt.
+    </div>
+    <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.7">
+      Du kannst den Status deiner Bewerbung jederzeit in deinem Dashboard einsehen.
+    </p>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${dashboardUrl}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        Meine Bewerbungen ansehen &rarr;
+      </a>
+    </td></tr></table>
+    <p style="margin:24px 0 0;font-size:13px;color:#aaa">Viel Erfolg bei deiner Bewerbung!</p>
+  </td></tr>`);
+}
+
 function esc(s: string): string {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
@@ -139,6 +165,9 @@ serve(async (req) => {
     } else if (type === "work_confirmed") {
       subject = `✅ Einsatz abgeschlossen – Wie war deine Erfahrung?`;
       html = workConfirmedTemplate(recipientName, firmenname || "", jobTitel || "", bewId || "");
+    } else if (type === "bewerbung_bestaetigt") {
+      subject = `Deine Bewerbung wurde erfolgreich übermittelt ✓`;
+      html = bewerbungBestaetigtTemplate(recipientName, jobTitel || "");
     } else {
       return new Response(JSON.stringify({ error: "Unbekannter type" }), { status: 400, headers: cors });
     }
