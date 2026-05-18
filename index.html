@@ -404,7 +404,50 @@
 /* ── RESPONSIVE ── */
 @media (max-width: 1000px) {
   .hero-layout { grid-template-columns: 1fr; }
-  .hero-visual { display: none; }
+  .hero { min-height: auto; padding-bottom: 60px; }
+
+  /* Cards-Wrapper: Position für Fade-Overlay */
+  .hero-cards-outer {
+    position: relative;
+    margin-top: 32px;
+  }
+  /* Fade-Effekt rechts: deutet an, dass weitere Karten kommen */
+  .hero-cards-outer::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 20px;
+    width: 56px;
+    background: linear-gradient(to right, transparent, #0f1f3d);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* Hero-Visual wird zum horizontalen Scroll-Container */
+  .hero-visual {
+    display: flex;
+    flex-direction: row;
+    height: auto;
+    position: static;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    gap: 14px;
+    padding: 4px 0 20px 4px;
+  }
+  .hero-visual::-webkit-scrollbar { display: none; }
+
+  /* Karten: kein absolute mehr, werden als Flex-Items dargestellt */
+  .hv-card {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    min-width: 78vw;
+    max-width: 300px;
+    width: auto !important;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
 }
 @media (max-width: 900px) {
   .hero { padding: calc(var(--nav-h) + 36px) 24px 60px; }
@@ -468,6 +511,7 @@
     </div>
 
     <!-- RECHTE SEITE: gestapelte Job-Card-Vorschau -->
+    <div class="hero-cards-outer">
     <div class="hero-visual" aria-hidden="true">
 
       <!-- Card 1 – oben, vorne -->
@@ -525,6 +569,7 @@
       </div>
 
     </div>
+    </div><!-- /hero-cards-outer -->
   </div>
 
   <div class="hero-stats">
