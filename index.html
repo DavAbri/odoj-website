@@ -408,8 +408,9 @@
 
 /* ── 1000px: Hero einspaltig + Karten-Karussell ── */
 @media (max-width: 1000px) {
-  .hero-layout { grid-template-columns: 1fr; }
+  .hero-layout { grid-template-columns: 1fr; gap: 0; max-width: 100%; }
   .hero { min-height: auto; padding-bottom: 0; }
+  .hero-inner { max-width: 100%; box-sizing: border-box; }
 
   /* Karten-Wrapper für Fade-Overlay */
   .hero-cards-outer {
@@ -436,21 +437,22 @@
     overflow-y: visible;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    gap: 14px;
-    padding: 4px 0 20px 4px;
+    gap: 12px;
+    padding: 4px 0 20px 20px;
   }
   .hero-visual::-webkit-scrollbar { display: none; }
 
-  /* Karten als statische Flex-Items */
+  /* Karten als statische Flex-Items – identisch zu Desktop-Styling */
   .hv-card {
     position: static !important;
     transform: none !important;
     opacity: 1 !important;
     min-width: 280px;
     max-width: 85vw;
-    width: auto !important;
+    width: 300px !important;
     flex-shrink: 0;
     scroll-snap-align: start;
+    box-sizing: border-box;
   }
 }
 
@@ -464,8 +466,21 @@
     letter-spacing: -2px;
     margin-bottom: 18px;
   }
-  .hero-sub { font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
-  .hero-btns { gap: 12px; flex-wrap: wrap; }
+  .hero-sub {
+    font-size: 16px; line-height: 1.6; margin-bottom: 32px;
+    max-width: 100%; overflow-wrap: break-word; word-break: normal;
+  }
+  .hero-btns {
+    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hero-btns .btn {
+    justify-content: center;
+    width: 100%;
+    max-width: 320px;
+    box-sizing: border-box;
+  }
 
   /* Hero-Stats: 2×2 Gitter */
   .hero-stats {
@@ -528,12 +543,9 @@
   .hero h1 { font-size: clamp(34px, 10.5vw, 46px); letter-spacing: -1.5px; }
   .hero-sub { font-size: 15px; }
 
-  /* Buttons gestapelt und volle Breite */
-  .hero-btns {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .hero-btns .btn { justify-content: center; }
+  /* Buttons: volle Breite auf kleinen Phones */
+  .hero-btns { align-items: stretch; }
+  .hero-btns .btn { justify-content: center; max-width: 100%; }
 
   /* Noch kompaktere Stats */
   .hero-stat { padding: 14px 16px; }
