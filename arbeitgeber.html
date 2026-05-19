@@ -187,6 +187,11 @@
 .vorteil h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 .vorteil p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
 
+/* Vorteile Image */
+.vorteile-img-wrap { margin-top: 48px; border-radius: var(--r-lg); overflow: hidden; }
+.vorteile-img-wrap img { width: 100%; height: 360px; object-fit: cover; display: block; }
+@media (max-width: 900px) { .vorteile-img-wrap img { height: 220px; } }
+
 /* Ablauf */
 .ablauf { background: var(--off); }
 .ablauf-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 52px; }
@@ -493,6 +498,11 @@
       <h3>Rechtssicher &amp; einfach</h3>
       <p>ODOJ übernimmt die Vermittlung – <a href="#rechtliches" style="color:var(--accent);font-weight:600;text-decoration:none">rechtliche Hinweise findest du hier</a>. Vollständig konform mit österreichischem Arbeitsrecht.</p>
     </div>
+  </div>
+  <div class="vorteile-img-wrap fade-in">
+    <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=80&auto=format&fit=crop"
+         loading="lazy"
+         alt="Arbeitgeber in Vorarlberg weist neue Tageskraft bei der Arbeit ein">
   </div>
 </section>
 
