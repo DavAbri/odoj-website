@@ -766,6 +766,18 @@ async function applyForJob(jobId, agId, btnEl, jobTitel) {
       jobTitel:    jobTitel || '',
     }
   }).catch(err => console.error('[E-Mail] Bewerbungsbestätigung fehlgeschlagen:', err));
+
+  // Benachrichtigungs-E-Mail an Arbeitgeber senden (non-blocking)
+  if (agId) {
+    odojSb.functions.invoke('send-email', {
+      body: {
+        type:        'neue_bewerbung_arbeitgeber',
+        recipientId: agId,
+        jobTitel:    jobTitel || '',
+        jobberName:  jobberName,
+      }
+    }).catch(err => console.error('[E-Mail] Arbeitgeber-Benachrichtigung fehlgeschlagen:', err));
+  }
 }
 
 // ── JOB CARD HTML ──

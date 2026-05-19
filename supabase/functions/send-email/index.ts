@@ -133,6 +133,29 @@ function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string): s
   </td></tr>`);
 }
 
+function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: string, jobTitel: string): string {
+  const inserateUrl = `${SITE_URL}/meine-inserate.html`;
+  const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Neue Bewerbung</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      <strong style="color:#0f1f3d">${esc(jobberName)}</strong> hat sich für deinen Job
+      <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> beworben.
+    </p>
+    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a5500;line-height:1.6">
+      📋 Melde dich in deinem ODOJ-Konto an, um die Bewerbung zu prüfen und zu antworten.
+    </div>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${inserateUrl}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        Bewerbung ansehen &rarr;
+      </a>
+    </td></tr></table>
+    <p style="margin:24px 0 0;font-size:13px;color:#aaa">Du erhältst diese E-Mail, weil du auf ODOJ ein Inserat veröffentlicht hast.</p>
+  </td></tr>`);
+}
+
 function esc(s: string): string {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
@@ -143,7 +166,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { type, recipientId, senderName, jobTitel, bewId, firmenname } = await req.json();
+    const { type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName } = await req.json();
 
     if (!recipientId) return new Response(JSON.stringify({ error: "recipientId fehlt" }), { status: 400, headers: cors });
 
@@ -168,6 +191,9 @@ serve(async (req) => {
     } else if (type === "bewerbung_bestaetigt") {
       subject = `Deine Bewerbung wurde erfolgreich übermittelt ✓`;
       html = bewerbungBestaetigtTemplate(recipientName, jobTitel || "");
+    } else if (type === "neue_bewerbung_arbeitgeber") {
+      subject = `Neue Bewerbung für deinen Job: ${jobTitel || ""}`;
+      html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "");
     } else {
       return new Response(JSON.stringify({ error: "Unbekannter type" }), { status: 400, headers: cors });
     }

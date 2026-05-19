@@ -661,6 +661,18 @@ async function doApply() {
       jobTitel:    _jdJob?.titel || '',
     }
   }).catch(err => console.error('[E-Mail] Bewerbungsbestätigung fehlgeschlagen:', err));
+
+  // Benachrichtigungs-E-Mail an Arbeitgeber senden (non-blocking)
+  if (_jdJob?.arbeitgeber_id) {
+    odojSb.functions.invoke('send-email', {
+      body: {
+        type:        'neue_bewerbung_arbeitgeber',
+        recipientId: _jdJob.arbeitgeber_id,
+        jobTitel:    _jdJob.titel || '',
+        jobberName:  jobberName,
+      }
+    }).catch(err => console.error('[E-Mail] Arbeitgeber-Benachrichtigung fehlgeschlagen:', err));
+  }
 }
 
 function showToast(msg, type) {
