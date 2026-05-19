@@ -227,8 +227,7 @@
 
 /* ── HOW IMAGE ── */
 .how-img-wrap { margin-top: 48px; border-radius: var(--r-lg); overflow: hidden; }
-.how-img-wrap img { width: 100%; height: 360px; object-fit: cover; display: block; }
-@media (max-width: 900px) { .how-img-wrap img { height: 220px; } }
+.how-img-wrap img { width: 100%; height: 360px; object-fit: cover; display: block; object-position: center 30%; }
 
 /* ── TEASER STRIP ── */
 .teasers {
@@ -406,28 +405,31 @@
   letter-spacing: -.8px;
 }
 
-/* ── RESPONSIVE ── */
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE – index.html
+══════════════════════════════════════════ */
+
+/* ── 1000px: Hero einspaltig + Karten-Karussell ── */
 @media (max-width: 1000px) {
   .hero-layout { grid-template-columns: 1fr; }
-  .hero { min-height: auto; padding-bottom: 60px; }
+  .hero { min-height: auto; padding-bottom: 0; }
 
-  /* Cards-Wrapper: Position für Fade-Overlay */
+  /* Karten-Wrapper für Fade-Overlay */
   .hero-cards-outer {
     position: relative;
-    margin-top: 32px;
+    margin-top: 28px;
   }
-  /* Fade-Effekt rechts: deutet an, dass weitere Karten kommen */
   .hero-cards-outer::after {
     content: '';
     position: absolute;
     top: 0; right: 0; bottom: 20px;
-    width: 56px;
-    background: linear-gradient(to right, transparent, #0f1f3d);
+    width: 60px;
+    background: linear-gradient(to right, transparent, #0b1f3a);
     pointer-events: none;
     z-index: 5;
   }
 
-  /* Hero-Visual wird zum horizontalen Scroll-Container */
+  /* Horizontales Karten-Karussell */
   .hero-visual {
     display: flex;
     flex-direction: row;
@@ -442,33 +444,112 @@
   }
   .hero-visual::-webkit-scrollbar { display: none; }
 
-  /* Karten: kein absolute mehr, werden als Flex-Items dargestellt */
+  /* Karten als statische Flex-Items */
   .hv-card {
     position: static !important;
     transform: none !important;
     opacity: 1 !important;
-    min-width: 78vw;
-    max-width: 300px;
+    min-width: 72vw;
+    max-width: 280px;
     width: auto !important;
     flex-shrink: 0;
     scroll-snap-align: start;
   }
 }
+
+/* ── 900px: Vollständiges Mobile-Layout ── */
 @media (max-width: 900px) {
-  .hero { padding: calc(var(--nav-h) + 36px) 24px 60px; }
-  .hero h1 { letter-spacing: -2px; }
-  .hero-stats { position: static; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,.07); margin-top: 48px; }
-  .hero-stat { flex: 0 0 calc(50% - 0px); border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); padding: 20px 24px; }
+  /* Hero */
+  .hero { padding: calc(var(--nav-h) + 32px) 24px 0; }
+  .hero-badge { margin-bottom: 20px; font-size: 12px; }
+  .hero h1 {
+    font-size: clamp(38px, 10vw, 58px);
+    letter-spacing: -2px;
+    margin-bottom: 18px;
+  }
+  .hero-sub { font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
+  .hero-btns { gap: 12px; flex-wrap: wrap; }
+
+  /* Hero-Stats: 2×2 Gitter */
+  .hero-stats {
+    position: static;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,.07);
+    margin-top: 36px;
+  }
+  .hero-stat {
+    flex: 0 0 50%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+    padding: 18px 20px;
+  }
+  /* Letzten zwei Stats: kein unterer Rand */
+  .hero-stat:nth-child(3),
+  .hero-stat:nth-child(4) { border-bottom: none; }
+  .hero-stat-num { font-size: 28px; }
+  .hero-stat-num sup { font-size: 14px; }
+  .hero-stat-lbl { font-size: 12px; }
+
+  /* Teasers */
   .teasers { grid-template-columns: 1fr; }
-  .teaser { border-right: none; border-bottom: 1px solid var(--gray-lt); }
+  .teaser {
+    padding: 32px 24px;
+    border-right: none;
+    border-bottom: 1px solid var(--gray-lt);
+  }
   .teaser:last-child { border-bottom: none; }
+
+  /* How it works */
+  .how-header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    gap: 16px;
+  }
   .steps { grid-template-columns: 1fr; gap: 3px; }
+  .step { padding: 32px 24px; }
   .step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+  .step-num { font-size: 52px; margin-bottom: 14px; }
+
+  /* How-Image */
+  .how-img-wrap { margin-top: 28px; border-radius: var(--r-md); }
+  .how-img-wrap img { height: 200px; }
+
+  /* Branchen */
   .branchen-grid { grid-template-columns: 1fr 1fr; }
-  .cta-band { padding: 56px 24px; flex-direction: column; align-items: flex-start; }
+  .branche-pill { padding: 24px 20px; }
+
+  /* CTA Band */
+  .cta-band {
+    padding: 48px 24px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  .cta-band .btn { justify-content: center; }
 }
-@media (max-width: 540px) {
+
+/* ── 480px: Kleine Smartphones (iPhone SE, 375-390px) ── */
+@media (max-width: 480px) {
+  .hero h1 { font-size: clamp(34px, 10.5vw, 46px); letter-spacing: -1.5px; }
+  .hero-sub { font-size: 15px; }
+
+  /* Buttons gestapelt und volle Breite */
+  .hero-btns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-btns .btn { justify-content: center; }
+
+  /* Noch kompaktere Stats */
+  .hero-stat { padding: 14px 16px; }
+  .hero-stat-num { font-size: 22px; }
+
+  /* Karten: etwas schmaler damit mehr vom nächsten Rand sichtbar */
+  .hv-card { min-width: 74vw; max-width: 260px; }
+
+  /* Branchen: eine Spalte */
   .branchen-grid { grid-template-columns: 1fr; }
 }
 </style>
