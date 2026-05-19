@@ -253,7 +253,7 @@
     <li><a href="jobs.html">Jobs finden</a></li>
     <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
     <li><a href="ueber-uns.html" class="active">Über uns</a></li>
-    <li><a href="jobs.html" class="nav-cta">Jetzt bewerben</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
   </ul>
   <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
     <span></span><span></span><span></span>
@@ -263,7 +263,7 @@
   <a href="jobs.html">Jobs finden</a>
   <a href="arbeitgeber.html">Für Arbeitgeber</a>
   <a href="ueber-uns.html" class="active">Über uns</a>
-  <a href="jobs.html" style="color:var(--accent);font-weight:600">Jetzt bewerben →</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
 </div>
 
 <!-- PAGE HERO -->
@@ -438,6 +438,9 @@ const obs = new IntersectionObserver((entries) => {
 }, { threshold: 0.08 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script src="notifications.js"></script>
 <script src="cookies.js"></script>
 <script src="chatbot.js"></script>
 </body>
