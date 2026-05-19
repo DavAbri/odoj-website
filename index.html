@@ -406,54 +406,19 @@
    MOBILE RESPONSIVE – index.html
 ══════════════════════════════════════════ */
 
-/* ── 1000px: Hero einspaltig + Karten-Karussell ── */
+/* ── 1000px: Hero einspaltig – Karten behalten gestapelten Desktop-Effekt ── */
 @media (max-width: 1000px) {
   .hero-layout { grid-template-columns: 1fr; gap: 0; max-width: 100%; }
   .hero { min-height: auto; padding-bottom: 0; }
   .hero-inner { max-width: 100%; box-sizing: border-box; }
 
-  /* Karten-Wrapper für Fade-Overlay */
   .hero-cards-outer {
     position: relative;
-    margin-top: 28px;
-  }
-  .hero-cards-outer::after {
-    content: '';
-    position: absolute;
-    top: 0; right: 0; bottom: 20px;
-    width: 60px;
-    background: linear-gradient(to right, transparent, #0b1f3a);
-    pointer-events: none;
-    z-index: 5;
+    margin-top: 36px;
   }
 
-  /* Horizontales Karten-Karussell */
-  .hero-visual {
-    display: flex;
-    flex-direction: row;
-    height: auto;
-    position: static;
-    overflow-x: auto;
-    overflow-y: visible;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    gap: 12px;
-    padding: 4px 0 20px 20px;
-  }
-  .hero-visual::-webkit-scrollbar { display: none; }
-
-  /* Karten als statische Flex-Items – identisch zu Desktop-Styling */
-  .hv-card {
-    position: static !important;
-    transform: none !important;
-    opacity: 1 !important;
-    min-width: 280px;
-    max-width: 85vw;
-    width: 300px !important;
-    flex-shrink: 0;
-    scroll-snap-align: start;
-    box-sizing: border-box;
-  }
+  /* Gestapelter Effekt bleibt wie auf Desktop */
+  .hero-visual { height: 380px; }
 }
 
 /* ── 900px: Vollständiges Mobile-Layout ── */
@@ -551,8 +516,10 @@
   .hero-stat { padding: 14px 16px; }
   .hero-stat-num { font-size: 22px; }
 
-  /* Karten: kompakter auf kleinen Phones, trotzdem min. 280px */
-  .hv-card { min-width: 280px; max-width: 82vw; }
+  /* Karten-Stapel etwas kompakter auf kleinen Phones */
+  .hero-visual { height: 340px; }
+  .hv-card-2 { top: 130px; }
+  .hv-card-3 { left: 20px; }
 
   /* Branchen: eine Spalte */
   .branchen-grid { grid-template-columns: 1fr; }
