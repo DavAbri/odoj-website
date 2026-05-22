@@ -670,6 +670,7 @@
           <p>Fülle das Formular aus – dein Inserat erscheint sofort in der Jobsuche.</p>
 
           <div id="ins-success" class="if-success" style="display:none">Job erfolgreich gespeichert!</div>
+          <div id="ins-tipp" style="display:none;margin-top:10px;padding:12px 16px;background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;font-size:13px;color:#7a5500;line-height:1.5">💡 <strong>Tipp:</strong> Bewerten Sie Ihre Jobber nach dem Einsatz – gute Jobber (3+ Sterne) werden beim nächsten Inserat als Stammkraft vorgeschlagen und können direkt benachrichtigt werden.</div>
           <div id="ins-error"   class="if-error"   style="display:none"></div>
 
           <form id="ins-form" onsubmit="submitInserat(event)">
@@ -854,6 +855,7 @@
       <span class="bew-stern" data-val="4" onmouseenter="hoverStern(4)" onmouseleave="resetSternHover()" onclick="clickStern(4)">★</span>
       <span class="bew-stern" data-val="5" onmouseenter="hoverStern(5)" onmouseleave="resetSternHover()" onclick="clickStern(5)">★</span>
     </div>
+    <div style="background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#7a5500;line-height:1.5">⭐ <strong>Ihre Bewertung hilft uns, die besten Arbeitskräfte zu erkennen.</strong> Jobber mit 3 oder mehr Sternen werden bei Ihrem nächsten Inserat als Stammkraft vorgeschlagen und können direkt per Nachricht benachrichtigt werden.</div>
     <div class="bew-kommentar-wrap">
       <label>Kommentar (optional, max. 300 Zeichen)</label>
       <textarea id="bew-kommentar" maxlength="300" placeholder="Kurzes Feedback zum Einsatz…"></textarea>
@@ -898,10 +900,9 @@ let _bewSelectedStern = 0;
 function openBewRateModal(bewId, jobberId, jobId, jobberName) {
   _bewRateData      = { bewId, jobberId, jobId, jobberName };
   _bewSelectedStern = 0;
-  document.getElementById('bew-rate-title').textContent =
-    'Wie war der Einsatz von ' + (jobberName || 'dem Jobber') + '?';
+  document.getElementById('bew-rate-title').textContent = 'Einsatz abgeschlossen – Jobber bewerten';
   document.getElementById('bew-rate-sub').textContent =
-    'Deine ehrliche Bewertung hilft anderen Arbeitgebern.';
+    'Bewertung für ' + (jobberName || 'Jobber') + ' – Ihre ehrliche Meinung hilft uns.';
   document.getElementById('bew-kommentar').value = '';
   document.getElementById('bew-rate-error').style.display   = 'none';
   document.getElementById('bew-rate-success').style.display = 'none';
@@ -967,6 +968,14 @@ async function submitAgBewertung() {
 
   // ag_bewertung_abgegeben markieren (non-fatal — Spalte muss in DB existieren)
   odojSb.from('jobs').update({ ag_bewertung_abgegeben: true }).eq('id', _bewRateData.jobId).then(() => {}).catch(() => {});
+
+  // Bewertung auch in bewerbungen speichern (für Stammkräfte-System)
+  if (_bewRateData.bewId) {
+    odojSb.from('bewerbungen').update({
+      bewertung: _bewSelectedStern,
+      bewertung_kommentar: kommentar || null
+    }).eq('id', _bewRateData.bewId).then(() => {}).catch(() => {});
+  }
 
   document.getElementById('bew-rate-success').style.display = 'block';
   btn.style.display = 'none';
@@ -1741,7 +1750,13 @@ async function submitInserat(e) {
 
   // Stammkräfte benachrichtigen
   _neuesJobData = { titel, datum, ort, gehalt, jobId: newJob?.id };
-  await openStammkraefteModal();
+  const stammkraefte = await ladeStammkraefte();
+  if (!stammkraefte.length) {
+    const tippEl = document.getElementById('ins-tipp');
+    if (tippEl) { tippEl.style.display = 'block'; setTimeout(() => { tippEl.style.display = 'none'; }, 8000); }
+  } else {
+    await openStammkraefteModal();
+  }
 }
 
 // ── AUTH GUARD ──
@@ -1911,6 +1926,33 @@ function stammkraefteAlleAuswaehlen(checked) {
   });
 }
 
+async function ladeStammkraefte() {
+  const { data: { user } } = await odojSb.auth.getUser();
+  if (!user) return [];
+
+  const { data: bewerbungen, error } = await odojSb
+    .from('bewerbungen')
+    .select('jobber_id, jobber_name, jobber_email, bewertung, job_id')
+    .eq('arbeitgeber_id', user.id)
+    .eq('anwesenheit_bestaetigt', true)
+    .gte('bewertung', 3)
+    .not('bewertung', 'is', null);
+
+  if (error) {
+    console.error('Stammkräfte Fehler:', error);
+    return [];
+  }
+
+  const unique = {};
+  (bewerbungen || []).forEach(b => {
+    if (!unique[b.jobber_id] || (b.bewertung > unique[b.jobber_id].bewertung)) {
+      unique[b.jobber_id] = b;
+    }
+  });
+
+  return Object.values(unique);
+}
+
 async function openStammkraefteModal() {
   const overlay = document.getElementById('stammkraefte-overlay');
   overlay.style.display = 'flex';
@@ -1919,83 +1961,19 @@ async function openStammkraefteModal() {
   document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>';
 
   try {
-    console.log('[Stammkräfte] Lade für AG:', _agSession?.user?.id);
+    const stammkraefte = await ladeStammkraefte();
 
-    // 1. Alle Jobs dieses Arbeitgebers
-    const { data: agJobs, error: jobErr } = await odojSb
-      .from('jobs').select('id').eq('arbeitgeber_id', _agSession.user.id);
-    if (jobErr) throw jobErr;
-
-    const agJobIds = (agJobs || []).map(j => j.id);
-    console.log('[Stammkräfte] Jobs gefunden:', agJobIds.length);
-
-    if (!agJobIds.length) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Du hast noch keine Stammkräfte.<br>Diese erscheinen nachdem du Jobber bestätigt hast.</div>';
+    if (!stammkraefte.length) {
+      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Du hast noch keine Stammkräfte.<br>Diese erscheinen nachdem du Jobber mit 3+ Sternen bewertet hast.</div>';
       return;
     }
 
-    // 2. Abgeschlossene Bewerbungen (Anwesenheit bestätigt)
-    const { data: bews, error: bewErr } = await odojSb
-      .from('bewerbungen').select('jobber_id, erstellt_am')
-      .in('job_id', agJobIds).eq('anwesenheit_bestaetigt', true);
-    if (bewErr) throw bewErr;
-
-    console.log('[Stammkräfte] Bestätigte Einsätze:', (bews || []).length);
-
-    if (!bews || !bews.length) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Du hast noch keine Stammkräfte.<br>Diese erscheinen nachdem du Jobber bestätigt hast.</div>';
-      return;
-    }
-
-    const jobberMap = {};
-    bews.forEach(b => {
-      if (!jobberMap[b.jobber_id] || b.erstellt_am > jobberMap[b.jobber_id]) {
-        jobberMap[b.jobber_id] = b.erstellt_am;
-      }
-    });
-    const jobberIds = Object.keys(jobberMap);
-
-    // 3. Bewertungen laden
-    const { data: bewertungen } = await odojSb
-      .from('bewertungen').select('bewertet_id, sterne')
-      .eq('bewerter_id', _agSession.user.id)
-      .eq('rolle_bewerter', 'arbeitgeber')
-      .in('bewertet_id', jobberIds);
-
-    const bewertungMap = {};
-    (bewertungen || []).forEach(b => { bewertungMap[b.bewertet_id] = b.sterne; });
-    console.log('[Stammkräfte] Bewertungen:', bewertungMap);
-
-    // 4. Filter: kein Rating ODER >= 3 Sterne
-    const geeigneteIds = jobberIds.filter(id => {
-      const s = bewertungMap[id];
-      return s === undefined || s === null || s >= 3;
-    });
-    console.log('[Stammkräfte] Geeignete IDs:', geeigneteIds.length);
-
-    if (!geeigneteIds.length) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Keine geeigneten Stammkräfte vorhanden.<br>Jobber mit weniger als 3 Sternen werden nicht angezeigt.</div>';
-      return;
-    }
-
-    // 5. Profile laden
-    const { data: profiles, error: profErr } = await odojSb
-      .from('Profile').select('user_id, vorname, nachname')
-      .in('user_id', geeigneteIds);
-    if (profErr) throw profErr;
-
-    _stammkraefteList = (profiles || []).map(p => ({
-      userId:         p.user_id,
-      name:           ((p.vorname || '') + ' ' + (p.nachname || '')).trim() || 'Jobber',
-      initials:       ((p.vorname || '?').charAt(0) + (p.nachname || '').charAt(0)).toUpperCase(),
-      letzterEinsatz: jobberMap[p.user_id],
-      sterne:         bewertungMap[p.user_id] ?? null,
+    _stammkraefteList = stammkraefte.map(b => ({
+      userId:   b.jobber_id,
+      name:     b.jobber_name || 'Jobber',
+      initials: (b.jobber_name || 'J').split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2) || 'J',
+      sterne:   b.bewertung,
     }));
-
-    if (!_stammkraefteList.length) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Keine Stammkräfte gefunden.</div>';
-      return;
-    }
 
     document.getElementById('stammkraefte-select-actions').style.display = 'flex';
     document.getElementById('stammkraefte-list').innerHTML = _stammkraefteList.map((jb, i) => `
@@ -2005,7 +1983,6 @@ async function openStammkraefteModal() {
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:14px;color:var(--navy)">${jb.name}</div>
           <div style="margin-top:2px">${_skSterne(jb.sterne)}</div>
-          <div style="font-size:11px;color:var(--text-lt);margin-top:1px">Letzter Einsatz: ${jb.letzterEinsatz ? new Date(jb.letzterEinsatz).toLocaleDateString('de-AT') : '–'}</div>
         </div>
       </label>`).join('');
   } catch (err) {
