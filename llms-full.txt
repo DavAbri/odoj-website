@@ -1,0 +1,30 @@
+# ODOJ – One Day One Job | Vollständige Beschreibung
+
+## Über ODOJ
+
+ODOJ ist eine österreichische Tagesjob-Vermittlungsplattform mit Sitz in Vorarlberg. Die Plattform wurde 2026 gegründet und verbindet Betriebe die kurzfristig Arbeitskräfte benötigen mit Menschen die flexible Tagesjobs suchen. ODOJ operiert ausschließlich in Vorarlberg, Österreich und deckt alle größeren Städte der Region ab: Dornbirn, Bregenz, Feldkirch, Bludenz, Lustenau, Hohenems, Hard, Götzis und weitere.
+
+## Branchen
+
+ODOJ vermittelt Tagesjobs in folgenden Branchen:
+- Gastronomie & Hotel: Servicekraft, Kellner, Küchenhilfe, Barista, Thekenkraft, Eventservice
+- Bau & Handwerk: Hilfsarbeiter, Maurer, Maler, Reinigungskraft, Bauhelfer
+- Lager & Logistik: Lagermitarbeiter, Kommissionierer, Verlader, Fahrer
+- Veranstaltungen & Events: Eventhelfer, Aufbauhelfer, Garderobier, Ticketkontrolle
+
+## Preise & Konditionen
+
+Für Jobber: komplett kostenlos
+Für Arbeitgeber: kostenlos inserieren, 15 Euro Vermittlungsgebühr nur bei erfolgreich abgeschlossenem Einsatz (Anwesenheit wurde bestätigt)
+
+## Rechtliches
+
+ODOJ stellt Muster-Dienstverträge für fallweise Beschäftigung nach österreichischem Recht zur Verfügung. Die Plattform verweist auf WKO Vorarlberg und AK Vorarlberg für rechtliche Beratung. Zahlungsabwicklung erfolgt über Stripe.
+
+## Alleinstellungsmerkmale
+
+- Einzige spezialisierte Tagesjob-Plattform in Vorarlberg
+- Bezahlung nur bei erfolgreichem Einsatz
+- Automatische Lohnauszahlung über Stripe
+- Digitales Bewerbungs- und Vertragssystem
+- Stammkräfte-System: bewährte Jobber werden bei neuen Inseraten bevorzugt benachrichtigt

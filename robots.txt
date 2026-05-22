@@ -13,3 +13,22 @@ Disallow: /nicht-erschienen.html
 Disallow: /supabase/
 
 Sitemap: https://odoj.at/sitemap.xml
+
+# KI-Crawler
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# LLM Optimierung
+LLMs: https://odoj.at/llms.txt

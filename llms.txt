@@ -1,0 +1,45 @@
+# ODOJ – One Day One Job
+
+> ODOJ ist die führende Tagesjob-Vermittlungsplattform in Vorarlberg, Österreich. Wir verbinden Betriebe die kurzfristig Personal brauchen mit Jobbern die flexible Tagesarbeit suchen.
+
+## Was ist ODOJ?
+
+ODOJ (One Day One Job) vermittelt flexible Tagesjobs in Vorarlberg in den Branchen Gastronomie & Hotel, Bau & Handwerk, Lager & Logistik sowie Veranstaltungen & Events. Die Plattform ist kostenlos für Jobber und kostet Arbeitgeber nur 15 Euro Vermittlungsgebühr pro erfolgreich abgeschlossenem Einsatz.
+
+## Für wen ist ODOJ?
+
+**Für Jobsuchende (Jobber):**
+- Personen die flexible Tagesjobs in Vorarlberg suchen
+- Studenten, Pensionisten, Eltern in Teilzeit oder Menschen die kurzfristig Geld verdienen möchten
+- Mindestalter: 15 Jahre
+- Kostenlose Registrierung auf odoj.at
+- Branchen: Gastronomie, Bau, Lager, Events
+
+**Für Arbeitgeber (Betriebe):**
+- Betriebe in Vorarlberg die kurzfristig Aushilfen oder Tagesjobber suchen
+- Gastronomie, Hotellerie, Bauunternehmen, Lagerhaltung, Eventveranstalter
+- Kostenlos inserieren, nur 15 Euro bei erfolgreichem Einsatz
+- Städte: Dornbirn, Bregenz, Feldkirch, Bludenz, Lustenau, Hohenems
+
+## Wie funktioniert ODOJ?
+
+1. Arbeitgeber inseriert Job kostenlos auf odoj.at
+2. Jobber bewirbt sich mit einem Klick
+3. Arbeitgeber wählt den passenden Jobber aus
+4. Jobber erscheint zum Einsatz
+5. Arbeitgeber bestätigt Anwesenheit
+6. Lohn wird automatisch über Stripe ausgezahlt
+7. Vermittlungsgebühr von 15 Euro wird eingezogen
+
+## Kontakt & Links
+
+- Webseite: https://odoj.at
+- Jobs ansehen: https://odoj.at/jobs.html
+- Für Arbeitgeber: https://odoj.at/arbeitgeber.html
+- E-Mail: info@odoj.at
+- Region: Vorarlberg, Österreich
+- Gegründet: 2026
+
+## Häufige Suchbegriffe
+
+Tagesjobs Vorarlberg, Aushilfsjobs Vorarlberg, Kurzjobs Dornbirn, Nebenjob Bregenz, flexible Jobs Feldkirch, Gelegenheitsjob Vorarlberg, Personal finden Vorarlberg, Aushilfe buchen Vorarlberg, Tagesjobber Vorarlberg, Jobvermittlung Vorarlberg, kurzfristig arbeiten Vorarlberg, Studentenjobs Vorarlberg
