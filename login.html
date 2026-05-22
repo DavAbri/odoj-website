@@ -597,6 +597,27 @@ async function doLogin(e) {
     return;
   }
 
+  // Ausstehende Profildaten aus Registrierung nachholen (falls E-Mail-Bestätigung nötig war)
+  const pendingRaw = localStorage.getItem('odoj_pending_profile');
+  if (pendingRaw) {
+    try {
+      const pendingInsert = JSON.parse(pendingRaw);
+      // Nur einfügen wenn kein Profil existiert
+      if (!profile) {
+        const { error: pendingErr } = await odojSb.from('Profile').insert({
+          ...pendingInsert,
+          user_id: data.user.id   // Sicherstellen dass user_id stimmt
+        });
+        if (pendingErr) console.warn('Ausstehender Profile-Insert fehlgeschlagen:', pendingErr.message);
+        else console.log('Ausstehendes Profil erfolgreich gespeichert.');
+      }
+      localStorage.removeItem('odoj_pending_profile');
+    } catch (e) {
+      console.warn('Fehler beim Nachholen der Profildaten:', e);
+      localStorage.removeItem('odoj_pending_profile');
+    }
+  }
+
   odojSaveRolle(tatsaechlicheRolle);
   redirectAfterAuth(tatsaechlicheRolle);
 }
@@ -682,11 +703,20 @@ async function doRegister(e) {
 
   // 2. Profil in Tabelle einfügen
   if (data.user) {
-    const { error: pe } = await odojSb.from('Profile').insert({
-      user_id: data.user.id,
+    const insertData = {
+      user_id:             data.user.id,
+      profil_vollstaendig: false,
       ...profileData
-    });
-    if (pe) console.warn('Profile insert:', pe.message);
+    };
+    const { error: pe } = await odojSb.from('Profile').insert(insertData);
+    if (pe) {
+      console.warn('Profile insert (Registrierung):', pe.message);
+      // Falls E-Mail-Bestätigung aktiv → noch kein Session → RLS blockiert INSERT.
+      // Profildaten in localStorage merken; wird beim ersten Login nachgeholt.
+      if (!data.session) {
+        localStorage.setItem('odoj_pending_profile', JSON.stringify(insertData));
+      }
+    }
   }
 
   // 3. Rolle speichern
