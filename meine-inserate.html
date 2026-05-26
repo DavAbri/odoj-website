@@ -1930,27 +1930,43 @@ async function ladeStammkraefte() {
   const { data: { user } } = await odojSb.auth.getUser();
   if (!user) return [];
 
-  const { data: bewerbungen, error } = await odojSb
-    .from('bewerbungen')
-    .select('jobber_id, jobber_name, jobber_email, bewertung, job_id')
-    .eq('arbeitgeber_id', user.id)
-    .eq('anwesenheit_bestaetigt', true)
-    .gte('bewertung', 3)
-    .not('bewertung', 'is', null);
+  // 1. Alle Jobs dieses Arbeitgebers
+  const { data: agJobs } = await odojSb
+    .from('jobs').select('id').eq('arbeitgeber_id', user.id);
+  const agJobIds = (agJobs || []).map(j => j.id);
+  if (!agJobIds.length) return [];
 
-  if (error) {
-    console.error('Stammkräfte Fehler:', error);
-    return [];
-  }
+  // 2. Jobber mit bestätigter Anwesenheit
+  const { data: bews, error } = await odojSb
+    .from('bewerbungen').select('jobber_id')
+    .in('job_id', agJobIds).eq('anwesenheit_bestaetigt', true);
+  if (error) { console.error('Stammkräfte Fehler:', error); return []; }
 
-  const unique = {};
-  (bewerbungen || []).forEach(b => {
-    if (!unique[b.jobber_id] || (b.bewertung > unique[b.jobber_id].bewertung)) {
-      unique[b.jobber_id] = b;
-    }
+  const jobberIds = [...new Set((bews || []).map(b => b.jobber_id))];
+  if (!jobberIds.length) return [];
+
+  // 3. Bewertungen >= 3 aus bewertungen Tabelle laden
+  const { data: bewertungen } = await odojSb
+    .from('bewertungen').select('bewertet_id, sterne')
+    .eq('bewerter_id', user.id).eq('rolle_bewerter', 'arbeitgeber')
+    .in('bewertet_id', jobberIds).gte('sterne', 3);
+  if (!bewertungen?.length) return [];
+
+  const bewMap = {};
+  bewertungen.forEach(b => {
+    if (!bewMap[b.bewertet_id] || b.sterne > bewMap[b.bewertet_id]) bewMap[b.bewertet_id] = b.sterne;
   });
 
-  return Object.values(unique);
+  // 4. Profile laden
+  const { data: profiles } = await odojSb
+    .from('Profile').select('user_id, vorname, nachname')
+    .in('user_id', Object.keys(bewMap));
+
+  return (profiles || []).map(p => ({
+    jobber_id:   p.user_id,
+    jobber_name: ((p.vorname || '') + ' ' + (p.nachname || '')).trim() || 'Jobber',
+    bewertung:   bewMap[p.user_id]
+  }));
 }
 
 async function openStammkraefteModal() {
