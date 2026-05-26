@@ -228,6 +228,13 @@
   cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .2s;
 }
 .btn-del:hover { background: #FFF0F0; }
+.btn-edit {
+  background: transparent; border: 1.5px solid var(--navy);
+  color: var(--navy); font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: var(--r-sm);
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .2s;
+}
+.btn-edit:hover { background: var(--off); }
 
 .empty-state {
   text-align: center; padding: 72px 32px; color: var(--text-lt);
@@ -669,6 +676,10 @@
           <h2>Job inserieren</h2>
           <p>Fülle das Formular aus – dein Inserat erscheint sofort in der Jobsuche.</p>
 
+          <div id="ins-edit-banner" style="display:none;padding:12px 16px;background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;font-size:13px;color:#7a5500;margin-bottom:12px;align-items:center;justify-content:space-between;gap:10px">
+            <span>✏️ <strong>Sie bearbeiten ein bestehendes Inserat</strong></span>
+            <button type="button" onclick="cancelEditInserat()" style="background:transparent;border:none;color:var(--navy);font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap;flex-shrink:0">Abbrechen ✕</button>
+          </div>
           <div id="ins-success" class="if-success" style="display:none">Job erfolgreich gespeichert!</div>
           <div id="ins-tipp" style="display:none;margin-top:10px;padding:12px 16px;background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;font-size:13px;color:#7a5500;line-height:1.5">💡 <strong>Tipp:</strong> Bewerten Sie Ihre Jobber nach dem Einsatz – gute Jobber (3+ Sterne) werden beim nächsten Inserat als Stammkraft vorgeschlagen und können direkt benachrichtigt werden.</div>
           <div id="ins-error"   class="if-error"   style="display:none"></div>
@@ -754,7 +765,10 @@
             <p style="font-size:12px;color:var(--text-lt);background:var(--off);border-radius:8px;padding:10px 14px;margin-top:4px;">
               Das Inserieren ist kostenlos. Pro erfolgreich abgeschlossenem Einsatz wird eine Vermittlungsgebühr von <strong>€ 15,00</strong> fällig – erst nach Ihrer Bestätigung der Anwesenheit.
             </p>
-            <button type="submit" class="if-submit" id="ins-btn">Job speichern</button>
+            <div style="display:flex;gap:10px">
+              <button type="submit" class="if-submit" id="ins-btn" style="flex:1">Job speichern</button>
+              <button type="button" id="ins-abbrechen-btn" onclick="cancelEditInserat()" style="display:none;padding:14px 20px;border-radius:var(--r-sm);border:1.5px solid var(--gray-lt);background:transparent;color:var(--navy);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s">Abbrechen</button>
+            </div>
           </form>
         </div>
       </div>
@@ -878,6 +892,9 @@ function toggleMenu() { document.getElementById('navMobile').classList.toggle('o
 let _agSession    = null;
 let _agFirmenname = '';
 let _agUidNummer  = '';
+let _editJobId    = null; // null = neues Inserat, sonst Job-ID die bearbeitet wird
+let _pendingEditData  = null; // zwischengespeicherte Formulardaten für Bearbeiten-Bestätigung
+let _pendingBewerber  = null; // Bewerber die benachrichtigt werden sollen
 
 function applyUidCheck(uid) {
   const hasUid = !!(uid && uid.trim());
@@ -1194,7 +1211,13 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
             ${ausstehendCount > 0 ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:0 4px;margin-left:4px">${ausstehendCount} neu</span>` : ''}
           </button>
-          <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}', '${titelEsc}')">Löschen</button>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <div style="display:flex;gap:6px">
+              <button class="btn-edit" onclick="event.stopPropagation();editInserat('${j.id}')">Bearbeiten ✏️</button>
+              <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}', '${titelEsc}')">Löschen</button>
+            </div>
+            ${bewCount > 0 ? `<div style="font-size:11px;color:#b07000;margin-top:1px">⚠️ Bewerber werden bei Änderungen benachrichtigt</div>` : ''}
+          </div>
         </div>
       </div>
     </div>`;
@@ -1723,6 +1746,13 @@ async function submitInserat(e) {
   btn.textContent = 'Speichern…';
   btn.disabled    = true;
 
+  // ── BEARBEITEN MODUS: UPDATE statt INSERT ──
+  if (_editJobId) {
+    const formData = { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, pause, beschr };
+    await _startEditFlow(formData, btn, errEl, successEl);
+    return;
+  }
+
   const { data: newJob, error } = await odojSb.from('jobs').insert({
     arbeitgeber_id: _agSession.user.id,
     firmenname:     _agFirmenname,
@@ -2063,9 +2093,171 @@ function closeStammkraefteModal() {
   document.body.style.overflow = '';
   showTab('inserate');
 }
+
+// ── INSERAT BEARBEITEN ──
+
+async function editInserat(jobId) {
+  // Job-Daten laden
+  const { data: job, error } = await odojSb.from('jobs').select('*').eq('id', jobId).single();
+  if (error || !job) { alert('Inserat konnte nicht geladen werden.'); return; }
+
+  // Zum Tab "inserieren" wechseln
+  showTab('inserieren');
+
+  // Formular vorausfüllen
+  document.getElementById('ins-titel').value     = job.titel || '';
+  document.getElementById('ins-branche').value   = job.branche || '';
+  document.getElementById('ins-datum').value     = job.datum || '';
+  document.getElementById('ins-von').value       = job.uhrzeit_von || '';
+  document.getElementById('ins-bis').value       = job.uhrzeit_bis || '';
+  document.getElementById('ins-stunden').value   = job.stundenanzahl || '';
+  document.getElementById('ins-pause').value     = job.pause || '0';
+  document.getElementById('ins-gehalt').value    = job.tagesgehalt || '';
+  document.getElementById('ins-plaetze').value   = job.plaetze || '';
+  document.getElementById('ins-mindestalter').value = job.mindestalter || '18';
+  document.getElementById('ins-adresse').value   = job.adresse || '';
+  document.getElementById('ins-ort').value       = job.ort || '';
+  document.getElementById('ins-beschr').value    = job.beschreibung || '';
+
+  // Bearbeiten-Modus aktivieren
+  _editJobId = jobId;
+  document.getElementById('ins-edit-banner').style.display = 'flex';
+  document.getElementById('ins-btn').textContent = 'Änderungen speichern';
+  document.getElementById('ins-abbrechen-btn').style.display = 'block';
+
+  // Zum Formular scrollen
+  document.getElementById('ins-edit-banner').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEditInserat() {
+  _editJobId = null;
+  _pendingEditData = null;
+  _pendingBewerber = null;
+  document.getElementById('ins-form').reset();
+  document.getElementById('ins-edit-banner').style.display = 'none';
+  document.getElementById('ins-btn').textContent = 'Job speichern';
+  document.getElementById('ins-abbrechen-btn').style.display = 'none';
+  document.getElementById('ins-error').style.display = 'none';
+  document.getElementById('ins-success').style.display = 'none';
+  showTab('inserate');
+}
+
+async function _startEditFlow(formData, btn, errEl, successEl) {
+  // Bestehende Bewerbungen prüfen
+  const { data: bewerbungen } = await odojSb
+    .from('bewerbungen').select('id, jobber_id, jobber_name, status')
+    .eq('job_id', _editJobId).neq('status', 'abgelehnt');
+
+  const aktiveBew = (bewerbungen || []);
+
+  if (!aktiveBew.length) {
+    // Keine Bewerbungen → direkt UPDATE
+    await _executeJobUpdate(formData, [], btn, errEl, successEl);
+  } else {
+    // Bewerbungen vorhanden → Bestätigungs-Modal zeigen
+    _pendingEditData = formData;
+    _pendingBewerber = aktiveBew;
+    const anzahl = aktiveBew.length;
+    document.getElementById('edit-confirm-text').textContent =
+      `Für dieses Inserat gibt es bereits ${anzahl} Bewerbung${anzahl !== 1 ? 'en' : ''}. Alle Bewerber werden über die Änderung benachrichtigt und können ihre Bewerbung bestätigen oder zurückziehen.`;
+    document.getElementById('edit-confirm-overlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    btn.textContent = 'Änderungen speichern';
+    btn.disabled = false;
+  }
+}
+
+function closeEditConfirm() {
+  document.getElementById('edit-confirm-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function confirmEditUpdate() {
+  if (!_pendingEditData || !_editJobId) return;
+  const btn = document.getElementById('ins-btn');
+  const errEl = document.getElementById('ins-error');
+  const successEl = document.getElementById('ins-success');
+  const confirmBtn = document.getElementById('edit-confirm-btn');
+  confirmBtn.textContent = 'Wird gespeichert…';
+  confirmBtn.disabled = true;
+  closeEditConfirm();
+  await _executeJobUpdate(_pendingEditData, _pendingBewerber || [], btn, errEl, successEl);
+  confirmBtn.textContent = 'Trotzdem ändern';
+  confirmBtn.disabled = false;
+}
+
+async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
+  const { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, pause, beschr } = formData;
+
+  const { error } = await odojSb.from('jobs').update({
+    titel, branche, datum,
+    uhrzeit_von:   von,
+    uhrzeit_bis:   bis,
+    stundenanzahl: stunden,
+    tagesgehalt:   gehalt,
+    adresse, ort, plaetze, mindestalter, pause,
+    beschreibung:  beschr
+  }).eq('id', _editJobId);
+
+  btn.textContent = 'Änderungen speichern';
+  btn.disabled = false;
+
+  if (error) {
+    errEl.textContent = 'Fehler beim Speichern: ' + error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Bewerber benachrichtigen
+  if (bewerber.length) {
+    const datumFormatiert = datum ? new Date(datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+    const nachricht = `⚠️ Änderung an Ihrem gebuchten Job\n\nDer Arbeitgeber hat das Inserat "${titel}" geändert.\n\nNeue Details:\n📅 Datum: ${datumFormatiert}\n⏰ Uhrzeit: ${von} - ${bis}\n💰 Tagesgehalt: € ${gehalt}\n📍 Ort: ${ort}\n\nMöchten Sie Ihre Bewerbung aufrechterhalten?\n✅ Tippen Sie 'JA' um Ihre Bewerbung zu bestätigen\n❌ Tippen Sie 'NEIN' um Ihre Bewerbung zurückzuziehen`;
+    const jetzt = new Date().toISOString();
+    for (const b of bewerber) {
+      try {
+        await odojSb.from('nachrichten').insert({
+          bewerbung_id:  b.id,
+          sender_id:     _agSession.user.id,
+          empfaenger_id: b.jobber_id,
+          nachricht,
+          gelesen:       false,
+          erstellt_am:   jetzt
+        });
+      } catch (_) {}
+    }
+    successEl.textContent = 'Inserat aktualisiert. Alle Bewerber wurden benachrichtigt. ✅';
+  } else {
+    successEl.textContent = 'Inserat wurde erfolgreich aktualisiert! ✅';
+  }
+
+  successEl.style.display = 'block';
+
+  // Reset und zu Meine Inserate wechseln
+  const jobIdCopy = _editJobId;
+  cancelEditInserat();
+  setTimeout(() => {
+    successEl.style.display = 'none';
+    showTab('inserate');
+  }, 2000);
+}
 </script>
 <script src="cookies.js"></script>
 <script src="chatbot.js"></script>
+
+<!-- INSERAT BEARBEITEN BESTÄTIGEN MODAL -->
+<div id="edit-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--white);border-radius:20px;max-width:440px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:36px 32px;text-align:center">
+    <div style="width:56px;height:56px;background:#FFF4E0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:var(--navy);margin-bottom:10px">Inserat bearbeiten</h3>
+    <p id="edit-confirm-text" style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:28px"></p>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeEditConfirm()" style="flex:1;background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);border-radius:var(--r-sm);padding:14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Abbrechen</button>
+      <button id="edit-confirm-btn" onclick="confirmEditUpdate()" style="flex:1;background:var(--accent);color:var(--navy);border:none;border-radius:var(--r-sm);padding:14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Trotzdem ändern</button>
+    </div>
+  </div>
+</div>
 
 <!-- LÖSCHEN BESTÄTIGEN MODAL -->
 <div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeDeleteModal()">

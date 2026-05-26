@@ -1091,6 +1091,25 @@ async function sendMessage() {
   });
 
   if (error) { alert('Fehler beim Senden: ' + error.message); return; }
+
+  // JA/NEIN Antwort auf Inserat-Änderungsbenachrichtigung verarbeiten
+  if (_chatRolle === 'jobber') {
+    const trimmed = text.toLowerCase().trim();
+    if (trimmed === 'ja' || trimmed === 'yes' || trimmed === 'nein' || trimmed === 'no') {
+      const { data: alleNachrichten } = await odojSb.from('nachrichten')
+        .select('*').eq('bewerbung_id', _activeBewId)
+        .order('erstellt_am', { ascending: false }).limit(30);
+      const letzteAgMsg = (alleNachrichten || []).find(m =>
+        m.sender_id !== _chatSession.user.id &&
+        m.nachricht && m.nachricht.includes('Möchten Sie Ihre Bewerbung aufrechterhalten?')
+      );
+      if (letzteAgMsg) {
+        const isJa = trimmed === 'ja' || trimmed === 'yes';
+        await _verarbeiteJaNeinAntwort(isJa);
+      }
+    }
+  }
+
   await loadMessages();
 
   // E-Mail-Benachrichtigung an Empfänger (fire & forget)
@@ -1122,6 +1141,46 @@ async function sendMessage() {
     if (preview) preview.textContent = text;
     const timeEl = convEl.querySelector('.conv-item-time');
     if (timeEl) timeEl.textContent = formatConvTime(new Date().toISOString());
+  }
+}
+
+async function _verarbeiteJaNeinAntwort(isJa) {
+  const jetzt = new Date().toISOString();
+  if (isJa) {
+    // System-Bestätigung im Chat anzeigen (als AG-Nachricht damit sie links erscheint)
+    await odojSb.from('nachrichten').insert({
+      bewerbung_id:  _activeBewId,
+      sender_id:     _activeBew.arbeitgeber_id,
+      empfaenger_id: _chatSession.user.id,
+      nachricht:     '✅ Ihre Bewerbung bleibt bestehen. Viel Erfolg beim Einsatz!',
+      gelesen:       true,
+      erstellt_am:   jetzt
+    }).catch(() => {});
+  } else {
+    // Bewerbung auf abgelehnt setzen
+    await odojSb.from('bewerbungen').update({ status: 'abgelehnt' }).eq('id', _activeBewId).catch(() => {});
+    // Bestätigung für Jobber
+    await odojSb.from('nachrichten').insert({
+      bewerbung_id:  _activeBewId,
+      sender_id:     _activeBew.arbeitgeber_id,
+      empfaenger_id: _chatSession.user.id,
+      nachricht:     '❌ Ihre Bewerbung wurde zurückgezogen. Sie können sich jederzeit neu bewerben.',
+      gelesen:       true,
+      erstellt_am:   jetzt
+    }).catch(() => {});
+    // Benachrichtigung an AG
+    const profile = await odojGetProfile(_chatSession.user.id).catch(() => null);
+    const jobberName = profile
+      ? (((profile.vorname || '') + ' ' + (profile.nachname || '')).trim() || 'Der Jobber')
+      : 'Der Jobber';
+    await odojSb.from('nachrichten').insert({
+      bewerbung_id:  _activeBewId,
+      sender_id:     _chatSession.user.id,
+      empfaenger_id: _activeBew.arbeitgeber_id,
+      nachricht:     `ℹ️ ${jobberName} hat seine Bewerbung nach der Änderung des Inserats zurückgezogen.`,
+      gelesen:       false,
+      erstellt_am:   new Date(Date.now() + 1000).toISOString()
+    }).catch(() => {});
   }
 }
 
