@@ -1745,18 +1745,14 @@ async function submitInserat(e) {
   }
 
   document.getElementById('ins-form').reset();
+  successEl.textContent = 'Inserat wurde erfolgreich gespeichert! ✅';
   successEl.style.display = 'block';
-  setTimeout(() => successEl.style.display = 'none', 2000);
 
-  // Stammkräfte benachrichtigen
+  // Stammkräfte laden und Modal anzeigen
   _neuesJobData = { titel, datum, ort, gehalt, jobId: newJob?.id };
   const stammkraefte = await ladeStammkraefte();
-  if (!stammkraefte.length) {
-    const tippEl = document.getElementById('ins-tipp');
-    if (tippEl) { tippEl.style.display = 'block'; setTimeout(() => { tippEl.style.display = 'none'; }, 8000); }
-  } else {
-    await openStammkraefteModal();
-  }
+  successEl.style.display = 'none';
+  await openStammkraefteModal(stammkraefte);
 }
 
 // ── AUTH GUARD ──
@@ -1969,18 +1965,24 @@ async function ladeStammkraefte() {
   }));
 }
 
-async function openStammkraefteModal() {
+async function openStammkraefteModal(vorgeladeneList) {
   const overlay = document.getElementById('stammkraefte-overlay');
   overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
   document.getElementById('stammkraefte-success').style.display = 'none';
   document.getElementById('stammkraefte-select-actions').style.display = 'none';
   document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px">Wird geladen…</div>';
 
   try {
-    const stammkraefte = await ladeStammkraefte();
+    const stammkraefte = vorgeladeneList !== undefined ? vorgeladeneList : await ladeStammkraefte();
 
     if (!stammkraefte.length) {
-      document.getElementById('stammkraefte-list').innerHTML = '<div style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px;line-height:1.6">Du hast noch keine Stammkräfte.<br>Diese erscheinen nachdem du Jobber mit 3+ Sternen bewertet hast.</div>';
+      document.getElementById('stammkraefte-list').innerHTML = `
+        <div style="text-align:center;font-size:14px;padding:16px 8px 20px;line-height:1.7;color:var(--text-lt)">
+          Sie haben noch keine Stammkräfte.<br>
+          <span style="font-size:13px">Jobber mit 3 oder mehr Sternen Bewertung werden hier angezeigt.</span>
+        </div>
+        <button onclick="closeStammkraefteModal()" style="width:100%;padding:13px;border-radius:10px;background:var(--navy);color:#fff;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:4px">Weiter zu Meine Inserate</button>`;
       return;
     }
 
@@ -2031,8 +2033,7 @@ async function sendStammkraefteNachrichten() {
   const j = _neuesJobData || {};
   const jobTitel = j.titel || 'Neuer Job';
   const datum    = j.datum ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-  const betrag   = j.gehalt ? '€ ' + j.gehalt : '';
-  const nachricht = `🌟 Neues Inserat von ${_agFirmenname}\n\nEin Arbeitgeber bei dem du bereits gearbeitet hast hat einen neuen Job inseriert: ${jobTitel}${datum ? ' am ' + datum : ''}${j.ort ? ' in ' + j.ort : ''}${betrag ? ' – ' + betrag : ''}.\n\nJetzt bewerben: jobs.html`;
+  const nachricht = `⭐ Neues Inserat – Sie wurden als Stammkraft ausgewählt!\n\nJob: ${jobTitel}\nDatum: ${datum}\nOrt: ${j.ort || ''}\nTagesgehalt: € ${j.gehalt || ''}\n\nJetzt bewerben auf odoj.at/jobs.html`;
 
   const jetzt = new Date().toISOString();
   for (const empfaengerId of checked) {
@@ -2059,6 +2060,7 @@ async function sendStammkraefteNachrichten() {
 
 function closeStammkraefteModal() {
   document.getElementById('stammkraefte-overlay').style.display = 'none';
+  document.body.style.overflow = '';
   showTab('inserate');
 }
 </script>
