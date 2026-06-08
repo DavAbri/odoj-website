@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ODOJ – Zugang</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0B1F3A;
+      --navy-mid:   #132847;
+      --navy-light: #1C3760;
+      --accent:     #E8A020;
+      --accent-lt:  #F5BE5A;
+      --sky:        #4A8FC1;
+      --white:      #FFFFFF;
+      --gray:       #8A9AB5;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      overflow: hidden;
+    }
+
+    .gate-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    /* Hintergrundraster */
+    .bg-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+      pointer-events: none;
+    }
+
+    /* Glow */
+    .bg-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(74,143,193,.18) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .card {
+      position: relative;
+      background: rgba(19, 40, 71, 0.85);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 24px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.35);
+      backdrop-filter: blur(16px);
+      text-align: center;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px; height: 64px;
+      background: var(--accent);
+      border-radius: 16px;
+      margin-bottom: 20px;
+    }
+
+    .logo-mark span {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.5px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--gray);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      color: var(--white);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 4px;
+      transition: border-color .2s, background .2s;
+      outline: none;
+    }
+
+    input[type="text"]::placeholder {
+      letter-spacing: 2px;
+      font-weight: 400;
+      color: rgba(255,255,255,.3);
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--sky);
+      background: rgba(255,255,255,.1);
+    }
+
+    input.error {
+      border-color: #e85555 !important;
+      animation: shake .3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%       { transform: translateX(-6px); }
+      75%       { transform: translateX(6px); }
+    }
+
+    .error-msg {
+      font-size: 13px;
+      color: #e85555;
+      margin-top: 8px;
+      min-height: 18px;
+      transition: opacity .2s;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: var(--navy);
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background .2s, transform .1s;
+      letter-spacing: 0.3px;
+    }
+
+    .btn:hover  { background: var(--accent-lt); }
+    .btn:active { transform: scale(.98); }
+
+    .footer-note {
+      position: absolute;
+      bottom: 28px;
+      font-size: 12px;
+      color: rgba(255,255,255,.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="gate-wrap">
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <div class="card">
+      <div class="logo-mark"><span>OD</span></div>
+      <h1>Zugang erforderlich</h1>
+      <p class="subtitle">Diese Seite ist geschützt.<br>Bitte Zugangscode eingeben.</p>
+
+      <div class="input-wrap">
+        <input
+          type="text"
+          id="codeInput"
+          placeholder="••••"
+          maxlength="20"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="characters"
+          spellcheck="false"
+        />
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+
+      <button class="btn" onclick="checkCode()">Zugang bestätigen</button>
+    </div>
+
+    <p class="footer-note">© 2026 ODOJ – One Day One Job</p>
+  </div>
+
+  <script>
+    const input = document.getElementById('codeInput');
+    const errorMsg = document.getElementById('errorMsg');
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') checkCode();
+    });
+
+    input.addEventListener('input', function () {
+      input.classList.remove('error');
+      errorMsg.textContent = '';
+    });
+
+    function checkCode() {
+      const val = input.value.trim().toUpperCase();
+      if (val === 'ODOJ') {
+        localStorage.setItem('odoj_access', 'granted');
+        window.location.replace('index.html');
+      } else {
+        input.classList.add('error');
+        errorMsg.textContent = 'Falscher Zugangscode. Bitte erneut versuchen.';
+        input.value = '';
+        input.focus();
+      }
+    }
+  </script>
+</body>
+</html>
