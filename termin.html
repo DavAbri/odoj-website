@@ -21,30 +21,31 @@
   :root {
     --navy:       #0B1F3A;
     --navy-mid:   #132847;
-    --navy-light: #1C3760;
     --accent:     #E8A020;
-    --accent-lt:  #F5BE5A;
     --gray:       #8A9AB5;
     --white:      #FFFFFF;
-    --r-md:       16px;
-    --r-lg:       24px;
   }
 
-  html { scroll-behavior: smooth; font-size: 16px; }
-
-  body {
+  html, body {
+    height: 100%;
     font-family: 'Plus Jakarta Sans', sans-serif;
     background: var(--navy);
     color: var(--white);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
+    overflow: hidden;
   }
 
-  /* ── HEADER / LOGO ── */
+  /* ── PAGE WRAPPER ── */
+  .page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px 32px 16px;
+    gap: 20px;
+  }
+
+  /* ── HEADER ── */
   header {
-    padding: 24px 40px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
   }
@@ -57,7 +58,7 @@
   }
 
   .logo-letters {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 800;
     letter-spacing: 2px;
     line-height: 1;
@@ -67,201 +68,195 @@
   .logo-letters .o { color: var(--accent); }
 
   .logo-sub {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 600;
     letter-spacing: 3px;
     color: var(--gray);
     text-transform: uppercase;
   }
 
-  /* ── MAIN ── */
-  main {
+  /* ── CONTENT GRID ── */
+  .content {
     flex: 1;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    min-height: 0;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 40px 24px 60px;
+    justify-content: center;
+    gap: 20px;
   }
 
-  /* ── HERO TEXT ── */
-  .hero-text {
-    text-align: center;
-    max-width: 640px;
-    margin-bottom: 48px;
-  }
-
-  .hero-text h1 {
-    font-size: clamp(28px, 5vw, 44px);
+  .left h1 {
+    font-size: clamp(22px, 2.8vw, 34px);
     font-weight: 800;
     line-height: 1.15;
-    margin-bottom: 16px;
   }
 
-  .hero-text h1 span { color: var(--accent); }
+  .left h1 span { color: var(--accent); }
 
-  .hero-text p {
-    font-size: clamp(15px, 2.5vw, 18px);
-    color: rgba(255,255,255,.75);
+  .left p {
+    font-size: 14px;
+    color: rgba(255,255,255,.72);
     line-height: 1.65;
   }
 
-  /* ── VORTEILE ── */
   .benefits {
     display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 52px;
-    max-width: 760px;
-    width: 100%;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .benefit-card {
     background: var(--navy-mid);
     border: 1px solid rgba(232,160,32,.18);
-    border-radius: var(--r-lg);
-    padding: 24px 28px;
+    border-radius: 14px;
+    padding: 14px 18px;
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    flex: 1 1 200px;
-    min-width: 180px;
-    transition: border-color .2s, transform .2s;
+    align-items: center;
+    gap: 12px;
+    transition: border-color .2s;
   }
 
-  .benefit-card:hover {
-    border-color: rgba(232,160,32,.45);
-    transform: translateY(-2px);
-  }
+  .benefit-card:hover { border-color: rgba(232,160,32,.45); }
 
   .benefit-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     background: rgba(232,160,32,.12);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 20px;
+    font-size: 17px;
   }
 
   .benefit-info h3 {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--white);
-    margin-bottom: 4px;
   }
 
   .benefit-info p {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--gray);
-    line-height: 1.5;
+    margin-top: 2px;
   }
 
-  /* ── CALENDLY WRAPPER ── */
-  .calendly-wrap {
-    width: 100%;
-    max-width: 900px;
-    background: var(--navy-mid);
-    border: 1px solid rgba(232,160,32,.2);
-    border-radius: var(--r-lg);
+  /* ── RIGHT PANEL (CALENDLY) ── */
+  .right {
+    background: var(--white);
+    border-radius: 20px;
     overflow: hidden;
-    min-height: 700px;
+    min-height: 0;
   }
 
   .calendly-inline-widget {
     width: 100% !important;
-    min-height: 700px;
+    height: 100% !important;
   }
 
   /* ── FOOTER ── */
   footer {
+    flex-shrink: 0;
     text-align: center;
-    padding: 28px 24px;
-    border-top: 1px solid rgba(255,255,255,.07);
     color: var(--gray);
-    font-size: 13px;
+    font-size: 12px;
+    padding-bottom: 4px;
   }
 
-  footer a {
-    color: var(--accent);
-    text-decoration: none;
-  }
+  footer a { color: var(--accent); text-decoration: none; }
 
-  footer a:hover { text-decoration: underline; }
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    html, body { overflow: auto; }
 
-  /* ── RESPONSIVE ── */
-  @media (max-width: 600px) {
-    header { padding: 20px 24px; }
-    .benefits { gap: 12px; }
-    .benefit-card { padding: 18px 20px; flex: 1 1 100%; }
-    .calendly-wrap { min-height: 600px; }
-    .calendly-inline-widget { min-height: 600px; }
+    .page { height: auto; overflow: visible; padding: 20px 16px 16px; }
+
+    .content {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+    }
+
+    .left { gap: 16px; }
+
+    .right {
+      height: 600px;
+    }
   }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-  <a class="logo" href="/">
-    <div class="logo-letters">
-      <span class="w">O</span><span class="o">D</span><span class="w">O</span><span class="o">J</span>
-    </div>
-    <div class="logo-sub">One Day One Job</div>
-  </a>
-</header>
+<div class="page">
 
-<!-- MAIN -->
-<main>
+  <!-- HEADER -->
+  <header>
+    <a class="logo" href="/">
+      <div class="logo-letters">
+        <span class="w">O</span><span class="o">D</span><span class="w">O</span><span class="o">J</span>
+      </div>
+      <div class="logo-sub">One Day One Job</div>
+    </a>
+  </header>
 
-  <!-- HERO TEXT -->
-  <div class="hero-text">
-    <h1>Termin <span>vereinbaren</span></h1>
-    <p>Lerne ODOJ kennen – wir kommen 30 Minuten zu dir und erklären dir, wie du kurzfristig Tageskräfte für deinen Betrieb findest.</p>
-  </div>
+  <!-- CONTENT GRID -->
+  <div class="content">
 
-  <!-- VORTEILE -->
-  <div class="benefits">
-    <div class="benefit-card">
-      <div class="benefit-icon">🎁</div>
-      <div class="benefit-info">
-        <h3>Kostenlose Erstberatung</h3>
-        <p>Kein versteckter Haken – vollkommen gratis für dich.</p>
+    <!-- LEFT: TEXT + VORTEILE -->
+    <div class="left">
+      <div>
+        <h1>Termin <span>vereinbaren</span></h1>
+      </div>
+      <p>Lerne ODOJ kennen – wir kommen 30 Minuten zu dir und erklären dir, wie du kurzfristig Tageskräfte für deinen Betrieb findest.</p>
+      <div class="benefits">
+        <div class="benefit-card">
+          <div class="benefit-icon">🎁</div>
+          <div class="benefit-info">
+            <h3>Kostenlose Erstberatung</h3>
+            <p>Kein versteckter Haken – gratis für dich.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">📍</div>
+          <div class="benefit-info">
+            <h3>30 Minuten – bei dir vor Ort</h3>
+            <p>Wir kommen zu dir, du musst nichts organisieren.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">✅</div>
+          <div class="benefit-info">
+            <h3>Unverbindlich & ohne Vertrag</h3>
+            <p>Einfach kennenlernen – ohne Verpflichtung.</p>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="benefit-card">
-      <div class="benefit-icon">📍</div>
-      <div class="benefit-info">
-        <h3>30 Minuten – bei dir vor Ort</h3>
-        <p>Wir kommen zu dir, du musst nichts organisieren.</p>
+
+    <!-- RIGHT: CALENDLY -->
+    <div class="right">
+      <div
+        class="calendly-inline-widget"
+        data-url="https://calendly.com/mail4david85/30min?hide_gdpr_banner=1&background_color=ffffff&text_color=0B1F3A&primary_color=E8A020"
+        style="min-width:280px;height:100%;">
       </div>
     </div>
-    <div class="benefit-card">
-      <div class="benefit-icon">✅</div>
-      <div class="benefit-info">
-        <h3>Unverbindlich & ohne Vertrag</h3>
-        <p>Einfach kennenlernen – ohne Verpflichtung.</p>
-      </div>
-    </div>
+
   </div>
 
-  <!-- CALENDLY WIDGET -->
-  <div class="calendly-wrap">
-    <div
-      class="calendly-inline-widget"
-      data-url="https://calendly.com/mail4david85/30min?hide_gdpr_banner=1&background_color=ffffff&text_color=0B1F3A&primary_color=E8A020"
-      style="min-width:320px;height:700px;">
-    </div>
-  </div>
+  <!-- FOOTER -->
+  <footer>
+    <a href="https://odoj.at">odoj.at</a> &nbsp;·&nbsp; One Day One Job · Vorarlberg &nbsp;·&nbsp; &copy; 2026
+  </footer>
 
-</main>
-
-<!-- FOOTER -->
-<footer>
-  <p><a href="https://odoj.at">odoj.at</a> &nbsp;·&nbsp; One Day One Job · Vorarlberg &nbsp;·&nbsp; &copy; 2026</p>
-</footer>
+</div>
 
 </body>
 </html>
