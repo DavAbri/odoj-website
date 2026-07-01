@@ -423,7 +423,7 @@ function renderCard(b, job, opts = {}) {
       </div>
       ${job?.uhrzeit_von ? `<div class="mj-card-meta">
         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        ${job.uhrzeit_von} – ${job.uhrzeit_bis || '–'}
+        ${job.uhrzeit_von} – ${job.uhrzeit_bis || '–'}${job.stundenanzahl ? ` · ${job.stundenanzahl} Std.` : ''}
       </div>` : ''}
       ${gehalt ? `<div class="mj-card-pay">€ ${gehalt} <span>/ Tag</span></div>` : ''}
       ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-bottom:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Job erledigt</div>` : ''}
@@ -481,7 +481,7 @@ async function loadMeineBewerbungen() {
   if (jobIds.length) {
     const { data: jobs } = await odojSb
       .from('jobs')
-      .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,uhrzeit_von,uhrzeit_bis,plaetze,mindestalter,arbeitgeber_id')
+      .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,uhrzeit_von,uhrzeit_bis,stundenanzahl,plaetze,mindestalter,arbeitgeber_id')
       .in('id', jobIds);
     jobs?.forEach(j => { jobMap[j.id] = j; });
     _jobMap = jobMap;
