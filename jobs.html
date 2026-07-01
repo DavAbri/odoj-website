@@ -812,7 +812,7 @@ function renderJobCard(job, locked) {
       <div class="job-metas">
         <span class="job-meta">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          ${job.uhrzeit_von || '–'} – ${job.uhrzeit_bis || '–'}
+          ${job.uhrzeit_von || '–'} – ${job.uhrzeit_bis || '–'}${job.stundenanzahl ? ` · ${job.stundenanzahl} Std.` : ''}
         </span>
         <span class="job-meta">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
