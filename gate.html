@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ODOJ – Zugang</title>
+  <title>ODOJ – Bald verfügbar</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,12 +52,19 @@
     }
 
     /* Glow */
-    .bg-glow {
+    .bg-glow-a {
       position: absolute;
       width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(74,143,193,.18) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(74,143,193,.15) 0%, transparent 70%);
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .bg-glow-b {
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(232,160,32,.08) 0%, transparent 70%);
+      top: 20%; right: 10%;
       pointer-events: none;
     }
 
@@ -66,49 +73,100 @@
       background: rgba(19, 40, 71, 0.85);
       border: 1px solid rgba(255,255,255,.1);
       border-radius: 24px;
-      padding: 48px 44px;
+      padding: 52px 48px;
       width: 100%;
-      max-width: 420px;
+      max-width: 460px;
       box-shadow: 0 24px 80px rgba(0,0,0,.35);
       backdrop-filter: blur(16px);
       text-align: center;
     }
 
-    .logo-mark {
+    /* Badge */
+    .badge {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      width: 64px; height: 64px;
+      gap: 7px;
+      background: rgba(232,160,32,.13);
+      border: 1px solid rgba(232,160,32,.28);
+      color: var(--accent-lt);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+      letter-spacing: .3px;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
       background: var(--accent);
-      border-radius: 16px;
-      margin-bottom: 20px;
+      border-radius: 50%;
+      animation: blink 2.2s infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.4; transform:scale(1.4); }
     }
 
+    .logo-mark {
+      display: block;
+      margin-bottom: 20px;
+      text-decoration: none;
+      line-height: 1;
+    }
     .logo-mark span {
-      font-size: 22px;
+      font-size: 38px;
       font-weight: 800;
-      color: var(--navy);
-      letter-spacing: -0.5px;
+      color: var(--white);
+      letter-spacing: -1px;
+    }
+    .logo-mark span.acc { color: var(--accent); }
+    .logo-mark em {
+      display: block;
+      font-style: normal;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.35);
+      margin-top: 5px;
     }
 
     h1 {
       font-size: 26px;
       font-weight: 800;
       color: var(--white);
-      margin-bottom: 8px;
-      letter-spacing: -0.3px;
+      margin-bottom: 10px;
+      letter-spacing: -.3px;
+      line-height: 1.2;
     }
 
     .subtitle {
       font-size: 14px;
-      color: var(--gray);
-      margin-bottom: 32px;
-      line-height: 1.5;
+      color: rgba(255,255,255,.55);
+      margin-bottom: 36px;
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    /* Trennlinie */
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,.08);
+      margin: 0 0 28px;
+    }
+
+    .access-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.35);
+      margin-bottom: 12px;
     }
 
     .input-wrap {
       position: relative;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     input[type="text"] {
@@ -126,23 +184,19 @@
       transition: border-color .2s, background .2s;
       outline: none;
     }
-
     input[type="text"]::placeholder {
       letter-spacing: 2px;
       font-weight: 400;
-      color: rgba(255,255,255,.3);
+      color: rgba(255,255,255,.25);
     }
-
     input[type="text"]:focus {
       border-color: var(--sky);
       background: rgba(255,255,255,.1);
     }
-
     input.error {
       border-color: #e85555 !important;
       animation: shake .3s ease;
     }
-
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       25%       { transform: translateX(-6px); }
@@ -152,9 +206,8 @@
     .error-msg {
       font-size: 13px;
       color: #e85555;
-      margin-top: 8px;
+      margin-bottom: 10px;
       min-height: 18px;
-      transition: opacity .2s;
     }
 
     .btn {
@@ -168,11 +221,9 @@
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-      margin-top: 8px;
       transition: background .2s, transform .1s;
-      letter-spacing: 0.3px;
+      letter-spacing: .3px;
     }
-
     .btn:hover  { background: var(--accent-lt); }
     .btn:active { transform: scale(.98); }
 
@@ -180,20 +231,42 @@
       position: absolute;
       bottom: 28px;
       font-size: 12px;
-      color: rgba(255,255,255,.2);
+      color: rgba(255,255,255,.18);
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 40px 28px; }
+      h1 { font-size: 22px; }
     }
   </style>
 </head>
 <body>
   <div class="gate-wrap">
     <div class="bg-grid"></div>
-    <div class="bg-glow"></div>
+    <div class="bg-glow-a"></div>
+    <div class="bg-glow-b"></div>
 
     <div class="card">
-      <div class="logo-mark"><span>OD</span></div>
-      <h1>Zugang erforderlich</h1>
-      <p class="subtitle">Diese Seite ist geschützt.<br>Bitte Zugangscode eingeben.</p>
 
+      <div class="badge">
+        <span class="badge-dot"></span>
+        Bald verfügbar
+      </div>
+
+      <div class="logo-mark">
+        <span>O<span class="acc">D</span>O<span class="acc">J</span></span>
+        <em>One Day One Job</em>
+      </div>
+
+      <h1>Wir sind gleich da</h1>
+      <p class="subtitle">
+        ODOJ – die Plattform für Tagesjobs in Vorarlberg – ist bald für alle verfügbar.<br>
+        Wir arbeiten noch an den letzten Details.
+      </p>
+
+      <hr class="divider">
+
+      <p class="access-label">Früher Zugang</p>
       <div class="input-wrap">
         <input
           type="text"
@@ -207,22 +280,19 @@
         />
       </div>
       <div class="error-msg" id="errorMsg"></div>
-
       <button class="btn" onclick="checkCode()">Zugang bestätigen</button>
+
     </div>
 
-    <p class="footer-note">© 2026 ODOJ – One Day One Job</p>
+    <p class="footer-note">© 2026 ODOJ – One Day One Job · Vorarlberg</p>
   </div>
 
   <script>
     const input = document.getElementById('codeInput');
     const errorMsg = document.getElementById('errorMsg');
 
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') checkCode();
-    });
-
-    input.addEventListener('input', function () {
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') checkCode(); });
+    input.addEventListener('input', () => {
       input.classList.remove('error');
       errorMsg.textContent = '';
     });
