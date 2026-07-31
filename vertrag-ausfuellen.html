@@ -355,6 +355,8 @@ let _vfArbeitgeberId = null;
 let _vfJobData = null;
 let _vfAgProfile = null;
 let _vfJobberProfile = null;
+let _vfBewName = '';
+let _vfBewEmail = '';
 
 (async function init() {
   document.getElementById('vf-loading').style.display = 'flex';
@@ -378,24 +380,50 @@ let _vfJobberProfile = null;
     return;
   }
 
-  const { data: bew } = await odojSb.from('bewerbungen')
-    .select('jobber_id, job_id, arbeitgeber_id')
-    .eq('id', _vfBewerbungId).single();
+  // Bewerbung laden – inkl. jobber_name/email als Fallback
+  const { data: bew, error: bewErr } = await odojSb.from('bewerbungen')
+    .select('jobber_id, job_id, arbeitgeber_id, jobber_name, jobber_email')
+    .eq('id', _vfBewerbungId).maybeSingle();
 
+  if (bewErr) console.error('[Vertrag] Bewerbung-Fehler:', bewErr.message);
   if (!bew) { alert('Bewerbung nicht gefunden.'); window.location.href = 'meine-inserate.html'; return; }
+
   _vfJobId         = bew.job_id;
   _vfJobberId      = bew.jobber_id;
   _vfArbeitgeberId = bew.arbeitgeber_id || s.user.id;
+  _vfBewName       = bew.jobber_name  || '';
+  _vfBewEmail      = bew.jobber_email || '';
 
+  if (!_vfJobberId) {
+    console.error('[Vertrag] jobber_id fehlt in Bewerbung!');
+  }
+
+  // Alle Profil- und Job-Daten parallel laden
   const [agRes, jobberRes, jobRes] = await Promise.all([
-    odojSb.from('Profile').select('firmenname, adresse, adresse_plz, adresse_ort').eq('user_id', _vfArbeitgeberId).single(),
-    odojSb.from('Profile').select('vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum').eq('user_id', _vfJobberId).single(),
-    odojSb.from('jobs').select('titel, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundenanzahl, adresse, ort, beschreibung').eq('id', _vfJobId).single()
+    odojSb.from('Profile')
+      .select('firmenname, vorname, nachname, adresse, adresse_plz, adresse_ort')
+      .eq('user_id', _vfArbeitgeberId).maybeSingle(),
+    _vfJobberId
+      ? odojSb.from('Profile')
+          .select('vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum')
+          .eq('user_id', _vfJobberId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    odojSb.from('jobs')
+      .select('titel, beschreibung, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundenanzahl, adresse, ort')
+      .eq('id', _vfJobId).maybeSingle()
   ]);
+
+  if (agRes.error)     console.error('[Vertrag] AG-Profil-Fehler:', agRes.error.message);
+  if (jobberRes.error) console.error('[Vertrag] Jobber-Profil-Fehler:', jobberRes.error.message);
+  if (jobRes.error)    console.error('[Vertrag] Job-Fehler:', jobRes.error.message);
 
   _vfAgProfile     = agRes.data;
   _vfJobberProfile = jobberRes.data;
   _vfJobData       = jobRes.data;
+
+  console.log('[Vertrag] AG-Profil:', _vfAgProfile);
+  console.log('[Vertrag] Jobber-Profil:', _vfJobberProfile);
+  console.log('[Vertrag] Job:', _vfJobData);
 
   fillForm();
 
@@ -404,38 +432,41 @@ let _vfJobberProfile = null;
 })();
 
 function fillForm() {
-  const ag  = _vfAgProfile    || {};
+  const ag  = _vfAgProfile     || {};
   const jb  = _vfJobberProfile || {};
-  const job = _vfJobData       || {};
+  const job = _vfJobData        || {};
 
-  // Arbeitgeber
-  document.getElementById('vf-firma').value     = ag.firmenname || '';
+  // ── Arbeitgeber ──
+  const agName = ag.firmenname || [ag.vorname, ag.nachname].filter(Boolean).join(' ') || '';
+  document.getElementById('vf-firma').value      = agName;
   document.getElementById('vf-ag-adresse').value = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
 
-  // Jobber
-  document.getElementById('vf-jobber-name').value = [jb.vorname, jb.nachname].filter(Boolean).join(' ');
-  document.getElementById('vf-jobber-sv').value    = jb.svnummer || '';
-  document.getElementById('vf-jobber-geburtsdatum').value = jb.geburtsdatum || '';
-  document.getElementById('vf-jobber-adresse').value = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
+  // ── Jobber – Fallback auf jobber_name aus der Bewerbung ──
+  const jbName = [jb.vorname, jb.nachname].filter(Boolean).join(' ') || _vfBewName || '';
+  document.getElementById('vf-jobber-name').value            = jbName;
+  document.getElementById('vf-jobber-sv').value              = jb.svnummer || '';
+  document.getElementById('vf-jobber-geburtsdatum').value    = jb.geburtsdatum || '';
+  document.getElementById('vf-jobber-adresse').value         = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
 
-  // Tätigkeit
+  // ── Tätigkeit ──
   document.getElementById('vf-taetigkeit').value = job.beschreibung || job.titel || '';
   document.getElementById('vf-einsatzort').value  = [job.adresse, job.ort].filter(Boolean).join(', ');
 
-  // Einsatzzeit
-  document.getElementById('vf-datum').value   = job.datum       || '';
-  document.getElementById('vf-von').value     = job.uhrzeit_von || '';
-  document.getElementById('vf-bis').value     = job.uhrzeit_bis || '';
+  // ── Einsatzzeit ──
+  document.getElementById('vf-datum').value   = job.datum        || '';
+  document.getElementById('vf-von').value     = job.uhrzeit_von  || '';
+  document.getElementById('vf-bis').value     = job.uhrzeit_bis  || '';
   document.getElementById('vf-stunden').value = job.stundenanzahl || '';
 
-  // Entgelt
-  const tagesgehalt = parseFloat(job.tagesgehalt) || 0;
-  const stunden     = parseFloat(job.stundenanzahl) || 0;
-  document.getElementById('vf-tagesgehalt').value  = tagesgehalt || '';
-  document.getElementById('vf-stundenlohn').value  = (stunden > 0 ? (tagesgehalt / stunden).toFixed(2) : '') || '';
+  // ── Entgelt ──
+  const tagesgehalt = parseFloat(job.tagesgehalt)   || 0;
+  const stunden     = parseFloat(job.stundenanzahl)  || 0;
+  document.getElementById('vf-tagesgehalt').value = tagesgehalt > 0 ? tagesgehalt : '';
   if (stunden > 0 && tagesgehalt > 0) {
+    const sl = (tagesgehalt / stunden).toFixed(2);
+    document.getElementById('vf-stundenlohn').value = sl;
     document.getElementById('vf-calc-hint').textContent =
-      `Automatisch berechnet: € ${tagesgehalt.toFixed(2)} ÷ ${stunden} Std. = € ${(tagesgehalt / stunden).toFixed(2)}/Std.`;
+      `Automatisch berechnet: € ${tagesgehalt.toFixed(2)} ÷ ${stunden} Std. = € ${sl}/Std.`;
   }
 }
 
