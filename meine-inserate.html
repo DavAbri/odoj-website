@@ -1274,6 +1274,10 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   }
   const [profRes, ratRes, vertragRes] = await Promise.all(queries);
   profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
+  // Profile-Snapshot für Vertrag-Erstellung cachen (bewerbung_id → profile)
+  bewerbungen.forEach(b => {
+    if (profileMap[b.jobber_id]) _bewerbungProfileCache[b.id] = profileMap[b.jobber_id];
+  });
   const rawRatings = {};
   ratRes.data?.forEach(r => {
     if (!rawRatings[r.bewertet_id]) rawRatings[r.bewertet_id] = [];
@@ -2325,8 +2329,14 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
 
 <script>
 let _currentVertragBewId = null;
+let _bewerbungProfileCache = {};
+
 function openVertragModal(bewId) {
   _currentVertragBewId = bewId;
+  // Jobber-Profil-Snapshot in localStorage sichern, damit vertrag-ausfuellen.html
+  // die Daten zuverlässig bekommt (unabhängig von RLS beim dortigen Query)
+  const cached = _bewerbungProfileCache[bewId];
+  if (cached) localStorage.setItem('odoj_vertrag_jobber_snap', JSON.stringify(cached));
   const modal = document.getElementById('vertrag-modal');
   const link  = document.getElementById('vertrag-modal-link');
   link.href = 'vertrag-ausfuellen.html?bewerbung_id=' + bewId;

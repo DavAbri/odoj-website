@@ -417,12 +417,18 @@ let _vfBewEmail = '';
   if (jobberRes.error) console.error('[Vertrag] Jobber-Profil-Fehler:', jobberRes.error.message);
   if (jobRes.error)    console.error('[Vertrag] Job-Fehler:', jobRes.error.message);
 
-  _vfAgProfile     = agRes.data;
-  _vfJobberProfile = jobberRes.data;
-  _vfJobData       = jobRes.data;
+  _vfAgProfile = agRes.data;
+  _vfJobData   = jobRes.data;
+
+  // Jobber-Profil: zuerst localStorage-Snapshot (von meine-inserate.html gesetzt),
+  // dann DB-Ergebnis, dann leeres Objekt
+  const snap = localStorage.getItem('odoj_vertrag_jobber_snap');
+  const snapData = snap ? JSON.parse(snap) : null;
+  _vfJobberProfile = snapData || jobberRes.data || null;
+  localStorage.removeItem('odoj_vertrag_jobber_snap');
 
   console.log('[Vertrag] AG-Profil:', _vfAgProfile);
-  console.log('[Vertrag] Jobber-Profil:', _vfJobberProfile);
+  console.log('[Vertrag] Jobber-Profil (snap/db):', _vfJobberProfile);
   console.log('[Vertrag] Job:', _vfJobData);
 
   fillForm();
