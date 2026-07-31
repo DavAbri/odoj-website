@@ -609,33 +609,41 @@ async function submitZurueckziehen() {
       .neq('status', 'beide_zugestimmt');
   }
 
-  // 3. Nachricht an Arbeitgeber senden
-  if (job?.arbeitgeber_id) {
-    // Chat-Raum finden oder erstellen
-    let raumId = null;
-    const { data: raeume } = await odojSb
-      .from('nachrichten_raeume')
-      .select('id')
-      .eq('bewerbung_id', _withdrawBewId)
-      .limit(1);
-    if (raeume && raeume.length > 0) {
-      raumId = raeume[0].id;
-    } else {
-      const { data: newRaum } = await odojSb
-        .from('nachrichten_raeume')
-        .insert({ bewerbung_id: _withdrawBewId, jobber_id: session.user.id, arbeitgeber_id: job.arbeitgeber_id })
-        .select('id').single();
-      raumId = newRaum?.id;
-    }
-    if (raumId) {
-      const jobTitle = job.titel || 'dem Job';
-      await odojSb.from('nachrichten').insert({
-        raum_id: raumId,
-        sender_id: session.user.id,
-        nachricht: `❌ Bewerbung zurückgezogen\n\nDer Jobber hat seine Bewerbung für „${jobTitle}" zurückgezogen.\n\nGrund: ${reason}`
-      });
-    }
+  // 3. Nachrichten an Arbeitgeber und Jobber senden
+  const jobTitle = job?.titel || 'dem Job';
+  const agId = job?.arbeitgeber_id;
+  const jobberId = session.user.id;
+  const wasAngen = wasAngenommen;
+  const agText = wasAngen
+    ? `❌ Bewerbung storniert\n\nDer Jobber hat die Bewerbung für „${jobTitle}" storniert.\n\nGrund: ${reason}`
+    : `❌ Bewerbung zurückgezogen\n\nDer Jobber hat seine Bewerbung für „${jobTitle}" zurückgezogen.\n\nGrund: ${reason}`;
+  const jobberText = wasAngen
+    ? `❌ Du hast deine Zusage für „${jobTitle}" storniert.\n\nGrund: ${reason}`
+    : `❌ Du hast deine Bewerbung für „${jobTitle}" zurückgezogen.\n\nGrund: ${reason}`;
+
+  const now = new Date().toISOString();
+
+  if (agId) {
+    const { data: agMsg } = await odojSb.from('nachrichten').insert({
+      bewerbung_id:  _withdrawBewId,
+      sender_id:     jobberId,
+      empfaenger_id: agId,
+      nachricht:     agText,
+      gelesen:       false,
+      erstellt_am:   now
+    }).select().single();
+    if (agMsg) odojSb.functions.invoke('send-notification-email', { body: { record: agMsg } }).catch(() => {});
   }
+
+  const { data: jobberMsg } = await odojSb.from('nachrichten').insert({
+    bewerbung_id:  _withdrawBewId,
+    sender_id:     jobberId,
+    empfaenger_id: jobberId,
+    nachricht:     jobberText,
+    gelesen:       false,
+    erstellt_am:   now
+  }).select().single();
+  if (jobberMsg) odojSb.functions.invoke('send-notification-email', { body: { record: jobberMsg } }).catch(() => {});
 
   closeZurueckziehenModal();
   loadMeineBewerbungen();

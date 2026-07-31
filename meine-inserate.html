@@ -1256,34 +1256,38 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   }
 
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
+  const acceptedBewIds = bewerbungen.filter(b => b.status === 'angenommen').map(b => b.id);
   let profileMap = {};
-  let bewMap = {};   // jobber_id → { avg, count }
-  if (jobberIds.length) {
-    const [profRes, ratRes] = await Promise.all([
-      odojSb.from('Profile')
-        .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum')
-        .in('user_id', jobberIds),
-      odojSb.from('bewertungen')
-        .select('bewertet_id, sterne')
-        .in('bewertet_id', jobberIds)
-        .eq('rolle_bewerter', 'arbeitgeber')
-    ]);
-    profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
-    // Ratings gruppieren
-    const rawRatings = {};
-    ratRes.data?.forEach(r => {
-      if (!rawRatings[r.bewertet_id]) rawRatings[r.bewertet_id] = [];
-      rawRatings[r.bewertet_id].push(r.sterne);
-    });
-    Object.entries(rawRatings).forEach(([uid, sterne]) => {
-      bewMap[uid] = { avg: sterne.reduce((a,b)=>a+b,0)/sterne.length, count: sterne.length };
-    });
+  let bewMap = {};
+  let vertragMap = {};
+  const queries = [
+    odojSb.from('Profile')
+      .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum')
+      .in('user_id', jobberIds.length ? jobberIds : ['none']),
+    odojSb.from('bewertungen')
+      .select('bewertet_id, sterne')
+      .in('bewertet_id', jobberIds.length ? jobberIds : ['none'])
+      .eq('rolle_bewerter', 'arbeitgeber')
+  ];
+  if (acceptedBewIds.length) {
+    queries.push(odojSb.from('vertraege').select('bewerbung_id, id').in('bewerbung_id', acceptedBewIds));
   }
+  const [profRes, ratRes, vertragRes] = await Promise.all(queries);
+  profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
+  const rawRatings = {};
+  ratRes.data?.forEach(r => {
+    if (!rawRatings[r.bewertet_id]) rawRatings[r.bewertet_id] = [];
+    rawRatings[r.bewertet_id].push(r.sterne);
+  });
+  Object.entries(rawRatings).forEach(([uid, sterne]) => {
+    bewMap[uid] = { avg: sterne.reduce((a,b)=>a+b,0)/sterne.length, count: sterne.length };
+  });
+  vertragRes?.data?.forEach(v => { vertragMap[v.bewerbung_id] = v.id; });
 
-  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], jobDatum)).join('');
+  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], jobDatum, vertragMap[b.id])).join('');
 }
 
-function renderBewItem(b, profile, bew, jobDatum) {
+function renderBewItem(b, profile, bew, jobDatum, vertragId) {
   // Echter Name aus Profile, Fallback auf gespeicherten jobber_name, dann E-Mail-Prefix
   const vorname  = profile?.vorname  || '';
   const nachname = profile?.nachname || '';
@@ -1356,6 +1360,10 @@ function renderBewItem(b, profile, bew, jobDatum) {
       <div class="bew-item-actions" id="bew-actions-${b.id}">
         ${acceptBtn}${rejectBtn}
         <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
+        ${b.status === 'angenommen' ? (vertragId
+          ? `<a href="vertrag-ansehen.html?id=${vertragId}" class="bew-btn" style="background:#E6F5EE;color:#1A7A50;border:1px solid #B3E0CA;text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>`
+          : `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>`)
+          : ''}
         ${presenceBtn}
       </div>
     </div>`;
@@ -1414,15 +1422,16 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   });
 
   const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
-  const { error: msgErr } = await odojSb.from('nachrichten').insert({
+  const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
     bewerbung_id:  bewId,
     sender_id:     agId,
     empfaenger_id: jobberId,
     nachricht:     systemMsg,
     gelesen:       false,
     erstellt_am:   new Date().toISOString()
-  });
+  }).select().single();
   if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
+  if (presMsg) odojSb.functions.invoke('send-notification-email', { body: { record: presMsg } }).catch(() => {});
 
   // BEW_REQ sofort senden — Jobber kann immer bewerten, unabhängig vom AG-Rating
   if (jobberId && bewData?.job_id) {
@@ -1507,15 +1516,16 @@ async function updateBewStatus(bewId, newStatus) {
       : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche!`;
 
     if (agId) {
-      const { error: msgErr } = await odojSb.from('nachrichten').insert({
+      const { data: insertedMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
         bewerbung_id:  bewId,
         sender_id:     agId,
         empfaenger_id: bew.jobber_id,
         nachricht,
         gelesen:       false,
         erstellt_am:   new Date().toISOString()
-      });
+      }).select().single();
       if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
+      if (insertedMsg) odojSb.functions.invoke('send-notification-email', { body: { record: insertedMsg } }).catch(() => {});
     }
   }
 
@@ -2304,13 +2314,18 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
         <button onclick="closeVertragModal()" style="background:transparent;border:2px solid var(--gray-lt);color:var(--text-mid);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;padding:12px;border-radius:var(--r-sm);cursor:pointer;transition:all .2s">
           Später
         </button>
+        <button onclick="vertragSelbstErstellen()" style="background:transparent;border:none;color:var(--text-lt);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:500;padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">
+          Ich erstelle den Dienstvertrag selbst
+        </button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+let _currentVertragBewId = null;
 function openVertragModal(bewId) {
+  _currentVertragBewId = bewId;
   const modal = document.getElementById('vertrag-modal');
   const link  = document.getElementById('vertrag-modal-link');
   link.href = 'vertrag-ausfuellen.html?bewerbung_id=' + bewId;
@@ -2320,6 +2335,22 @@ function openVertragModal(bewId) {
 function closeVertragModal() {
   document.getElementById('vertrag-modal').style.display = 'none';
   document.body.style.overflow = '';
+}
+async function vertragSelbstErstellen() {
+  closeVertragModal();
+  if (!_currentVertragBewId || !_agSession) return;
+  const { data: bew } = await odojSb.from('bewerbungen').select('jobber_id').eq('id', _currentVertragBewId).single();
+  if (!bew?.jobber_id) return;
+  const msgPayload = {
+    bewerbung_id:  _currentVertragBewId,
+    sender_id:     _agSession.user.id,
+    empfaenger_id: bew.jobber_id,
+    nachricht:     'ℹ️ Dienstvertrag\n\nDer Arbeitgeber wird den Dienstvertrag selbst erstellen und dir direkt zukommen lassen.',
+    gelesen:       false,
+    erstellt_am:   new Date().toISOString()
+  };
+  const { data: ins } = await odojSb.from('nachrichten').insert(msgPayload).select().single();
+  if (ins) odojSb.functions.invoke('send-notification-email', { body: { record: ins } }).catch(() => {});
 }
 </script>
 </body>

@@ -519,15 +519,16 @@ async function submitVertrag() {
     const vertragLink = `${window.location.origin}/vertrag-ansehen.html?id=${vertrag.id}`;
     const nachricht = `📋 Neuer Dienstvertrag\n\nvertrag-ansehen.html?id=${vertrag.id}`;
 
-    const { error: msgErr } = await odojSb.from('nachrichten').insert({
+    const { data: insertedMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
       bewerbung_id:  _vfBewerbungId,
       sender_id:     _vfSession.user.id,
       empfaenger_id: _vfJobberId,
       nachricht,
       gelesen:       false,
       erstellt_am:   new Date().toISOString()
-    });
+    }).select().single();
     if (msgErr) throw new Error('Nachricht: ' + msgErr.message);
+    if (insertedMsg) odojSb.functions.invoke('send-notification-email', { body: { record: insertedMsg } }).catch(() => {});
 
     showToast('✓ Vertrag gespeichert und an Jobber gesendet!', 'success');
     setTimeout(() => { window.location.href = 'meine-inserate.html?vertrag=gesendet'; }, 1800);
