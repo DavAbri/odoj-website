@@ -21,7 +21,6 @@
 }
 .vf-container { max-width: 820px; margin: 0 auto; }
 
-/* Section cards */
 .vf-card {
   background: var(--white);
   border: 1.5px solid var(--gray-lt);
@@ -31,32 +30,24 @@
 }
 .vf-card-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 14px; font-weight: 800;
   color: var(--navy);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 20px; padding-bottom: 12px;
   border-bottom: 2px solid var(--accent);
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 10px;
 }
 .vf-card-num {
   width: 26px; height: 26px;
-  background: var(--navy);
-  color: var(--white);
+  background: var(--navy); color: var(--white);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 800; flex-shrink: 0;
 }
 
-/* Grid for fields */
 .vf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .vf-grid-full { grid-column: 1 / -1; }
 
-/* Field */
 .vf-field { display: flex; flex-direction: column; gap: 5px; }
 .vf-field label {
   font-size: 11px; font-weight: 700;
@@ -64,7 +55,7 @@
   color: var(--text-lt);
 }
 .vf-field input, .vf-field textarea, .vf-field select {
-  background: var(--off);
+  background: var(--white);
   border: 1.5px solid var(--gray-lt);
   border-radius: var(--r-sm);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -73,60 +64,49 @@
   transition: border-color .2s;
   width: 100%;
 }
-.vf-field input:focus, .vf-field textarea:focus { border-color: var(--accent); }
-.vf-field input[readonly], .vf-field textarea[readonly] {
-  background: #F0F3F8;
-  color: var(--text-mid);
-  cursor: default;
+.vf-field input:focus, .vf-field textarea:focus, .vf-field select:focus {
+  border-color: var(--accent);
+  background: #FFFDF8;
 }
 .vf-field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
 .vf-hint { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
 
-/* Warning box */
+.vf-section-label {
+  font-size: 13px; font-weight: 700; color: var(--text-lt);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px;
+}
+
 .vf-warn {
   background: #FFF8E8;
   border: 1.5px solid rgba(232,160,32,.4);
   border-radius: var(--r-md);
-  padding: 18px 22px;
-  font-size: 13px;
-  color: #7A4A00;
-  line-height: 1.7;
-  margin-bottom: 20px;
+  padding: 18px 22px; font-size: 13px; color: #7A4A00;
+  line-height: 1.7; margin-bottom: 20px;
 }
 .vf-warn strong { color: #5A3000; }
 
-/* Checkbox row */
 .vf-check-row {
   display: flex; align-items: flex-start; gap: 12px;
-  background: var(--off);
-  border: 1.5px solid var(--gray-lt);
-  border-radius: var(--r-md);
-  padding: 16px 20px;
-  margin-bottom: 20px;
+  background: var(--off); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md); padding: 16px 20px; margin-bottom: 20px;
 }
 .vf-check-row input[type="checkbox"] {
-  width: 18px; height: 18px; margin-top: 2px; cursor: pointer; flex-shrink: 0;
-  accent-color: var(--navy);
+  width: 18px; height: 18px; margin-top: 2px;
+  cursor: pointer; flex-shrink: 0; accent-color: var(--navy);
 }
 .vf-check-row label { font-size: 14px; color: var(--text); line-height: 1.6; cursor: pointer; }
 
-/* Submit btn */
 .vf-submit {
-  width: 100%;
-  background: var(--accent);
-  color: var(--navy);
+  width: 100%; background: var(--accent); color: var(--navy);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 15px; font-weight: 700;
-  padding: 16px 24px;
-  border: none; border-radius: var(--r-sm);
-  cursor: pointer;
+  font-size: 15px; font-weight: 700; padding: 16px 24px;
+  border: none; border-radius: var(--r-sm); cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   transition: background .2s, transform .15s;
 }
 .vf-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
 .vf-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
-/* Loading */
 .vf-loading {
   min-height: calc(100vh - var(--nav-h) - 80px);
   display: flex; align-items: center; justify-content: center;
@@ -158,6 +138,11 @@
 .odoj-toast.toast-success { background: #1a7a50; }
 .odoj-toast.toast-error   { background: #c0392b; }
 .odoj-toast.toast-warn    { background: #c07a00; }
+
+/* Stundenlohn auto-hint */
+.vf-calc-hint {
+  font-size: 11px; color: var(--text-lt); margin-top: 3px; font-style: italic;
+}
 </style>
 </head>
 <body>
@@ -189,7 +174,7 @@
   <div class="page-hero-inner">
     <span class="page-hero-label">Vertragsabschluss</span>
     <h1>Dienstvertrag<br><em>ausfüllen</em></h1>
-    <p>Füllen Sie den Dienstvertrag aus. Die Daten wurden bereits vorausgefüllt.</p>
+    <p>Alle Felder wurden automatisch vorausgefüllt. Du kannst jeden Wert noch anpassen.</p>
   </div>
 </div>
 
@@ -218,39 +203,39 @@
         Vertragsparteien
       </div>
 
-      <p style="font-size:13px;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Arbeitgeber</p>
+      <p class="vf-section-label">Arbeitgeber</p>
       <div class="vf-grid" style="margin-bottom:20px">
         <div class="vf-field">
           <label>Firmenname</label>
-          <input type="text" id="vf-firma" readonly>
+          <input type="text" id="vf-firma" placeholder="z.B. Muster GmbH">
         </div>
         <div class="vf-field">
-          <label>Firmenbuchnummer (editierbar)</label>
+          <label>Firmenbuchnummer (optional)</label>
           <input type="text" id="vf-firmenbuch" placeholder="z.B. FN 123456a">
         </div>
         <div class="vf-field vf-grid-full">
           <label>Adresse des Arbeitgebers</label>
-          <input type="text" id="vf-ag-adresse" readonly>
+          <input type="text" id="vf-ag-adresse" placeholder="Straße, PLZ Ort">
         </div>
       </div>
 
-      <p style="font-size:13px;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Arbeitnehmer (Jobber)</p>
+      <p class="vf-section-label">Arbeitnehmer (Jobber)</p>
       <div class="vf-grid">
         <div class="vf-field">
           <label>Vor- und Nachname</label>
-          <input type="text" id="vf-jobber-name" readonly>
+          <input type="text" id="vf-jobber-name" placeholder="Vorname Nachname">
         </div>
         <div class="vf-field">
           <label>Geburtsdatum</label>
-          <input type="text" id="vf-jobber-geburtsdatum" readonly>
+          <input type="date" id="vf-jobber-geburtsdatum">
         </div>
         <div class="vf-field vf-grid-full">
           <label>Adresse des Arbeitnehmers</label>
-          <input type="text" id="vf-jobber-adresse" readonly>
+          <input type="text" id="vf-jobber-adresse" placeholder="Straße, PLZ Ort">
         </div>
         <div class="vf-field">
           <label>Sozialversicherungsnummer</label>
-          <input type="text" id="vf-jobber-sv" readonly>
+          <input type="text" id="vf-jobber-sv" placeholder="z.B. 1234 010190">
         </div>
       </div>
     </div>
@@ -259,7 +244,7 @@
     <div class="vf-card">
       <div class="vf-card-title">
         <span class="vf-card-num">2</span>
-        Tätigkeit & Einsatzort
+        Tätigkeit &amp; Einsatzort
       </div>
       <div class="vf-grid">
         <div class="vf-field vf-grid-full">
@@ -282,15 +267,19 @@
       <div class="vf-grid">
         <div class="vf-field">
           <label>Einsatzdatum</label>
-          <input type="text" id="vf-datum" readonly>
+          <input type="date" id="vf-datum">
         </div>
         <div class="vf-field">
           <label>Arbeitsbeginn</label>
-          <input type="text" id="vf-von" readonly>
+          <input type="time" id="vf-von">
         </div>
         <div class="vf-field">
           <label>Arbeitsende (geplant)</label>
-          <input type="text" id="vf-bis" readonly>
+          <input type="time" id="vf-bis">
+        </div>
+        <div class="vf-field">
+          <label>Arbeitszeit in Stunden</label>
+          <input type="number" id="vf-stunden" min="1" max="24" step="0.5" placeholder="z.B. 8">
         </div>
       </div>
       <p class="vf-hint" style="margin-top:12px">
@@ -306,17 +295,17 @@
       </div>
       <div class="vf-grid">
         <div class="vf-field">
-          <label>Tagesgehalt (brutto)</label>
-          <input type="text" id="vf-tagesgehalt" readonly>
+          <label>Tagesgehalt brutto (€)</label>
+          <input type="number" id="vf-tagesgehalt" min="0" step="0.01" placeholder="0.00" oninput="recalcStundenlohn()">
         </div>
         <div class="vf-field">
-          <label>Stundenlohn (brutto)</label>
-          <input type="text" id="vf-stundenlohn" readonly>
+          <label>Stundenlohn brutto (€)</label>
+          <input type="number" id="vf-stundenlohn" min="0" step="0.01" placeholder="0.00">
+          <span class="vf-calc-hint" id="vf-calc-hint"></span>
         </div>
       </div>
       <p class="vf-hint" style="margin-top:12px">
-        ℹ Die Auszahlung erfolgt nach Einsatzbestätigung direkt über die ODOJ-Plattform per Stripe.
-        Der Betrag wird nach Bestätigung der Anwesenheit durch den Arbeitgeber überwiesen.
+        ℹ Der Stundenlohn wird automatisch aus Tagesgehalt ÷ Stunden berechnet, kann aber manuell angepasst werden.
       </p>
     </div>
 
@@ -389,21 +378,19 @@ let _vfJobberProfile = null;
     return;
   }
 
-  // Bewerbung laden
   const { data: bew } = await odojSb.from('bewerbungen')
     .select('jobber_id, job_id, arbeitgeber_id')
     .eq('id', _vfBewerbungId).single();
 
   if (!bew) { alert('Bewerbung nicht gefunden.'); window.location.href = 'meine-inserate.html'; return; }
-  _vfJobId       = bew.job_id;
-  _vfJobberId    = bew.jobber_id;
+  _vfJobId         = bew.job_id;
+  _vfJobberId      = bew.jobber_id;
   _vfArbeitgeberId = bew.arbeitgeber_id || s.user.id;
 
-  // Alle Daten parallel laden
   const [agRes, jobberRes, jobRes] = await Promise.all([
     odojSb.from('Profile').select('firmenname, adresse, adresse_plz, adresse_ort').eq('user_id', _vfArbeitgeberId).single(),
     odojSb.from('Profile').select('vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum').eq('user_id', _vfJobberId).single(),
-    odojSb.from('jobs').select('titel, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundenanzahl, adresse, ort').eq('id', _vfJobId).single()
+    odojSb.from('jobs').select('titel, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundenanzahl, adresse, ort, beschreibung').eq('id', _vfJobId).single()
   ]);
 
   _vfAgProfile     = agRes.data;
@@ -417,44 +404,50 @@ let _vfJobberProfile = null;
 })();
 
 function fillForm() {
-  const ag = _vfAgProfile || {};
-  const jb = _vfJobberProfile || {};
-  const job = _vfJobData || {};
+  const ag  = _vfAgProfile    || {};
+  const jb  = _vfJobberProfile || {};
+  const job = _vfJobData       || {};
 
   // Arbeitgeber
-  document.getElementById('vf-firma').value    = ag.firmenname || '';
-  const agAdr = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
-  document.getElementById('vf-ag-adresse').value = agAdr;
+  document.getElementById('vf-firma').value     = ag.firmenname || '';
+  document.getElementById('vf-ag-adresse').value = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
 
   // Jobber
   document.getElementById('vf-jobber-name').value = [jb.vorname, jb.nachname].filter(Boolean).join(' ');
-  document.getElementById('vf-jobber-sv').value   = jb.svnummer || '–';
-  if (jb.geburtsdatum) {
-    const geb = new Date(jb.geburtsdatum);
-    document.getElementById('vf-jobber-geburtsdatum').value =
-      geb.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
-  }
-  const jbAdr = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
-  document.getElementById('vf-jobber-adresse').value = jbAdr;
+  document.getElementById('vf-jobber-sv').value    = jb.svnummer || '';
+  document.getElementById('vf-jobber-geburtsdatum').value = jb.geburtsdatum || '';
+  document.getElementById('vf-jobber-adresse').value = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
 
   // Tätigkeit
-  document.getElementById('vf-taetigkeit').value = job.titel || '';
+  document.getElementById('vf-taetigkeit').value = job.beschreibung || job.titel || '';
   document.getElementById('vf-einsatzort').value  = [job.adresse, job.ort].filter(Boolean).join(', ');
 
-  // Zeit
-  if (job.datum) {
-    const d = new Date(job.datum + 'T00:00:00');
-    document.getElementById('vf-datum').value = d.toLocaleDateString('de-AT', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
-  }
-  document.getElementById('vf-von').value = job.uhrzeit_von || '';
-  document.getElementById('vf-bis').value = job.uhrzeit_bis || '';
+  // Einsatzzeit
+  document.getElementById('vf-datum').value   = job.datum       || '';
+  document.getElementById('vf-von').value     = job.uhrzeit_von || '';
+  document.getElementById('vf-bis').value     = job.uhrzeit_bis || '';
+  document.getElementById('vf-stunden').value = job.stundenanzahl || '';
 
   // Entgelt
   const tagesgehalt = parseFloat(job.tagesgehalt) || 0;
-  const stunden = parseFloat(job.stundenanzahl) || 8;
-  const stundenlohn = stunden > 0 ? (tagesgehalt / stunden).toFixed(2) : '–';
-  document.getElementById('vf-tagesgehalt').value = `€ ${tagesgehalt.toFixed(2)}`;
-  document.getElementById('vf-stundenlohn').value = `€ ${stundenlohn} / Stunde`;
+  const stunden     = parseFloat(job.stundenanzahl) || 0;
+  document.getElementById('vf-tagesgehalt').value  = tagesgehalt || '';
+  document.getElementById('vf-stundenlohn').value  = (stunden > 0 ? (tagesgehalt / stunden).toFixed(2) : '') || '';
+  if (stunden > 0 && tagesgehalt > 0) {
+    document.getElementById('vf-calc-hint').textContent =
+      `Automatisch berechnet: € ${tagesgehalt.toFixed(2)} ÷ ${stunden} Std. = € ${(tagesgehalt / stunden).toFixed(2)}/Std.`;
+  }
+}
+
+function recalcStundenlohn() {
+  const tagesgehalt = parseFloat(document.getElementById('vf-tagesgehalt').value) || 0;
+  const stunden     = parseFloat(document.getElementById('vf-stunden').value) || 0;
+  if (stunden > 0 && tagesgehalt > 0) {
+    const sl = (tagesgehalt / stunden).toFixed(2);
+    document.getElementById('vf-stundenlohn').value = sl;
+    document.getElementById('vf-calc-hint').textContent =
+      `Automatisch berechnet: € ${tagesgehalt.toFixed(2)} ÷ ${stunden} Std. = € ${sl}/Std.`;
+  }
 }
 
 function showToast(msg, type) {
@@ -478,33 +471,23 @@ async function submitVertrag() {
   btn.innerHTML = 'Wird gespeichert…';
 
   try {
-    const ag  = _vfAgProfile  || {};
-    const jb  = _vfJobberProfile || {};
-    const job = _vfJobData    || {};
-
-    const agAdr = [ag.adresse, ag.adresse_plz, ag.adresse_ort].filter(Boolean).join(', ');
-    const jbAdr = [jb.adresse, jb.adresse_plz, jb.adresse_ort].filter(Boolean).join(', ');
-    const stunden     = parseFloat(job.stundenanzahl) || 8;
-    const tagesgehalt = parseFloat(job.tagesgehalt)   || 0;
-    const stundenlohn = stunden > 0 ? parseFloat((tagesgehalt / stunden).toFixed(2)) : 0;
-
     const vertragData = {
       bewerbung_id:            _vfBewerbungId,
       job_id:                  _vfJobId,
       arbeitgeber_id:          _vfArbeitgeberId,
       jobber_id:               _vfJobberId,
-      firmenname:              ag.firmenname || '',
-      arbeitgeber_adresse:     agAdr,
-      jobber_name:             [jb.vorname, jb.nachname].filter(Boolean).join(' '),
-      jobber_adresse:          jbAdr,
-      jobber_geburtsdatum:     jb.geburtsdatum || '',
-      jobber_svnummer:         jb.svnummer || '',
+      firmenname:              document.getElementById('vf-firma').value.trim(),
+      arbeitgeber_adresse:     document.getElementById('vf-ag-adresse').value.trim(),
+      jobber_name:             document.getElementById('vf-jobber-name').value.trim(),
+      jobber_adresse:          document.getElementById('vf-jobber-adresse').value.trim(),
+      jobber_geburtsdatum:     document.getElementById('vf-jobber-geburtsdatum').value || null,
+      jobber_svnummer:         document.getElementById('vf-jobber-sv').value.trim(),
       taetigkeitsbeschreibung: document.getElementById('vf-taetigkeit').value.trim(),
       einsatzort:              document.getElementById('vf-einsatzort').value.trim(),
-      einsatzdatum:            job.datum || '',
-      arbeitszeit_von:         job.uhrzeit_von || '',
-      arbeitszeit_bis:         job.uhrzeit_bis || '',
-      stundenlohn,
+      einsatzdatum:            document.getElementById('vf-datum').value || null,
+      arbeitszeit_von:         document.getElementById('vf-von').value || null,
+      arbeitszeit_bis:         document.getElementById('vf-bis').value || null,
+      stundenlohn:             parseFloat(document.getElementById('vf-stundenlohn').value) || 0,
       sonstige_vereinbarungen: document.getElementById('vf-sonstiges').value.trim(),
       status:                  'warte_auf_jobber',
       arbeitgeber_zugestimmt:  true,
@@ -515,10 +498,7 @@ async function submitVertrag() {
       .from('vertraege').insert(vertragData).select().single();
     if (vertragErr) throw new Error('Vertrag: ' + vertragErr.message);
 
-    // Nachricht an Jobber senden
-    const vertragLink = `${window.location.origin}/vertrag-ansehen.html?id=${vertrag.id}`;
     const nachricht = `📋 Neuer Dienstvertrag\n\nvertrag-ansehen.html?id=${vertrag.id}`;
-
     const { data: insertedMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
       bewerbung_id:  _vfBewerbungId,
       sender_id:     _vfSession.user.id,
