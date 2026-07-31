@@ -1180,7 +1180,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
   const remainingHtml = `<span class="inserat-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#22c55e"><circle cx="12" cy="12" r="10"/></svg> ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
 
   return `
-    <div class="inserat-card" onclick="window.location.href='job-detail.html?id=${j.id}'">
+    <div class="inserat-card" onclick="openBewerbungen('${j.id}', '${titelEsc}', '${j.datum || ''}')">
       <div class="inserat-top">
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
           <div class="inserat-titel">${j.titel}</div>
@@ -1580,6 +1580,7 @@ async function updateBewStatus(bewId, newStatus) {
       const nameEsc = jobberName.replace(/'/g, "\\'");
       actEl.innerHTML =
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
+        `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>` +
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>` +
         (jobDatumErreicht
           ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
