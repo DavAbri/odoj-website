@@ -156,6 +156,23 @@ function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: str
   </td></tr>`);
 }
 
+function waitlistTemplate(email: string): string {
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Warteliste bestätigt</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">Du bist dabei! 🎉</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      Wir haben deine E-Mail-Adresse <strong style="color:#0f1f3d">${esc(email)}</strong> erfolgreich auf unserer Warteliste eingetragen.
+      Sobald ODOJ live geht, melden wir uns bei dir.
+    </p>
+    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:18px 20px;margin:0 0 24px;font-size:14px;color:#7a5500;line-height:1.7">
+      🚀 <strong>Was ist ODOJ?</strong><br>
+      ODOJ ist die neue Plattform für Tagesjobs in Vorarlberg. Jobber können sich schnell und einfach für Tagesjobs bewerben – Arbeitgeber finden kurzfristig flexible Verstärkung.
+    </div>
+    <p style="margin:0;font-size:13px;color:#aaa;line-height:1.6">Wir freuen uns, dich bald an Bord begrüßen zu dürfen!</p>
+  </td></tr>`);
+}
+
 function esc(s: string): string {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
@@ -166,7 +183,27 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName } = await req.json();
+    const { type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email } = await req.json();
+
+    // Warteliste: kein recipientId nötig, E-Mail direkt
+    if (type === 'waitlist') {
+      if (!email) return new Response(JSON.stringify({ error: "email fehlt" }), { status: 400, headers: cors });
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: FROM,
+          to: email,
+          subject: "Du bist auf der ODOJ-Warteliste! 🎉",
+          html: waitlistTemplate(email),
+        }),
+      });
+      const resBody = await res.json();
+      if (!res.ok) throw new Error(resBody?.message || "Resend-Fehler");
+      return new Response(JSON.stringify({ ok: true, id: resBody.id }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
 
     if (!recipientId) return new Response(JSON.stringify({ error: "recipientId fehlt" }), { status: 400, headers: cors });
 

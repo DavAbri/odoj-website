@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ODOJ – Bald verfügbar</title>
+  <title>ODOJ – Coming Soon</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,27 +22,51 @@
       --gray:       #8A9AB5;
     }
 
-    html, body {
-      height: 100%;
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
       font-family: 'Plus Jakarta Sans', sans-serif;
       background: var(--navy);
       color: var(--white);
-      overflow: hidden;
     }
 
+    /* ── Login Button ── */
+    .login-btn {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 100;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.16);
+      color: rgba(255,255,255,.75);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, color .2s;
+      letter-spacing: .2px;
+    }
+    .login-btn:hover {
+      background: rgba(255,255,255,.13);
+      border-color: rgba(255,255,255,.28);
+      color: #fff;
+    }
+
+    /* ── Background ── */
     .gate-wrap {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 80px 24px 60px;
       position: relative;
     }
 
-    /* Hintergrundraster */
     .bg-grid {
-      position: absolute; inset: 0;
+      position: fixed; inset: 0;
       background-image:
         linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
@@ -50,24 +74,23 @@
       mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
       pointer-events: none;
     }
-
-    /* Glow */
     .bg-glow-a {
-      position: absolute;
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(74,143,193,.15) 0%, transparent 70%);
+      position: fixed;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(74,143,193,.14) 0%, transparent 70%);
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
     .bg-glow-b {
-      position: absolute;
+      position: fixed;
       width: 400px; height: 400px;
       background: radial-gradient(circle, rgba(232,160,32,.08) 0%, transparent 70%);
-      top: 20%; right: 10%;
+      top: 15%; right: 8%;
       pointer-events: none;
     }
 
+    /* ── Card ── */
     .card {
       position: relative;
       background: rgba(19, 40, 71, 0.85);
@@ -75,13 +98,12 @@
       border-radius: 24px;
       padding: 52px 48px;
       width: 100%;
-      max-width: 460px;
+      max-width: 480px;
       box-shadow: 0 24px 80px rgba(0,0,0,.35);
       backdrop-filter: blur(16px);
       text-align: center;
     }
 
-    /* Badge */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -132,44 +154,32 @@
     }
 
     h1 {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 800;
       color: var(--white);
-      margin-bottom: 10px;
-      letter-spacing: -.3px;
+      margin-bottom: 12px;
+      letter-spacing: -.4px;
       line-height: 1.2;
     }
 
     .subtitle {
       font-size: 14px;
-      color: rgba(255,255,255,.55);
-      margin-bottom: 36px;
-      line-height: 1.65;
+      color: rgba(255,255,255,.5);
+      margin-bottom: 32px;
+      line-height: 1.7;
       font-weight: 300;
     }
 
-    /* Trennlinie */
     .divider {
       border: none;
       border-top: 1px solid rgba(255,255,255,.08);
       margin: 0 0 28px;
     }
 
-    .access-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.35);
-      margin-bottom: 12px;
-    }
+    /* ── Inputs ── */
+    .input-wrap { position: relative; margin-bottom: 12px; }
 
-    .input-wrap {
-      position: relative;
-      margin-bottom: 14px;
-    }
-
-    input[type="text"] {
+    input[type="email"], input[type="text"] {
       width: 100%;
       padding: 14px 18px;
       background: rgba(255,255,255,.06);
@@ -177,42 +187,43 @@
       border-radius: 12px;
       color: var(--white);
       font-family: inherit;
-      font-size: 16px;
-      font-weight: 600;
-      text-align: center;
-      letter-spacing: 4px;
+      font-size: 15px;
+      font-weight: 500;
       transition: border-color .2s, background .2s;
       outline: none;
     }
-    input[type="text"]::placeholder {
-      letter-spacing: 2px;
-      font-weight: 400;
-      color: rgba(255,255,255,.25);
+    input[type="text"] {
+      text-align: center;
+      letter-spacing: 4px;
+      font-size: 16px;
+      font-weight: 600;
     }
-    input[type="text"]:focus {
-      border-color: var(--sky);
-      background: rgba(255,255,255,.1);
-    }
+    input::placeholder { color: rgba(255,255,255,.28); font-weight: 400; }
+    input[type="text"]::placeholder { letter-spacing: 2px; }
+    input[type="email"]:focus { border-color: var(--accent); background: rgba(255,255,255,.09); }
+    input[type="text"]:focus  { border-color: var(--sky);    background: rgba(255,255,255,.1);  }
     input.error {
       border-color: #e85555 !important;
       animation: shake .3s ease;
     }
     @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25%       { transform: translateX(-6px); }
-      75%       { transform: translateX(6px); }
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
     }
 
     .error-msg {
       font-size: 13px;
       color: #e85555;
-      margin-bottom: 10px;
       min-height: 18px;
+      margin-bottom: 10px;
+      text-align: left;
     }
 
+    /* ── Buttons ── */
     .btn {
       width: 100%;
-      padding: 14px;
+      padding: 15px;
       background: var(--accent);
       color: var(--navy);
       border: none;
@@ -221,31 +232,123 @@
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-      transition: background .2s, transform .1s;
-      letter-spacing: .3px;
+      transition: background .2s, transform .1s, opacity .2s;
+      letter-spacing: .2px;
     }
-    .btn:hover  { background: var(--accent-lt); }
-    .btn:active { transform: scale(.98); }
+    .btn:hover   { background: var(--accent-lt); }
+    .btn:active  { transform: scale(.98); }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
 
-    .footer-note {
+    /* ── Success state ── */
+    .success-wrap { padding: 8px 0; }
+    .success-icon {
+      width: 64px; height: 64px;
+      background: rgba(30,160,90,.15);
+      border: 2px solid rgba(30,160,90,.35);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+      font-size: 28px;
+    }
+    .success-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+    .success-text {
+      font-size: 14px;
+      color: rgba(255,255,255,.55);
+      line-height: 1.65;
+    }
+
+    /* ── Modal Overlay ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-card {
+      position: relative;
+      background: rgba(15, 33, 62, 0.97);
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 20px;
+      padding: 40px 36px 36px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.55);
+      text-align: center;
+    }
+    .modal-close {
       position: absolute;
-      bottom: 28px;
+      top: 14px; right: 14px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.1);
+      color: rgba(255,255,255,.5);
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .2s, color .2s;
+      font-family: inherit;
+    }
+    .modal-close:hover { background: rgba(255,255,255,.14); color: #fff; }
+
+    .modal-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.35);
+      margin-bottom: 20px;
+    }
+
+    /* ── Footer ── */
+    .footer-note {
+      margin-top: 28px;
       font-size: 12px;
       color: rgba(255,255,255,.18);
     }
 
     @media (max-width: 480px) {
-      .card { padding: 40px 28px; }
-      h1 { font-size: 22px; }
+      .card { padding: 40px 24px; }
+      .modal-card { padding: 36px 24px 28px; }
+      h1 { font-size: 24px; }
+      .login-btn { top: 14px; right: 16px; font-size: 12px; padding: 8px 16px; }
     }
   </style>
 </head>
 <body>
-  <div class="gate-wrap">
-    <div class="bg-grid"></div>
-    <div class="bg-glow-a"></div>
-    <div class="bg-glow-b"></div>
 
+  <!-- Login Button oben rechts -->
+  <button class="login-btn" onclick="openLoginModal()">Login</button>
+
+  <!-- Hintergrund -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow-a"></div>
+  <div class="bg-glow-b"></div>
+
+  <!-- Hauptseite -->
+  <div class="gate-wrap">
     <div class="card">
 
       <div class="badge">
@@ -260,13 +363,45 @@
 
       <h1>Coming Soon</h1>
       <p class="subtitle">
-        ODOJ – die Plattform für Tagesjobs in Vorarlberg – ist bald für alle verfügbar.<br>
-        Wir arbeiten noch an den letzten Details.
+        ODOJ startet bald – die Plattform für Tagesjobs in Vorarlberg.<br>
+        Trag dich ein und erfahre als Erster, wenn es losgeht.
       </p>
 
       <hr class="divider">
 
-      <p class="access-label">Früher Zugang</p>
+      <!-- E-Mail Formular -->
+      <div id="waitlist-form">
+        <div class="input-wrap">
+          <input
+            type="email"
+            id="emailInput"
+            placeholder="deine@email.at"
+            autocomplete="email"
+          />
+        </div>
+        <div class="error-msg" id="emailError"></div>
+        <button class="btn" id="waitlistBtn" onclick="submitWaitlist()">Jetzt eintragen &rarr;</button>
+      </div>
+
+      <!-- Erfolgs-Zustand (versteckt) -->
+      <div id="waitlist-success" style="display:none">
+        <div class="success-wrap">
+          <div class="success-icon">✓</div>
+          <div class="success-title">Du bist dabei!</div>
+          <p class="success-text">Wir haben deine E-Mail-Adresse eingetragen und dir eine Bestätigung geschickt. Sobald ODOJ live geht, melden wir uns.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="footer-note">© 2026 ODOJ – One Day One Job · Vorarlberg</p>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay" id="login-modal" onclick="handleOverlayClick(event)">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeLoginModal()">✕</button>
+      <p class="modal-title">Team-Zugang</p>
       <div class="input-wrap">
         <input
           type="text"
@@ -279,35 +414,103 @@
           spellcheck="false"
         />
       </div>
-      <div class="error-msg" id="errorMsg"></div>
+      <div class="error-msg" id="codeError"></div>
       <button class="btn" onclick="checkCode()">Zugang bestätigen</button>
-
     </div>
-
-    <p class="footer-note">© 2026 ODOJ – One Day One Job · Vorarlberg</p>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const input = document.getElementById('codeInput');
-    const errorMsg = document.getElementById('errorMsg');
+    const _sbGate = supabase.createClient(
+      'https://vixarulzbsfwnbfucbih.supabase.co',
+      'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
+    );
 
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') checkCode(); });
-    input.addEventListener('input', () => {
-      input.classList.remove('error');
-      errorMsg.textContent = '';
+    // ── Login Modal ──────────────────────────────────────────────────
+    function openLoginModal() {
+      document.getElementById('login-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('codeInput').focus(), 120);
+    }
+    function closeLoginModal() {
+      document.getElementById('login-modal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('login-modal')) closeLoginModal();
+    }
+
+    const codeInput = document.getElementById('codeInput');
+    const codeError = document.getElementById('codeError');
+    codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkCode(); });
+    codeInput.addEventListener('input', () => {
+      codeInput.classList.remove('error');
+      codeError.textContent = '';
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeLoginModal();
     });
 
     function checkCode() {
-      const val = input.value.trim().toUpperCase();
+      const val = codeInput.value.trim().toUpperCase();
       if (val === 'ODOJ') {
         localStorage.setItem('odoj_access', 'granted');
         window.location.replace('index.html');
       } else {
-        input.classList.add('error');
-        errorMsg.textContent = 'Falscher Zugangscode. Bitte erneut versuchen.';
-        input.value = '';
-        input.focus();
+        codeInput.classList.add('error');
+        codeError.textContent = 'Falscher Zugangscode. Bitte erneut versuchen.';
+        codeInput.value = '';
+        codeInput.focus();
       }
+    }
+
+    // ── Waitlist ─────────────────────────────────────────────────────
+    const emailInput = document.getElementById('emailInput');
+    const emailError = document.getElementById('emailError');
+    const waitlistBtn = document.getElementById('waitlistBtn');
+
+    emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitWaitlist(); });
+    emailInput.addEventListener('input', () => {
+      emailInput.classList.remove('error');
+      emailError.textContent = '';
+    });
+
+    async function submitWaitlist() {
+      const email = emailInput.value.trim().toLowerCase();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        emailInput.classList.add('error');
+        emailError.textContent = 'Bitte gib eine gültige E-Mail-Adresse ein.';
+        emailInput.focus();
+        return;
+      }
+
+      waitlistBtn.disabled = true;
+      waitlistBtn.textContent = 'Wird eingetragen …';
+
+      const { error } = await _sbGate.from('waitlist').insert({ email });
+
+      if (error) {
+        waitlistBtn.disabled = false;
+        waitlistBtn.textContent = 'Jetzt eintragen →';
+        if (error.code === '23505') {
+          emailInput.classList.add('error');
+          emailError.textContent = 'Diese E-Mail-Adresse ist bereits eingetragen.';
+        } else {
+          emailError.textContent = 'Etwas ist schiefgelaufen. Bitte versuche es erneut.';
+          console.error('Waitlist error:', error);
+        }
+        return;
+      }
+
+      // Bestätigungs-E-Mail (fire-and-forget)
+      _sbGate.functions.invoke('send-email', {
+        body: { type: 'waitlist', email }
+      }).catch(() => {});
+
+      // Erfolg anzeigen
+      document.getElementById('waitlist-form').style.display = 'none';
+      document.getElementById('waitlist-success').style.display = 'block';
     }
   </script>
 </body>
