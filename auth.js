@@ -266,3 +266,13 @@ async function odojInitNav() {
 
 // Auto-Initialisierung Nav auf allen Seiten
 odojInitNav();
+
+// Mobiles Menü schließen bei Klick außerhalb
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('navMobile');
+  const burger = document.querySelector('.nav-burger');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (!menu.contains(e.target) && !burger.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
