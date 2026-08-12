@@ -502,11 +502,66 @@
   text-transform: uppercase;
 }
 
+/* ── BACK BUTTON (nur Mobile sichtbar) ── */
+.chat-back-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--navy);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.chat-back-btn:hover { background: var(--off); }
+
 /* ── MOBILE ── */
 @media (max-width: 700px) {
-  .chat-sidebar { width: 100%; }
-  .chat-wrapper { flex-direction: column; }
-  .chat-sidebar { height: 240px; min-width: unset; border-right: none; border-bottom: 1px solid var(--gray-lt); }
+  .chat-wrapper {
+    flex-direction: column;
+    position: relative;
+    height: calc(100vh - var(--nav-h));
+    overflow: hidden;
+  }
+  /* Sidebar = volle Liste-Ansicht */
+  .chat-sidebar {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-width: unset;
+    border-right: none;
+    z-index: 1;
+  }
+  /* Chat-Main standardmäßig versteckt */
+  .chat-main {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 2;
+  }
+  /* Chat-Main eingeblendet wenn Konversation geöffnet */
+  .chat-main.mobile-open {
+    display: flex;
+  }
+  /* Back-Button einblenden */
+  .chat-back-btn {
+    display: flex;
+  }
+  /* Header-Layout anpassen für Back-Button */
+  .chat-win-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  .chat-win-header-info { flex: 1; min-width: 0; }
+  .chat-win-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 </style>
 </head>
@@ -558,8 +613,13 @@
     <!-- Chat Fenster -->
     <div id="chat-window">
       <div class="chat-win-header" id="chat-win-header">
-        <div class="chat-win-name" id="chat-win-name">–</div>
-        <div class="chat-win-sub"  id="chat-win-sub">–</div>
+        <button class="chat-back-btn" onclick="mobileGoBack()" aria-label="Zurück zur Übersicht">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="chat-win-header-info">
+          <div class="chat-win-name" id="chat-win-name">–</div>
+          <div class="chat-win-sub"  id="chat-win-sub">–</div>
+        </div>
       </div>
       <div class="messages-area" id="messages-area">
       </div>
@@ -819,6 +879,11 @@ async function openConversation(bewId) {
   // Fenster einblenden
   document.getElementById('chat-empty').style.display  = 'none';
   document.getElementById('chat-window').style.display = 'flex';
+
+  // Mobile: Chat-Panel über die Liste schieben
+  if (window.innerWidth <= 700) {
+    document.querySelector('.chat-main').classList.add('mobile-open');
+  }
 
   await loadMessages();
 
@@ -1386,6 +1451,12 @@ async function submitVertragAbgelehnt() {
   showToast('Vertrag abgelehnt. Arbeitgeber wurde informiert.', 'warn');
   btn.disabled = false; btn.textContent = 'Ablehnen';
   await loadMessages(false);
+}
+
+// ── MOBILE: Zurück zur Liste ──
+function mobileGoBack() {
+  document.querySelector('.chat-main').classList.remove('mobile-open');
+  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
 }
 
 // Start
