@@ -1459,8 +1459,27 @@ function mobileGoBack() {
   if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
 }
 
+// ── COOKIE-BANNER: Input-Bar auf Mobile nach oben schieben ──
+function adjustInputForCookieBanner() {
+  if (window.innerWidth > 700) return;
+  const inputBar = document.querySelector('.chat-input-bar');
+  if (!inputBar) return;
+  const banner = document.getElementById('odoj-ck-banner');
+  if (banner && getComputedStyle(banner).display !== 'none') {
+    inputBar.style.paddingBottom = (banner.offsetHeight + 32) + 'px';
+  } else {
+    inputBar.style.paddingBottom = '';
+  }
+}
+
 // Start
 initChat();
+setTimeout(adjustInputForCookieBanner, 400);
+document.addEventListener('click', e => {
+  if (e.target.closest('#ck-b-accept, #ck-b-necessary')) {
+    setTimeout(adjustInputForCookieBanner, 300);
+  }
+});
 </script>
 <!-- VERTRAG ABLEHNEN MODAL -->
 <div id="vertrag-reject-overlay" class="reason-modal-overlay" style="display:none" onclick="if(event.target===this)closeRejectVertragModal()">
