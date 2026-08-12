@@ -119,7 +119,7 @@ function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string): s
     </p>
     <div style="background:#e6f5ee;border:1.5px solid #a8d9be;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#1a5c3a;line-height:1.6">
       ✅ Der Arbeitgeber wurde benachrichtigt und wird deine Bewerbung so bald wie möglich prüfen.<br><br>
-      Sobald es ein Update gibt – ob Zusage, Absage oder Rückfrage – wirst du sofort per E-Mail und in der App benachrichtigt.
+      Sobald es ein Update gibt – ob Zusage, Absage oder Rückfrage – wirst du sofort per E-Mail und auf der Plattform benachrichtigt.
     </div>
     <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.7">
       Du kannst den Status deiner Bewerbung jederzeit in deinem Dashboard einsehen.
