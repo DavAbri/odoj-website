@@ -240,8 +240,7 @@
   .ck-btn-accept, .ck-btn-necessary { padding:10px 16px; font-size:13px; }
   .ck-m-body, .ck-m-footer { padding-left:18px; padding-right:18px; }
   .ck-m-head { padding:18px 18px; }
-  #odoj-ck-fab { bottom:90px; left:16px; }
-  #odoj-ck-fab-tip { bottom:146px; left:16px; }
+
 }
     `;
     document.head.appendChild(s);
