@@ -182,10 +182,6 @@ async function odojInitNav() {
       ? `<a href="meine-inserate.html" class="nav-dd-item" id="nav-dd-role"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Meine Inserate</a>`
       : `<a href="meine-bewerbungen.html" class="nav-dd-item" id="nav-dd-role"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Meine Bewerbungen</a>`;
 
-    const roleItemMobile = rolle === 'arbeitgeber'
-      ? `<a href="meine-inserate.html" id="nav-mobile-meine-inserate">Meine Inserate</a>`
-      : `<a href="meine-bewerbungen.html" id="nav-mobile-meine-bew">Meine Bewerbungen</a>`;
-
     // ── Desktop: Profil-Dropdown ──
     if (authEl) {
       authEl.innerHTML = `
@@ -220,23 +216,53 @@ async function odojInitNav() {
       });
     }
 
-    // ── Mobile: Profil-Links direkt in der mobilen Nav ──
-    if (mobileEl) {
-      mobileEl.innerHTML = `
-        <div class="nav-mobile-divider"></div>
-        <a href="chat.html" id="nav-mobile-nachrichten">Nachrichten</a>
-        ${roleItemMobile}
-        <a href="profil.html">Profileinstellungen</a>
-        <a href="#" onclick="odojLogoutConfirm();return false;" class="nav-logout-mobile">Ausloggen →</a>`;
+    // ── Mobile: Profil-Bereich (wie ursprünglich) ──
+    if (mobileEl) mobileEl.innerHTML =
+      '<a href="profil.html" class="nav-user-name-mobile">✓ ' + displayName + '</a>' +
+      '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen →</a>';
+
+    // ── Mobile: Statische Links je nach Rolle ausblenden ──
+    const navMobile = document.getElementById('navMobile');
+    if (navMobile) {
+      navMobile.querySelectorAll('a').forEach(a => {
+        const href = a.getAttribute('href');
+        if (rolle === 'jobber') {
+          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.style.display = 'none';
+        } else if (rolle === 'arbeitgeber') {
+          if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.style.display = 'none';
+        }
+      });
     }
 
-    // Badges setzen
-    _setNavBadge('nav-dd-nachrichten', unreadCount);
-    _setMobileNavBadge('nav-mobile-nachrichten', unreadCount);
-    if (rolle === 'arbeitgeber') {
-      _setNavBadge('nav-dd-role', pendingBewCount);
-      _setMobileNavBadge('nav-mobile-meine-inserate', pendingBewCount);
+    // ── Mobile: Rollenspezifische Links einfügen ──
+    if (navMobile && mobileEl && !document.getElementById('nav-mobile-nachrichten')) {
+      const msgA = document.createElement('a');
+      msgA.href        = 'chat.html';
+      msgA.id          = 'nav-mobile-nachrichten';
+      msgA.textContent = 'Nachrichten';
+      navMobile.insertBefore(msgA, mobileEl);
+      if (unreadCount > 0) _setMobileNavBadge('nav-mobile-nachrichten', unreadCount);
+
+      if (rolle === 'jobber' && !document.getElementById('nav-mobile-meine-bew')) {
+        const mjA = document.createElement('a');
+        mjA.href = 'meine-bewerbungen.html';
+        mjA.id   = 'nav-mobile-meine-bew';
+        mjA.textContent = 'Meine Bewerbungen';
+        navMobile.insertBefore(mjA, msgA);
+      }
+      if (rolle === 'arbeitgeber' && !document.getElementById('nav-mobile-meine-inserate')) {
+        const miA = document.createElement('a');
+        miA.href = 'meine-inserate.html';
+        miA.id   = 'nav-mobile-meine-inserate';
+        miA.textContent = 'Meine Inserate';
+        if (location.pathname.includes('meine-inserate')) miA.style.color = 'var(--accent)';
+        navMobile.insertBefore(miA, msgA);
+        if (pendingBewCount > 0) _setMobileNavBadge('nav-mobile-meine-inserate', pendingBewCount);
+      }
     }
+
+    // Desktop-Badges setzen
+    _setNavBadge('nav-dd-nachrichten', unreadCount);
 
     // Alle 30s Badges aktualisieren
     setInterval(async () => {

@@ -433,8 +433,14 @@ footer {
 .nav-dd-divider { height: 1px; background: #E8EDF5; margin: 4px 6px; }
 .nav-dd-logout { color: #e74c3c !important; }
 .nav-dd-logout:hover { background: #FEF2F2 !important; }
-/* Mobile divider */
-.nav-mobile-divider { height: 1px; background: rgba(255,255,255,.1); margin: 6px 0; }
+.nav-user-name-mobile {
+  color: rgba(255,255,255,.5);
+  font-size: 13px;
+  display: block;
+  padding: 10px 0 6px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-weight: 400;
+}
 .nav-logout-mobile { color: #e74c3c !important; font-weight: 600 !important; }
 /* Logout Bestätigungs-Modal */
 #odoj-logout-modal {
