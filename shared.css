@@ -429,6 +429,7 @@ footer {
   color: #0B1F3A; text-decoration: none; transition: background .15s;
   cursor: pointer; width: 100%; text-align: left; background: none; border: none;
 }
+.nav-profil-dropdown .nav-dd-item { color: #0B1F3A; }
 .nav-dd-item:hover { background: #F4F7FB; color: #0B1F3A; }
 .nav-dd-divider { height: 1px; background: #E8EDF5; margin: 4px 6px; }
 .nav-dd-logout { color: #e74c3c !important; }
