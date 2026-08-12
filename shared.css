@@ -94,6 +94,7 @@ nav {
   align-items: center;
   gap: 28px;
   list-style: none;
+  flex-shrink: 0;
 }
 
 .nav-links a {
