@@ -441,10 +441,7 @@
   <div class="filter-content" id="filterContent">
     <span class="filter-lbl">Branche:</span>
     <button class="fbtn on" id="fbtn-branche-alle" onclick="filterBranche('alle', this)">Alle</button>
-    <button class="fbtn" onclick="filterBranche('gastro', this)">Gastronomie</button>
-    <button class="fbtn" onclick="filterBranche('bau', this)">Bau &amp; Handwerk</button>
-    <button class="fbtn" onclick="filterBranche('lager', this)">Lager &amp; Logistik</button>
-    <button class="fbtn" onclick="filterBranche('events', this)">Events</button>
+    <span id="branche-btns"></span>
     <div class="filter-divider"></div>
     <span class="filter-lbl">Mindestalter:</span>
     <button class="fbtn on" id="fbtn-alter-alle" onclick="filterAlter(null, this)">Alle</button>
@@ -563,11 +560,24 @@ function _berechneAlter(geburtsdatum) {
 
 // ── BRANCHE MAP ──
 const JOB_BRANCHEN = {
-  gastro: { label: 'Gastronomie',      cls: 'tag-gastro' },
-  bau:    { label: 'Bau & Handwerk',   cls: 'tag-bau'    },
-  lager:  { label: 'Lager & Logistik', cls: 'tag-lager'  },
-  events: { label: 'Events',           cls: 'tag-events' },
+  gastro: { label: 'Gastronomie', cls: 'tag-gastro' },
+  hotel:  { label: 'Hotellerie',  cls: 'tag-hotel'  },
+  events: { label: 'Events',      cls: 'tag-events' },
 };
+
+function buildBranchenFilter(usedBranchen) {
+  const container = document.getElementById('branche-btns');
+  if (!container) return;
+  container.innerHTML = '';
+  Object.entries(JOB_BRANCHEN).forEach(([key, def]) => {
+    if (!usedBranchen.has(key)) return;
+    const btn = document.createElement('button');
+    btn.className = 'fbtn';
+    btn.textContent = def.label;
+    btn.addEventListener('click', () => filterBranche(key, btn));
+    container.appendChild(btn);
+  });
+}
 
 // ── TOAST ──
 function showJobsToast(msg, type) {
@@ -665,7 +675,7 @@ function _applyFilters() {
 
 function filterBranche(b, btn) {
   _activeBranche = b;
-  document.querySelectorAll('#fbtn-branche-alle, .fbtn[onclick*="filterBranche"]').forEach(x => x.classList.remove('on'));
+  document.querySelectorAll('#fbtn-branche-alle, #branche-btns .fbtn').forEach(x => x.classList.remove('on'));
   btn.classList.add('on');
   _applyFilters();
 }
@@ -886,6 +896,10 @@ async function checkJobsAuth() {
   // Client-seitiger Filter als Sicherheitsnetz (falls DB-Vergleich abweicht)
   const allJobs = (rawJobs || []).filter(j => !j.datum || j.datum >= heuteDatum);
   console.log('[ODOJ] Jobs nach Server-Filter:', rawJobs?.length, '→ nach Client-Filter:', allJobs.length);
+
+  // Branche-Filter dynamisch: nur Kategorien anzeigen, die in aktiven Inseraten vorkommen
+  const usedBranchen = new Set(allJobs.map(j => j.branche).filter(Boolean));
+  buildBranchenFilter(usedBranchen);
 
   // Echte Firmennamen aus Profile laden
   if (allJobs?.length) {

@@ -325,8 +325,7 @@ section { padding: 88px 60px; }
   text-transform: uppercase;
 }
 .tag-gastro { background: #FEF3E8; color: #A85500; }
-.tag-bau    { background: #EBF5FF; color: #1A5FA0; }
-.tag-lager  { background: #EEF2FF; color: #3040A0; }
+.tag-hotel  { background: #E0F4F0; color: #0A6E5E; }
 .tag-events { background: #F5EEFF; color: #6020A0; }
 .tag-green  { background: #E6F5EE; color: #1A7040; }
 .tag-orange { background: #FFF4E0; color: #A05000; }

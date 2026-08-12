@@ -695,9 +695,8 @@
                 <label>Branche *</label>
                 <select id="ins-branche" required>
                   <option value="" disabled selected>Bitte wählen</option>
-                  <option value="gastro">Gastronomie &amp; Hotel</option>
-                  <option value="bau">Bau &amp; Handwerk</option>
-                  <option value="lager">Lager &amp; Logistik</option>
+                  <option value="gastro">Gastronomie</option>
+                  <option value="hotel">Hotellerie</option>
                   <option value="events">Veranstaltungen &amp; Events</option>
                 </select>
               </div>
@@ -1039,10 +1038,9 @@ function showTab(tab) {
 
 // ── BRANCHE → Label + Tag-Klasse ──
 const BRANCHEN = {
-  gastro: { label: 'Gastronomie',          cls: 'tag-gastro' },
-  bau:    { label: 'Bau & Handwerk',       cls: 'tag-bau'    },
-  lager:  { label: 'Lager & Logistik',     cls: 'tag-lager'  },
-  events: { label: 'Events',               cls: 'tag-events' },
+  gastro: { label: 'Gastronomie', cls: 'tag-gastro' },
+  hotel:  { label: 'Hotellerie',  cls: 'tag-hotel'  },
+  events: { label: 'Events',      cls: 'tag-events' },
 };
 
 // ── INSERATE LADEN ──
