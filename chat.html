@@ -521,9 +521,14 @@
 /* ── MOBILE ── */
 @media (max-width: 700px) {
   .chat-wrapper {
+    position: fixed;
+    top: var(--nav-h);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin-top: 0;
+    height: auto;
     flex-direction: column;
-    position: relative;
-    height: calc(100vh - var(--nav-h));
     overflow: hidden;
   }
   /* Sidebar = volle Liste-Ansicht */
@@ -1465,16 +1470,20 @@ function adjustInputForCookieBanner() {
   const inputBar = document.querySelector('.chat-input-bar');
   if (!inputBar) return;
   const banner = document.getElementById('odoj-ck-banner');
-  if (banner && getComputedStyle(banner).display !== 'none') {
-    inputBar.style.paddingBottom = (banner.offsetHeight + 32) + 'px';
-  } else {
-    inputBar.style.paddingBottom = '';
-  }
+  const visible = banner && getComputedStyle(banner).display !== 'none' && banner.offsetHeight > 0;
+  inputBar.style.paddingBottom = visible ? (banner.offsetHeight + 16) + 'px' : '';
+}
+
+function _initCookieBannerWatch() {
+  adjustInputForCookieBanner();
+  const banner = document.getElementById('odoj-ck-banner');
+  if (!banner) return;
+  new MutationObserver(adjustInputForCookieBanner).observe(banner, { attributes: true, attributeFilter: ['style', 'class'] });
 }
 
 // Start
 initChat();
-setTimeout(adjustInputForCookieBanner, 400);
+setTimeout(_initCookieBannerWatch, 300);
 document.addEventListener('click', e => {
   if (e.target.closest('#ck-b-accept, #ck-b-necessary')) {
     setTimeout(adjustInputForCookieBanner, 300);
@@ -1516,6 +1525,6 @@ document.addEventListener('click', e => {
 </div>
 
 <script src="cookies.js"></script>
-<script src="chatbot.js"></script>
+
 </body>
 </html>
