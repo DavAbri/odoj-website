@@ -240,6 +240,31 @@
 .ag-lohn-box p  { font-size: 14px; color: #3A5070; line-height: 1.7; margin: 0 0 12px; }
 .ag-lohn-box p:last-of-type { margin-bottom: 0; }
 
+/* Weitere Informationen – Accordion (helles Theme, gleiche Toggle-Logik wie FAQ) */
+.wi-list { max-width: 780px; margin: 52px auto 0; }
+.wi-item { border-bottom: 1px solid var(--gray-lt); }
+.wi-item:last-child { border-bottom: none; }
+.wi-question {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 0; cursor: pointer; gap: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 700; color: var(--text);
+  background: none; border: none; width: 100%; text-align: left;
+  transition: color .2s;
+}
+.wi-question:hover { color: var(--accent); }
+.wi-item .faq-chevron { color: var(--accent); transition: transform .3s; }
+.wi-item.open .faq-chevron { transform: rotate(180deg); }
+.wi-answer {
+  max-height: 0; overflow: hidden;
+  font-size: 14px; color: var(--text-lt);
+  line-height: 1.8; font-weight: 300;
+  transition: max-height .4s ease, padding-bottom .3s;
+}
+.wi-item.open .wi-answer { max-height: 2000px; padding-bottom: 22px; }
+.wi-answer p { margin: 0 0 10px; }
+.wi-answer p:last-child { margin-bottom: 0; }
+
 /* ── INFO SEKTIONEN ── */
 .info-section { background: var(--white); }
 .info-section-alt { background: var(--off); }
@@ -848,6 +873,174 @@
       <p>Der im Inserat angegebene Bruttolohn ist nicht gleich euren gesamten Arbeitgeberkosten. Zusätzlich können insbesondere entstehen: Sozialversicherung · Lohnnebenkosten · Urlaubsersatzleistung · aliquote Sonderzahlungen · Zuschläge.</p>
       <p>Der Lohn muss außerdem zumindest dem geltenden kollektivvertraglichen Mindestlohn für die Tätigkeit entsprechen. Die genaue Abrechnung übernimmt am besten eure Lohnverrechnung.</p>
       <div class="info-card-note">🛠 Bald verfügbar: Ein <strong>Zahltagsrechner</strong>, der neben dem Stundenlohn auch Urlaubsgeld, Sonderzahlungen und Zuschläge berücksichtigt und so den sogenannten <strong>Mindestzahltag</strong> übersichtlich darstellt.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SEKTION: WEITERE INFORMATIONEN (Accordion) -->
+<section class="info-section info-section-alt" id="weitere-infos">
+  <div class="info-section-inner">
+    <div class="fade-in">
+      <span class="section-label">Wichtige Hinweise &amp; Sonderfälle</span>
+      <h2 class="section-title">Weitere<br>Informationen</h2>
+    </div>
+
+    <div class="wi-list">
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          1. Ist eine fallweise Beschäftigung überhaupt möglich?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Eine fallweise Beschäftigung eignet sich für unregelmäßige einzelne Einsätze.</p>
+          <p>Typisch wäre beispielsweise: „Wir brauchen nächsten Samstag kurzfristig eine zusätzliche Servicekraft."</p>
+          <p>Nicht geeignet wäre dagegen eine von vornherein regelmäßige Beschäftigung wie: „Du arbeitest jeden Samstag bei uns."</p>
+          <p>Auch ein Einsatz beispielsweise jeden letzten Samstag im Monat gilt grundsätzlich nicht als fallweise Beschäftigung. In solchen Fällen kann ein durchgehendes Beschäftigungsverhältnis vorliegen.</p>
+          <p>Zwischen den einzelnen Einsätzen darf außerdem keine Verpflichtung bestehen, weitere Einsätze anzunehmen bzw. anzubieten.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          2. Kollektivvertrag und Mindestlohn
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Auch bei einem eintägigen Job gelten die normalen arbeitsrechtlichen Vorschriften.</p>
+          <p>Vor der Beschäftigung muss daher insbesondere geprüft werden: welcher Kollektivvertrag gilt, in welche Beschäftigungsgruppe der Arbeitnehmer fällt, welcher Mindestlohn vorgesehen ist und welche Zuschläge oder Sonderzahlungen zustehen.</p>
+          <p>Der auf ODOJ angegebene Lohn darf den geltenden kollektivvertraglichen Mindestlohn nicht unterschreiten.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          3. Der angegebene Lohn entspricht nicht euren Gesamtkosten
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Der im Inserat angeführte Bruttolohn ist nicht automatisch der Gesamtbetrag, den euch der Arbeitnehmer kostet.</p>
+          <p>Je nach Beschäftigung können zusätzlich beispielsweise anfallen: Arbeitgeberanteile zur Sozialversicherung, Unfallversicherungsbeitrag, Dienstgeberbeitrag, Zuschlag zum Dienstgeberbeitrag, Kommunalsteuer, gegebenenfalls BV-Kassenbeitrag, aliquote Sonderzahlungen, Urlaubsersatzleistung, Mehrarbeits-, Überstunden-, Nacht-, Sonn- oder Feiertagszuschläge, gegebenenfalls weitere kollektivvertragliche Ansprüche.</p>
+          <p>Die genaue Berechnung übernimmt am besten eure Lohnverrechnung.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          4. Urlaubsersatzleistung
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Auch bei einer eintägigen Beschäftigung entsteht aliquot Urlaub.</p>
+          <p>Da dieser normalerweise nicht konsumiert werden kann, muss er bei Beendigung als Urlaubsersatzleistung abgegolten werden.</p>
+          <p>Diese darf nicht einfach mit einem höheren Stundenlohn als „inkludiert" betrachtet werden, sondern ist bei der Endabrechnung separat zu berücksichtigen.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          5. Geringfügig oder vollversichert?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>„Fallweise beschäftigt" bedeutet nicht automatisch „geringfügig beschäftigt".</p>
+          <p>Die sozialversicherungsrechtliche Behandlung richtet sich nach dem jeweiligen Entgelt.</p>
+          <p>Die Geringfügigkeitsgrenze beträgt 2026 € 551,10.</p>
+          <p>Auch geringfügig fallweise Beschäftigte müssen jedenfalls ordnungsgemäß vor Arbeitsbeginn angemeldet werden.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          6. Viele geringfügig Beschäftigte im selben Unternehmen
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Beschäftigt ein Unternehmen mehrere geringfügig beschäftigte Personen, kann zusätzlich eine Dienstgeberabgabe entstehen.</p>
+          <p>2026 ist insbesondere eine monatliche Entgeltsumme aller geringfügig Beschäftigten von € 826,65 relevant. Wird diese Grenze überschritten, kann die Dienstgeberabgabe anfallen. Fallweise Beschäftigte zählen dabei mit.</p>
+          <p>Eure Lohnverrechnung berücksichtigt dies üblicherweise automatisch.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          7. Arbeitnehmer arbeitet erneut bei euch
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Arbeitet dieselbe Person zu einem späteren Zeitpunkt erneut bei euch, handelt es sich bei einer echten fallweisen Beschäftigung grundsätzlich wieder um ein eigenes Dienstverhältnis.</p>
+          <p>Daher: neuer Einsatz → neuer Vertrag bzw. neue Vereinbarung → neue Anmeldung vor Arbeitsbeginn.</p>
+          <p>Bei wiederholten Beschäftigungen ist außerdem die Abfertigung Neu zu beachten. Das erste Arbeitsverhältnis ist grundsätzlich BV-beitragsfrei. Beginnt innerhalb von zwölf Monaten ein weiteres Dienstverhältnis beim selben Arbeitgeber, kann bereits ab dem ersten Tag dieses weiteren Dienstverhältnisses BV-Beitragspflicht bestehen.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          8. Arbeitnehmer erscheint nicht
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Wurde ein Arbeitnehmer bereits angemeldet, tritt seinen Einsatz aber doch nicht an, darf die Anmeldung nicht einfach bestehen bleiben.</p>
+          <p>Die Meldung muss entsprechend storniert bzw. korrigiert werden.</p>
+          <p>Informiert in diesem Fall eure Lohnverrechnung.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          9. Tatsächliche Arbeitszeit weicht vom Inserat ab
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Das Inserat dient zur Vereinbarung des geplanten Einsatzes.</p>
+          <p>Für die Abrechnung zählt jedoch die tatsächlich geleistete Arbeitszeit.</p>
+          <p>Beginnt oder endet der Arbeitnehmer später oder früher, entstehen Überstunden oder fallen Zuschläge an, muss dies entsprechend in der Arbeitszeitaufzeichnung und Lohnverrechnung berücksichtigt werden.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          10. Jugendliche Arbeitnehmer
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Bei Arbeitnehmern unter 18 Jahren gelten zusätzliche Schutzvorschriften, insbesondere hinsichtlich: Arbeitszeit, Pausen, Nachtarbeit, Sonn- und Feiertagsarbeit, erlaubten Tätigkeiten.</p>
+          <p>Bei minderjährigen Arbeitnehmern müssen daher zusätzlich die Bestimmungen des Kinder- und Jugendlichen-Beschäftigungsgesetzes beachtet werden.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          11. Ausländische Arbeitnehmer
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Eine erfolgreiche Anmeldung bei der ÖGK bedeutet nicht automatisch, dass eine Person in Österreich arbeiten darf.</p>
+          <p>Bei Personen ohne uneingeschränkten österreichischen Arbeitsmarktzugang muss der Arbeitgeber daher zusätzlich prüfen, ob die erforderliche Aufenthalts- bzw. Beschäftigungsberechtigung besteht.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          12. Nachweis aus der mBGM
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Nach der endgültigen Meldung sind auch die für Arbeitnehmer vorgeschriebenen Sozialversicherungsnachweise zu beachten.</p>
+          <p>Insbesondere muss dem fallweise Beschäftigten die entsprechende Abschrift der Zeitenmeldung aus der mBGM unverzüglich ausgehändigt werden.</p>
+          <p>Dies kann eure Lohnverrechnung gemeinsam mit den übrigen Abrechnungsunterlagen erledigen.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          13. Unterlagen aufbewahren
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Bewahrt zu jedem Einsatz insbesondere folgende Unterlagen bzw. Informationen nachvollziehbar auf: Dienstvertrag, ÖGK-/ELDA-Meldungen, Arbeitszeitaufzeichnungen, Lohnabrechnung, Nachweise über Zuschläge und sonstige Ansprüche, Zahlungsnachweis.</p>
+          <p>So bleibt jeder vermittelte Einsatz auch später nachvollziehbar.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
