@@ -203,6 +203,64 @@
 .ablauf-line { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
 .ablauf-step:hover .ablauf-line { transform: scaleX(1); }
 
+/* Gelbes Infofeld – Verantwortung Arbeitgeber */
+.ag-hinweis-gelb {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: #FFF4E0; border: 1.5px solid rgba(232,160,32,.4);
+  border-radius: var(--r-md); padding: 22px 26px; margin: 44px 0 0;
+}
+.ag-hinweis-gelb-ico {
+  flex-shrink: 0; width: 38px; height: 38px;
+  background: rgba(232,160,32,.25); border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center; color: #A05000;
+}
+.ag-hinweis-gelb h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.ag-hinweis-gelb p  { font-size: 13px; color: #6B4A16; line-height: 1.65; font-weight: 400; margin: 0; }
+
+/* In 8 Schritten – Timeline */
+.acht-schritte-inner { max-width: 760px; margin: 52px auto 0; }
+.acht-schritt { display: flex; gap: 22px; position: relative; padding-bottom: 36px; }
+.acht-schritt:last-child { padding-bottom: 0; }
+.acht-schritt::before {
+  content: ''; position: absolute; left: 19px; top: 44px; bottom: -36px;
+  width: 2px; background: var(--gray-lt);
+}
+.acht-schritt:last-child::before { display: none; }
+.acht-schritt-num {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--navy); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px;
+  position: relative; z-index: 1;
+}
+.acht-schritt-body { flex: 1; padding-top: 4px; }
+.acht-schritt-body h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.acht-schritt-body p  { font-size: 14px; color: var(--text-lt); line-height: 1.7; font-weight: 300; margin: 0 0 6px; }
+.acht-schritt-body p:last-child { margin-bottom: 0; }
+.as-list { list-style: none; padding: 0; margin: 4px 0 10px; }
+.as-list li { font-size: 14px; color: var(--text-lt); line-height: 1.8; font-weight: 300; }
+.as-calc li { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; color: var(--text); font-size: 13.5px; }
+.acht-schritt-done {
+  margin-top: 10px; display: inline-flex; align-items: center; gap: 8px;
+  background: #E6F5EE; color: #1a7a50; border: 1px solid rgba(26,122,80,.25);
+  border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Lohn-Hinweisbox */
+.ag-lohn-box {
+  background: #F5F7FA; border: 1.5px solid #D8DDE8; border-radius: 16px;
+  padding: 28px 32px; margin: 40px auto 0; max-width: 760px;
+  display: flex; align-items: flex-start; gap: 20px;
+}
+.ag-lohn-box-ico {
+  flex-shrink: 0; width: 44px; height: 44px; background: #E8EDF5;
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0B1628;
+}
+.ag-lohn-box h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 800; color: #0B1628; margin-bottom: 10px; }
+.ag-lohn-box p  { font-size: 14px; color: #3A5070; line-height: 1.7; margin: 0 0 12px; }
+.ag-lohn-box p:last-of-type { margin-bottom: 0; }
+
 /* ── INFO SEKTIONEN ── */
 .info-section { background: var(--white); }
 .info-section-alt { background: var(--off); }
@@ -338,6 +396,8 @@
   .form-row { grid-template-columns: 1fr; }
   .info-grid { grid-template-columns: 1fr 1fr; }
   .tipps-grid { grid-template-columns: 1fr; }
+  .ag-hinweis-gelb { padding: 18px 20px; }
+  .ag-lohn-box { flex-direction: column; padding: 22px 24px; }
 }
 @media (max-width: 540px) {
   .ag-hero { padding: calc(var(--nav-h) + 24px) 20px 0; }
@@ -353,6 +413,9 @@
   .ablauf-step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
   .info-grid { grid-template-columns: 1fr; }
+  .acht-schritt { gap: 14px; }
+  .acht-schritt-num { width: 34px; height: 34px; font-size: 13px; }
+  .acht-schritt::before { left: 16px; top: 38px; }
 }
 
 </style>
@@ -690,6 +753,130 @@
       <h4>Personal erscheint</h4>
       <p>Der Mitarbeiter führt Arbeit aus. Abrechnung und Abwicklung direkt über ODOJ.</p>
       <div class="ablauf-line"></div>
+    </div>
+  </div>
+
+  <!-- Gelbes Infofeld: Arbeitgeber bleibt Arbeitgeber -->
+  <div class="ag-hinweis-gelb fade-in">
+    <div class="ag-hinweis-gelb-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div>
+      <h3>ODOJ unterstützt – Arbeitgeber bleibt Arbeitgeber</h3>
+      <p>ODOJ vermittelt zwischen Arbeitnehmer und Arbeitgeber und stellt euch unterstützende Informationen und Vorlagen zur Verfügung. Der Dienstvertrag kommt direkt zwischen euch und dem Arbeitnehmer zustande – ihr bleibt daher insbesondere für die korrekte Anmeldung, arbeitsrechtliche Einstufung, Lohnverrechnung, Abgaben und Auszahlung verantwortlich. Bei Unsicherheiten empfehlen wir, Sonderfälle mit eurer Lohnverrechnung, eurem Steuerberater oder einer arbeitsrechtlichen Beratungsstelle abzuklären.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SEKTION: 8 SCHRITTE ZUM ERFOLGREICHEN TAGESJOB -->
+<section class="acht-schritte">
+  <div class="fade-in">
+    <span class="section-label">Der komplette Ablauf</span>
+    <h2 class="section-title">In 8 Schritten zum<br>erfolgreichen Tagesjob</h2>
+    <p class="section-sub">Von der Erstellung des Inserats bis zur Auszahlung – wir begleiten euch durch den gesamten Ablauf.</p>
+  </div>
+
+  <div class="acht-schritte-inner">
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">1</div>
+      <div class="acht-schritt-body">
+        <h4>Inserat erstellen</h4>
+        <p>Alle wichtigen Informationen zum Einsatz angeben: Tätigkeit · Datum · Arbeitszeit · Arbeitsort · Voraussetzungen · Bruttolohn.</p>
+        <p>Je genauer eure Angaben, desto vollständiger können wir später eure Dienstvertragsvorlage vorausfüllen.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">2</div>
+      <div class="acht-schritt-body">
+        <h4>Bewerber auswählen</h4>
+        <p>Bewerbungen ansehen, Profile vergleichen und bei Bedarf direkt über ODOJ schreiben.</p>
+        <p>Passende Person gefunden? → Bewerbung unter „Meine Inserate" annehmen.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">3</div>
+      <div class="acht-schritt-body">
+        <h4>Dienstvertrag abschließen</h4>
+        <p>Ihr erhaltet von uns eine vorausgefüllte Dienstvertragsvorlage.</p>
+        <ul class="as-list">
+          <li>→ Angaben kontrollieren</li>
+          <li>→ Fehlendes ergänzen</li>
+          <li>→ ggf. KV &amp; Einstufung prüfen</li>
+          <li>→ von beiden Parteien unterschreiben</li>
+        </ul>
+        <p>Ihr könnt natürlich auch euren eigenen Dienstvertrag verwenden.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">4</div>
+      <div class="acht-schritt-body">
+        <h4>Arbeitnehmer anmelden</h4>
+        <p>Vor Arbeitsbeginn: fallweise Anmeldung bei der ÖGK – z. B. über ELDA.</p>
+        <div class="info-card-note">⚠️ Die Anmeldung muss vor dem tatsächlichen Arbeitsantritt erfolgen.</div>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">5</div>
+      <div class="acht-schritt-body">
+        <h4>Arbeitszeit dokumentieren</h4>
+        <p>Während des Einsatzes die tatsächliche Arbeitszeit festhalten: Beginn · Pausen · Ende.</p>
+        <p>Arbeitszeit-, Pausen- und Ruhezeitvorschriften beachten.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">6</div>
+      <div class="acht-schritt-body">
+        <h4>Lohn abrechnen</h4>
+        <p>Nach dem Einsatz erfolgt die Lohnverrechnung.</p>
+        <ul class="as-list as-calc">
+          <li>Grundlohn</li>
+          <li>+ Urlaubsersatzleistung</li>
+          <li>+ aliquote Sonderzahlungen</li>
+          <li>+ ggf. Zuschläge / Mehr- &amp; Überstunden</li>
+        </ul>
+        <p>→ üblicherweise über eure bestehende Lohnverrechnung oder euren Steuerberater.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">7</div>
+      <div class="acht-schritt-body">
+        <h4>mBGM übermitteln</h4>
+        <p>Nach dem Einsatz:</p>
+        <ul class="as-list">
+          <li>→ mBGM für fallweise Beschäftigte übermitteln</li>
+          <li>→ erforderliche Nachweise an den Arbeitnehmer übergeben</li>
+        </ul>
+        <p>Auch das kann eure Lohnverrechnung übernehmen.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">8</div>
+      <div class="acht-schritt-body">
+        <h4>Lohn auszahlen</h4>
+        <p>Lohnabrechnung bereitstellen und Nettolohn an den Arbeitnehmer auszahlen.</p>
+        <p>Außerdem die Vermittlungsgebühr von € 15 an One Day One Job überweisen – transparent und ohne versteckte Zusatzkosten. Die Gebühr wird nur fällig, wenn die Vermittlung erfolgreich abgeschlossen wurde.</p>
+        <div class="acht-schritt-done">Geschafft – der Tagesjob ist abgeschlossen. ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lohn-Hinweisbox -->
+  <div class="ag-lohn-box fade-in">
+    <div class="ag-lohn-box-ico">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.8 9a2 2 0 0 0-1.8-1H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 6v1.5M12 16.5V18"/></svg>
+    </div>
+    <div>
+      <h3>Noch wichtig beim angegebenen Lohn</h3>
+      <p>Der im Inserat angegebene Bruttolohn ist nicht gleich euren gesamten Arbeitgeberkosten. Zusätzlich können insbesondere entstehen: Sozialversicherung · Lohnnebenkosten · Urlaubsersatzleistung · aliquote Sonderzahlungen · Zuschläge.</p>
+      <p>Der Lohn muss außerdem zumindest dem geltenden kollektivvertraglichen Mindestlohn für die Tätigkeit entsprechen. Die genaue Abrechnung übernimmt am besten eure Lohnverrechnung.</p>
+      <div class="info-card-note">🛠 Bald verfügbar: Ein <strong>Zahltagsrechner</strong>, der neben dem Stundenlohn auch Urlaubsgeld, Sonderzahlungen und Zuschläge berücksichtigt und so den sogenannten <strong>Mindestzahltag</strong> übersichtlich darstellt.</div>
     </div>
   </div>
 </section>
