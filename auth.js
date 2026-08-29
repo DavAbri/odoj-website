@@ -227,7 +227,7 @@ async function odojInitNav() {
       navMobile.querySelectorAll('a').forEach(a => {
         const href = a.getAttribute('href');
         if (rolle === 'jobber') {
-          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.style.display = 'none';
+          if (href === 'ueber-uns.html') a.style.display = 'none';
         } else if (rolle === 'arbeitgeber') {
           if (href === 'jobs.html' || href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.style.display = 'none';
         }
