@@ -293,6 +293,7 @@
 <script src="auth.js"></script>
 <script src="notifications.js"></script>
 <script src="modal.js"></script>
+<script src="info-tooltip.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
@@ -582,7 +583,15 @@ function renderMain(job) {
     <div class="jd-right">
       <div class="jd-apply-box">
         <div class="jd-pay-big">€ ${gehalt} <span>/ Tag</span></div>
-        <div class="jd-pay-sub">Tagesgehalt (brutto)</div>
+        <div class="jd-pay-sub">Tagesgehalt (brutto)
+          <span class="odoj-tip">
+            <button type="button" class="odoj-tip-btn" aria-label="Info zu Brutto/Netto">i</button>
+            <span class="odoj-tip-pop">
+              <p>Der angegebene Lohn ist der Bruttolohn. Bei geringfügiger Beschäftigung (2026: bis € 551,10 pro Monat und Arbeitgeber) fallen in der Regel keine Sozialversicherungsbeiträge des Arbeitnehmers an – dann entspricht der Bruttolohn dem Nettolohn. Wird diese Grenze überschritten, können Sozialversicherungsbeiträge anfallen und der Nettolohn liegt unter dem angegebenen Betrag.</p>
+              <p><strong>Wichtig:</strong> Diese Grenze gilt für die Summe ALLER geringfügigen Beschäftigungen einer Person, nicht nur für diesen einen Job. Hast du mehrere geringfügige Jobs gleichzeitig, bist du selbst dafür verantwortlich, deine Gesamteinkünfte im Blick zu behalten (siehe dazu auch die Einkommensübersicht in deinem Profil).</p>
+            </span>
+          </span>
+        </div>
         <hr class="jd-apply-divider">
         <div class="jd-apply-row">
           <span class="jd-apply-row-label">Datum</span>

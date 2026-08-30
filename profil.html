@@ -322,6 +322,31 @@
 }
 .btn-download:hover { border-color: var(--navy); color: var(--navy); }
 
+/* ── Einkommensübersicht ── */
+.eu-hinweis {
+  background: #FFF4E0; border: 1.5px solid rgba(232,160,32,.4);
+  border-radius: var(--r-md); padding: 18px 20px; margin-bottom: 24px;
+}
+.eu-hinweis h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+.eu-hinweis p { font-size: 13px; color: #6B4A16; line-height: 1.65; margin: 0 0 8px; }
+.eu-hinweis p:last-child { margin-bottom: 0; }
+.eu-monat-card { background: var(--off); border: 1.5px solid var(--gray-lt); border-radius: var(--r-md); padding: 24px; margin-bottom: 20px; }
+.eu-monat-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
+.eu-monat-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-lt); }
+.eu-monat-betrag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; color: var(--navy); }
+.eu-monat-betrag span { font-size: 14px; font-weight: 400; color: var(--text-lt); }
+.eu-bar-track { background: var(--gray-lt); border-radius: 100px; height: 10px; overflow: hidden; margin: 14px 0 8px; }
+.eu-bar-fill { height: 100%; border-radius: 100px; transition: width .5s ease; }
+.eu-bar-pct { font-size: 12px; font-weight: 700; color: var(--text-lt); }
+.eu-bar-pct.eu-warn { color: #A05000; }
+.eu-bar-pct.eu-over { color: #C0392B; }
+.eu-history { margin-top: 4px; }
+.eu-history-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-lt); margin-bottom: 10px; }
+.eu-history-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-lt); font-size: 13px; }
+.eu-history-row:last-child { border-bottom: none; }
+.eu-history-monat { color: var(--text-lt); font-weight: 300; }
+.eu-history-betrag { color: var(--text); font-weight: 700; }
+
 /* ── Empty / Loading ── */
 .profil-empty { text-align: center; padding: 52px 32px; color: var(--text-lt); }
 .profil-loading { text-align: center; padding: 48px; color: var(--text-lt); }
@@ -484,6 +509,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
 <script src="notifications.js"></script>
+<script src="info-tooltip.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
@@ -884,6 +910,86 @@ async function loadAuszahlungen(jobberId) {
     </div>`;
 }
 
+// ─────────────────────────────────────────
+// EINKOMMENSÜBERSICHT (JOBBER)
+// ─────────────────────────────────────────
+async function loadEinkommensuebersicht(jobberId) {
+  const bodyEl = document.getElementById('einkommen-body');
+  if (!bodyEl) return;
+
+  const fmt = n => Number(n).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+
+  const { data: bews, error } = await odojSb
+    .from('bewerbungen')
+    .select('jobs(tagesgehalt, datum)')
+    .eq('jobber_id', jobberId)
+    .eq('anwesenheit_bestaetigt', true);
+
+  if (error) { bodyEl.innerHTML = `<p style="color:#c0392b;padding:16px">Fehler: ${error.message}</p>`; return; }
+
+  // Konfigurierte Geringfügigkeitsgrenze für das laufende Jahr laden (Fallback 2026-Wert)
+  const jahr = new Date().getFullYear();
+  const { data: setting } = await odojSb
+    .from('einstellungen')
+    .select('wert')
+    .eq('schluessel', `geringfuegigkeitsgrenze_${jahr}`)
+    .maybeSingle();
+  const grenze = Number(setting?.wert || 551.10);
+
+  // Nach Kalendermonat gruppieren (Schlüssel "YYYY-MM")
+  const monatSummen = {};
+  (bews || []).forEach(b => {
+    const datum  = b.jobs?.datum;
+    const betrag = Number(b.jobs?.tagesgehalt || 0);
+    if (!datum) return;
+    const key = datum.substring(0, 7);
+    monatSummen[key] = (monatSummen[key] || 0) + betrag;
+  });
+
+  const MONATSNAMEN = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const heute   = new Date();
+  const aktKey  = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
+  const aktSumme = monatSummen[aktKey] || 0;
+  const pctRaw  = grenze > 0 ? (aktSumme / grenze) * 100 : 0;
+  const pct     = Math.min(100, Math.round(pctRaw));
+  const ueberschritten = aktSumme > grenze;
+
+  const barColor = ueberschritten ? '#C0392B' : (pct >= 80 ? '#E8A020' : '#1A7A50');
+  const pctClass = ueberschritten ? 'eu-over' : (pct >= 80 ? 'eu-warn' : '');
+  const aktMonatLabel = `${MONATSNAMEN[heute.getMonth()]} ${heute.getFullYear()}`;
+
+  // Historie: bis zu 5 zurückliegende Monate mit Einträgen (neueste zuerst)
+  const historyKeys = Object.keys(monatSummen)
+    .filter(k => k !== aktKey)
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, 5);
+
+  const historyHtml = historyKeys.length ? `
+    <div class="eu-history">
+      <div class="eu-history-title">Letzte Monate</div>
+      ${historyKeys.map(k => {
+        const [jy, jm] = k.split('-');
+        const label = `${MONATSNAMEN[parseInt(jm, 10) - 1]} ${jy}`;
+        return `<div class="eu-history-row">
+          <span class="eu-history-monat">${escH(label)}</span>
+          <span class="eu-history-betrag">€ ${fmt(monatSummen[k])}</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  bodyEl.innerHTML = `
+    <div class="eu-monat-card">
+      <div class="eu-monat-head">
+        <span class="eu-monat-label">${escH(aktMonatLabel)}</span>
+        <span class="eu-bar-pct ${pctClass}">${pct}% von € ${fmt(grenze)}</span>
+      </div>
+      <div class="eu-monat-betrag">€ ${fmt(aktSumme)} <span>verdient über ODOJ</span></div>
+      <div class="eu-bar-track"><div class="eu-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      ${ueberschritten ? `<div style="font-size:12px;color:#C0392B;font-weight:600;margin-top:4px">Geringfügigkeitsgrenze in diesem Monat überschritten.</div>` : ''}
+    </div>
+    ${historyHtml}`;
+}
+
 async function printAuszahlung(r, agFirmaName) {
   // Jobber-Profil laden
   let jobberName = r.jobber_name || '';
@@ -1265,6 +1371,24 @@ function renderJobber(session, profile) {
       </div>
     </div>
 
+    <!-- Meine Einkommensübersicht -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Meine Einkommensübersicht
+        <span class="odoj-tip" style="margin-left:6px">
+          <button type="button" class="odoj-tip-btn" aria-label="Info zur Einkommensübersicht">i</button>
+          <span class="odoj-tip-pop">Diese Übersicht zeigt nur deine Einkünfte über ODOJ. Hast du weitere Einkommensquellen, berücksichtige diese zusätzlich selbst.</span>
+        </span>
+      </h2>
+      <div class="eu-hinweis">
+        <h3>Wichtig bei mehreren Nebenjobs</h3>
+        <p>Wenn du mehrere geringfügige Beschäftigungen gleichzeitig ausübst (z. B. mehrere Tagesjobs bei unterschiedlichen Arbeitgebern), zählt für die Geringfügigkeitsgrenze (2026: € 551,10/Monat) die SUMME aller deiner Einkünfte – nicht nur der einzelne Job. Überschreitest du diese Grenze in Summe, kann rückwirkend Sozialversicherungspflicht eintreten, was zu einer Nachzahlung bei der Jahresabrechnung führen kann.</p>
+        <p>Es liegt in deiner eigenen Verantwortung, deine Gesamteinkünfte aus allen Quellen im Blick zu behalten. ODOJ kann dir nur die Einkünfte anzeigen, die über unsere Plattform erzielt wurden (siehe Einkommensübersicht unten) – nicht jedoch Einkünfte aus anderen Jobs oder Plattformen. Bei Unsicherheiten wende dich an die ÖGK oder einen Steuerberater.</p>
+      </div>
+      <div id="einkommen-body">
+        <div class="profil-loading">Lade Einkommensübersicht…</div>
+      </div>
+    </div>
+
     <!-- Meine Auszahlungen -->
     <div class="profil-card">
       <h2 class="profil-section-title">Meine Auszahlungen</h2>
@@ -1278,6 +1402,7 @@ function renderJobber(session, profile) {
 
   loadJobberBewertungen(session.user.id);
   loadAuszahlungen(session.user.id);
+  loadEinkommensuebersicht(session.user.id);
 }
 
 function renderPasswortCard() {
