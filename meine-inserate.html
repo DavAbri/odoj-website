@@ -1411,7 +1411,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   const gesamtBetrag = lohnBetrag + vermittlungsgebuehr;
 
   const today = new Date().toISOString().split('T')[0];
-  await odojSb.from('rechnungen').insert({
+  const { error: rechErr } = await odojSb.from('rechnungen').insert({
     arbeitgeber_id:     agId,
     jobber_id:          jobberId,
     bewerbung_id:       bewId,
@@ -1424,6 +1424,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     rechnungsnummer:    rechnungsnummer,
     datum:              today
   });
+  if (rechErr) console.warn('Rechnung konnte nicht gespeichert werden:', rechErr.message);
 
   const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
   const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
