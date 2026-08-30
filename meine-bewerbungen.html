@@ -141,6 +141,16 @@
   border: 1.5px solid #f5c6c0;
 }
 .mj-card-btn-withdraw:hover { background: #fff0f0; border-color: #c0392b; }
+.mj-zahlung-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; padding: 4px 10px;
+  border-radius: 100px; text-transform: uppercase; letter-spacing: .3px;
+}
+.mj-zahlung-badge-pending { background: #FFF8E8; color: #A05000; }
+.mj-zahlung-badge-ok      { background: #E6F5EE; color: #1A7A50; }
+.mj-card-btn-lohn { background: var(--accent); color: var(--navy); font-weight: 700; }
+.mj-card-btn-lohn:hover { background: var(--accent-lt); }
+.mj-card-btn-lohn:disabled { opacity: .6; cursor: default; }
 
 /* ── ZURÜCKZIEHEN MODAL ── */
 .withdraw-overlay {
@@ -428,11 +438,15 @@ function renderCard(b, job, opts = {}) {
         ${job.uhrzeit_von} – ${job.uhrzeit_bis || '–'}${job.stundenanzahl ? ` · ${job.stundenanzahl} Std.` : ''}
       </div>` : ''}
       ${gehalt ? `<div class="mj-card-pay">€ ${gehalt} <span>/ Tag</span></div>` : ''}
-      ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-bottom:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Job erledigt</div>` : ''}
+      ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Job erledigt</div>
+        <span class="mj-zahlung-badge ${b.zahlung_status === 'bestaetigt' ? 'mj-zahlung-badge-ok' : 'mj-zahlung-badge-pending'}">${b.zahlung_status === 'bestaetigt' ? 'Zahlung bestätigt' : 'Zahlung ausstehend'}</span>
+      </div>` : ''}
       <div class="mj-card-actions">
         ${opts.showChat ? `<a href="${chatHref}" class="mj-card-btn mj-card-btn-chat" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Chat</a>` : ''}
         <a href="${jobDetailHref}" class="mj-card-btn mj-card-btn-detail" onclick="event.stopPropagation()">Details →</a>
         ${opts.showWithdraw ? `<button class="mj-card-btn mj-card-btn-withdraw" onclick="event.stopPropagation();openZurueckziehenModal('${b.id}','${escH(job?.titel||'')}','${b.status}')">Zurückziehen</button>` : ''}
+        ${(b.anwesenheit_bestaetigt && b.zahlung_status !== 'bestaetigt') ? `<button class="mj-card-btn mj-card-btn-lohn" id="lohn-btn-${b.id}" onclick="event.stopPropagation();confirmLohnErhalten('${b.id}')">✓ Lohn erhalten</button>` : ''}
       </div>
     </div>`;
 }
@@ -443,7 +457,10 @@ function renderEmpty(icon, text) {
 
 async function loadMeineBewerbungen() {
   const session = await odojGetSession();
-  if (!session) { window.location.href = 'login.html'; return; }
+  if (!session) {
+    window.location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
+    return;
+  }
 
   const profile = await odojGetProfile(session.user.id);
   const rolle   = profile?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
@@ -651,7 +668,43 @@ async function submitZurueckziehen() {
   loadMeineBewerbungen();
 }
 
-loadMeineBewerbungen();
+// ── ZAHLUNG: "Lohn erhalten" bestätigen ──
+async function confirmLohnErhalten(bewId) {
+  const btn = document.getElementById('lohn-btn-' + bewId);
+  if (btn) { btn.disabled = true; btn.textContent = 'Speichern…'; }
+
+  const { error } = await odojSb.from('bewerbungen')
+    .update({ zahlung_status: 'bestaetigt', zahlung_bestaetigt_am: new Date().toISOString() })
+    .eq('id', bewId);
+
+  if (error) {
+    alert('Fehler: ' + error.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Lohn erhalten'; }
+    return;
+  }
+  loadMeineBewerbungen();
+}
+
+// ── ZAHLUNG: Antwort aus Reminder-E-Mail verarbeiten (?bew=...&antwort=ja|nein) ──
+async function handleZahlungAntwortAusEmail() {
+  const params  = new URLSearchParams(location.search);
+  const bewId   = params.get('bew');
+  const antwort = params.get('antwort');
+  if (!bewId || !antwort) return;
+
+  // URL bereinigen, damit ein Reload die Aktion nicht wiederholt
+  history.replaceState(null, '', location.pathname);
+
+  if (antwort === 'ja') {
+    await confirmLohnErhalten(bewId);
+  } else if (antwort === 'nein') {
+    const card = document.querySelector(`[onclick*="confirmLohnErhalten('${bewId}')"]`)?.closest('.mj-card');
+    if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.style.outline = '2px solid #E8A020'; }
+    alert('Danke für die Rückmeldung. Bitte bestätige hier, sobald der Lohn eingetroffen ist.');
+  }
+}
+
+loadMeineBewerbungen().then(handleZahlungAntwortAusEmail);
 </script>
 
 <!-- ZURÜCKZIEHEN OVERLAY -->

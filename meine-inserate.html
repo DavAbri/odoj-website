@@ -482,6 +482,22 @@
   padding: 10px 14px; margin-bottom: 10px;
 }
 .bew-profile-field { font-size: 13px; color: var(--text-mid); font-weight: 400; }
+.bew-zahlung-box { margin-top: 10px; border: 1.5px solid var(--gray-lt); border-radius: var(--r-sm); overflow: hidden; }
+.bew-zahlung-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; cursor: pointer; background: var(--off);
+}
+.bew-zahlung-badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 100px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+.bew-zahlung-badge-pending { background: #FFF8E8; color: #A05000; }
+.bew-zahlung-badge-ok      { background: #E6F5EE; color: #1A7A50; }
+.bew-zahlung-overdue { font-size: 11px; font-weight: 700; color: #C0392B; margin-left: 8px; }
+.bew-zahlung-toggle { font-size: 12px; font-weight: 600; color: var(--text-lt); }
+.bew-zahlung-details { display: none; padding: 14px 16px; font-size: 13px; color: var(--text-mid); line-height: 1.7; }
+.bew-zahlung-box.open .bew-zahlung-details { display: block; }
+.bew-zahlung-details strong { color: var(--text); }
+.bew-zahlung-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+.bew-zahlung-fee { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--gray-lt); }
+.bew-zahlung-frist { margin-top: 10px; background: #FFF8E8; border: 1px solid rgba(232,160,32,.3); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #7A4A00; }
 .bew-item-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .bew-btn {
   font-size: 13px; font-weight: 600;
@@ -1255,6 +1271,10 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
     return;
   }
 
+  const { data: jobRow } = await odojSb.from('jobs').select('tagesgehalt').eq('id', jobId).single();
+  const tagesgehalt = jobRow?.tagesgehalt || 0;
+  const odojConfig = await getOdojBankConfig();
+
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
   const acceptedBewIds = bewerbungen.filter(b => b.status === 'angenommen').map(b => b.id);
   let profileMap = {};
@@ -1262,7 +1282,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   let vertragMap = {};
   const queries = [
     odojSb.from('Profile')
-      .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum')
+      .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum, iban')
       .in('user_id', jobberIds.length ? jobberIds : ['none']),
     odojSb.from('bewertungen')
       .select('bewertet_id, sterne')
@@ -1288,10 +1308,58 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   });
   vertragRes?.data?.forEach(v => { vertragMap[v.bewerbung_id] = v.id; });
 
-  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], jobDatum, vertragMap[b.id])).join('');
+  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], jobDatum, vertragMap[b.id], tagesgehalt, jobTitel, odojConfig)).join('');
 }
 
-function renderBewItem(b, profile, bew, jobDatum, vertragId) {
+// ODOJ-Bankdaten für die Vermittlungsgebühr (einmalig geladen & gecached)
+let _odojBankConfig = null;
+async function getOdojBankConfig() {
+  if (_odojBankConfig) return _odojBankConfig;
+  const { data } = await odojSb.from('einstellungen').select('schluessel, wert_text').in('schluessel', ['odoj_iban', 'odoj_kontoinhaber']);
+  _odojBankConfig = {
+    iban:         data?.find(e => e.schluessel === 'odoj_iban')?.wert_text || '',
+    kontoinhaber: data?.find(e => e.schluessel === 'odoj_kontoinhaber')?.wert_text || 'ODOJ'
+  };
+  return _odojBankConfig;
+}
+
+function toggleZahlungDetails(bewId) {
+  document.getElementById('bew-zahlung-' + bewId)?.classList.toggle('open');
+}
+
+function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) {
+  const bezahlt = b.zahlung_status === 'bestaetigt';
+  const fmt = n => Number(n || 0).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+  const dat = b.bestaetigt_am
+    ? new Date(b.bestaetigt_am).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '';
+  const verwendungszweckLohn    = `ODOJ – ${jobTitel} – ${dat}`;
+  const verwendungszweckGebuehr = `ODOJ – Vermittlungsgebühr`;
+  return `
+    <div class="bew-zahlung-box" id="bew-zahlung-${b.id}">
+      <div class="bew-zahlung-head" onclick="toggleZahlungDetails('${b.id}')">
+        <div>
+          <span class="bew-zahlung-badge ${bezahlt ? 'bew-zahlung-badge-ok' : 'bew-zahlung-badge-pending'}">${bezahlt ? 'Zahlung bestätigt' : 'Zahlung ausstehend'}</span>
+          ${(!bezahlt && b.zahlung_ueberfaellig) ? `<span class="bew-zahlung-overdue">Überfällig</span>` : ''}
+        </div>
+        <span class="bew-zahlung-toggle">Zahlungsdetails ▾</span>
+      </div>
+      <div class="bew-zahlung-details">
+        <div class="bew-zahlung-row"><span>Lohn an Jobber</span><strong>€ ${fmt(tagesgehalt)}</strong></div>
+        <div class="bew-zahlung-row"><span>IBAN Jobber</span><strong>${escJ(profile?.iban || 'noch nicht hinterlegt')}</strong></div>
+        <div class="bew-zahlung-row"><span>Verwendungszweck</span><strong>${escJ(verwendungszweckLohn)}</strong></div>
+        <div class="bew-zahlung-fee">
+          <div class="bew-zahlung-row"><span>Vermittlungsgebühr (separat)</span><strong>€ 15,00</strong></div>
+          <div class="bew-zahlung-row"><span>IBAN ODOJ</span><strong>${escJ(odojConfig?.iban || '–')}</strong></div>
+          <div class="bew-zahlung-row"><span>Empfänger</span><strong>${escJ(odojConfig?.kontoinhaber || 'ODOJ')}</strong></div>
+          <div class="bew-zahlung-row"><span>Verwendungszweck</span><strong>${escJ(verwendungszweckGebuehr)}</strong></div>
+        </div>
+        ${!bezahlt ? `<div class="bew-zahlung-frist">⏱ Bitte überweise den Lohn zeitnah, idealerweise innerhalb von 3 Werktagen nach dem Einsatz.</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderBewItem(b, profile, bew, jobDatum, vertragId, tagesgehalt, jobTitel, odojConfig) {
   // Echter Name aus Profile, Fallback auf gespeicherten jobber_name, dann E-Mail-Prefix
   const vorname  = profile?.vorname  || '';
   const nachname = profile?.nachname || '';
@@ -1361,6 +1429,7 @@ function renderBewItem(b, profile, bew, jobDatum, vertragId) {
         <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
       </div>
       ${profileDetails}
+      ${b.anwesenheit_bestaetigt ? renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) : ''}
       <div class="bew-item-actions" id="bew-actions-${b.id}">
         ${acceptBtn}${rejectBtn}
         <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
@@ -1465,6 +1534,46 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
         firmenname:  agProfile?.firmenname || '',
         jobTitel:    jobTitel,
         bewId:       bewId
+      }
+    }).catch(() => {});
+  }
+
+  // Zahlungsaufforderung an den Arbeitgeber (manuelle Überweisung, kein Stripe)
+  let jobberProfil = null;
+  if (agId) {
+    const [profRes, einstellungenRes] = await Promise.all([
+      odojSb.from('Profile').select('iban').eq('user_id', jobberId).maybeSingle(),
+      odojSb.from('einstellungen').select('schluessel, wert_text').in('schluessel', ['odoj_iban', 'odoj_kontoinhaber'])
+    ]);
+    jobberProfil = profRes.data;
+    const einstellungen = einstellungenRes.data;
+    const odojIban        = einstellungen?.find(e => e.schluessel === 'odoj_iban')?.wert_text || '';
+    const odojKontoinhaber = einstellungen?.find(e => e.schluessel === 'odoj_kontoinhaber')?.wert_text || 'ODOJ';
+    const jobDatumFmt = bewData?.job_id
+      ? new Date().toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : '';
+
+    // Zahlungsblock sofort in der Karte anzeigen (ohne Overlay neu zu laden)
+    const itemEl = document.getElementById('bew-item-' + bewId);
+    const actionsEl = document.getElementById('bew-actions-' + bewId);
+    if (itemEl && actionsEl && !document.getElementById('bew-zahlung-' + bewId)) {
+      const fakeBew = { id: bewId, zahlung_status: 'ausstehend', zahlung_ueberfaellig: false, bestaetigt_am: now };
+      actionsEl.insertAdjacentHTML('beforebegin', renderZahlungsBlock(fakeBew, jobberProfil, lohnBetrag, jobTitel, { iban: odojIban, kontoinhaber: odojKontoinhaber }));
+    }
+
+    odojSb.functions.invoke('send-email', {
+      body: {
+        type:             'payment_request',
+        recipientId:      agId,
+        jobTitel:         jobTitel,
+        datum:            jobDatumFmt,
+        lohnBetrag:       lohnBetrag,
+        jobberIban:       jobberProfil?.iban || '',
+        jobberName:       jobberName,
+        gebuehr:          vermittlungsgebuehr,
+        odojIban:         odojIban,
+        odojKontoinhaber: odojKontoinhaber,
+        rechnungsnummer:  rechnungsnummer
       }
     }).catch(() => {});
   }

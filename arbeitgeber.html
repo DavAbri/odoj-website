@@ -583,12 +583,12 @@
       <div class="info-card fade-in">
         <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
         <h3>Wann wird die Gebühr fällig?</h3>
-        <p>Die Gebühr wird automatisch nach Bestätigung der Anwesenheit durch den Arbeitgeber per Stripe eingezogen. Der Lohn wird direkt an den Jobber überwiesen. Sie erhalten eine Rechnung über die Vermittlungsgebühr.</p>
+        <p>Nach Bestätigung der Anwesenheit erhalten Sie automatisch eine Zahlungsaufforderung mit allen Überweisungsdetails – für den Lohn an den Jobber sowie separat für die Vermittlungsgebühr an ODOJ. Sie überweisen beides eigenständig per Banking.</p>
       </div>
       <div class="info-card fade-in">
         <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
         <h3>Wie setzt sich die Gebühr zusammen?</h3>
-        <p>Die Vermittlungsgebühr deckt die Plattformkosten: Zahlungsabwicklung (Stripe, ca. 1,5–2 % + € 0,25), Plattform- &amp; Serverkosten, Entwicklung &amp; Wartung sowie Support.</p>
+        <p>Die Vermittlungsgebühr deckt die Plattformkosten: Plattform- &amp; Serverkosten, Zahlungsnachverfolgung, Entwicklung &amp; Wartung sowie Support.</p>
       </div>
       <div class="info-card fade-in">
         <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
@@ -620,8 +620,8 @@
             <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             </div>
-            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Zahlungsabwicklung (Stripe)</h4>
-            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Ca. 2% + 0,25€ pro Transaktion für die sichere Zahlungsabwicklung</p>
+            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Zahlungsnachverfolgung</h4>
+            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Automatische Zahlungsaufforderungen, Statusanzeige und Erinnerungen für einen reibungslosen Ablauf</p>
           </div>
           <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
             <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
@@ -664,7 +664,7 @@
             <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <span style="font-size:14px;color:var(--text);font-weight:500;">Automatische Abwicklung über Stripe</span>
+            <span style="font-size:14px;color:var(--text);font-weight:500;">Automatische Zahlungsaufforderung mit allen Details</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
             <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -704,7 +704,7 @@
             <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);">3</span>
           </div>
           <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;">Sie bestätigen die Anwesenheit</h4>
-          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Erst jetzt werden € 15,00 + Lohn via Stripe eingezogen</p>
+          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Erst jetzt erhalten Sie die Zahlungsaufforderung mit allen Überweisungsdetails</p>
         </div>
       </div>
     </div>
@@ -1155,8 +1155,8 @@
       <div class="tipp-card fade-in">
         <div class="tipp-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
         <div class="tipp-body">
-          <h3>Automatische Abwicklung</h3>
-          <p>Lohn und Vermittlungsgebühr werden automatisch über Stripe abgewickelt – direkt nach Bestätigung der Anwesenheit. Keine manuelle Überweisung nötig.</p>
+          <h3>Klare Zahlungsübersicht</h3>
+          <p>Direkt nach Bestätigung der Anwesenheit erhaltet ihr alle Überweisungsdetails (IBAN, Betrag, Verwendungszweck) – für Lohn und Vermittlungsgebühr getrennt, inklusive Status-Tracking in der Plattform.</p>
         </div>
       </div>
       <div class="tipp-card fade-in">
@@ -1219,7 +1219,7 @@
           Wie funktioniert die Abrechnung?
           <span class="faq-chevron">▾</span>
         </button>
-        <div class="faq-answer">Nach Ihrer Bestätigung der Anwesenheit wird der vereinbarte Lohn des Jobbers sowie die Vermittlungsgebühr von € 15,00 automatisch über Stripe von Ihrem hinterlegten Zahlungsmittel eingezogen. Der Lohn wird direkt an den Jobber überwiesen. Sie erhalten eine detaillierte Rechnung über die Vermittlungsgebühr in Ihrem Profil-Bereich.</div>
+        <div class="faq-answer">Nach Ihrer Bestätigung der Anwesenheit erhalten Sie eine Zahlungsaufforderung per E-Mail und unter „Meine Inserate" mit allen Details: IBAN des Jobbers samt Verwendungszweck für den Lohn sowie separat die IBAN von ODOJ für die Vermittlungsgebühr von € 15,00. Beide Überweisungen führen Sie eigenständig per Banking durch. Den Zahlungsstatus sehen Sie jederzeit in der Plattform.</div>
       </div>
       <div class="faq-item fade-in">
         <button class="faq-question" onclick="toggleFaq(this)">

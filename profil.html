@@ -1058,7 +1058,7 @@ async function printAuszahlung(r, agFirmaName) {
   </div>
 </div>
 
-<span class="badge">✓ Ausbezahlt via Stripe</span>
+<span class="badge">✓ Einsatz bestätigt</span>
 
 <div class="section">
   <span class="section-label">Arbeitskraft</span>
@@ -1080,18 +1080,18 @@ async function printAuszahlung(r, agFirmaName) {
   </div>
   <div class="detail-item">
     <label>Auszahlungsart</label>
-    <span>Stripe (automatisch)</span>
+    <span>Banküberweisung (manuell durch Arbeitgeber)</span>
   </div>
 </div>
 
 <div class="betrag-box">
-  <div class="label">Ausgezahlter Betrag (Netto-Lohn)</div>
+  <div class="label">Vereinbarter Lohn (Brutto)</div>
   <div class="amount">€ ${fmt2(lohnBetrag)}</div>
 </div>
 
 <hr class="divider">
 <div class="footer-note">
-  Auszahlung erfolgt über Stripe durch ODOJ.<br>
+  Die Auszahlung erfolgt per Banküberweisung direkt vom Arbeitgeber an den Jobber.<br>
   Diese Bestätigung wurde automatisch über die ODOJ-Plattform erstellt.<br><br>
   Bei Fragen: hallo@odoj.at
 </div>
@@ -1121,6 +1121,7 @@ function renderJobber(session, profile) {
   const ort      = profile?.adresse_ort  || '';
   const addrFull = strasse ? `${strasse}, ${plz} ${ort}`.trim() : '';
   const telefon  = profile?.telefon      || '';
+  const iban     = profile?.iban         || '';
   const geburt   = profile?.geburtsdatum || '';
   const bio      = profile?.bio          || '';
   const verfueg  = Array.isArray(profile?.verfuegbarkeit) ? profile.verfuegbarkeit : [];
@@ -1196,6 +1197,10 @@ function renderJobber(session, profile) {
             <label>Telefon</label>
             <span id="jb-info-telefon">${escH(telefon) || '–'}</span>
           </div>
+          <div class="profil-info-item">
+            <label>IBAN <span style="font-weight:300;text-transform:none;letter-spacing:0">(für Lohnüberweisungen)</span></label>
+            <span id="jb-info-iban">${escH(iban) || '–'}</span>
+          </div>
         </div>
         <button class="btn-edit" onclick="toggleJbPers(true)">Bearbeiten</button>
       </div>
@@ -1221,6 +1226,10 @@ function renderJobber(session, profile) {
               <label>Telefonnummer</label>
               <input type="tel" id="jb-edit-telefon" value="${escH(telefon)}" placeholder="+43 660 ...">
             </div>
+          </div>
+          <div class="profil-field">
+            <label>IBAN <span style="font-weight:300;text-transform:none;letter-spacing:0">(für Lohnüberweisungen vom Arbeitgeber)</span></label>
+            <input type="text" id="jb-edit-iban" value="${escH(iban)}" placeholder="AT00 0000 0000 0000 0000" style="text-transform:uppercase">
           </div>
           <div id="jb-pers-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px"></div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1480,6 +1489,7 @@ async function saveJbPers(userId) {
   const nachname = document.getElementById('jb-edit-nachname').value.trim();
   const geburt   = document.getElementById('jb-edit-geburt').value;
   const telefon  = document.getElementById('jb-edit-telefon').value.trim();
+  const iban     = document.getElementById('jb-edit-iban').value.trim().toUpperCase().replace(/\s+/g, '');
   const errEl    = document.getElementById('jb-pers-error');
   const btn      = document.getElementById('jb-pers-btn');
   errEl.style.display = 'none';
@@ -1489,9 +1499,14 @@ async function saveJbPers(userId) {
     errEl.style.display = 'block';
     return;
   }
+  if (iban && !/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(iban)) {
+    errEl.textContent = 'Bitte eine gültige IBAN eingeben (z.B. AT00 0000 0000 0000 0000).';
+    errEl.style.display = 'block';
+    return;
+  }
 
   btn.disabled = true; btn.textContent = 'Speichern…';
-  const { error } = await _saveProfileFields(userId, { vorname, nachname, geburtsdatum: geburt || null, telefon });
+  const { error } = await _saveProfileFields(userId, { vorname, nachname, geburtsdatum: geburt || null, telefon, iban: iban || null });
   btn.disabled = false; btn.textContent = 'Speichern';
 
   if (error) { errEl.textContent = 'Fehler: ' + error.message; errEl.style.display = 'block'; return; }
@@ -1502,6 +1517,7 @@ async function saveJbPers(userId) {
   document.getElementById('jb-info-vorname').textContent   = vorname || '–';
   document.getElementById('jb-info-nachname').textContent  = nachname || '–';
   document.getElementById('jb-info-telefon').textContent   = telefon || '–';
+  document.getElementById('jb-info-iban').textContent      = iban || '–';
   if (geburt) {
     document.getElementById('jb-info-geburt').textContent =
       new Date(geburt + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
@@ -1790,7 +1806,7 @@ async function printRechnung(r) {
   </div>
 </div>
 
-<span class="badge">✓ Bezahlt via Stripe</span>
+<span class="badge"${r.status === 'bezahlt' ? '' : ' style="background:#FFF8E8;color:#A05000"'}>${r.status === 'bezahlt' ? '✓ Bezahlt' : 'Zahlung ausstehend'}</span>
 
 <div class="section">
   <span class="section-label">Rechnungsempfänger</span>
@@ -1822,7 +1838,7 @@ async function printRechnung(r) {
 
 <hr class="divider">
 <div class="footer-note">
-  Zahlung erfolgt automatisch über Stripe.<br>
+  Die Zahlung erfolgt per Banküberweisung. Lohn und Vermittlungsgebühr sind gesondert zu überweisen (siehe Zahlungsaufforderung).<br>
   Diese Rechnung wurde automatisch über die ODOJ-Plattform erstellt.<br><br>
   Bei Fragen: hallo@odoj.at
 </div>

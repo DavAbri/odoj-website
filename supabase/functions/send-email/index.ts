@@ -173,6 +173,93 @@ function waitlistTemplate(email: string): string {
   </td></tr>`);
 }
 
+function paymentRequestTemplate(
+  recipientName: string, jobTitel: string, datum: string,
+  lohnBetrag: number, jobberIban: string, jobberName: string,
+  gebuehr: number, odojIban: string, odojKontoinhaber: string, rechnungsnummer: string
+): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const verwendungszweckLohn = `ODOJ – ${jobTitel} – ${datum}`;
+  const verwendungszweckGebuehr = `ODOJ – Vermittlungsgebühr – ${rechnungsnummer}`;
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Zahlungsaufforderung</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#444;line-height:1.7">
+      der Einsatz von <strong style="color:#0f1f3d">${esc(jobberName)}</strong> als <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> wurde bestätigt. Bitte überweise nun den Lohn direkt an den Jobber.
+    </p>
+    <div style="background:#f4f7fb;border-radius:10px;padding:20px 22px;margin:0 0 20px">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#7a8fa8;text-transform:uppercase;letter-spacing:.5px">Lohn an den Jobber</p>
+      <p style="margin:0 0 10px;font-size:24px;font-weight:800;color:#0f1f3d">€ ${fmt(lohnBetrag)}</p>
+      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>IBAN:</strong> ${esc(jobberIban || "– noch nicht hinterlegt, bitte Jobber kontaktieren –")}</p>
+      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(jobberName)}</p>
+      <p style="margin:0;font-size:14px;color:#444"><strong>Verwendungszweck:</strong> ${esc(verwendungszweckLohn)}</p>
+    </div>
+    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:20px 22px;margin:0 0 24px">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#a05000;text-transform:uppercase;letter-spacing:.5px">Separat: Vermittlungsgebühr an ODOJ</p>
+      <p style="margin:0 0 10px;font-size:20px;font-weight:800;color:#0f1f3d">€ ${fmt(gebuehr)}</p>
+      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>IBAN:</strong> ${esc(odojIban)}</p>
+      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(odojKontoinhaber)}</p>
+      <p style="margin:0;font-size:14px;color:#444"><strong>Verwendungszweck:</strong> ${esc(verwendungszweckGebuehr)}</p>
+    </div>
+    <p style="margin:0 0 24px;font-size:14px;color:#7a5500;background:#fff8e8;border-radius:8px;padding:12px 16px;line-height:1.6">
+      ⏱ Bitte überweise den Lohn zeitnah, idealerweise innerhalb von 3 Werktagen nach dem Einsatz.
+    </p>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/meine-inserate.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">
+        Zur Übersicht meiner Inserate &rarr;
+      </a>
+    </td></tr></table>
+    <p style="margin:24px 0 0;font-size:13px;color:#aaa">Sobald der Jobber den Erhalt bestätigt, aktualisiert sich der Zahlungsstatus automatisch.</p>
+  </td></tr>`);
+}
+
+function paymentReminderJobberTemplate(recipientName: string, jobTitel: string, bewId: string): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  const jaUrl   = `${SITE_URL}/meine-bewerbungen.html?bew=${bewId}&antwort=ja`;
+  const neinUrl = `${SITE_URL}/meine-bewerbungen.html?bew=${bewId}&antwort=nein`;
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Kurze Rückfrage</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.7">
+      hast du deinen Lohn für <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> bereits erhalten?
+    </p>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto"><tr>
+      <td style="background:#1a7a50;border-radius:8px">
+        <a href="${jaUrl}" style="display:inline-block;padding:13px 22px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none">✓ Ja, erhalten</a>
+      </td>
+      <td style="width:12px"></td>
+      <td style="background:#eef0f5;border-radius:8px">
+        <a href="${neinUrl}" style="display:inline-block;padding:13px 22px;color:#3a5070;font-size:14px;font-weight:700;text-decoration:none">Noch nicht erhalten</a>
+      </td>
+    </tr></table>
+    <p style="margin:24px 0 0;font-size:13px;color:#aaa">Du musst dafür in deinem ODOJ-Konto angemeldet sein.</p>
+  </td></tr>`);
+}
+
+function paymentReminderAgTemplate(recipientName: string, jobTitel: string, jobberName: string, betrag: number): string {
+  const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
+  const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Erinnerung</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#444;line-height:1.7">
+      der Lohn (€ ${fmt(betrag)}) für <strong style="color:#0f1f3d">${esc(jobberName)}</strong> (<strong style="color:#0f1f3d">${esc(jobTitel)}</strong>) ist laut unseren Aufzeichnungen noch nicht als erhalten bestätigt worden.
+    </p>
+    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a5500;line-height:1.6">
+      Falls die Überweisung bereits erfolgt ist, ist keine weitere Aktion nötig – der Jobber bestätigt den Erhalt selbst in der Plattform. Falls noch nicht geschehen, bitten wir dich, die Zahlung zeitnah zu veranlassen.
+    </div>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/meine-inserate.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">
+        Zahlungsdetails ansehen &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
 function esc(s: string): string {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
@@ -183,7 +270,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email } = await req.json();
+    const {
+      type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
+      datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag
+    } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
     if (type === 'waitlist') {
@@ -231,6 +321,19 @@ serve(async (req) => {
     } else if (type === "neue_bewerbung_arbeitgeber") {
       subject = `Neue Bewerbung für deinen Job: ${jobTitel || ""}`;
       html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "");
+    } else if (type === "payment_request") {
+      subject = `Zahlungsaufforderung – ${jobTitel || "Einsatz"} (${jobberName || ""})`;
+      html = paymentRequestTemplate(
+        recipientName, jobTitel || "", datum || "",
+        Number(lohnBetrag) || 0, jobberIban || "", jobberName || "",
+        Number(gebuehr) || 15, odojIban || "", odojKontoinhaber || "ODOJ", rechnungsnummer || ""
+      );
+    } else if (type === "payment_reminder_jobber") {
+      subject = `Hast du deinen Lohn für ${jobTitel || "deinen Einsatz"} bereits erhalten?`;
+      html = paymentReminderJobberTemplate(recipientName, jobTitel || "", bewId || "");
+    } else if (type === "payment_reminder_ag") {
+      subject = `Erinnerung: Zahlung für ${jobTitel || "einen Einsatz"} noch ausstehend`;
+      html = paymentReminderAgTemplate(recipientName, jobTitel || "", jobberName || "", Number(betrag) || 0);
     } else {
       return new Response(JSON.stringify({ error: "Unbekannter type" }), { status: 400, headers: cors });
     }

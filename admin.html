@@ -429,10 +429,10 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Jobber</th><th>Job Titel</th><th>Firma</th><th>Beworben am</th><th>Status</th></tr>
+            <tr><th>Jobber</th><th>Job Titel</th><th>Firma</th><th>Beworben am</th><th>Status</th><th>Lohnzahlung</th></tr>
           </thead>
           <tbody id="bew-tbody">
-            <tr><td colspan="5" class="table-empty">Wird geladen…</td></tr>
+            <tr><td colspan="6" class="table-empty">Wird geladen…</td></tr>
           </tbody>
         </table>
       </div>
@@ -470,8 +470,8 @@
       </div>
       <div class="stripe-placeholder">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" style="margin-bottom:8px"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-        <div class="stripe-placeholder-title">Stripe Integration</div>
-        <div class="stripe-placeholder-text">Automatische Zahlungsverarbeitung via Stripe — coming soon.</div>
+        <div class="stripe-placeholder-title">Manuelle Zahlungsabwicklung</div>
+        <div class="stripe-placeholder-text">Arbeitgeber überweisen die Vermittlungsgebühr per Banküberweisung direkt an ODOJ. Sobald der Zahlungseingang auf dem Konto bestätigt ist, hier bei der jeweiligen Rechnung auf "Als bezahlt" klicken.</div>
       </div>
     </div>
 
@@ -591,7 +591,7 @@
 
   async function loadNutzer() {
     try {
-      const { data } = await odojSb.from('Profile').select('*').order('created_at', { ascending: false });
+      const { data } = await odojSb.from('Profile').select('*').order('erstellt_am', { ascending: false });
       allNutzer = data || [];
     } catch (_) { allNutzer = []; }
     renderNutzerTable(allNutzer);
@@ -600,7 +600,7 @@
 
   async function loadJobs() {
     try {
-      const { data } = await odojSb.from('jobs').select('*').order('created_at', { ascending: false });
+      const { data } = await odojSb.from('jobs').select('*').order('erstellt_am', { ascending: false });
       allJobs = data || [];
     } catch (_) { allJobs = []; }
     const branchen = [...new Set(allJobs.map(j => j.branche).filter(Boolean))].sort();
@@ -611,7 +611,7 @@
 
   async function loadBewerbungen() {
     try {
-      const { data } = await odojSb.from('bewerbungen').select('*').order('created_at', { ascending: false });
+      const { data } = await odojSb.from('bewerbungen').select('*').order('erstellt_am', { ascending: false });
       allBewerbungen = data || [];
     } catch (_) { allBewerbungen = []; }
     renderBewerbungenTable(allBewerbungen);
@@ -619,7 +619,7 @@
 
   async function loadRechnungen() {
     try {
-      const { data } = await odojSb.from('rechnungen').select('*').order('created_at', { ascending: false });
+      const { data } = await odojSb.from('rechnungen').select('*').order('erstellt_am', { ascending: false });
       allRechnungen = data || [];
     } catch (_) { allRechnungen = []; }
     renderRechnungenTable(allRechnungen);
@@ -675,7 +675,7 @@
     tbody.innerHTML = list.map(n => `<tr>
       <td style="font-weight:600">${nutzerName(n)}</td>
       <td><span class="badge ${n.rolle === 'jobber' ? 'badge-blue' : 'badge-purple'}">${n.rolle === 'jobber' ? 'Jobber' : 'Arbeitgeber'}</span></td>
-      <td style="font-size:12px;color:var(--text2)">${fmtDate(n.created_at)}</td>
+      <td style="font-size:12px;color:var(--text2)">${fmtDate(n.erstellt_am)}</td>
       <td>${n.gesperrt ? '<span class="badge badge-red">Gesperrt</span>' : '<span class="badge badge-green">Aktiv</span>'}</td>
     </tr>`).join('');
   }
@@ -703,7 +703,7 @@
       <td style="font-weight:600">${nutzerName(n)}</td>
       <td style="font-size:12px;color:var(--text2)">${n.email || '–'}</td>
       <td><span class="badge ${n.rolle === 'jobber' ? 'badge-blue' : 'badge-purple'}">${n.rolle === 'jobber' ? 'Jobber' : 'Arbeitgeber'}</span></td>
-      <td style="font-size:12px;color:var(--text2)">${fmtDate(n.created_at)}</td>
+      <td style="font-size:12px;color:var(--text2)">${fmtDate(n.erstellt_am)}</td>
       <td>${n.gesperrt ? '<span class="badge badge-red">Gesperrt</span>' : '<span class="badge badge-green">Aktiv</span>'}</td>
       <td><div class="btn-gap">
         ${n.gesperrt
@@ -736,7 +736,7 @@
       ['Vorname', n.vorname || '–'], ['Nachname', n.nachname || '–'],
       ['Firmenname', n.firmenname || '–'], ['Telefon', n.telefon || '–'],
       ['Geburtsdatum', fmtDate(n.geburtsdatum)], ['Ort', n.ort || '–'],
-      ['Branche', n.branche || '–'], ['Registriert', fmtDate(n.created_at)],
+      ['Branche', n.branche || '–'], ['Registriert', fmtDate(n.erstellt_am)],
       ['Status', n.gesperrt ? 'Gesperrt' : 'Aktiv'],
     ];
     document.getElementById('nutzer-modal-content').innerHTML =
@@ -768,7 +768,7 @@
         <td style="font-weight:600;max-width:150px;word-break:break-word">${j.titel || '–'}</td>
         <td style="font-size:12px">${j.branche || '–'}</td>
         <td style="font-size:12px">${j.firmenname || '–'}</td>
-        <td style="font-size:12px;white-space:nowrap">${fmtDate(j.datum || j.created_at)}</td>
+        <td style="font-size:12px;white-space:nowrap">${fmtDate(j.datum || j.erstellt_am)}</td>
         <td style="font-size:12px">${j.ort || '–'}</td>
         <td style="font-size:12px">${j.tagesgehalt ? '€' + j.tagesgehalt : '–'}</td>
         <td style="text-align:center">${j.plaetze || '–'}</td>
@@ -820,17 +820,24 @@
 
   function renderBewerbungenTable(list) {
     const tbody = document.getElementById('bew-tbody');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Keine Bewerbungen</td></tr>'; return; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Keine Bewerbungen</td></tr>'; return; }
     tbody.innerHTML = list.map(b => {
       const jobber = findNutzer(b.jobber_id);
       const job    = findJob(b.job_id);
       const ag     = findNutzer(b.arbeitgeber_id);
+      let lohnZahlung = '<span style="font-size:12px;color:var(--text2)">–</span>';
+      if (b.anwesenheit_bestaetigt) {
+        lohnZahlung = b.zahlung_status === 'bestaetigt'
+          ? '<span class="badge badge-green">Bezahlt</span>'
+          : (b.zahlung_ueberfaellig ? '<span class="badge badge-red">Überfällig</span>' : '<span class="badge badge-yellow">Ausstehend</span>');
+      }
       return `<tr>
         <td>${jobber ? nutzerName(jobber) : '–'}</td>
         <td style="font-weight:600">${job ? job.titel : (b.job_titel || '–')}</td>
         <td style="font-size:12px">${ag ? nutzerName(ag) : (job ? job.firmenname : '–')}</td>
-        <td style="font-size:12px;color:var(--text2)">${fmtDate(b.created_at)}</td>
+        <td style="font-size:12px;color:var(--text2)">${fmtDate(b.erstellt_am)}</td>
         <td>${statusBadge(b.status)}</td>
+        <td>${lohnZahlung}</td>
       </tr>`;
     }).join('');
   }
@@ -850,7 +857,7 @@
       const job    = findJob(r.job_id);
       const id     = String(r.id).replace(/'/g, "\\'");
       return `<tr>
-        <td style="font-size:12px;white-space:nowrap">${fmtDate(r.created_at || r.datum)}</td>
+        <td style="font-size:12px;white-space:nowrap">${fmtDate(r.datum || r.erstellt_am)}</td>
         <td>${ag ? nutzerName(ag) : (r.firmenname || '–')}</td>
         <td>${jobber ? nutzerName(jobber) : (r.jobber_name || '–')}</td>
         <td style="font-size:12px">${job ? job.titel : (r.job_titel || '–')}</td>
@@ -887,7 +894,7 @@
       const jobber = findNutzer(r.jobber_id);
       const job    = findJob(r.job_id);
       return [
-        fmtDate(r.created_at || r.datum),
+        fmtDate(r.erstellt_am || r.datum),
         ag ? nutzerName(ag) : (r.firmenname || ''),
         jobber ? nutzerName(jobber) : (r.jobber_name || ''),
         job ? job.titel : (r.job_titel || ''),
@@ -942,7 +949,7 @@
     const months = last12();
     renderBarChart(id, months.map(m => ({
       label: m.label,
-      value: items.filter(n => (n.created_at || '').startsWith(m.key)).length,
+      value: items.filter(n => (n.erstellt_am || '').startsWith(m.key)).length,
     })), colorClass);
   }
 
@@ -950,7 +957,7 @@
     const months = last12();
     renderBarChart('chart-umsatz-monat', months.map(m => ({
       label: m.label,
-      value: Math.round(allRechnungen.filter(r => (r.created_at || r.datum || '').startsWith(m.key)).reduce((s, r) => s + (parseFloat(r.betrag) || 0), 0)),
+      value: Math.round(allRechnungen.filter(r => (r.erstellt_am || r.datum || '').startsWith(m.key)).reduce((s, r) => s + (parseFloat(r.betrag) || 0), 0)),
     })), 'green');
   }
 
