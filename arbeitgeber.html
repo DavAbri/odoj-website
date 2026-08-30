@@ -56,6 +56,27 @@
 }
 .ag-inserate-bar-text span { font-size: 13px; color: rgba(11,31,58,.6); }
 
+/* ── SEITEN-SUB-NAV (Sprungmarken) ── */
+.ag-subnav {
+  position: sticky; top: var(--nav-h); z-index: 95;
+  background: var(--white); border-bottom: 1.5px solid var(--gray-lt);
+  display: flex; gap: 4px; padding: 0 60px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.ag-subnav::-webkit-scrollbar { display: none; }
+.ag-subnav-link {
+  flex-shrink: 0; padding: 16px 18px; font-size: 14px; font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--text-lt); text-decoration: none; white-space: nowrap;
+  border-bottom: 3px solid transparent; transition: color .2s, border-color .2s;
+}
+.ag-subnav-link:hover { color: var(--navy); }
+.ag-subnav-link.active { color: var(--navy); border-bottom-color: var(--accent); }
+@media (max-width: 900px) {
+  .ag-subnav { padding: 0 20px; }
+  .ag-subnav-link { padding: 14px 14px; font-size: 13px; }
+}
+
 /* ── MARKETING SECTIONS ── */
 
 /* Hero */
@@ -167,20 +188,6 @@
 .vorteil h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 .vorteil p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; font-weight: 300; }
 
-
-/* Ablauf */
-.ablauf { background: var(--off); }
-.ablauf-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 52px; }
-.ablauf-step { background: var(--white); padding: 36px 30px; position: relative; transition: transform .2s, box-shadow .2s; }
-.ablauf-step:first-child { border-radius: var(--r-lg) 0 0 var(--r-lg); }
-.ablauf-step:last-child  { border-radius: 0 var(--r-lg) var(--r-lg) 0; }
-.ablauf-step:hover { transform: translateY(-3px); box-shadow: var(--sh-md); z-index: 1; }
-.ablauf-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 14px; display: block; }
-.ablauf-step h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
-.ablauf-step p  { font-size: 13px; color: var(--text-lt); line-height: 1.6; font-weight: 300; }
-.ablauf-line { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
-.ablauf-step:hover .ablauf-line { transform: scaleX(1); }
-.ablauf-steps.ablauf-3 { grid-template-columns: repeat(3, 1fr); }
 
 /* Gelbes Infofeld – Verantwortung Arbeitgeber */
 .ag-hinweis-gelb {
@@ -351,34 +358,6 @@
 }
 .ag-cta-band p { font-size: 15px; color: rgba(11,31,58,.6); margin-top: 10px; font-weight: 300; }
 
-/* Anfrage */
-.anfrage { background: var(--navy); }
-.anfrage-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: start; margin-top: 52px; }
-.anfrage-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: var(--r-lg); padding: 44px; }
-.anfrage-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; color: var(--white); margin-bottom: 6px; }
-.anfrage-card > p { font-size: 14px; color: rgba(255,255,255,.45); font-weight: 300; margin-bottom: 28px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.form-field { margin-bottom: 10px; }
-.form-field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: rgba(255,255,255,.38); margin-bottom: 6px; }
-.form-field input, .form-field select, .form-field textarea { width: 100%; background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.1); border-radius: var(--r-sm); color: var(--white); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; padding: 12px 15px; outline: none; transition: border-color .2s; box-sizing: border-box; }
-.form-field input::placeholder, .form-field textarea::placeholder { color: rgba(255,255,255,.25); }
-.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); }
-.form-field select option { background: var(--navy-mid); color: var(--white); }
-.form-field textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
-.btn-submit { width: 100%; background: var(--accent); color: var(--navy); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; padding: 16px; border-radius: var(--r-sm); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .2s, transform .15s; margin-top: 12px; }
-.btn-submit:hover { background: var(--accent-lt); transform: translateY(-1px); }
-.anfrage-side { padding-top: 8px; }
-.guarantee { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: var(--r-md); padding: 28px; margin-top: 32px; }
-.guarantee h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 16px; }
-.guarantee-item { display: flex; gap: 12px; margin-bottom: 11px; font-size: 14px; color: rgba(255,255,255,.55); font-weight: 300; line-height: 1.5; }
-.guarantee-item:last-child { margin-bottom: 0; }
-.guarantee-item span:first-child { color: var(--accent); font-weight: 800; flex-shrink: 0; }
-.contact-list { display: flex; flex-direction: column; gap: 14px; margin-top: 32px; }
-.contact-item { display: flex; align-items: center; gap: 14px; }
-.ci-icon { width: 42px; height: 42px; background: rgba(255,255,255,.07); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-.ci-main { font-size: 14px; font-weight: 500; color: var(--white); }
-.ci-sub  { font-size: 12px; color: rgba(255,255,255,.35); }
-
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
   .ag-hero-layout { grid-template-columns: 1fr; gap: 48px; }
@@ -393,12 +372,6 @@
   .ag-cta-band { padding: 48px 28px; flex-direction: column; align-items: flex-start; gap: 24px; }
   .ag-inserate-bar-inner { padding: 14px 24px; }
   .vorteile-grid { grid-template-columns: 1fr 1fr; }
-  .ablauf-steps { grid-template-columns: 1fr 1fr; }
-  .ablauf-steps.ablauf-3 { grid-template-columns: 1fr 1fr; }
-  .ablauf-step:first-child { border-radius: var(--r-lg) 0 0 0; }
-  .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) 0; }
-  .anfrage-layout { grid-template-columns: 1fr; gap: 36px; }
-  .form-row { grid-template-columns: 1fr; }
   .info-grid { grid-template-columns: 1fr 1fr; }
   .tipps-grid { grid-template-columns: 1fr; }
   .ag-hinweis-gelb { padding: 18px 20px; }
@@ -414,10 +387,6 @@
   .ag-cta-band { padding: 40px 20px; }
   .ag-inserate-bar-inner { padding: 12px 20px; flex-direction: column; align-items: stretch; }
   .vorteile-grid { grid-template-columns: 1fr; }
-  .ablauf-steps { grid-template-columns: 1fr; }
-  .ablauf-steps.ablauf-3 { grid-template-columns: 1fr; }
-  .ablauf-step:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
-  .ablauf-step:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
   .info-grid { grid-template-columns: 1fr; }
   .acht-schritt { gap: 14px; }
   .acht-schritt-num { width: 34px; height: 34px; font-size: 13px; }
@@ -534,246 +503,24 @@
   </div>
 </div>
 
-<!-- VORTEILE -->
-<section class="vorteile" id="vorteile">
+<!-- SUB-NAV: Sprungmarken innerhalb der Seite -->
+<nav class="ag-subnav" id="ag-subnav">
+  <a href="#ablauf" class="ag-subnav-link" data-target="ablauf">Wie komme ich zu einem Jobber?</a>
+  <a href="#anmeldung" class="ag-subnav-link" data-target="anmeldung">Wie melde ich den Jobber richtig an?</a>
+  <a href="#weitere-infos" class="ag-subnav-link" data-target="weitere-infos">Weitere Infos</a>
+  <a href="#vermittlungsgebuehr" class="ag-subnav-link" data-target="vermittlungsgebuehr">Unsere Vermittlungsgebühr</a>
+</nav>
+
+<!-- ABSCHNITT 1: WIE KOMME ICH ZU EINEM JOBBER? -->
+<section class="acht-schritte" id="ablauf">
   <div class="fade-in">
-    <span class="section-label">Warum ODOJ?</span>
-    <h2 class="section-title">Alles, was Betriebe<br>wirklich brauchen</h2>
-    <p class="section-sub">Kein Headhunter-Aufwand, keine Vertragslaufzeiten. Verlässliches Personal, genau wann du es brauchst.</p>
-  </div>
-  <div class="vorteile-grid">
-    <div class="vorteil fade-in">
-      <div class="vorteil-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-      <h3>Kurzfristig verfügbar</h3>
-      <p>Inserat heute, Personal morgen. Für Notfälle auch an Wochenenden und Feiertagen.</p>
-    </div>
-    <div class="vorteil fade-in">
-      <div class="vorteil-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
-      <h3>Geprüfte Profile</h3>
-      <p>Verifizierte Adresse, E-Mail und Sozialversicherungsnummer. Bewertungen von Arbeitgebern sorgen für zusätzliche Transparenz.</p>
-    </div>
-    <div class="vorteil fade-in">
-      <div class="vorteil-ico">📄</div>
-      <h3>Rechtssicher &amp; einfach</h3>
-      <p>ODOJ übernimmt die Vermittlung – <a href="#rechtliches" style="color:var(--accent);font-weight:600;text-decoration:none">rechtliche Hinweise findest du hier</a>. Vollständig konform mit österreichischem Arbeitsrecht.</p>
-    </div>
-  </div>
-</section>
-
-<!-- SEKTION: VERMITTLUNGSGEBÜHR -->
-<section class="info-section info-section-alt" id="gebuehr">
-  <div class="info-section-inner">
-    <div class="fade-in">
-      <span class="section-label">Transparente Kosten</span>
-      <h2 class="section-title">Unsere Vermittlungsgebühr –<br>transparent erklärt</h2>
-    </div>
-    <div style="margin-top:40px;background:var(--accent);border-radius:20px;padding:36px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:20px">
-      <div style="width:60px;height:60px;background:rgba(11,31,58,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(11,31,58,.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
-      <div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;color:var(--navy);line-height:1">€ 15,00</div>
-        <div style="font-size:15px;color:rgba(11,31,58,.65);font-weight:500;margin-top:3px">pro erfolgreich abgeschlossenem Einsatz</div>
-      </div>
-      <div style="flex:1;min-width:220px">
-        <p style="font-size:14px;color:rgba(11,31,58,.7);line-height:1.65;font-weight:300">Diese Gebühr fällt erst an, wenn Sie als Arbeitgeber die Anwesenheit des Jobbers bestätigt haben – also nur bei tatsächlich erbrachter Leistung. <strong style="color:var(--navy)">Keine versteckten Kosten.</strong></p>
-      </div>
-    </div>
-    <div class="info-grid">
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-        <h3>Wann wird die Gebühr fällig?</h3>
-        <p>Nach Bestätigung der Anwesenheit erhalten Sie automatisch eine Zahlungsaufforderung mit allen Überweisungsdetails – für den Lohn an den Jobber sowie separat für die Vermittlungsgebühr an ODOJ. Sie überweisen beides eigenständig per Banking.</p>
-      </div>
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-        <h3>Wie setzt sich die Gebühr zusammen?</h3>
-        <p>Die Vermittlungsgebühr deckt die Plattformkosten: Plattform- &amp; Serverkosten, Zahlungsnachverfolgung, Entwicklung &amp; Wartung sowie Support.</p>
-      </div>
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
-        <h3>Das Inserieren ist kostenlos</h3>
-        <p>Das Erstellen und Veröffentlichen eines Jobinserats ist für Arbeitgeber vollständig kostenlos. Pro erfolgreich abgeschlossenem Einsatz wird eine Vermittlungsgebühr von € 15,00 fällig.</p>
-        <div class="info-card-note">Keine monatlichen Gebühren, keine Abonnements, keine versteckten Kosten.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- VERMITTLUNGSGEBÜHR DETAIL -->
-<section style="background:var(--navy);padding:80px 60px;">
-  <div style="max-width:1100px;margin:0 auto;">
-    <div class="fade-in" style="text-align:center;margin-bottom:56px;">
-      <span class="section-label">Transparent &amp; fair</span>
-      <h2 class="section-title" style="color:var(--white);">Unsere Vermittlungsgebühr</h2>
-      <p style="color:rgba(255,255,255,.5);font-size:17px;margin-top:10px;font-weight:300;">Nur zahlen wenn es funktioniert hat</p>
-    </div>
-
-    <!-- Zwei Spalten -->
-    <div style="display:grid;grid-template-columns:1fr 360px;gap:48px;align-items:start;margin-bottom:60px;" class="vg-cols">
-      <!-- Linke Spalte -->
-      <div class="fade-in">
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:var(--white);margin-bottom:16px;">Wie setzt sich die Gebühr zusammen?</h3>
-        <p style="color:rgba(255,255,255,.6);font-size:15px;line-height:1.75;font-weight:300;margin-bottom:32px;">Pro erfolgreich abgeschlossenem Einsatz verrechnen wir eine Vermittlungsgebühr von € 15,00. Diese Gebühr fällt ausschließlich an, wenn Sie als Arbeitgeber die Anwesenheit des Jobbers bestätigt haben – also nur bei tatsächlich erbrachter Leistung. Kein Einsatz, keine Kosten.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
-            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            </div>
-            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Zahlungsnachverfolgung</h4>
-            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Automatische Zahlungsaufforderungen, Statusanzeige und Erinnerungen für einen reibungslosen Ablauf</p>
-          </div>
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
-            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Plattformkosten</h4>
-            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Server, Datenbank und Hosting für einen zuverlässigen Betrieb</p>
-          </div>
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
-            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            </div>
-            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Entwicklung &amp; Wartung</h4>
-            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Kontinuierliche Verbesserung und Weiterentwicklung der Plattform</p>
-          </div>
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
-            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Support &amp; Betreuung</h4>
-            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Persönliche Unterstützung für Arbeitgeber und Jobber</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Rechte Spalte – Preis-Box -->
-      <div class="fade-in" style="background:var(--white);border-radius:20px;padding:36px;position:sticky;top:calc(var(--nav-h) + 20px);">
-        <div style="text-align:center;padding-bottom:28px;border-bottom:1px solid #eef0f5;margin-bottom:24px;">
-          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:56px;font-weight:800;color:var(--navy);line-height:1;">€ 15,00</div>
-          <div style="font-size:13px;color:var(--text-lt);margin-top:6px;font-weight:300;">pro erfolgreich abgeschlossenem Einsatz</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <span style="font-size:14px;color:var(--text);font-weight:500;">Nur fällig bei bestätigtem Einsatz</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <span style="font-size:14px;color:var(--text);font-weight:500;">Automatische Zahlungsaufforderung mit allen Details</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <span style="font-size:14px;color:var(--text);font-weight:500;">Rechnung wird automatisch erstellt</span>
-          </div>
-        </div>
-        <div style="background:#fffbf0;border:1px solid rgba(232,160,32,.25);border-radius:12px;padding:14px;font-size:12px;color:#7a5a00;line-height:1.6;">
-          Das Inserieren eines Jobs ist vollständig kostenlos. Die Gebühr wird erst nach Ihrer Bestätigung der Anwesenheit automatisch eingezogen.
-        </div>
-      </div>
-    </div>
-
-    <!-- Timeline: Wann wird bezahlt -->
-    <div class="fade-in">
-      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:var(--white);text-align:center;margin-bottom:32px;">Wann wird die Gebühr fällig?</h3>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;">
-        <!-- Verbindungslinie -->
-        <div style="position:absolute;top:28px;left:calc(100%/6);right:calc(100%/6);height:2px;background:rgba(232,160,32,.3);z-index:0;"></div>
-        <div style="text-align:center;padding:0 20px;position:relative;z-index:1;">
-          <div style="width:56px;height:56px;background:rgba(255,255,255,.08);border:2px solid rgba(232,160,32,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--accent);">1</span>
-          </div>
-          <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;">Job inserieren</h4>
-          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Kostenlos und unverbindlich</p>
-        </div>
-        <div style="text-align:center;padding:0 20px;position:relative;z-index:1;">
-          <div style="width:56px;height:56px;background:rgba(255,255,255,.08);border:2px solid rgba(232,160,32,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--accent);">2</span>
-          </div>
-          <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;">Jobber erscheint und arbeitet</h4>
-          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Der Einsatz findet statt</p>
-        </div>
-        <div style="text-align:center;padding:0 20px;position:relative;z-index:1;">
-          <div style="width:56px;height:56px;background:var(--accent);border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);">3</span>
-          </div>
-          <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;">Sie bestätigen die Anwesenheit</h4>
-          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Erst jetzt erhalten Sie die Zahlungsaufforderung mit allen Überweisungsdetails</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<style>
-@media (max-width: 900px) {
-  .vg-cols { grid-template-columns: 1fr !important; }
-}
-</style>
-
-<!-- ABLAUF -->
-<section class="ablauf" id="ablauf">
-  <div class="fade-in">
-    <span class="section-label">So funktioniert's</span>
-    <h2 class="section-title">In 4 Schritten zum<br>einsatzbereiten Personal</h2>
-    <p class="section-sub">Von der Registrierung bis zum ersten Arbeitstag – schnell und unkompliziert.</p>
-  </div>
-  <div class="ablauf-steps">
-    <div class="ablauf-step fade-in">
-      <span class="ablauf-num">SCHRITT 01</span>
-      <h4>Konto erstellen</h4>
-      <p>Kostenlos als Arbeitgeber registrieren – dauert 2 Minuten, keine versteckten Kosten.</p>
-      <div class="ablauf-line"></div>
-    </div>
-    <div class="ablauf-step fade-in" id="ablauf-step-inserieren">
-      <span class="ablauf-num">SCHRITT 02</span>
-      <h4>Job inserieren</h4>
-      <p>Datum, Uhrzeit, Branche, Anforderungen und Tagesgehalt angeben – fertig.</p>
-      <p style="font-size:11px;color:var(--accent);font-weight:700;margin-top:8px">Kostenlos inserieren – € 15 Gebühr nur bei Erfolg</p>
-      <div class="ablauf-line"></div>
-    </div>
-    <div class="ablauf-step fade-in">
-      <span class="ablauf-num">SCHRITT 03</span>
-      <h4>Bewerber auswählen</h4>
-      <p>Jobber aus Vorarlberg bewerben sich. Du siehst Profile, wählst aus und bestätigst.</p>
-      <div class="ablauf-line"></div>
-    </div>
-    <div class="ablauf-step fade-in">
-      <span class="ablauf-num">SCHRITT 04</span>
-      <h4>Personal erscheint</h4>
-      <p>Der Mitarbeiter führt Arbeit aus. Abrechnung und Abwicklung direkt über ODOJ.</p>
-      <div class="ablauf-line"></div>
-    </div>
-  </div>
-
-  <!-- Gelbes Infofeld: Arbeitgeber bleibt Arbeitgeber -->
-  <div class="ag-hinweis-gelb fade-in">
-    <div class="ag-hinweis-gelb-ico">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-    </div>
-    <div>
-      <h3>ODOJ unterstützt – Arbeitgeber bleibt Arbeitgeber</h3>
-      <p>ODOJ vermittelt zwischen Arbeitnehmer und Arbeitgeber und stellt euch unterstützende Informationen und Vorlagen zur Verfügung. Der Dienstvertrag kommt direkt zwischen euch und dem Arbeitnehmer zustande – ihr bleibt daher insbesondere für die korrekte Anmeldung, arbeitsrechtliche Einstufung, Lohnverrechnung, Abgaben und Auszahlung verantwortlich. Bei Unsicherheiten empfehlen wir, Sonderfälle mit eurer Lohnverrechnung, eurem Steuerberater oder einer arbeitsrechtlichen Beratungsstelle abzuklären.</p>
-    </div>
-  </div>
-</section>
-
-<!-- SEKTION: 8 SCHRITTE ZUM ERFOLGREICHEN TAGESJOB -->
-<section class="acht-schritte">
-  <div class="fade-in">
-    <span class="section-label">Der komplette Ablauf</span>
-    <h2 class="section-title">In 8 Schritten zum<br>erfolgreichen Tagesjob</h2>
+    <span class="section-label">In 8 Schritten zum erfolgreichen Tagesjob</span>
+    <h2 class="section-title">Wie komme ich zu<br>einem Jobber?</h2>
     <p class="section-sub">Von der Erstellung des Inserats bis zur Auszahlung – wir begleiten euch durch den gesamten Ablauf.</p>
   </div>
 
   <div class="acht-schritte-inner">
-    <div class="acht-schritt fade-in">
+    <div class="acht-schritt fade-in" id="acht-schritt-inserieren">
       <div class="acht-schritt-num">1</div>
       <div class="acht-schritt-body">
         <h4>Inserat erstellen</h4>
@@ -862,23 +609,152 @@
       </div>
     </div>
   </div>
+</section>
 
-  <!-- Lohn-Hinweisbox -->
-  <div class="ag-lohn-box fade-in">
-    <div class="ag-lohn-box-ico">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.8 9a2 2 0 0 0-1.8-1H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 6v1.5M12 16.5V18"/></svg>
+<!-- ABSCHNITT 2: WIE MELDE ICH DEN JOBBER RICHTIG AN? -->
+<section class="info-section" id="anmeldung">
+  <div class="info-section-inner">
+    <div class="fade-in">
+      <span class="section-label">Rechtlicher Rahmen</span>
+      <h2 class="section-title">Wie melde ich den<br>Jobber richtig an?</h2>
+      <p class="section-sub">ODOJ übernimmt die Vermittlung – für die korrekte Anmeldung und Abwicklung ist der Arbeitgeber selbst verantwortlich.</p>
     </div>
-    <div>
-      <h3>Noch wichtig beim angegebenen Lohn</h3>
-      <p>Der im Inserat angegebene Bruttolohn ist nicht gleich euren gesamten Arbeitgeberkosten. Zusätzlich können insbesondere entstehen: Sozialversicherung · Lohnnebenkosten · Urlaubsersatzleistung · aliquote Sonderzahlungen · Zuschläge.</p>
-      <p>Der Lohn muss außerdem zumindest dem geltenden kollektivvertraglichen Mindestlohn für die Tätigkeit entsprechen. Die genaue Abrechnung übernimmt am besten eure Lohnverrechnung.</p>
-      <div class="info-card-note">🛠 Bald verfügbar: Ein <strong>Zahltagsrechner</strong>, der neben dem Stundenlohn auch Urlaubsgeld, Sonderzahlungen und Zuschläge berücksichtigt und so den sogenannten <strong>Mindestzahltag</strong> übersichtlich darstellt.</div>
+
+    <!-- Gelbes Infofeld: Arbeitgeber bleibt Arbeitgeber -->
+    <div class="ag-hinweis-gelb fade-in" style="margin-top:40px">
+      <div class="ag-hinweis-gelb-ico">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </div>
+      <div>
+        <h3>ODOJ unterstützt – Arbeitgeber bleibt Arbeitgeber</h3>
+        <p>ODOJ vermittelt zwischen Arbeitnehmer und Arbeitgeber und stellt euch unterstützende Informationen und Vorlagen zur Verfügung. Der Dienstvertrag kommt direkt zwischen euch und dem Arbeitnehmer zustande – ihr bleibt daher insbesondere für die korrekte Anmeldung, arbeitsrechtliche Einstufung, Lohnverrechnung, Abgaben und Auszahlung verantwortlich. Bei Unsicherheiten empfehlen wir, Sonderfälle mit eurer Lohnverrechnung, eurem Steuerberater oder einer arbeitsrechtlichen Beratungsstelle abzuklären.</p>
+      </div>
+    </div>
+
+    <!-- ELDA Info-Block -->
+    <div style="background:#EAF4FF;border:1.5px solid #B5D4F4;border-radius:16px;padding:28px 32px;margin:40px 0 8px;display:flex;align-items:flex-start;gap:20px;">
+      <div style="flex-shrink:0;width:44px;height:44px;background:#D0E9FF;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#2A6EA6">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div style="flex:1">
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#0B1628;margin-bottom:10px">Arbeitnehmer vor dem Einsatz versichern</h3>
+        <p style="font-size:14px;color:#3A5070;line-height:1.7;margin-bottom:16px">
+          Als Arbeitgeber sind Sie gesetzlich verpflichtet, jeden Mitarbeiter <strong>vor dem ersten Arbeitstag</strong> bei der Sozialversicherung anzumelden. Dies gilt auch für Tageseinsätze über ODOJ. Die Anmeldung erfolgt einfach und schnell über das ELDA-Portal der österreichischen Sozialversicherung.
+        </p>
+        <a href="https://www.elda.at/eldamamol/" target="_blank" rel="noopener noreferrer" class="elda-btn" style="display:inline-flex;align-items:center;gap:8px;background:#0B1628;color:#fff;padding:12px 24px;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;text-decoration:none;transition:background 0.2s,color 0.2s">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Jetzt auf ELDA anmelden
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <div style="margin-top:10px;font-size:12px;color:#7A8FA8">elda.at – Offizielles Portal der österreichischen Sozialversicherung</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>
+        <h3>Anmeldung bei der ÖGK</h3>
+        <p>Jeder Tagesarbeiter muss <strong>vor Arbeitsbeginn</strong> bei der Österreichischen Gesundheitskasse (ÖGK) angemeldet werden. Eine Vorabanmeldung am Vortag bis 23:59 Uhr ist möglich.</p>
+        <div class="info-card-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Anmeldung muss vor dem ersten Arbeitstag erfolgen – nicht danach!</div>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <h3>Pflichtversicherungen</h3>
+        <p>Für alle unselbständig Beschäftigten gilt: Kranken-, Unfall-, Pensions- und Arbeitslosenversicherung sind in Österreich gesetzlich vorgeschrieben und müssen vom Arbeitgeber abgeführt werden.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span>
+        <h3>Werkvertrag vs. Dienstvertrag</h3>
+        <p>Tagesarbeitskräfte werden in der Regel über einen freien Dienstvertrag oder als geringfügig Beschäftigte angestellt. Ein Werkvertrag ist unzulässig, wenn echte Weisungsgebundenheit besteht.</p>
+        <div class="info-card-note">ℹ️ Bei Unsicherheit: Rechtsberatung der WKO nutzen.</div>
+        <a href="Dienstvertrag_ODOJ_Muster.docx" download="Dienstvertrag_ODOJ_Muster.docx" style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Hier: unverbindliche Muster-Vorlage herunterladen
+        </a>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <h3>Arbeitszeitgesetz (AZG)</h3>
+        <p>Ab <strong>6 Stunden</strong> Arbeitszeit sind 30 Minuten Pause Pflicht. Ab <strong>9 Stunden</strong> sind es 45 Minuten. ODOJ weist im Inserierformular automatisch auf Verstöße hin.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span>
+        <h3><a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">WKO Vorarlberg</a></h3>
+        <p>Die <a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none">Wirtschaftskammer Vorarlberg</a> bietet kostenlose Rechtsberatung für Betriebe – ideal für Fragen zu Vertragsformen, Kollektivverträgen und kurzfristigen Anstellungen.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 11l-5-5-5 5"/><path d="M7 17l2.5-2.5a3.536 3.536 0 0 1 5 0L17 17"/><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/></svg></span>
+        <h3><a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">AK Vorarlberg</a></h3>
+        <p>Die <a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none">Arbeiterkammer Vorarlberg</a> berät zu Mindestlöhnen, Überstundenregelungen und Urlaubsanspruch. Auch als Arbeitgeber können Sie sich dort über Ihre Pflichten informieren.</p>
+      </div>
+    </div>
+
+    <!-- Lohn-Hinweisbox -->
+    <div class="ag-lohn-box fade-in">
+      <div class="ag-lohn-box-ico">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.8 9a2 2 0 0 0-1.8-1H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 6v1.5M12 16.5V18"/></svg>
+      </div>
+      <div>
+        <h3>Noch wichtig beim angegebenen Lohn</h3>
+        <p>Der im Inserat angegebene Bruttolohn ist nicht gleich euren gesamten Arbeitgeberkosten. Zusätzlich können insbesondere entstehen: Sozialversicherung · Lohnnebenkosten · Urlaubsersatzleistung · aliquote Sonderzahlungen · Zuschläge.</p>
+        <p>Der Lohn muss außerdem zumindest dem geltenden kollektivvertraglichen Mindestlohn für die Tätigkeit entsprechen. Die genaue Abrechnung übernimmt am besten eure Lohnverrechnung.</p>
+        <div class="info-card-note">🛠 Bald verfügbar: Ein <strong>Zahltagsrechner</strong>, der neben dem Stundenlohn auch Urlaubsgeld, Sonderzahlungen und Zuschläge berücksichtigt und so den sogenannten <strong>Mindestzahltag</strong> übersichtlich darstellt.</div>
+      </div>
+    </div>
+
+    <!-- Dienstvertrag Banner -->
+    <div style="background:#F5F7FA;border:1.5px solid #D8DDE8;border-radius:16px;padding:28px 32px;margin:24px 0 8px;display:flex;align-items:flex-start;gap:20px;">
+      <div style="flex-shrink:0;width:44px;height:44px;background:#E8EDF5;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#0B1628;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+      </div>
+      <div style="flex:1">
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:#0B1628;margin-bottom:8px;">Dienstvertrag Vorlage</h3>
+        <p style="font-size:14px;color:#3A5070;line-height:1.7;margin-bottom:16px;">
+          Nutzen Sie unsere professionelle Muster-Vorlage für den Dienstvertrag. Einfach herunterladen, ausfüllen und ausdrucken. Bitte beachten Sie, dass es sich um eine unverbindliche Vorlage handelt – wir empfehlen die Prüfung durch einen Rechtsexperten.
+        </p>
+        <a href="Dienstvertrag_ODOJ_Muster.docx" download="Dienstvertrag_ODOJ_Muster.docx" style="display:inline-flex;align-items:center;gap:8px;background:#0B1628;color:#fff;padding:10px 22px;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;text-decoration:none;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Muster-Vorlage herunterladen
+        </a>
+        <div style="margin-top:10px;font-size:12px;color:#7A8FA8;font-style:italic;">⚠ Unverbindliche Muster-Vorlage | Nicht rechtsverbindlich</div>
+      </div>
+    </div>
+
+    <p class="info-disclaimer fade-in">
+      <strong>Wichtiger Hinweis:</strong> ODOJ ist eine Vermittlungsplattform und übernimmt keine Arbeitgeberstellung. Die rechtlich korrekte Anmeldung, Versicherung und Abmeldung der vermittelten Arbeitskräfte liegt ausschließlich in der Verantwortung des Arbeitgebers. Wir empfehlen, bei Unsicherheiten einen Steuerberater, die <a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600">WKO Vorarlberg</a> oder die <a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600">AK Vorarlberg</a> zu kontaktieren.
+    </p>
+  </div>
+</section>
+
+<!-- ABSCHNITT 3: WEITERE INFOS -->
+<section class="vorteile" id="weitere-infos">
+  <div class="fade-in">
+    <span class="section-label">Für Arbeitgeber</span>
+    <h2 class="section-title">Weitere Infos</h2>
+    <p class="section-sub">Von den Vorteilen von ODOJ bis zu häufigen Fragen – alles Wissenswerte auf einen Blick.</p>
+  </div>
+  <h3 class="fade-in" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:var(--text);margin:44px 0 20px">Warum ODOJ?</h3>
+  <div class="vorteile-grid">
+    <div class="vorteil fade-in">
+      <div class="vorteil-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <h3>Kurzfristig verfügbar</h3>
+      <p>Inserat heute, Personal morgen. Für Notfälle auch an Wochenenden und Feiertagen.</p>
+    </div>
+    <div class="vorteil fade-in">
+      <div class="vorteil-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
+      <h3>Geprüfte Profile</h3>
+      <p>Verifizierte Adresse, E-Mail und Sozialversicherungsnummer. Bewertungen von Arbeitgebern sorgen für zusätzliche Transparenz.</p>
+    </div>
+    <div class="vorteil fade-in">
+      <div class="vorteil-ico">📄</div>
+      <h3>Rechtssicher &amp; einfach</h3>
+      <p>ODOJ übernimmt die Vermittlung – <a href="#anmeldung" style="color:var(--accent);font-weight:600;text-decoration:none">rechtliche Hinweise findest du hier</a>. Vollständig konform mit österreichischem Arbeitsrecht.</p>
     </div>
   </div>
 </section>
 
 <!-- SEKTION: WEITERE INFORMATIONEN (Accordion) -->
-<section class="info-section info-section-alt" id="weitere-infos">
+<section class="info-section info-section-alt" id="weitere-infos-accordion">
   <div class="info-section-inner">
     <div class="fade-in">
       <span class="section-label">Wichtige Hinweise &amp; Sonderfälle</span>
@@ -1045,97 +921,6 @@
   </div>
 </section>
 
-<!-- SEKTION: RECHTLICHES & ANSTELLUNG -->
-<section class="info-section" id="rechtliches">
-  <div class="info-section-inner">
-    <div class="fade-in">
-      <span class="section-label">Rechtlicher Rahmen</span>
-      <h2 class="section-title">Rechtliches &amp;<br>Anstellung</h2>
-      <p class="section-sub">ODOJ übernimmt die Vermittlung – für die korrekte Anmeldung und Abwicklung ist der Arbeitgeber selbst verantwortlich.</p>
-    </div>
-
-    <!-- ELDA Info-Block -->
-    <div style="background:#EAF4FF;border:1.5px solid #B5D4F4;border-radius:16px;padding:28px 32px;margin:40px 0 8px;display:flex;align-items:flex-start;gap:20px;">
-      <div style="flex-shrink:0;width:44px;height:44px;background:#D0E9FF;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#2A6EA6">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </div>
-      <div style="flex:1">
-        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#0B1628;margin-bottom:10px">Arbeitnehmer vor dem Einsatz versichern</h3>
-        <p style="font-size:14px;color:#3A5070;line-height:1.7;margin-bottom:16px">
-          Als Arbeitgeber sind Sie gesetzlich verpflichtet, jeden Mitarbeiter <strong>vor dem ersten Arbeitstag</strong> bei der Sozialversicherung anzumelden. Dies gilt auch für Tageseinsätze über ODOJ. Die Anmeldung erfolgt einfach und schnell über das ELDA-Portal der österreichischen Sozialversicherung.
-        </p>
-        <a href="https://www.elda.at/eldamamol/" target="_blank" rel="noopener noreferrer" class="elda-btn" style="display:inline-flex;align-items:center;gap:8px;background:#0B1628;color:#fff;padding:12px 24px;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;text-decoration:none;transition:background 0.2s,color 0.2s">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Jetzt auf ELDA anmelden
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-        <div style="margin-top:10px;font-size:12px;color:#7A8FA8">elda.at – Offizielles Portal der österreichischen Sozialversicherung</div>
-      </div>
-    </div>
-
-    <div class="info-grid">
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>
-        <h3>Anmeldung bei der ÖGK</h3>
-        <p>Jeder Tagesarbeiter muss <strong>vor Arbeitsbeginn</strong> bei der Österreichischen Gesundheitskasse (ÖGK) angemeldet werden. Eine Vorabanmeldung am Vortag bis 23:59 Uhr ist möglich.</p>
-        <div class="info-card-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Anmeldung muss vor dem ersten Arbeitstag erfolgen – nicht danach!</div>
-      </div>
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-        <h3>Pflichtversicherungen</h3>
-        <p>Für alle unselbständig Beschäftigten gilt: Kranken-, Unfall-, Pensions- und Arbeitslosenversicherung sind in Österreich gesetzlich vorgeschrieben und müssen vom Arbeitgeber abgeführt werden.</p>
-      </div>
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span>
-        <h3>Werkvertrag vs. Dienstvertrag</h3>
-        <p>Tagesarbeitskräfte werden in der Regel über einen freien Dienstvertrag oder als geringfügig Beschäftigte angestellt. Ein Werkvertrag ist unzulässig, wenn echte Weisungsgebundenheit besteht.</p>
-        <div class="info-card-note">ℹ️ Bei Unsicherheit: Rechtsberatung der WKO nutzen.</div>
-        <a href="Dienstvertrag_ODOJ_Muster.docx" download="Dienstvertrag_ODOJ_Muster.docx" style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Hier: unverbindliche Muster-Vorlage herunterladen
-        </a>
-      </div>
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-        <h3>Arbeitszeitgesetz (AZG)</h3>
-        <p>Ab <strong>6 Stunden</strong> Arbeitszeit sind 30 Minuten Pause Pflicht. Ab <strong>9 Stunden</strong> sind es 45 Minuten. ODOJ weist im Inserierformular automatisch auf Verstöße hin.</p>
-      </div>
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span>
-        <h3><a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">WKO Vorarlberg</a></h3>
-        <p>Die <a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none">Wirtschaftskammer Vorarlberg</a> bietet kostenlose Rechtsberatung für Betriebe – ideal für Fragen zu Vertragsformen, Kollektivverträgen und kurzfristigen Anstellungen.</p>
-      </div>
-      <div class="info-card fade-in">
-        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 11l-5-5-5 5"/><path d="M7 17l2.5-2.5a3.536 3.536 0 0 1 5 0L17 17"/><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/></svg></span>
-        <h3><a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">AK Vorarlberg</a></h3>
-        <p>Die <a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none">Arbeiterkammer Vorarlberg</a> berät zu Mindestlöhnen, Überstundenregelungen und Urlaubsanspruch. Auch als Arbeitgeber können Sie sich dort über Ihre Pflichten informieren.</p>
-      </div>
-    </div>
-
-    <!-- Dienstvertrag Banner -->
-    <div style="background:#F5F7FA;border:1.5px solid #D8DDE8;border-radius:16px;padding:28px 32px;margin:24px 0 8px;display:flex;align-items:flex-start;gap:20px;">
-      <div style="flex-shrink:0;width:44px;height:44px;background:#E8EDF5;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#0B1628;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
-      </div>
-      <div style="flex:1">
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:#0B1628;margin-bottom:8px;">Dienstvertrag Vorlage</h3>
-        <p style="font-size:14px;color:#3A5070;line-height:1.7;margin-bottom:16px;">
-          Nutzen Sie unsere professionelle Muster-Vorlage für den Dienstvertrag. Einfach herunterladen, ausfüllen und ausdrucken. Bitte beachten Sie, dass es sich um eine unverbindliche Vorlage handelt – wir empfehlen die Prüfung durch einen Rechtsexperten.
-        </p>
-        <a href="Dienstvertrag_ODOJ_Muster.docx" download="Dienstvertrag_ODOJ_Muster.docx" style="display:inline-flex;align-items:center;gap:8px;background:#0B1628;color:#fff;padding:10px 22px;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;text-decoration:none;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Muster-Vorlage herunterladen
-        </a>
-        <div style="margin-top:10px;font-size:12px;color:#7A8FA8;font-style:italic;">⚠ Unverbindliche Muster-Vorlage | Nicht rechtsverbindlich</div>
-      </div>
-    </div>
-
-    <p class="info-disclaimer fade-in">
-      <strong>Wichtiger Hinweis:</strong> ODOJ ist eine Vermittlungsplattform und übernimmt keine Arbeitgeberstellung. Die rechtlich korrekte Anmeldung, Versicherung und Abmeldung der vermittelten Arbeitskräfte liegt ausschließlich in der Verantwortung des Arbeitgebers. Wir empfehlen, bei Unsicherheiten einen Steuerberater, die <a href="https://www.wko.at/vorarlberg" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600">WKO Vorarlberg</a> oder die <a href="https://www.ak-vorarlberg.at" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600">AK Vorarlberg</a> zu kontaktieren.
-    </p>
-  </div>
-</section>
-
 <!-- SEKTION: TIPPS FÜR EINEN GUTEN EINSATZ -->
 <section class="info-section info-section-alt" id="tipps">
   <div class="info-section-inner">
@@ -1233,49 +1018,161 @@
 </section>
 
 
-<!-- ANFRAGE FORM -->
-<section class="anfrage" id="anfrage">
-  <span class="section-label">Kontakt</span>
-  <h2 class="section-title section-title-white">Persönlich anfragen</h2>
-  <p class="section-sub section-sub-white">Lieber direkt? Füllen Sie das Formular aus – wir melden uns so schnell wie möglich.</p>
-  <div class="anfrage-layout">
-    <div class="anfrage-card fade-in">
-      <h3>Anfrage senden</h3>
-      <p>Alle Felder mit * sind Pflichtfelder.</p>
-      <form onsubmit="submitAnfrage(event)">
-        <div class="form-row">
-          <div class="form-field"><label>Firmenname *</label><input type="text" placeholder="Ihr Unternehmen" required></div>
-          <div class="form-field"><label>Ansprechperson *</label><input type="text" placeholder="Vor- und Nachname" required></div>
-        </div>
-        <div class="form-row">
-          <div class="form-field"><label>E-Mail *</label><input type="email" placeholder="firma@beispiel.at" required></div>
-          <div class="form-field"><label>Telefon</label><input type="tel" placeholder="+43 ..."></div>
-        </div>
-        <div class="form-field"><label>Ihre Anfrage</label><textarea placeholder="Was können wir für Sie tun?"></textarea></div>
-        <button type="submit" class="btn-submit" id="anfBtn">
-          Anfrage absenden
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-      </form>
+<!-- ABSCHNITT 4: UNSERE VERMITTLUNGSGEBÜHR -->
+<section class="info-section info-section-alt" id="vermittlungsgebuehr">
+  <div class="info-section-inner">
+    <div class="fade-in">
+      <span class="section-label">Transparente Kosten</span>
+      <h2 class="section-title">Unsere Vermittlungsgebühr</h2>
     </div>
-    <div class="anfrage-side fade-in">
-      <span class="section-label">Direktkontakt</span>
-      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;color:var(--white);margin-bottom:10px;letter-spacing:-.5px">Lieber persönlich?</h3>
-      <p style="color:rgba(255,255,255,.5);font-size:15px;font-weight:300;line-height:1.65;max-width:360px">Rufen Sie uns an oder schreiben Sie eine E-Mail. Wir sind für Sie da.</p>
-      <div class="contact-list">
-        <div class="contact-item"><div class="ci-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.94-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17v-.08z"/></svg></div><div><div class="ci-main">+43 (0) 5572 – ODOJ</div><div class="ci-sub">Mo – Fr, 08:00 – 18:00 Uhr</div></div></div>
-        <div class="contact-item"><div class="ci-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div><div class="ci-main">betriebe@odoj.at</div><div class="ci-sub">Wir melden uns so schnell wie möglich</div></div></div>
+    <div style="margin-top:40px;background:var(--accent);border-radius:20px;padding:36px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:20px">
+      <div style="width:60px;height:60px;background:rgba(11,31,58,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(11,31,58,.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
-      <div class="guarantee">
-        <h4>Unsere Versprechen</h4>
-        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Schnelle Rückmeldung</span></div>
-        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Nur geprüfte, zuverlässige Mitarbeitende</span></div>
-        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Faire, transparente Abrechnung</span></div>
-        <div class="guarantee-item"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Persönlicher Ansprechpartner für Ihr Unternehmen</span></div>
+      <div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;color:var(--navy);line-height:1">€ 15,00</div>
+        <div style="font-size:15px;color:rgba(11,31,58,.65);font-weight:500;margin-top:3px">pro erfolgreich abgeschlossenem Einsatz</div>
+      </div>
+      <div style="flex:1;min-width:220px">
+        <p style="font-size:14px;color:rgba(11,31,58,.7);line-height:1.65;font-weight:300">Diese Gebühr fällt erst an, wenn Sie als Arbeitgeber die Anwesenheit des Jobbers bestätigt haben – also nur bei tatsächlich erbrachter Leistung. <strong style="color:var(--navy)">Keine versteckten Kosten.</strong></p>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <h3>Wann wird die Gebühr fällig?</h3>
+        <p>Nach Bestätigung der Anwesenheit erhalten Sie automatisch eine Zahlungsaufforderung mit allen Überweisungsdetails – für den Lohn an den Jobber sowie separat für die Vermittlungsgebühr an ODOJ. Sie überweisen beides eigenständig per Banking.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+        <h3>Wie setzt sich die Gebühr zusammen?</h3>
+        <p>Die Vermittlungsgebühr deckt die Plattformkosten: Plattform- &amp; Serverkosten, Zahlungsnachverfolgung, Entwicklung &amp; Wartung sowie Support.</p>
+      </div>
+      <div class="info-card fade-in">
+        <span class="info-card-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+        <h3>Das Inserieren ist kostenlos</h3>
+        <p>Das Erstellen und Veröffentlichen eines Jobinserats ist für Arbeitgeber vollständig kostenlos. Pro erfolgreich abgeschlossenem Einsatz wird eine Vermittlungsgebühr von € 15,00 fällig.</p>
+        <div class="info-card-note">Keine monatlichen Gebühren, keine Abonnements, keine versteckten Kosten.</div>
       </div>
     </div>
   </div>
 </section>
+
+<section style="background:var(--navy);padding:80px 60px;">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="fade-in" style="text-align:center;margin-bottom:56px;">
+      <span class="section-label">Transparent &amp; fair</span>
+      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:var(--white);">Wie funktioniert die Zahlung im Detail?</h3>
+      <p style="color:rgba(255,255,255,.5);font-size:17px;margin-top:10px;font-weight:300;">Nur zahlen wenn es funktioniert hat</p>
+    </div>
+
+    <!-- Zwei Spalten -->
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:48px;align-items:start;margin-bottom:60px;" class="vg-cols">
+      <!-- Linke Spalte -->
+      <div class="fade-in">
+        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:var(--white);margin-bottom:16px;">Wie setzt sich die Gebühr zusammen?</h3>
+        <p style="color:rgba(255,255,255,.6);font-size:15px;line-height:1.75;font-weight:300;margin-bottom:32px;">Pro erfolgreich abgeschlossenem Einsatz verrechnen wir eine Vermittlungsgebühr von € 15,00. Diese Gebühr fällt ausschließlich an, wenn Sie als Arbeitgeber die Anwesenheit des Jobbers bestätigt haben – also nur bei tatsächlich erbrachter Leistung. Kein Einsatz, keine Kosten.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
+            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Zahlungsnachverfolgung</h4>
+            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Automatische Zahlungsaufforderungen, Statusanzeige und Erinnerungen für einen reibungslosen Ablauf</p>
+          </div>
+          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
+            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Plattformkosten</h4>
+            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Server, Datenbank und Hosting für einen zuverlässigen Betrieb</p>
+          </div>
+          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
+            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Entwicklung &amp; Wartung</h4>
+            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Kontinuierliche Verbesserung und Weiterentwicklung der Plattform</p>
+          </div>
+          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;">
+            <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;">Support &amp; Betreuung</h4>
+            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;font-weight:300;">Persönliche Unterstützung für Arbeitgeber und Jobber</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rechte Spalte – Preis-Box -->
+      <div class="fade-in" style="background:var(--white);border-radius:20px;padding:36px;position:sticky;top:calc(var(--nav-h) + 20px);">
+        <div style="text-align:center;padding-bottom:28px;border-bottom:1px solid #eef0f5;margin-bottom:24px;">
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:56px;font-weight:800;color:var(--navy);line-height:1;">€ 15,00</div>
+          <div style="font-size:13px;color:var(--text-lt);margin-top:6px;font-weight:300;">pro erfolgreich abgeschlossenem Einsatz</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span style="font-size:14px;color:var(--text);font-weight:500;">Nur fällig bei bestätigtem Einsatz</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span style="font-size:14px;color:var(--text);font-weight:500;">Automatische Zahlungsaufforderung mit allen Details</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:22px;height:22px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span style="font-size:14px;color:var(--text);font-weight:500;">Rechnung wird automatisch erstellt</span>
+          </div>
+        </div>
+        <div style="background:#fffbf0;border:1px solid rgba(232,160,32,.25);border-radius:12px;padding:14px;font-size:12px;color:#7a5a00;line-height:1.6;">
+          Das Inserieren eines Jobs ist vollständig kostenlos. Die Gebühr wird erst nach Ihrer Bestätigung der Anwesenheit automatisch eingezogen.
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline: Wann wird bezahlt -->
+    <div class="fade-in">
+      <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:var(--white);text-align:center;margin-bottom:32px;">Wann wird die Gebühr fällig?</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;">
+        <!-- Verbindungslinie -->
+        <div style="position:absolute;top:28px;left:calc(100%/6);right:calc(100%/6);height:2px;background:rgba(232,160,32,.3);z-index:0;"></div>
+        <div style="text-align:center;padding:0 20px;position:relative;z-index:1;">
+          <div style="width:56px;height:56px;background:rgba(255,255,255,.08);border:2px solid rgba(232,160,32,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--accent);">1</span>
+          </div>
+          <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;">Job inserieren</h4>
+          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Kostenlos und unverbindlich</p>
+        </div>
+        <div style="text-align:center;padding:0 20px;position:relative;z-index:1;">
+          <div style="width:56px;height:56px;background:rgba(255,255,255,.08);border:2px solid rgba(232,160,32,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--accent);">2</span>
+          </div>
+          <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;">Jobber erscheint und arbeitet</h4>
+          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Der Einsatz findet statt</p>
+        </div>
+        <div style="text-align:center;padding:0 20px;position:relative;z-index:1;">
+          <div style="width:56px;height:56px;background:var(--accent);border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);">3</span>
+          </div>
+          <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;">Sie bestätigen die Anwesenheit</h4>
+          <p style="font-size:13px;color:rgba(255,255,255,.45);font-weight:300;">Erst jetzt erhalten Sie die Zahlungsaufforderung mit allen Überweisungsdetails</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+@media (max-width: 900px) {
+  .vg-cols { grid-template-columns: 1fr !important; }
+}
+</style>
 
 </div><!-- /ag-marketing -->
 
@@ -1341,9 +1238,9 @@ function toggleFaq(btn) {
     if (rolle === 'arbeitgeber') {
       document.getElementById('ag-inserate-bar').style.display = 'block';
     } else {
-      // Jobber: Seite bleibt sichtbar, nur "Job inserieren"-Schritt ausblenden
-      document.getElementById('ablauf-step-inserieren').style.display = 'none';
-      document.querySelector('.ablauf-steps').classList.add('ablauf-3');
+      // Jobber: Seite bleibt sichtbar, nur "Inserat erstellen"-Schritt ausblenden
+      const inserierenSchritt = document.getElementById('acht-schritt-inserieren');
+      if (inserierenSchritt) inserierenSchritt.style.display = 'none';
     }
   }
 
@@ -1362,18 +1259,30 @@ function toggleFaq(btn) {
   }, 3000);
 })();
 
-function submitAnfrage(e) {
-  e.preventDefault();
-  const btn = document.getElementById('anfBtn');
-  btn.textContent = 'Anfrage erhalten! Wir melden uns.';
-  btn.style.background = '#1a8c5c';
-  btn.disabled = true;
-}
-
 const obs = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80); });
 }, { threshold: 0.08 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+// ── SUB-NAV SCROLLSPY ──
+(function () {
+  const subnavLinks = document.querySelectorAll('.ag-subnav-link');
+  const subnavSections = ['ablauf', 'anmeldung', 'weitere-infos', 'vermittlungsgebuehr']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  if (!subnavLinks.length || !subnavSections.length) return;
+
+  function setActiveSubnav(id) {
+    subnavLinks.forEach(l => l.classList.toggle('active', l.dataset.target === id));
+  }
+
+  const subnavObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if (entry.isIntersecting) setActiveSubnav(entry.target.id); });
+  }, { rootMargin: '-140px 0px -70% 0px', threshold: 0 });
+
+  subnavSections.forEach(sec => subnavObserver.observe(sec));
+  setActiveSubnav('ablauf');
+})();
 </script>
 <script src="cookies.js"></script>
 
