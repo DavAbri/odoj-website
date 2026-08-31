@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script src="auth-check.js"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Für Arbeitnehmer – Dein Tagesjob in Vorarlberg | ODOJ</title>
+<meta name="description" content="So findest du als Arbeitnehmer über ODOJ deinen Tagesjob: In 7 Schritten von der Registrierung bis zur Auszahlung – kostenlos, transparent und rechtssicher.">
+<meta name="robots" content="index, follow">
+<meta name="author" content="ODOJ – One Day One Job">
+<meta name="geo.region" content="AT-8">
+<meta name="geo.placename" content="Vorarlberg, Österreich">
+<link rel="canonical" href="https://odoj.at/arbeitnehmer.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ODOJ – One Day One Job">
+<meta property="og:url" content="https://odoj.at/arbeitnehmer.html">
+<meta property="og:image" content="https://odoj.at/og-image.svg">
+<meta property="og:title" content="Für Arbeitnehmer | ODOJ – Tagesjobs Vorarlberg">
+<meta property="og:description" content="So findest du als Arbeitnehmer über ODOJ deinen Tagesjob: In 7 Schritten von der Registrierung bis zur Auszahlung.">
+<meta property="og:locale" content="de_AT">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1b3e">
+<link rel="stylesheet" href="shared.css">
+<style>
+
+/* ── INFO SEKTIONEN ── */
+.info-section { background: var(--white); }
+.info-section-alt { background: var(--off); }
+.info-section-inner { max-width: 1100px; margin: 0 auto; }
+
+/* Gelbes Infofeld */
+.ag-hinweis-gelb {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: #FFF4E0; border: 1.5px solid rgba(232,160,32,.4);
+  border-radius: var(--r-md); padding: 22px 26px; margin: 0 0 12px;
+}
+.ag-hinweis-gelb-ico {
+  flex-shrink: 0; width: 38px; height: 38px;
+  background: rgba(232,160,32,.25); border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center; color: #A05000;
+}
+.ag-hinweis-gelb h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.ag-hinweis-gelb p  { font-size: 13px; color: #6B4A16; line-height: 1.65; font-weight: 400; margin: 0; }
+
+/* In 7 Schritten – Timeline */
+.acht-schritte-inner { max-width: 760px; margin: 52px auto 0; }
+.acht-schritt { display: flex; gap: 22px; position: relative; padding-bottom: 36px; }
+.acht-schritt:last-child { padding-bottom: 0; }
+.acht-schritt::before {
+  content: ''; position: absolute; left: 19px; top: 44px; bottom: -36px;
+  width: 2px; background: var(--gray-lt);
+}
+.acht-schritt:last-child::before { display: none; }
+.acht-schritt-num {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--navy); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px;
+  position: relative; z-index: 1;
+}
+.acht-schritt-body { flex: 1; padding-top: 4px; }
+.acht-schritt-body h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.acht-schritt-body p  { font-size: 14px; color: var(--text-lt); line-height: 1.7; font-weight: 300; margin: 0 0 6px; }
+.acht-schritt-body p:last-child { margin-bottom: 0; }
+.as-list { list-style: none; padding: 0; margin: 4px 0 10px; }
+.as-list li { font-size: 14px; color: var(--text-lt); line-height: 1.8; font-weight: 300; }
+.acht-schritt-done {
+  margin-top: 10px; display: inline-flex; align-items: center; gap: 8px;
+  background: #E6F5EE; color: #1a7a50; border: 1px solid rgba(26,122,80,.25);
+  border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.info-card-note {
+  margin-top: 12px; background: #FFF8E8;
+  border: 1px solid rgba(232,160,32,.3); border-radius: 6px;
+  padding: 10px 12px; font-size: 12px; color: #7A4A00; line-height: 1.5;
+}
+
+/* FAQ – Accordion (helles Theme, wie "Weitere Informationen") */
+.wi-list { max-width: 780px; margin: 52px auto 0; }
+.wi-item { border-bottom: 1px solid var(--gray-lt); }
+.wi-item:last-child { border-bottom: none; }
+.wi-question {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 0; cursor: pointer; gap: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 700; color: var(--text);
+  background: none; border: none; width: 100%; text-align: left;
+  transition: color .2s;
+}
+.wi-question:hover { color: var(--accent); }
+.wi-item .faq-chevron { flex-shrink: 0; font-size: 18px; color: var(--accent); transition: transform .3s; }
+.wi-item.open .faq-chevron { transform: rotate(180deg); }
+.wi-answer {
+  max-height: 0; overflow: hidden;
+  font-size: 14px; color: var(--text-lt);
+  line-height: 1.8; font-weight: 300;
+  transition: max-height .4s ease, padding-bottom .3s;
+}
+.wi-item.open .wi-answer { max-height: 600px; padding-bottom: 22px; }
+
+@media (max-width: 540px) {
+  .acht-schritt { gap: 14px; }
+  .acht-schritt-num { width: 34px; height: 34px; font-size: 13px; }
+  .acht-schritt::before { left: 16px; top: 38px; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>O<span>J</span><em>One Day One Job</em></a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitnehmer.html" class="active">Für Arbeitnehmer</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="infos.html">Infos</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitnehmer.html" class="active">Für Arbeitnehmer</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="infos.html">Infos</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-glow"></div>
+  <div class="page-hero-inner">
+    <span class="page-hero-label">Für Arbeitnehmer</span>
+    <h1>Dein Tagesjob.<br><em>Einfach erklärt.</em></h1>
+    <p>Vom Account bis zur Auszahlung – so funktioniert ODOJ für dich als Jobber.</p>
+  </div>
+</div>
+
+<!-- HINWEIS: ODOJ IST VERMITTLER -->
+<section class="info-section" style="padding-bottom:0">
+  <div class="info-section-inner">
+    <div class="ag-hinweis-gelb fade-in">
+      <div class="ag-hinweis-gelb-ico">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </div>
+      <div>
+        <h3>ODOJ ist Vermittler – nicht dein Arbeitgeber</h3>
+        <p>ODOJ ist eine reine Vermittlungsplattform und nicht dein Arbeitgeber. Dein Dienstverhältnis entsteht direkt zwischen dir und dem jeweiligen Unternehmen.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IN 7 SCHRITTEN ZU DEINEM TAGESJOB -->
+<section class="acht-schritte">
+  <div class="fade-in">
+    <span class="section-label">So einfach geht's</span>
+    <h2 class="section-title">In 7 Schritten zu<br>deinem Tagesjob</h2>
+    <p class="section-sub">Von der Registrierung bis zur Auszahlung – wir begleiten dich durch den gesamten Ablauf.</p>
+  </div>
+
+  <div class="acht-schritte-inner">
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">1</div>
+      <div class="acht-schritt-body">
+        <h4>Account erstellen</h4>
+        <p>Für die Registrierung sind zunächst nur wenige grundlegende Angaben notwendig. Du musst dein Profil nicht sofort vollständig ausfüllen und kannst dir direkt einen ersten Überblick über verfügbare Jobs verschaffen.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">2</div>
+      <div class="acht-schritt-body">
+        <h4>Profil vervollständigen</h4>
+        <p>Bevor du dich auf einen Job bewirbst, müssen zusätzliche Angaben hinterlegt werden: Wohnadresse, Staatsangehörigkeit, Sozialversicherungsnummer.</p>
+        <p>Diese Informationen werden für die korrekte Anmeldung durch den Arbeitgeber benötigt. Gleichzeitig ermöglichen sie ODOJ, einen bereits weitgehend vorausgefüllten Dienstvertrag bereitzustellen und den späteren Ablauf zu vereinfachen.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">3</div>
+      <div class="acht-schritt-body">
+        <h4>Job finden &amp; bewerben</h4>
+        <p>Passenden Tagesjob auswählen und mit wenigen Klicks bewerben. Bereits vor der Bewerbung sind die wichtigsten Informationen wie Tätigkeit, Arbeitsort, Einsatzzeit und Entgelt ersichtlich.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">4</div>
+      <div class="acht-schritt-body">
+        <h4>Zusage &amp; Nachrichten erhalten</h4>
+        <p>Bei einer Zusage, Absage oder Änderung wirst du automatisch per E-Mail informiert. Zusätzlich findest du alle relevanten Informationen unter „Nachrichten". Dort kannst du dich bei Fragen auch direkt mit dem Arbeitgeber austauschen.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">5</div>
+      <div class="acht-schritt-body">
+        <h4>Dienstvertrag abschließen</h4>
+        <p>Kommt ein Einsatz zustande, wird zwischen dir und dem Arbeitgeber ein Dienstvertrag geschlossen. ODOJ kann dafür auf Basis der hinterlegten Daten eine vorausgefüllte Vorlage bereitstellen.</p>
+        <ul class="as-list">
+          <li>→ Vertrag von Arbeitgeber und Arbeitnehmer unterschreiben</li>
+          <li>→ Vertragsinhalte vor Unterzeichnung kontrollieren</li>
+          <li>→ Eine Kopie des unterschriebenen Vertrages aufbewahren</li>
+          <li>→ ODOJ bleibt Vermittler und ist keine Vertragspartei</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">6</div>
+      <div class="acht-schritt-body">
+        <h4>Arbeiten &amp; Arbeitszeit dokumentieren</h4>
+        <p>Zum vereinbarten Zeitpunkt wird die Tätigkeit beim Arbeitgeber aufgenommen. Beginn, Ende und tatsächlich geleistete Arbeitszeit sollten nachvollziehbar dokumentiert werden. Abweichungen von der ursprünglich vereinbarten Arbeitszeit müssen festgehalten werden.</p>
+      </div>
+    </div>
+
+    <div class="acht-schritt fade-in">
+      <div class="acht-schritt-num">7</div>
+      <div class="acht-schritt-body">
+        <h4>Abschluss bestätigen &amp; Entgelt erhalten</h4>
+        <p>Nach dem Einsatz bestätigen Arbeitgeber und Arbeitnehmer den Abschluss sowie die tatsächlich geleistete Arbeitszeit. Anschließend erfolgt die Abrechnung und Auszahlung des vereinbarten Entgelts durch den Arbeitgeber bzw. über den vorgesehenen Zahlungsprozess.</p>
+        <div class="acht-schritt-done">Geschafft – dein Tagesjob ist abgeschlossen. ✓</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="info-section info-section-alt">
+  <div class="info-section-inner">
+    <div class="fade-in">
+      <span class="section-label">Häufige Fragen</span>
+      <h2 class="section-title">FAQ</h2>
+    </div>
+
+    <div class="wi-list">
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          Muss ich ODOJ etwas bezahlen?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Nein. Die Nutzung von ODOJ ist für Arbeitnehmer kostenlos. Die Vermittlungsgebühr wird vom Arbeitgeber getragen.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          Kann ich ODOJ nutzen, wenn ich Schüler bzw. unter 18 Jahre alt bin?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Ja, grundsätzlich können auch Jugendliche Tagesjobs über ODOJ finden. Für Minderjährige gelten jedoch besondere gesetzliche Bestimmungen, beispielsweise hinsichtlich Arbeitszeiten, Ruhezeiten und erlaubter Tätigkeiten. Deshalb können bestimmte Jobs erst ab 18 Jahren verfügbar sein.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          Kann ich ODOJ nutzen, wenn ich selbstständig bin oder ein Gewerbe habe?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Die über ODOJ angebotenen Jobs sind als reguläre Dienstverhältnisse zwischen Arbeitnehmer und Arbeitgeber vorgesehen. Eine bestehende Selbstständigkeit schließt ein zusätzliches Dienstverhältnis grundsätzlich nicht aus. Je nach persönlicher Situation können jedoch zusätzliche sozialversicherungs- oder steuerrechtliche Aspekte relevant sein.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          Bin ich bei einem Tagesjob versichert?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Bei einem ordnungsgemäß angemeldeten Dienstverhältnis besteht der gesetzlich vorgesehene Sozialversicherungsschutz. Für die korrekte und rechtzeitige Anmeldung ist der jeweilige Arbeitgeber verantwortlich.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          Muss ich mein Einkommen selbst versteuern?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>Bei einem Dienstverhältnis übernimmt grundsätzlich der Arbeitgeber die Lohnverrechnung und führt eine gegebenenfalls anfallende Lohnsteuer ab. Bei mehreren Beschäftigungen bzw. bestimmten Einkommenskonstellationen kann es allerdings im Nachhinein zu einer Arbeitnehmerveranlagung bzw. Nachversteuerung kommen.</p>
+        </div>
+      </div>
+
+      <div class="wi-item fade-in">
+        <button class="wi-question" onclick="toggleFaq(this)">
+          Was passiert, wenn es Probleme mit einem Arbeitgeber gibt?
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="wi-answer">
+          <p>ODOJ stellt die Plattform für Vermittlung und Kommunikation bereit, ist jedoch nicht selbst Arbeitgeber oder Vertragspartei. Bei Unstimmigkeiten sollte zunächst der direkte Austausch mit dem Arbeitgeber gesucht werden. Die über ODOJ dokumentierten Job-, Nachrichten- und Vertragsinformationen können dabei helfen, den vereinbarten Ablauf nachvollziehbar zu machen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>O<span>J</span></a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg. Fair, schnell, unkompliziert.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Für Jobsuchende</h4>
+      <ul><li><a href="jobs.html">Jobs ansehen</a></li></ul>
+    </div>
+    <div class="footer-col">
+      <h4>Für Unternehmen</h4>
+      <ul><li><a href="arbeitgeber.html">Personal anfragen</a></li></ul>
+    </div>
+    <div class="footer-col">
+      <h4>Rechtliches</h4>
+      <ul>
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+        <li><a href="agb.html">AGB</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 ODOJ – One Day One Job.</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script src="notifications.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+function toggleFaq(btn) {
+  btn.parentElement.classList.toggle('open');
+}
+
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+<script src="cookies.js"></script>
+
+</body>
+</html>
