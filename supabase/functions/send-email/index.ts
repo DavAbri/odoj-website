@@ -25,7 +25,7 @@ function baseTemplate(content: string): string {
   <!-- HEADER -->
   <tr><td style="background:#0f1f3d;padding:22px 32px;text-align:center">
     <span style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
-      O<span style="color:#E8A020">D</span>OJ
+      O<span style="color:#E8A020">D</span>O<span style="color:#E8A020">J</span>
     </span>
   </td></tr>
   <!-- BODY -->

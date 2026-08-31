@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const RESEND_API_KEY = "re_QpgBH26G_MnvP3tXvxFaL3sE79sm6bnBK"
-const FROM_EMAIL = "info@odoj.at"
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "info@odoj.at"
 const FROM_NAME = "ODOJ – One Day One Job"
-const SITE_URL = "https://odoj.at"
+const SITE_URL = Deno.env.get("SITE_URL") || "https://odoj.at"
 
 serve(async (req) => {
   const corsHeaders = {
@@ -83,7 +83,7 @@ serve(async (req) => {
         <tr>
           <td style="background:#0B1F3A;padding:32px 40px;text-align:center;">
             <div style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-1px;">
-              O<span style="color:#E8A020;">D</span>OJ
+              O<span style="color:#E8A020;">D</span>O<span style="color:#E8A020;">J</span>
             </div>
             <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px;">One Day One Job</div>
           </td>

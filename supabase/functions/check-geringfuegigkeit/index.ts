@@ -29,7 +29,7 @@ function warnungTemplate(vorname: string, betrag: number, grenze: number): strin
 <tr><td align="center">
 <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 6px 30px rgba(0,0,0,.10)">
   <tr><td style="background:#0f1f3d;padding:22px 32px;text-align:center">
-    <span style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px">O<span style="color:#E8A020">D</span>OJ</span>
+    <span style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px">O<span style="color:#E8A020">D</span>O<span style="color:#E8A020">J</span></span>
   </td></tr>
   <tr><td style="padding:36px 32px 28px">
     <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Wichtiger Hinweis</p>
