@@ -38,7 +38,8 @@ async function odojCountUnread(userId) {
       .from('nachrichten')
       .select('id', { count: 'exact', head: true })
       .eq('empfaenger_id', userId)
-      .eq('gelesen', false);
+      .eq('gelesen', false)
+      .not('bewerbung_id', 'is', null);
     return count || 0;
   } catch (_) { return 0; }
 }
