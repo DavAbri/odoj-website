@@ -91,9 +91,13 @@ function _setMobileNavBadge(elId, count) {
 }
 
 // Nachrichten-Badge aktualisieren (wird auch vom Polling gerufen)
+// Erscheint sowohl beim Nachrichten-Link als auch am Profil-Zugang,
+// da man auch über "Profil" zu den Nachrichten gelangt.
 function odojUpdateUnreadDot(count) {
   _setNavBadge('nav-dd-nachrichten', count);
+  _setNavBadge('nav-profil-trigger', count);
   _setMobileNavBadge('nav-mobile-nachrichten', count);
+  _setMobileNavBadge('nav-mobile-profil', count);
 }
 
 // Badge-CSS einmalig injizieren
@@ -218,7 +222,7 @@ async function odojInitNav() {
 
     // ── Mobile: Profil-Bereich (wie ursprünglich) ──
     if (mobileEl) mobileEl.innerHTML =
-      '<a href="profil.html" class="nav-user-name-mobile">✓ ' + displayName + '</a>' +
+      '<a href="profil.html" class="nav-user-name-mobile" id="nav-mobile-profil">✓ ' + displayName + '</a>' +
       '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen →</a>';
 
     // ── Mobile: Statische Links je nach Rolle ausblenden ──
@@ -241,7 +245,10 @@ async function odojInitNav() {
       msgA.id          = 'nav-mobile-nachrichten';
       msgA.textContent = 'Nachrichten';
       navMobile.insertBefore(msgA, mobileEl);
-      if (unreadCount > 0) _setMobileNavBadge('nav-mobile-nachrichten', unreadCount);
+      if (unreadCount > 0) {
+        _setMobileNavBadge('nav-mobile-nachrichten', unreadCount);
+        _setMobileNavBadge('nav-mobile-profil', unreadCount);
+      }
 
       if (rolle === 'jobber' && !document.getElementById('nav-mobile-meine-bew')) {
         const mjA = document.createElement('a');
@@ -261,8 +268,8 @@ async function odojInitNav() {
       }
     }
 
-    // Desktop-Badges setzen
-    _setNavBadge('nav-dd-nachrichten', unreadCount);
+    // Nachrichten-Badges setzen (Nachrichten-Link + Profil-Zugang, Desktop & Mobile)
+    odojUpdateUnreadDot(unreadCount);
 
     // Alle 30s Badges aktualisieren
     setInterval(async () => {
