@@ -797,7 +797,7 @@ async function applyForJob(jobId, agId, btnEl, jobTitel) {
 }
 
 // ── JOB CARD HTML ──
-function renderJobCard(job, locked) {
+function renderJobCard(job, locked, hideApply) {
   const b = JOB_BRANCHEN[job.branche] || { label: job.branche || '–', cls: '' };
   const datum = job.datum
     ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long' })
@@ -807,7 +807,9 @@ function renderJobCard(job, locked) {
   const plaetze = job.plaetze === 1 ? '1 Platz frei' : (job.plaetze + ' Plätze frei');
 
   let applyHtml;
-  if (locked) {
+  if (hideApply) {
+    applyHtml = '';
+  } else if (locked) {
     applyHtml = '<a href="login.html" class="job-apply" onclick="event.stopPropagation()">Bewerben</a>';
   } else if (_appliedJobIds.has(job.id)) {
     applyHtml = '<button class="job-apply job-applied" style="background:#1a7a50;cursor:default" disabled onclick="event.stopPropagation()">Beworben</button>';
@@ -849,7 +851,7 @@ function renderJobCard(job, locked) {
 }
 
 // ── JOBS RENDERN ──
-function renderJobs(jobs, unlocked) {
+function renderJobs(jobs, unlocked, hideApply) {
   window._odojJobsUnlocked = unlocked;
   const grid = document.getElementById('jobsGrid');
   const loadEl = document.getElementById('jobs-loading');
@@ -867,7 +869,7 @@ function renderJobs(jobs, unlocked) {
     filteredJobs = jobs.filter(job => !job.mindestalter || job.mindestalter <= _jobberAlter);
   }
 
-  grid.innerHTML = filteredJobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
+  grid.innerHTML = filteredJobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3, hideApply)).join('');
 
   // Filter anwenden (behält aktive Branche + Alter)
   _applyFilters();
@@ -949,7 +951,8 @@ async function checkJobsAuth() {
 
     if (rolle === 'arbeitgeber') {
       document.getElementById('ag-info-banner').style.display = 'flex';
-      renderJobs(allJobs, false);
+      document.getElementById('jobs-lock-banner').style.display = 'none';
+      renderJobs(allJobs, true, true);
     } else {
       // Bereits-beworben-IDs laden
       const { data: bewerbungen } = await odojSb
