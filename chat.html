@@ -1058,13 +1058,19 @@ async function loadMessages(silent) {
     } else if (isVertragOK) {
       const vMatch3 = m.nachricht.match(/vertrag-ansehen\.html\?id=([a-f0-9-]{36})/i);
       const vId3    = vMatch3 ? vMatch3[1] : null;
+      const vertragOkBody = _chatRolle === 'arbeitgeber'
+        ? 'Der Jobber hat dem Dienstvertrag zugestimmt. Bitte drucken Sie den Vertrag aus und lassen Sie ihn handschriftlich unterschreiben.'
+        : 'Du hast dem Dienstvertrag zugestimmt. Du kannst ihn direkt vor Ort bei Antritt deines Jobs unterschreiben.';
+      const vertragOkBtn = _chatRolle === 'arbeitgeber' && vId3
+        ? `<a href="vertrag-ansehen.html?id=${vId3}" class="btn-vertrag-open" style="margin-top:12px;background:#1a7a50" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h9l3 3v14H6v-3"/><path d="M6 18H3V8h3"/></svg> Vertrag drucken</a>`
+        : '';
       html += `<div class="msg-bubble msg-vertrag" style="background:#E8F5EE;border-color:#A8D5BB">
         <div class="msg-vertrag-title" style="color:#1a7a50">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           Vertrag bestätigt
         </div>
-        <div class="msg-vertrag-body">Der Jobber hat dem Dienstvertrag zugestimmt. Bitte drucken Sie den Vertrag aus und lassen Sie ihn handschriftlich unterschreiben.</div>
-        ${vId3 ? `<a href="vertrag-ansehen.html?id=${vId3}" class="btn-vertrag-open" style="margin-top:12px;background:#1a7a50" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h9l3 3v14H6v-3"/><path d="M6 18H3V8h3"/></svg> Vertrag drucken</a>` : ''}
+        <div class="msg-vertrag-body">${vertragOkBody}</div>
+        ${vertragOkBtn}
         <div class="msg-time">${time}</div>
       </div>`;
     } else if (isVertragAbg) {
