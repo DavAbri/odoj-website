@@ -449,16 +449,32 @@
       if (e.key === 'Escape') closeLoginModal();
     });
 
-    function checkCode() {
-      const val = codeInput.value.trim().toUpperCase();
-      if (val === '2208') {
-        localStorage.setItem('odoj_access', 'granted');
-        window.location.replace('index.html');
-      } else {
+    let _gateCheckInFlight = false;
+    async function checkCode() {
+      if (_gateCheckInFlight) return;
+      const val = codeInput.value.trim();
+      if (!val) return;
+      _gateCheckInFlight = true;
+      try {
+        const { data, error } = await _sbGate.functions.invoke('check-gate-code', {
+          body: { code: val }
+        });
+        if (!error && data?.ok) {
+          localStorage.setItem('odoj_access', 'granted');
+          window.location.replace('index.html');
+          return;
+        }
         codeInput.classList.add('error');
         codeError.textContent = 'Falscher Zugangscode. Bitte erneut versuchen.';
         codeInput.value = '';
         codeInput.focus();
+      } catch (_) {
+        codeInput.classList.add('error');
+        codeError.textContent = 'Falscher Zugangscode. Bitte erneut versuchen.';
+        codeInput.value = '';
+        codeInput.focus();
+      } finally {
+        _gateCheckInFlight = false;
       }
     }
 
