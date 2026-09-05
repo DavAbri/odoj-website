@@ -25,6 +25,43 @@ async function odojGetProfile(userId) {
   } catch (_) { return null; }
 }
 
+// Holt bei der Registrierung erfasste Profildaten nach, falls der Insert
+// damals an RLS scheiterte (kein Session vor E-Mail-Bestätigung). Läuft auf
+// jeder Seite mit Session, nicht nur im Login-Formular - deckt damit auch
+// den Fall ab, dass der Nutzer über den Bestätigungslink direkt eingeloggt
+// auf der Seite landet, ohne das Login-Formular je zu durchlaufen.
+//
+// Nutzt UPSERT statt INSERT: Der DB-Trigger handle_new_user() legt bei jeder
+// Registrierung bereits eine leere Profile-Zeile an (nur user_id/email/rolle).
+// Ein reines "nur einfügen wenn nicht vorhanden" würde die vollständigen
+// Registrierungsdaten dadurch nie mehr schreiben, da ja schon eine (leere)
+// Zeile existiert.
+async function odojRecoverPendingProfile(userId) {
+  const pendingRaw = localStorage.getItem('odoj_pending_profile');
+  if (!pendingRaw || !userId) return;
+  try {
+    const { data: existing } = await odojSb
+      .from('Profile').select('profil_vollstaendig').eq('user_id', userId).maybeSingle();
+    if (existing?.profil_vollstaendig) {
+      // Profil wurde vom Nutzer bereits selbst vervollständigt - alte
+      // Registrierungsdaten nicht mehr drüberschreiben.
+      localStorage.removeItem('odoj_pending_profile');
+      return;
+    }
+    const pendingInsert = JSON.parse(pendingRaw);
+    const { error } = await odojSb
+      .from('Profile')
+      .upsert({ ...pendingInsert, user_id: userId }, { onConflict: 'user_id' });
+    if (error) {
+      console.error('Nachholen der Registrierungsdaten fehlgeschlagen:', error.message, error);
+      return;
+    }
+    localStorage.removeItem('odoj_pending_profile');
+  } catch (e) {
+    console.error('Fehler beim Nachholen der Registrierungsdaten:', e);
+  }
+}
+
 async function odojLogout() {
   await odojSb.auth.signOut();
   localStorage.removeItem('odoj_rolle');
@@ -162,6 +199,7 @@ async function odojInitNav() {
   const mobileEl = document.getElementById('nav-mobile-auth');
 
   if (session) {
+    await odojRecoverPendingProfile(session.user.id);
     const profile = await odojGetProfile(session.user.id);
     const rolle   = profile?.rolle
                     || session.user.user_metadata?.rolle

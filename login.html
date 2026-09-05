@@ -740,25 +740,7 @@ async function doLogin(e) {
   }
 
   // Ausstehende Profildaten aus Registrierung nachholen (falls E-Mail-Bestätigung nötig war)
-  const pendingRaw = localStorage.getItem('odoj_pending_profile');
-  if (pendingRaw) {
-    try {
-      const pendingInsert = JSON.parse(pendingRaw);
-      // Nur einfügen wenn kein Profil existiert
-      if (!profile) {
-        const { error: pendingErr } = await odojSb.from('Profile').insert({
-          ...pendingInsert,
-          user_id: data.user.id   // Sicherstellen dass user_id stimmt
-        });
-        if (pendingErr) console.warn('Ausstehender Profile-Insert fehlgeschlagen:', pendingErr.message);
-        else console.log('Ausstehendes Profil erfolgreich gespeichert.');
-      }
-      localStorage.removeItem('odoj_pending_profile');
-    } catch (e) {
-      console.warn('Fehler beim Nachholen der Profildaten:', e);
-      localStorage.removeItem('odoj_pending_profile');
-    }
-  }
+  await odojRecoverPendingProfile(data.user.id);
 
   odojSaveRolle(tatsaechlicheRolle);
   redirectAfterAuth(tatsaechlicheRolle);

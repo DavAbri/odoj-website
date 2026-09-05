@@ -1104,6 +1104,31 @@ async function printAuszahlung(r, agFirmaName) {
   win.document.close();
 }
 
+// Gleiche Länderliste wie im Registrierungsformular (login.html)
+const ODOJ_LAENDER = [
+  'Österreich','Deutschland','Schweiz','Liechtenstein','Italien',
+  '──────────',
+  'Afghanistan','Ägypten','Albanien','Algerien','Andorra','Angola','Argentinien','Armenien','Aserbaidschan','Äthiopien',
+  'Australien','Bangladesch','Belgien','Bosnien und Herzegowina','Brasilien','Bulgarien','Chile','China','Dänemark',
+  'Estland','Finnland','Frankreich','Georgien','Ghana','Griechenland','Indien','Indonesien','Irak','Iran','Irland',
+  'Israel','Japan','Jordanien','Kanada','Kasachstan','Kolumbien','Kosovo','Kroatien','Lettland','Libanon','Litauen',
+  'Luxemburg','Malta','Marokko','Mazedonien (Nordmazedonien)','Mexiko','Moldau','Montenegro','Neuseeland','Niederlande','Nigeria','Norwegen',
+  'Pakistan','Philippinen','Polen','Portugal','Rumänien','Russland','Schweden','Serbien','Slowakei','Slowenien',
+  'Somalia','Spanien','Sri Lanka','Südafrika','Südkorea','Syrien','Thailand','Tschechien','Tunesien','Türkei',
+  'Ukraine','Ungarn','Vereinigte Staaten','Vereinigtes Königreich','Vietnam','Sonstige'
+];
+function _renderLaenderOptions(selected) {
+  let html = `<option value="">Bitte wählen…</option>`;
+  ODOJ_LAENDER.forEach(land => {
+    if (land === '──────────') { html += `<option disabled>──────────</option>`; return; }
+    const label = land === 'Vereinigte Staaten' ? 'Vereinigte Staaten (USA)'
+                : land === 'Mazedonien (Nordmazedonien)' ? 'Nordmazedonien'
+                : land;
+    html += `<option value="${escH(land)}"${land === selected ? ' selected' : ''}>${escH(label)}</option>`;
+  });
+  return html;
+}
+
 // ─────────────────────────────────────────
 // JOBBER PROFIL
 // ─────────────────────────────────────────
@@ -1122,6 +1147,7 @@ function renderJobber(session, profile) {
   const telefon  = profile?.telefon      || '';
   const iban     = profile?.iban         || '';
   const geburt   = profile?.geburtsdatum || '';
+  const staatsangehoerigkeit = profile?.staatsangehoerigkeit || '';
   const bio      = profile?.bio          || '';
   const verfueg  = Array.isArray(profile?.verfuegbarkeit) ? profile.verfuegbarkeit : [];
   const branchen = Array.isArray(profile?.branchen)       ? profile.branchen       : [];
@@ -1197,6 +1223,10 @@ function renderJobber(session, profile) {
             <span id="jb-info-telefon">${escH(telefon) || '–'}</span>
           </div>
           <div class="profil-info-item">
+            <label>Staatsangehörigkeit</label>
+            <span id="jb-info-staatsangehoerigkeit">${escH(staatsangehoerigkeit) || '–'}</span>
+          </div>
+          <div class="profil-info-item">
             <label>IBAN <span style="font-weight:300;text-transform:none;letter-spacing:0">(für Lohnüberweisungen)</span></label>
             <span id="jb-info-iban">${escH(iban) || '–'}</span>
           </div>
@@ -1225,6 +1255,10 @@ function renderJobber(session, profile) {
               <label>Telefonnummer</label>
               <input type="tel" id="jb-edit-telefon" value="${escH(telefon)}" placeholder="+43 660 ...">
             </div>
+          </div>
+          <div class="profil-field">
+            <label>Staatsangehörigkeit</label>
+            <select id="jb-edit-staatsangehoerigkeit">${_renderLaenderOptions(staatsangehoerigkeit)}</select>
           </div>
           <div class="profil-field">
             <label>IBAN <span style="font-weight:300;text-transform:none;letter-spacing:0">(für Lohnüberweisungen vom Arbeitgeber)</span></label>
@@ -1488,6 +1522,7 @@ async function saveJbPers(userId) {
   const nachname = document.getElementById('jb-edit-nachname').value.trim();
   const geburt   = document.getElementById('jb-edit-geburt').value;
   const telefon  = document.getElementById('jb-edit-telefon').value.trim();
+  const staatsangehoerigkeit = document.getElementById('jb-edit-staatsangehoerigkeit').value;
   const iban     = document.getElementById('jb-edit-iban').value.trim().toUpperCase().replace(/\s+/g, '');
   const errEl    = document.getElementById('jb-pers-error');
   const btn      = document.getElementById('jb-pers-btn');
@@ -1505,7 +1540,7 @@ async function saveJbPers(userId) {
   }
 
   btn.disabled = true; btn.textContent = 'Speichern…';
-  const { error } = await _saveProfileFields(userId, { vorname, nachname, geburtsdatum: geburt || null, telefon, iban: iban || null });
+  const { error } = await _saveProfileFields(userId, { vorname, nachname, geburtsdatum: geburt || null, telefon, staatsangehoerigkeit: staatsangehoerigkeit || null, iban: iban || null });
   btn.disabled = false; btn.textContent = 'Speichern';
 
   if (error) { errEl.textContent = 'Fehler: ' + error.message; errEl.style.display = 'block'; return; }
@@ -1516,6 +1551,7 @@ async function saveJbPers(userId) {
   document.getElementById('jb-info-vorname').textContent   = vorname || '–';
   document.getElementById('jb-info-nachname').textContent  = nachname || '–';
   document.getElementById('jb-info-telefon').textContent   = telefon || '–';
+  document.getElementById('jb-info-staatsangehoerigkeit').textContent = staatsangehoerigkeit || '–';
   document.getElementById('jb-info-iban').textContent      = iban || '–';
   if (geburt) {
     document.getElementById('jb-info-geburt').textContent =
@@ -2087,22 +2123,16 @@ async function initProfil() {
   const session = await odojGetSession();
   if (!session) { window.location.href = 'login.html'; return; }
 
-  console.log('[Profile] Eingeloggter User:', session.user.id, session.user.email);
-
-  // Tabellen-Struktur debuggen: ersten Row laden um Spaltennamen zu sehen
-  const { data: sampleRow, error: sampleErr } = await odojSb
-    .from('Profile').select('*').limit(1);
-  console.log('[Profile] Tabellen-Struktur (1 Row):', sampleRow, '| Fehler:', sampleErr);
-  if (sampleRow && sampleRow[0]) {
-    console.log('[Profile] Vorhandene Spalten:', Object.keys(sampleRow[0]));
-  }
+  // Falls direkt nach der Registrierung über den Bestätigungslink hierher
+  // navigiert wurde, bevor odojInitNav() auf der vorherigen Seite fertig war.
+  await odojRecoverPendingProfile(session.user.id);
 
   const { data: profile, error: profileErr } = await odojSb
     .from('Profile')
     .select('*')
     .eq('user_id', session.user.id)
     .maybeSingle();
-  console.log('[Profile] Eigenes Profil:', profile, '| Fehler:', profileErr);
+  if (profileErr) console.error('Fehler beim Laden des eigenen Profils:', profileErr.message, profileErr);
 
   const rolle = profile?.rolle
     || session.user.user_metadata?.rolle
