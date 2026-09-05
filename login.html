@@ -648,6 +648,29 @@ function isPasswordStrongEnough(pw) {
 }
 const PASSWORD_HINWEIS = 'Passwort muss mind. 8 Zeichen haben und Groß-, Kleinbuchstabe, Zahl sowie Sonderzeichen enthalten.';
 
+// Wandelt technische Supabase-Fehlermeldungen bei der Registrierung in
+// verständliche, nutzerfreundliche Texte um. Die echte Fehlermeldung wird
+// immer zusätzlich per console.error geloggt, damit sie zur Diagnose
+// erhalten bleibt.
+function friendlyRegisterError(error) {
+  const msg = (error?.message || '').toLowerCase();
+  if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
+    return 'Für diese E-Mail-Adresse existiert bereits ein Konto. Bitte melde dich stattdessen an.';
+  }
+  if (msg.includes('password')) {
+    return PASSWORD_HINWEIS;
+  }
+  if (msg.includes('invalid') && msg.includes('email')) {
+    return 'Bitte gib eine gültige E-Mail-Adresse ein.';
+  }
+  if (msg.includes('rate limit') || msg.includes('too many')) {
+    return 'Zu viele Versuche. Bitte warte kurz und versuche es erneut.';
+  }
+  // Unerwarteter/serverseitiger Fehler (z.B. Datenbankfehler) - echte Ursache
+  // steht in der Konsole, Nutzer bekommt eine handlungsfähige Meldung.
+  return 'Bei der Registrierung ist ein technisches Problem aufgetreten. Bitte versuche es in ein paar Minuten erneut oder kontaktiere uns unter info@odoj.at, falls es weiterhin nicht funktioniert.';
+}
+
 function showRegError(msg) {
   const errEl = document.getElementById('reg-error');
   errEl.textContent = msg;
@@ -819,7 +842,8 @@ async function doRegister(e) {
   });
 
   if (error) {
-    showRegError(error.message);
+    console.error('Registrierung fehlgeschlagen (auth.signUp):', error.message, error);
+    showRegError(friendlyRegisterError(error));
     return;
   }
 
@@ -832,11 +856,16 @@ async function doRegister(e) {
     };
     const { error: pe } = await odojSb.from('Profile').insert(insertData);
     if (pe) {
-      console.warn('Profile insert (Registrierung):', pe.message);
+      console.error('Profil-Insert fehlgeschlagen (Registrierung):', pe.message, pe, insertData);
       // Falls E-Mail-Bestätigung aktiv → noch kein Session → RLS blockiert INSERT.
       // Profildaten in localStorage merken; wird beim ersten Login nachgeholt.
       if (!data.session) {
         localStorage.setItem('odoj_pending_profile', JSON.stringify(insertData));
+      } else {
+        // Session existiert bereits, Profil konnte aber nicht gespeichert werden -
+        // nicht einfach weiterleiten, sondern den Nutzer informieren.
+        showRegError('Dein Konto wurde erstellt, aber dein Profil konnte nicht vollständig gespeichert werden. Bitte melde dich an und vervollständige dein Profil, oder kontaktiere uns unter info@odoj.at.');
+        return;
       }
     }
   }
