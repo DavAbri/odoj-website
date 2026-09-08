@@ -283,6 +283,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Statistiken
       </a>
+      <a href="#" class="nav-link" data-section="nachrichten" onclick="showSection('nachrichten');return false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Nachrichten
+      </a>
     </nav>
     <div class="sidebar-footer">
       <div class="admin-badge">
@@ -338,10 +342,43 @@
           <div class="stat-value" id="stat-bew">–</div>
           <div class="stat-sub">ausstehend</div>
         </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Abgeschlossen</div>
+          <div class="stat-value" id="stat-bew-erledigt">–</div>
+          <div class="stat-sub">Vermittlungen</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Bezahlte Gebühren</div>
+          <div class="stat-value" id="stat-bezahlt">–</div>
+          <div class="stat-sub">eingegangen</div>
+        </div>
         <div class="stat-card red">
-          <div class="stat-label">Gesamtumsatz</div>
-          <div class="stat-value" id="stat-umsatz">–</div>
-          <div class="stat-sub">alle Rechnungen</div>
+          <div class="stat-label">Offene Gebühren</div>
+          <div class="stat-value" id="stat-offen">–</div>
+          <div class="stat-sub">noch nicht bezahlt</div>
+        </div>
+      </div>
+      <div class="section-header">
+        <div class="section-title">Neuregistrierungen</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Heute</div>
+          <div class="stat-value" id="stat-neu-heute">–</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Diese Woche</div>
+          <div class="stat-value" id="stat-neu-woche">–</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Diesen Monat</div>
+          <div class="stat-value" id="stat-neu-monat">–</div>
+        </div>
+      </div>
+      <div class="chart-grid" style="margin-bottom:28px">
+        <div class="chart-card">
+          <div class="chart-title">Registrierungen pro Woche (letzte 10 Wochen)</div>
+          <div class="bar-chart" id="chart-reg-woche"></div>
         </div>
       </div>
       <div class="section-header">
@@ -496,6 +533,25 @@
       </div>
     </div>
 
+    <!-- NACHRICHTEN -->
+    <div id="section-nachrichten" class="admin-section">
+      <div class="section-header"><div class="section-title">Nachrichten-Einblick</div></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">
+        Zum Nachvollziehen bei Rückfragen oder Streitigkeiten. Liste zeigt eine Zeile pro Bewerbung/Konversation.
+      </div>
+      <div class="table-controls">
+        <input type="text" class="search-input" id="nach-search" placeholder="Jobber, Firma oder Job-Titel suchen…" oninput="filterNachrichten()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Jobber</th><th>Arbeitgeber</th><th>Job</th><th>Status</th><th>Aktion</th></tr></thead>
+          <tbody id="nach-tbody">
+            <tr><td colspan="5" class="table-empty">Wird geladen…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -507,6 +563,28 @@
       <button class="modal-close" onclick="closeModal('nutzer-modal')">✕</button>
     </div>
     <div id="nutzer-modal-content"></div>
+  </div>
+</div>
+
+<!-- Job Details Modal -->
+<div class="modal-overlay" id="job-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Job Details</div>
+      <button class="modal-close" onclick="closeModal('job-modal')">✕</button>
+    </div>
+    <div id="job-modal-content"></div>
+  </div>
+</div>
+
+<!-- Nachrichten Thread Modal -->
+<div class="modal-overlay" id="thread-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Nachrichtenverlauf</div>
+      <button class="modal-close" onclick="closeModal('thread-modal')">✕</button>
+    </div>
+    <div id="thread-modal-content"></div>
   </div>
 </div>
 
@@ -562,6 +640,7 @@
     bewerbungen: { title: 'Bewerbungsübersicht',sub: 'Alle Bewerbungen' },
     rechnungen:  { title: 'Rechnungen',         sub: 'Alle Rechnungen & Zahlungen' },
     statistiken: { title: 'Statistiken',        sub: 'Auswertungen & Diagramme' },
+    nachrichten: { title: 'Nachrichten-Einblick', sub: 'Konversationen zwischen Nutzern' },
   };
 
   function showSection(name) {
@@ -585,6 +664,7 @@
     await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen()]);
     renderDashboard();
     renderStatistiken();
+    renderNachrichtenTable(allBewerbungen);
   }
 
   async function refreshData() {
@@ -664,14 +744,48 @@
     const ag     = allNutzer.filter(n => n.rolle === 'arbeitgeber').length;
     const active = allJobs.filter(j => j.status === 'aktiv').length;
     const open   = allBewerbungen.filter(b => b.status === 'ausstehend').length;
-    const umsatz = allRechnungen.reduce((s, r) => s + (parseFloat(r.betrag) || 0), 0);
+    const erledigt = allBewerbungen.filter(b => b.status === 'erledigt').length;
+    const bezahlt  = allRechnungen.filter(r => r.status === 'bezahlt').reduce((s, r) => s + (parseFloat(r.betrag) || 0), 0);
+    const offen    = allRechnungen.filter(r => r.status !== 'bezahlt').reduce((s, r) => s + (parseFloat(r.betrag) || 0), 0);
     document.getElementById('stat-nutzer').textContent    = total;
     document.getElementById('stat-nutzer-sub').textContent = jobber + ' Jobber · ' + ag + ' Arbeitgeber';
     document.getElementById('stat-jobber').textContent    = jobber;
     document.getElementById('stat-ag').textContent        = ag;
     document.getElementById('stat-jobs').textContent      = active;
     document.getElementById('stat-bew').textContent       = open;
-    document.getElementById('stat-umsatz').textContent    = '€ ' + umsatz.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    document.getElementById('stat-bew-erledigt').textContent = erledigt;
+    document.getElementById('stat-bezahlt').textContent   = '€ ' + bezahlt.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    document.getElementById('stat-offen').textContent     = '€ ' + offen.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startWeek  = new Date(startToday); startWeek.setDate(startWeek.getDate() - startWeek.getDay() + (startWeek.getDay() === 0 ? -6 : 1));
+    const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const regDate = n => n.erstellt_am ? new Date(n.erstellt_am) : null;
+    document.getElementById('stat-neu-heute').textContent = allNutzer.filter(n => regDate(n) && regDate(n) >= startToday).length;
+    document.getElementById('stat-neu-woche').textContent = allNutzer.filter(n => regDate(n) && regDate(n) >= startWeek).length;
+    document.getElementById('stat-neu-monat').textContent = allNutzer.filter(n => regDate(n) && regDate(n) >= startMonth).length;
+
+    renderWeeklyRegChart();
+  }
+
+  function renderWeeklyRegChart() {
+    const el = document.getElementById('chart-reg-woche');
+    if (!el) return;
+    const weeks = [];
+    const now = new Date();
+    const thisWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay() + (thisWeekStart.getDay() === 0 ? -6 : 1));
+    for (let i = 9; i >= 0; i--) {
+      const start = new Date(thisWeekStart); start.setDate(start.getDate() - i * 7);
+      const end   = new Date(start); end.setDate(end.getDate() + 7);
+      weeks.push({ label: start.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit' }), start, end });
+    }
+    const data = weeks.map(w => ({
+      label: w.label,
+      value: allNutzer.filter(n => n.erstellt_am && new Date(n.erstellt_am) >= w.start && new Date(n.erstellt_am) < w.end).length,
+    }));
+    renderBarChart('chart-reg-woche', data, 'blue');
   }
 
   function renderRecentNutzer() {
@@ -716,6 +830,7 @@
           ? `<button class="btn-sm btn-success" onclick="toggleSperre('${n.user_id}',false)">Entsperren</button>`
           : `<button class="btn-sm btn-danger"  onclick="toggleSperre('${n.user_id}',true)">Sperren</button>`}
         <button class="btn-sm btn-secondary" onclick="showNutzerDetails('${n.user_id}')">Details</button>
+        <button class="btn-sm btn-danger" onclick="confirmDeleteNutzer('${n.user_id}','${nutzerName(n).replace(/'/g, "\\'")}')">Löschen</button>
       </div></td>
     </tr>`).join('');
   }
@@ -736,18 +851,128 @@
   function showNutzerDetails(userId) {
     const n = allNutzer.find(u => u.user_id === userId);
     if (!n) return;
+    const isAg = n.rolle === 'arbeitgeber';
     const rows = [
       ['Name', nutzerName(n)], ['E-Mail', n.email || '–'],
-      ['Rolle', n.rolle === 'jobber' ? 'Jobber' : 'Arbeitgeber'],
+      ['Rolle', isAg ? 'Arbeitgeber' : 'Jobber'],
       ['Vorname', n.vorname || '–'], ['Nachname', n.nachname || '–'],
-      ['Firmenname', n.firmenname || '–'], ['Telefon', n.telefon || '–'],
-      ['Geburtsdatum', fmtDate(n.geburtsdatum)], ['Ort', n.ort || '–'],
-      ['Branche', n.branche || '–'], ['Registriert', fmtDate(n.erstellt_am)],
-      ['Status', n.gesperrt ? 'Gesperrt' : 'Aktiv'],
+      ['Telefon', n.telefon || '–'],
+      ['Adresse', n.adresse || '–'], ['PLZ', n.adresse_plz || n.plz || '–'], ['Ort', n.adresse_ort || n.ort || '–'],
+      ['Registriert', fmtDate(n.erstellt_am)], ['Status', n.gesperrt ? 'Gesperrt' : 'Aktiv'],
     ];
+    if (isAg) {
+      rows.push(
+        ['Firmenname', n.firmenname || '–'], ['UID-Nummer', n.uid_nummer || '–'],
+        ['Website', n.website || '–'], ['Branche', n.branche || '–'],
+        ['Beschreibung', n.beschreibung || '–'],
+      );
+    } else {
+      rows.push(
+        ['Geburtsdatum', fmtDate(n.geburtsdatum)], ['Staatsangehörigkeit', n.staatsangehoerigkeit || '–'],
+        ['SV-Nummer', n.svnummer || '–'], ['IBAN', n.iban || '–'],
+      );
+    }
     document.getElementById('nutzer-modal-content').innerHTML =
-      rows.map(([l, v]) => `<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('');
+      rows.map(([l, v]) => `<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('') +
+      `<div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn-sm btn-primary" onclick="editNutzerMode('${userId}')">Bearbeiten</button>
+      </div>`;
     openModal('nutzer-modal');
+  }
+
+  function editNutzerMode(userId) {
+    const n = allNutzer.find(u => u.user_id === userId);
+    if (!n) return;
+    const isAg = n.rolle === 'arbeitgeber';
+    const f = (id, label, val, type) => `<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div class="detail-label" style="width:auto">${label}</div>
+      <input type="${type || 'text'}" id="${id}" value="${(val || '').toString().replace(/"/g, '&quot;')}"
+        style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px">
+    </div>`;
+    let html = `<div style="font-size:12px;color:var(--text2);margin-bottom:14px">E-Mail (Login) kann hier nicht geändert werden.</div>`;
+    html += f('edit-vorname', 'Vorname', n.vorname);
+    html += f('edit-nachname', 'Nachname', n.nachname);
+    html += f('edit-telefon', 'Telefon', n.telefon);
+    html += f('edit-adresse', 'Adresse', n.adresse);
+    html += f('edit-plz', 'PLZ', n.adresse_plz || n.plz);
+    html += f('edit-ort', 'Ort', n.adresse_ort || n.ort);
+    if (isAg) {
+      html += f('edit-firmenname', 'Firmenname', n.firmenname);
+      html += f('edit-uid', 'UID-Nummer', n.uid_nummer);
+      html += f('edit-website', 'Website', n.website);
+      html += f('edit-branche', 'Branche', n.branche);
+      html += f('edit-beschreibung', 'Beschreibung', n.beschreibung);
+    } else {
+      html += f('edit-geburtsdatum', 'Geburtsdatum', n.geburtsdatum, 'date');
+      html += f('edit-svnummer', 'SV-Nummer', n.svnummer);
+      html += f('edit-iban', 'IBAN', n.iban);
+    }
+    html += `<div id="nutzer-edit-error" class="confirm-text" style="display:none;color:var(--danger);font-size:13px;margin-top:4px"></div>`;
+    html += `<div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn-sm btn-primary" onclick="saveNutzerEdit('${userId}')">Speichern</button>
+      <button class="btn-sm btn-secondary" onclick="showNutzerDetails('${userId}')">Abbrechen</button>
+    </div>`;
+    document.getElementById('nutzer-modal-content').innerHTML = html;
+  }
+
+  async function saveNutzerEdit(userId) {
+    const n = allNutzer.find(u => u.user_id === userId);
+    if (!n) return;
+    const isAg = n.rolle === 'arbeitgeber';
+    const val = id => document.getElementById(id)?.value.trim() || null;
+    const update = {
+      vorname: val('edit-vorname'), nachname: val('edit-nachname'), telefon: val('edit-telefon'),
+      adresse: val('edit-adresse'), adresse_plz: val('edit-plz'), adresse_ort: val('edit-ort'),
+    };
+    if (isAg) {
+      Object.assign(update, {
+        firmenname: val('edit-firmenname'), uid_nummer: val('edit-uid'),
+        website: val('edit-website'), branche: val('edit-branche'), beschreibung: val('edit-beschreibung'),
+      });
+    } else {
+      Object.assign(update, {
+        geburtsdatum: val('edit-geburtsdatum'), svnummer: val('edit-svnummer'), iban: val('edit-iban'),
+      });
+    }
+    const { error } = await odojSb.from('Profile').update(update).eq('user_id', userId);
+    if (error) {
+      const el = document.getElementById('nutzer-edit-error');
+      el.textContent = 'Fehler beim Speichern: ' + error.message;
+      el.style.display = 'block';
+      return;
+    }
+    Object.assign(n, update);
+    filterNutzer();
+    renderRecentNutzer();
+    closeModal('nutzer-modal');
+    showToast('Nutzerdaten gespeichert', 'success');
+  }
+
+  function confirmDeleteNutzer(userId, name) {
+    document.getElementById('confirm-title').textContent = 'Nutzer löschen';
+    document.getElementById('confirm-text').textContent  =
+      `Soll "${name}" wirklich endgültig gelöscht werden? Das Konto kann sich danach nicht mehr anmelden. Nutzer mit bestehenden Jobs, Bewerbungen, Rechnungen oder Verträgen können aus Sicherheitsgründen nicht gelöscht werden - bitte stattdessen sperren.`;
+    document.getElementById('confirm-ok').onclick = async () => {
+      try {
+        const { data, error } = await odojSb.functions.invoke('admin-delete-user', { body: { userId } });
+        if (error || !data?.success) {
+          const msg = data?.error || error?.message || 'Löschen fehlgeschlagen.';
+          closeModal('confirm-modal');
+          showToast(msg, 'error');
+          return;
+        }
+        allNutzer = allNutzer.filter(n => n.user_id !== userId);
+        filterNutzer();
+        renderDashboard();
+        renderRecentNutzer();
+        closeModal('confirm-modal');
+        showToast('Nutzer gelöscht', 'success');
+      } catch (e) {
+        closeModal('confirm-modal');
+        showToast('Löschen fehlgeschlagen: ' + e.message, 'error');
+      }
+    };
+    openModal('confirm-modal');
   }
 
   // ── Jobs ──
@@ -784,6 +1009,7 @@
           ${j.status !== 'aktiv'
             ? `<button class="btn-sm btn-success" onclick="setJobStatus('${id}','aktiv')">Aktivieren</button>`
             : `<button class="btn-sm btn-danger"  onclick="setJobStatus('${id}','inaktiv')">Deaktivieren</button>`}
+          <button class="btn-sm btn-secondary" onclick="showJobDetails('${id}')">Details</button>
           <button class="btn-sm btn-danger" onclick="confirmDeleteJob('${id}','${ttl}')">Löschen</button>
         </div></td>
       </tr>`;
@@ -816,6 +1042,83 @@
       } catch (_) { showToast('Fehler beim Löschen', 'error'); }
     };
     openModal('confirm-modal');
+  }
+
+  function showJobDetails(jobId) {
+    const j = findJob(jobId);
+    if (!j) return;
+    const rows = [
+      ['Titel', j.titel || '–'], ['Firma', j.firmenname || '–'], ['Branche', j.branche || '–'],
+      ['Status', j.status || '–'], ['Datum', fmtDate(j.datum)],
+      ['Uhrzeit', (j.uhrzeit_von || '–') + ' - ' + (j.uhrzeit_bis || '–')],
+      ['Adresse', j.adresse || '–'], ['Ort', j.ort || '–'],
+      ['Tagesgehalt', j.tagesgehalt ? fmtEuro(j.tagesgehalt) : '–'],
+      ['Plätze', j.plaetze ?? '–'], ['Mindestalter', j.mindestalter ?? '–'],
+      ['Beschreibung', j.beschreibung || '–'], ['Erstellt', fmtDate(j.erstellt_am)],
+    ];
+    document.getElementById('job-modal-content').innerHTML =
+      rows.map(([l, v]) => `<div class="detail-row"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('') +
+      `<div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn-sm btn-primary" onclick="editJobMode('${jobId}')">Bearbeiten</button>
+      </div>`;
+    openModal('job-modal');
+  }
+
+  function editJobMode(jobId) {
+    const j = findJob(jobId);
+    if (!j) return;
+    const f = (id, label, val, type) => `<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div class="detail-label" style="width:auto">${label}</div>
+      <input type="${type || 'text'}" id="${id}" value="${(val ?? '').toString().replace(/"/g, '&quot;')}"
+        style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px">
+    </div>`;
+    let html = '';
+    html += f('jedit-titel', 'Titel', j.titel);
+    html += f('jedit-branche', 'Branche', j.branche);
+    html += f('jedit-datum', 'Datum', j.datum, 'date');
+    html += f('jedit-von', 'Uhrzeit von', j.uhrzeit_von);
+    html += f('jedit-bis', 'Uhrzeit bis', j.uhrzeit_bis);
+    html += f('jedit-adresse', 'Adresse', j.adresse);
+    html += f('jedit-ort', 'Ort', j.ort);
+    html += f('jedit-gehalt', 'Tagesgehalt', j.tagesgehalt, 'number');
+    html += f('jedit-plaetze', 'Plätze', j.plaetze, 'number');
+    html += f('jedit-mindestalter', 'Mindestalter', j.mindestalter, 'number');
+    html += `<div class="detail-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div class="detail-label" style="width:auto">Beschreibung</div>
+      <textarea id="jedit-beschreibung" rows="4" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px">${j.beschreibung || ''}</textarea>
+    </div>`;
+    html += `<div id="job-edit-error" style="display:none;color:var(--danger);font-size:13px;margin-top:4px"></div>`;
+    html += `<div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn-sm btn-primary" onclick="saveJobEdit('${jobId}')">Speichern</button>
+      <button class="btn-sm btn-secondary" onclick="showJobDetails('${jobId}')">Abbrechen</button>
+    </div>`;
+    document.getElementById('job-modal-content').innerHTML = html;
+  }
+
+  async function saveJobEdit(jobId) {
+    const val = id => document.getElementById(id)?.value.trim() || null;
+    const update = {
+      titel: val('jedit-titel'), branche: val('jedit-branche'), datum: val('jedit-datum'),
+      uhrzeit_von: val('jedit-von'), uhrzeit_bis: val('jedit-bis'),
+      adresse: val('jedit-adresse'), ort: val('jedit-ort'),
+      tagesgehalt: val('jedit-gehalt') ? parseFloat(val('jedit-gehalt')) : null,
+      plaetze: val('jedit-plaetze') ? parseInt(val('jedit-plaetze')) : null,
+      mindestalter: val('jedit-mindestalter') ? parseInt(val('jedit-mindestalter')) : null,
+      beschreibung: document.getElementById('jedit-beschreibung')?.value.trim() || null,
+    };
+    const { error } = await odojSb.from('jobs').update(update).eq('id', jobId);
+    if (error) {
+      const el = document.getElementById('job-edit-error');
+      el.textContent = 'Fehler beim Speichern: ' + error.message;
+      el.style.display = 'block';
+      return;
+    }
+    const idx = allJobs.findIndex(x => x.id === jobId);
+    if (idx !== -1) Object.assign(allJobs[idx], update);
+    filterJobs();
+    renderStatistiken();
+    closeModal('job-modal');
+    showToast('Job gespeichert', 'success');
   }
 
   // ── Bewerbungen ──
@@ -870,8 +1173,8 @@
         <td style="font-weight:700">${fmtEuro(r.betrag)}</td>
         <td>${statusBadge(r.status || 'offen')}</td>
         <td>${r.status !== 'bezahlt'
-          ? `<button class="btn-sm btn-success" onclick="markBezahlt('${id}')">Als bezahlt</button>`
-          : '<span style="font-size:12px;color:var(--text2)">–</span>'}</td>
+          ? `<button class="btn-sm btn-success" onclick="setRechnungStatus('${id}','bezahlt')">Als bezahlt</button>`
+          : `<button class="btn-sm btn-secondary" onclick="setRechnungStatus('${id}','offen')">Auf offen setzen</button>`}</td>
       </tr>`;
     }).join('');
   }
@@ -881,15 +1184,15 @@
     document.getElementById('rech-total').textContent = '€ ' + total.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 
-  async function markBezahlt(id) {
+  async function setRechnungStatus(id, status) {
     try {
-      await odojSb.from('rechnungen').update({ status: 'bezahlt' }).eq('id', id);
+      await odojSb.from('rechnungen').update({ status }).eq('id', id);
       const idx = allRechnungen.findIndex(r => r.id == id);
-      if (idx !== -1) allRechnungen[idx].status = 'bezahlt';
+      if (idx !== -1) allRechnungen[idx].status = status;
       filterRechnungen();
       renderRechnungenTotal();
       renderDashboard();
-      showToast('Als bezahlt markiert', 'success');
+      showToast(status === 'bezahlt' ? 'Als bezahlt markiert' : 'Auf offen zurückgesetzt', 'success');
     } catch (_) { showToast('Fehler', 'error'); }
   }
 
@@ -1011,6 +1314,66 @@
             ${v > 0 ? `<span class="bar-val">${v}</span>` : ''}
           </div>
         </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Nachrichten-Einblick ──
+  function filterNachrichten() {
+    const q = document.getElementById('nach-search').value.toLowerCase();
+    const list = allBewerbungen.filter(b => {
+      if (!q) return true;
+      const jobber = findNutzer(b.jobber_id);
+      const ag     = findNutzer(b.arbeitgeber_id);
+      const job    = findJob(b.job_id);
+      const hay = [
+        jobber ? nutzerName(jobber) : (b.jobber_name || ''),
+        ag ? nutzerName(ag) : '',
+        job ? job.titel : (b.job_titel || ''),
+      ].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    renderNachrichtenTable(list);
+  }
+
+  function renderNachrichtenTable(list) {
+    const tbody = document.getElementById('nach-tbody');
+    if (!tbody) return;
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Keine Konversationen</td></tr>'; return; }
+    tbody.innerHTML = list.map(b => {
+      const jobber = findNutzer(b.jobber_id);
+      const ag     = findNutzer(b.arbeitgeber_id);
+      const job    = findJob(b.job_id);
+      const id     = String(b.id).replace(/'/g, "\\'");
+      return `<tr>
+        <td>${jobber ? nutzerName(jobber) : (b.jobber_name || '–')}</td>
+        <td>${ag ? nutzerName(ag) : (job ? job.firmenname : '–')}</td>
+        <td style="font-size:12px">${job ? job.titel : (b.job_titel || '–')}</td>
+        <td>${statusBadge(b.status)}</td>
+        <td><button class="btn-sm btn-secondary" onclick="showThread('${id}')">Verlauf ansehen</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function showThread(bewerbungId) {
+    const b = allBewerbungen.find(x => x.id === bewerbungId);
+    const content = document.getElementById('thread-modal-content');
+    content.innerHTML = '<div class="table-empty">Wird geladen…</div>';
+    openModal('thread-modal');
+
+    const { data: msgs, error } = await odojSb
+      .from('nachrichten').select('*').eq('bewerbung_id', bewerbungId).order('erstellt_am', { ascending: true });
+
+    if (error) { content.innerHTML = `<div class="table-empty">Fehler: ${error.message}</div>`; return; }
+    if (!msgs || !msgs.length) { content.innerHTML = '<div class="table-empty">Keine Nachrichten in dieser Konversation.</div>'; return; }
+
+    content.innerHTML = msgs.map(m => {
+      const senderProfil = findNutzer(m.sender_id);
+      const senderName   = senderProfil ? nutzerName(senderProfil) : 'Unbekannt';
+      const zeit = m.erstellt_am ? new Date(m.erstellt_am).toLocaleString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px">${senderName} <span style="font-weight:400;color:var(--text2)">· ${zeit}</span></div>
+        <div style="font-size:13px;color:var(--text);white-space:pre-line">${(m.nachricht || '').replace(/</g, '&lt;')}</div>
       </div>`;
     }).join('');
   }
