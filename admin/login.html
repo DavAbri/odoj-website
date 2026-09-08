@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script src="/auth-check.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin-Login – ODOJ</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/fonts/plus-jakarta-sans.css">
+<style>
+  :root { --navy: #0B1F3A; --accent: #E8A020; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--navy);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #fff; border-radius: 16px; padding: 40px 36px;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.32);
+  }
+  .logo { text-align: center; font-size: 26px; font-weight: 800; color: var(--navy); letter-spacing: -.5px; margin-bottom: 4px; }
+  .logo span { color: var(--accent); }
+  .sub { text-align: center; font-size: 13px; color: #7A8FA8; margin-bottom: 28px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #7A8FA8; margin-bottom: 6px; }
+  .field input {
+    width: 100%; background: #F4F7FB; border: 1.5px solid #E2E8F0; border-radius: 8px;
+    color: var(--navy); font-family: inherit; font-size: 15px; padding: 12px 14px; outline: none;
+    transition: border-color .2s, background .2s;
+  }
+  .field input:focus { border-color: var(--accent); background: #fff; }
+  .error {
+    background: #FEE2E2; border: 1px solid #F87171; color: #991B1B;
+    font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; display: none; line-height: 1.4;
+  }
+  .btn {
+    width: 100%; background: var(--accent); color: var(--navy);
+    font-family: inherit; font-size: 15px; font-weight: 700; padding: 14px;
+    border: none; border-radius: 8px; cursor: pointer; transition: background .2s;
+    margin-top: 4px;
+  }
+  .btn:hover { background: #d99416; }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">O<span>D</span>OJ</div>
+  <div class="sub">Admin-Bereich</div>
+  <div class="error" id="err"></div>
+  <form id="form" onsubmit="doAdminLogin(event)">
+    <div class="field">
+      <label>E-Mail</label>
+      <input type="email" id="email" required autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Passwort</label>
+      <input type="password" id="pw" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn" id="btn">Anmelden</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  // Eigener, von der normalen Nutzer-Anmeldung getrennter Login.
+  // Nur diese E-Mail-Adressen dürfen rein - muss mit admin/index.html übereinstimmen.
+  const ADMIN_EMAILS = ['mail4david85@gmail.com', 'admin@odoj.at'];
+
+  const sb = supabase.createClient(
+    'https://vixarulzbsfwnbfucbih.supabase.co',
+    'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
+  );
+
+  // Falls schon eine gültige Admin-Session besteht, direkt weiter.
+  (async () => {
+    const { data } = await sb.auth.getSession();
+    const email = data?.session?.user?.email?.toLowerCase();
+    if (email && ADMIN_EMAILS.includes(email)) {
+      window.location.replace('/admin/index.html');
+    }
+  })();
+
+  async function doAdminLogin(e) {
+    e.preventDefault();
+    const btn   = document.getElementById('btn');
+    const errEl = document.getElementById('err');
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Wird geprüft…';
+
+    const email = document.getElementById('email').value.trim();
+    const pw    = document.getElementById('pw').value;
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+
+    if (error) {
+      errEl.textContent = 'E-Mail oder Passwort falsch.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Anmelden';
+      return;
+    }
+
+    if (!ADMIN_EMAILS.includes(data.user.email.toLowerCase())) {
+      // Gültiger Nutzer-Account, aber kein Admin -> sofort wieder ausloggen.
+      await sb.auth.signOut();
+      errEl.textContent = 'Dieses Konto hat keinen Zugriff auf den Admin-Bereich.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Anmelden';
+      return;
+    }
+
+    window.location.replace('/admin/index.html');
+  }
+</script>
+</body>
+</html>

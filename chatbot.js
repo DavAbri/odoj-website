@@ -8,7 +8,7 @@ Du beantwortest Fragen auf Deutsch und hilfst Nutzern dabei, die richtigen Funkt
 WICHTIGE INFORMATIONEN ÜBER ODOJ:
 - ODOJ vermittelt Tagesjobs in Vorarlberg in den Branchen: Gastronomie & Hotel, Bau & Handwerk, Lager & Logistik, Veranstaltungen & Events
 - Es gibt zwei Nutzertypen: Jobber (Arbeitnehmer) und Arbeitgeber
-- Die Webseite hat folgende Seiten: index.html (Startseite), jobs.html (Stellenbörse), arbeitgeber.html (Für Arbeitgeber), ueber-uns.html (Über uns), login.html (Anmelden/Registrieren), profil.html (Profil), chat.html (Nachrichten), meine-bewerbungen.html (Meine Bewerbungen), admin.html (nur für Admins)
+- Die Webseite hat folgende Seiten: index.html (Startseite), jobs.html (Stellenbörse), arbeitgeber.html (Für Arbeitgeber), ueber-uns.html (Über uns), login.html (Anmelden/Registrieren), profil.html (Profil), chat.html (Nachrichten), meine-bewerbungen.html (Meine Bewerbungen), /admin (nur für ODOJ-Team, eigener Login)
 
 FÜR JOBBER (Arbeitnehmer):
 - Registrierung: Auf login.html als Jobber registrieren mit Name, Geburtsdatum (min 15 Jahre), E-Mail, Passwort
