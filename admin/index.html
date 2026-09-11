@@ -575,15 +575,34 @@
   }
 
   // ── 4. Rechnungen pro Arbeitgeber ──
+  function findBewerbung(id) { return allBewerbungen.find(b => b.id === id) || null; }
+
+  // Name des Arbeitgebers ermitteln: zuerst über sein Profil, sonst über den
+  // Firmennamen, der bei irgendeinem seiner Jobs hinterlegt ist. rechnungen
+  // speichert selbst weder Firmenname noch job_id - der Weg dorthin führt
+  // über bewerbung_id -> bewerbungen.job_id -> jobs.firmenname. Da nicht
+  // jede einzelne Rechnung diesen Weg noch auflösen kann (z.B. wenn der Job
+  // inzwischen gelöscht wurde), wird über ALLE Rechnungen dieses Arbeitgebers
+  // gesucht, bis ein Name gefunden wird.
+  function bestAgName(agId) {
+    const ag = findNutzer(agId);
+    if (ag) return nutzerName(ag);
+    for (const r of allRechnungen) {
+      if (r.arbeitgeber_id !== agId) continue;
+      const bew = findBewerbung(r.bewerbung_id);
+      const job = bew ? findJob(bew.job_id) : null;
+      if (job?.firmenname) return job.firmenname;
+    }
+    return 'Unbekannt';
+  }
+
   function renderRechnungenAgTable() {
     const q = (document.getElementById('rech-ag-search')?.value || '').toLowerCase();
     const groups = {};
     allRechnungen.forEach(r => {
       const key = r.arbeitgeber_id || 'unbekannt';
-      if (!groups[key]) groups[key] = { arbeitgeber_id: r.arbeitgeber_id, name: null, total: 0, bezahlt: 0, offen: 0 };
+      if (!groups[key]) groups[key] = { arbeitgeber_id: r.arbeitgeber_id, name: bestAgName(r.arbeitgeber_id), total: 0, bezahlt: 0, offen: 0 };
       const g = groups[key];
-      const ag = findNutzer(r.arbeitgeber_id);
-      g.name = ag ? nutzerName(ag) : (r.firmenname || 'Unbekannt');
       g.total++;
       if (r.status === 'bezahlt') g.bezahlt++; else g.offen++;
     });
@@ -603,21 +622,21 @@
   }
 
   function showAgRechnungen(agId) {
-    const ag = findNutzer(agId);
-    document.getElementById('rech-ag-modal-title').textContent = 'Rechnungen – ' + (ag ? nutzerName(ag) : 'Unbekannt');
+    document.getElementById('rech-ag-modal-title').textContent = 'Rechnungen – ' + bestAgName(agId);
     renderAgRechnungenList(agId);
     openModal('rech-ag-modal');
   }
 
   function renderAgRechnungenList(agId) {
+    const agName = bestAgName(agId);
     const list = allRechnungen.filter(r => r.arbeitgeber_id === agId);
     const rows = list.map(r => {
-      const job = findJob(r.job_id);
+      const jobTitel = r.job_titel || 'Unbekannter Job';
       const id  = String(r.id).replace(/'/g, "\\'");
       return `<div class="detail-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px">
         <div style="min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--navy)">${job ? job.titel : (r.job_titel || 'Unbekannter Job')}</div>
-          <div style="font-size:12px;color:var(--text2)">${fmtDate(r.datum || r.erstellt_am)} · ${fmtEuro(r.betrag)}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy)">${agName}</div>
+          <div style="font-size:12px;color:var(--text2)">${jobTitel} · ${fmtDate(r.datum || r.erstellt_am)} · ${fmtEuro(r.betrag)}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
           ${statusBadge(r.status || 'offen')}
