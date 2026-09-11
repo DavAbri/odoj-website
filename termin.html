@@ -160,6 +160,28 @@
     height: 100% !important;
   }
 
+  /* ── SKIP-TO-WEBSITE BUTTON ── */
+  .skip-row {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .skip-btn {
+    background: transparent;
+    border: 1.5px solid rgba(232,160,32,.4);
+    color: var(--accent);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+  }
+
+  .skip-btn:hover { background: rgba(232,160,32,.12); border-color: var(--accent); }
+
   /* ── FOOTER ── */
   footer {
     flex-shrink: 0;
@@ -249,12 +271,30 @@
 
   </div>
 
+  <!-- SKIP-TO-WEBSITE -->
+  <div class="skip-row">
+    <button class="skip-btn" onclick="odojSkipToWebsite()">Zur Webseite →</button>
+  </div>
+
   <!-- FOOTER -->
   <footer>
     <a href="https://odoj.at">odoj.at</a> &nbsp;·&nbsp; One Day One Job · Vorarlberg &nbsp;·&nbsp; &copy; 2026
   </footer>
 
 </div>
+
+<script>
+  // Für Arbeitgeber, die über den QR-Code im Akquisebrief hierher kommen:
+  // direkter Zugang zur Plattform ohne den Coming-Soon-Zugangscode erneut
+  // einzugeben. Setzt denselben Zugangsnachweis wie eine korrekte
+  // Code-Eingabe auf gate.html - bewusst nur als Button-Klick auf dieser
+  // nicht beworbenen Seite, nicht als URL-Parameter, damit der Zugang nicht
+  // als Link kopiert/weitergegeben werden kann.
+  function odojSkipToWebsite() {
+    localStorage.setItem('odoj_access', 'granted');
+    window.location.href = '/';
+  }
+</script>
 
 </body>
 </html>
