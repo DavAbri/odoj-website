@@ -25,7 +25,7 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="ODOJ – One Day One Job">
     <meta property="og:title" content="ODOJ – Tagesjobs in Vorarlberg">
-<meta property="og:description" content="Flexible Tagesjobs in Gastronomie, Bau, Lager & Events. Kostenlos registrieren und sofort loslegen.">
+<meta property="og:description" content="Flexible Tagesjobs in Gastronomie, Hotellerie & Events. Kostenlos registrieren und sofort loslegen.">
 <meta property="og:locale" content="de_AT">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d1b3e">
@@ -110,9 +110,11 @@
   text-transform: uppercase; letter-spacing: .3px;
   margin-bottom: 12px;
 }
-.hv-tag-gastro { background: #FDF3DC; color: #A05000; }
-.hv-tag-bau    { background: #EAF0FA; color: #1C3760; }
-.hv-tag-events { background: #F3EDFD; color: #5B2D9E; }
+.hv-tag-gastro       { background: #FDF3DC; color: #A05000; }
+.hv-tag-events       { background: #F3EDFD; color: #5B2D9E; }
+.hv-tag-hotel        { background: #E3F6F5; color: #0F7173; }
+.hv-tag-einzelhandel { background: #E8F5E9; color: #2E7D32; }
+.hv-tag-sonstige     { background: #F1F5F9; color: #475569; }
 .hv-card-row {
   display: flex; justify-content: space-between;
   align-items: flex-start; margin-bottom: 8px;
@@ -325,7 +327,7 @@
 .branchen { background: var(--navy); }
 .branchen-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   margin-top: 52px;
 }
@@ -507,7 +509,7 @@
     <div class="hero-inner">
       <div class="hero-badge">Vorarlberg</div>
       <h1>Dein Tag.<br><em>Dein Job.</em><br>Dein Geld.</h1>
-      <p class="hero-sub">ODOJ vermittelt flexible Tagesjobs in Gastronomie, Bau, Lager und Events – schnell, unkompliziert und fair bezahlt.</p>
+      <p class="hero-sub">ODOJ vermittelt flexible Tagesjobs in Gastronomie, Hotellerie, Events und mehr – schnell, unkompliziert und fair bezahlt.</p>
       <div class="hero-btns">
         <a href="jobs.html" class="btn btn-accent">
           Jobs ansehen
@@ -548,10 +550,10 @@
       <!-- Card 2 – Mitte, leicht rotiert -->
       <div class="hv-card hv-card-2">
         <div class="hv-card-row">
-          <span class="hv-tag hv-tag-bau">Bau &amp; Handwerk</span>
+          <span class="hv-tag hv-tag-einzelhandel">Einzelhandel</span>
         </div>
-        <div class="hv-titel">Hilfsarbeiter Baustelle</div>
-        <div class="hv-firma">Fels &amp; Stein Bau GmbH, Dornbirn</div>
+        <div class="hv-titel">Verkäufer/in gesucht</div>
+        <div class="hv-firma">Mode Huber GmbH, Dornbirn</div>
         <div class="hv-metas">
           <span class="hv-meta">
             <svg width="12" height="12" fill="none" stroke="#7A8FA8" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -651,23 +653,28 @@
   <div class="branchen-grid">
     <a href="jobs.html?b=gastro" class="branche-pill fade-in">
       <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></span>
-      <h4>Gastronomie &amp; Hotel</h4>
-      <p>Service, Küche, Reinigung</p>
-    </a>
-    <a href="jobs.html?b=bau" class="branche-pill fade-in">
-      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5a2.12 2.12 0 1 1-3-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"/></svg></span>
-      <h4>Bau &amp; Handwerk</h4>
-      <p>Hilfsarbeiter, Maler, Montage</p>
-    </a>
-    <a href="jobs.html?b=lager" class="branche-pill fade-in">
-      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
-      <h4>Lager &amp; Logistik</h4>
-      <p>Kommissionierung, Versand</p>
+      <h4>Gastronomie</h4>
+      <p>Service, Küche, Bar</p>
     </a>
     <a href="jobs.html?b=events" class="branche-pill fade-in">
       <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></span>
       <h4>Veranstaltungen &amp; Events</h4>
       <p>Konzerte, Messen, Festivals</p>
+    </a>
+    <a href="jobs.html?b=hotel" class="branche-pill fade-in">
+      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span>
+      <h4>Hotellerie</h4>
+      <p>Rezeption, Housekeeping, Service</p>
+    </a>
+    <a href="jobs.html?b=einzelhandel" class="branche-pill fade-in">
+      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+      <h4>Einzelhandel</h4>
+      <p>Verkauf, Kassa, Regalbetreuung</p>
+    </a>
+    <a href="jobs.html?b=sonstige" class="branche-pill fade-in">
+      <span class="branche-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
+      <h4>Sonstige</h4>
+      <p>Weitere Einsatzbereiche</p>
     </a>
   </div>
 </section>
@@ -740,7 +747,7 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
     "url": "https://odoj.at",
     "logo": "https://odoj.at/logo.png",
     "image": "https://odoj.at/logo.png",
-    "description": "ODOJ vermittelt flexible Tagesjobs in Vorarlberg in den Bereichen Gastronomie, Bau, Lager und Events. Kostenlos registrieren und sofort loslegen.",
+    "description": "ODOJ vermittelt flexible Tagesjobs in Vorarlberg in den Bereichen Gastronomie, Veranstaltungen & Events, Hotellerie, Einzelhandel und mehr. Kostenlos registrieren und sofort loslegen.",
     "email": "info@odoj.at",
     "address": {
       "@type": "PostalAddress",
@@ -771,7 +778,7 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
     "@id": "https://odoj.at/#website",
     "url": "https://odoj.at",
     "name": "ODOJ – One Day One Job",
-    "description": "Flexible Tagesjobs in Vorarlberg – Gastronomie, Bau, Lager & Events",
+    "description": "Flexible Tagesjobs in Vorarlberg – Gastronomie, Hotellerie & Events",
     "publisher": { "@id": "https://odoj.at/#organization" },
     "inLanguage": "de-AT",
     "potentialAction": {
@@ -790,7 +797,7 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "ODOJ – One Day One Job",
-  "description": "Die führende Tagesjob-Vermittlungsplattform in Vorarlberg, Österreich. Wir vermitteln flexible Tagesjobs in Gastronomie, Bau, Lager und Events.",
+  "description": "Die führende Tagesjob-Vermittlungsplattform in Vorarlberg, Österreich. Wir vermitteln flexible Tagesjobs in Gastronomie, Hotellerie, Events und mehr.",
   "url": "https://odoj.at",
   "email": "info@odoj.at",
   "foundingDate": "2026",
@@ -811,7 +818,8 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
     "Personalvermittlung Vorarlberg",
     "Gastronomie Jobs Vorarlberg",
     "Eventhelfer Bregenz",
-    "Lagerhelfer Vorarlberg"
+    "Hotellerie Jobs Vorarlberg",
+    "Einzelhandel Jobs Vorarlberg"
   ],
   "hasOfferCatalog": {
     "@type": "OfferCatalog",
@@ -829,8 +837,8 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
         "@type": "Offer",
         "itemOffered": {
           "@type": "Service",
-          "name": "Tagesjob Bau Vorarlberg",
-          "description": "Hilfsarbeiter und Bauhelfer auf Tagesbasis in Vorarlberg"
+          "name": "Tagesjob Hotellerie Vorarlberg",
+          "description": "Flexible Tagesjobs an der Rezeption, im Housekeeping oder Service in Vorarlberger Hotels"
         }
       },
       {
@@ -839,6 +847,14 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
           "@type": "Service",
           "name": "Eventhelfer Vorarlberg",
           "description": "Kurzfristige Eventhelfer für Veranstaltungen in Vorarlberg"
+        }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "Tagesjob Einzelhandel Vorarlberg",
+          "description": "Flexible Tagesjobs im Verkauf und an der Kassa in Vorarlberger Geschäften"
         }
       }
     ]

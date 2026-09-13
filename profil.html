@@ -530,10 +530,11 @@ function renderArbeitgeber(session, profile) {
   const adresseFull = [profile?.adresse, profile?.adresse_plz, profile?.adresse_ort].filter(Boolean).join(', ') || '–';
 
   const BRANCHEN_LABEL = {
-    gastro: 'Gastronomie & Hotel',
-    bau:    'Bau & Handwerk',
-    lager:  'Lager & Logistik',
-    events: 'Veranstaltungen & Events',
+    gastro:       'Gastronomie',
+    events:       'Veranstaltungen & Events',
+    hotel:        'Hotellerie',
+    einzelhandel: 'Einzelhandel',
+    sonstige:     'Sonstige',
   };
 
   body.innerHTML = `
@@ -626,10 +627,11 @@ function renderArbeitgeber(session, profile) {
             <label>Branche</label>
             <select id="ag-edit-branche">
               <option value="">Bitte wählen</option>
-              <option value="gastro" ${profile?.branche === 'gastro' ? 'selected' : ''}>Gastronomie &amp; Hotel</option>
-              <option value="bau"    ${profile?.branche === 'bau'    ? 'selected' : ''}>Bau &amp; Handwerk</option>
-              <option value="lager"  ${profile?.branche === 'lager'  ? 'selected' : ''}>Lager &amp; Logistik</option>
-              <option value="events" ${profile?.branche === 'events' ? 'selected' : ''}>Veranstaltungen &amp; Events</option>
+              <option value="gastro"       ${profile?.branche === 'gastro'       ? 'selected' : ''}>Gastronomie</option>
+              <option value="events"       ${profile?.branche === 'events'       ? 'selected' : ''}>Veranstaltungen &amp; Events</option>
+              <option value="hotel"        ${profile?.branche === 'hotel'        ? 'selected' : ''}>Hotellerie</option>
+              <option value="einzelhandel" ${profile?.branche === 'einzelhandel' ? 'selected' : ''}>Einzelhandel</option>
+              <option value="sonstige"     ${profile?.branche === 'sonstige'     ? 'selected' : ''}>Sonstige</option>
             </select>
           </div>
           <div class="profil-field">
@@ -727,7 +729,7 @@ async function saveAgProfil(userId) {
   }
 
   // View aktualisieren
-  const BRANCHEN_LABEL = { gastro:'Gastronomie & Hotel', bau:'Bau & Handwerk', lager:'Lager & Logistik', events:'Veranstaltungen & Events' };
+  const BRANCHEN_LABEL = { gastro:'Gastronomie', events:'Veranstaltungen & Events', hotel:'Hotellerie', einzelhandel:'Einzelhandel', sonstige:'Sonstige' };
   const adresseFull = [adresse, plz, ort].filter(Boolean).join(', ') || '–';
   document.getElementById('ag-info-firma').textContent    = firma || '–';
   document.getElementById('ag-info-person').textContent   = [vorname, nachname].filter(Boolean).join(' ') || '–';
@@ -1159,10 +1161,11 @@ function renderJobber(session, profile) {
   const ZEITEN     = ['ganztags','halbtags','flexibel'];
   const Z_LABEL    = { ganztags:'Ganztags', halbtags:'Halbtags', flexibel:'Flexibel' };
   const BRANCHEN_LIST = [
-    { val: 'gastro', label: 'Gastronomie & Hotel' },
-    { val: 'bau',    label: 'Bau & Handwerk' },
-    { val: 'lager',  label: 'Lager & Logistik' },
-    { val: 'events', label: 'Events & Veranstaltungen' },
+    { val: 'gastro',       label: 'Gastronomie' },
+    { val: 'events',       label: 'Veranstaltungen & Events' },
+    { val: 'hotel',        label: 'Hotellerie' },
+    { val: 'einzelhandel', label: 'Einzelhandel' },
+    { val: 'sonstige',     label: 'Sonstige' },
   ];
 
   const verfuegDisplay  = [
@@ -1582,8 +1585,9 @@ async function saveVerfBranch(userId) {
   const W_LABEL = { montag:'Mo', dienstag:'Di', mittwoch:'Mi', donnerstag:'Do', freitag:'Fr', samstag:'Sa', sonntag:'So' };
   const Z_LABEL = { ganztags:'Ganztags', halbtags:'Halbtags', flexibel:'Flexibel' };
   const BRANCHEN_LIST = [
-    { val:'gastro', label:'Gastronomie & Hotel' }, { val:'bau', label:'Bau & Handwerk' },
-    { val:'lager',  label:'Lager & Logistik' },    { val:'events', label:'Events & Veranstaltungen' },
+    { val:'gastro', label:'Gastronomie' }, { val:'events', label:'Veranstaltungen & Events' },
+    { val:'hotel',  label:'Hotellerie' },  { val:'einzelhandel', label:'Einzelhandel' },
+    { val:'sonstige', label:'Sonstige' },
   ];
 
   const { error } = await _saveProfileFields(userId, { verfuegbarkeit: verfueg, branchen });
@@ -1925,7 +1929,7 @@ async function loadJobberBewertungen(userId) {
     });
   }
 
-  const BRANCHEN_LABEL = { gastro:'Gastronomie & Hotel', bau:'Bau & Handwerk', lager:'Lager & Logistik', events:'Events & Veranstaltungen' };
+  const BRANCHEN_LABEL = { gastro:'Gastronomie', events:'Veranstaltungen & Events', hotel:'Hotellerie', einzelhandel:'Einzelhandel', sonstige:'Sonstige' };
   const totalEinsaetze = Object.values(branchenMap).reduce((a, b) => a + b, 0);
 
   const rechtsEl = document.getElementById('profil-bewertung-rechts');

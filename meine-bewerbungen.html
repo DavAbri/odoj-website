@@ -396,10 +396,11 @@ function toggleMenu() { document.getElementById('navMobile').classList.toggle('o
 let _bewMap = {}, _jobMap = {};
 
 const BRANCHEN = {
-  gastro: { label: 'Gastronomie',        cls: 'tag-gastro' },
-  bau:    { label: 'Bau & Handwerk',     cls: 'tag-bau'    },
-  lager:  { label: 'Lager & Logistik',   cls: 'tag-lager'  },
-  events: { label: 'Events',             cls: 'tag-events' },
+  gastro:       { label: 'Gastronomie',              cls: 'tag-gastro' },
+  events:       { label: 'Veranstaltungen & Events', cls: 'tag-events' },
+  hotel:        { label: 'Hotellerie',               cls: 'tag-hotel' },
+  einzelhandel: { label: 'Einzelhandel',             cls: 'tag-einzelhandel' },
+  sonstige:     { label: 'Sonstige',                 cls: 'tag-sonstige' },
 };
 
 function escH(s) {
