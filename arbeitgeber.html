@@ -83,7 +83,7 @@
   background: var(--navy);
   display: flex; flex-direction: column; justify-content: center;
   position: relative; overflow: hidden;
-  padding: calc(var(--nav-h) + 60px) 60px 80px;
+  padding: calc(var(--nav-h) + 60px) 60px 50px;
 }
 .ag-hero-grid {
   position: absolute; inset: 0;
@@ -132,21 +132,6 @@
   max-width: 500px; line-height: 1.7; font-weight: 300; margin-bottom: 40px;
 }
 .ag-hero-btns { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
-.ag-hero-stats {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
-  display: flex; border-top: 1px solid rgba(255,255,255,.07);
-}
-.ag-hero-stat {
-  flex: 1; padding: 24px 40px;
-  border-right: 1px solid rgba(255,255,255,.07);
-}
-.ag-hero-stat:last-child { border-right: none; }
-.ag-hero-stat-num {
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 30px; font-weight: 800;
-  color: var(--white); line-height: 1;
-}
-.ag-hero-stat-num sup { font-size: 15px; color: var(--accent); vertical-align: super; }
-.ag-hero-stat-lbl { font-size: 13px; color: rgba(255,255,255,.38); margin-top: 4px; font-weight: 300; }
 
 /* Hero Visual */
 .ag-hero-visual { position: relative; height: 380px; }
@@ -361,13 +346,10 @@
 @media (max-width: 1024px) {
   .ag-hero-layout { grid-template-columns: 1fr; gap: 48px; }
   .ag-hero-visual { height: 300px; max-width: 420px; margin: 0 auto; }
-  .ag-hero-stats { position: static; border-top: 1px solid rgba(255,255,255,.07); }
-  .ag-hero { padding-bottom: 0; }
+  .ag-hero { padding-bottom: 48px; }
 }
 @media (max-width: 900px) {
-  .ag-hero { padding: calc(var(--nav-h) + 40px) 28px 0; }
-  .ag-hero-stat { padding: 18px 20px; }
-  .ag-hero-stat-num { font-size: 22px; }
+  .ag-hero { padding: calc(var(--nav-h) + 40px) 28px 40px; }
   .ag-cta-band { padding: 48px 28px; flex-direction: column; align-items: flex-start; gap: 24px; }
   .ag-inserate-bar-inner { padding: 14px 24px; }
   .vorteile-grid { grid-template-columns: 1fr 1fr; }
@@ -377,12 +359,10 @@
   .ag-lohn-box { flex-direction: column; padding: 22px 24px; }
 }
 @media (max-width: 540px) {
-  .ag-hero { padding: calc(var(--nav-h) + 24px) 20px 0; }
+  .ag-hero { padding: calc(var(--nav-h) + 24px) 20px 32px; }
   .ag-hero h1 { font-size: clamp(34px, 9vw, 50px); }
   .ag-hero-btns { flex-direction: column; align-items: stretch; }
   .ag-hero-visual { display: none; }
-  .ag-hero-stats { flex-wrap: wrap; }
-  .ag-hero-stat { flex: 1 1 50%; border-right: none; border-top: 1px solid rgba(255,255,255,.07); }
   .ag-cta-band { padding: 40px 20px; }
   .ag-inserate-bar-inner { padding: 12px 20px; flex-direction: column; align-items: stretch; }
   .vorteile-grid { grid-template-columns: 1fr; }
@@ -479,25 +459,6 @@
         <div class="ag-card-title">Lagermitarbeiter</div>
         <div class="ag-card-sub">Rheintal Logistik GmbH · Fr, 18. April</div>
       </div>
-    </div>
-  </div>
-
-  <div class="ag-hero-stats">
-    <div class="ag-hero-stat">
-      <div class="ag-hero-stat-num">24<sup>h</sup></div>
-      <div class="ag-hero-stat-lbl">Bis zum ersten Mitarbeiter</div>
-    </div>
-    <div class="ag-hero-stat">
-      <div class="ag-hero-stat-num">0<sup>€</sup></div>
-      <div class="ag-hero-stat-lbl">Kosten für Inserate</div>
-    </div>
-    <div class="ag-hero-stat">
-      <div class="ag-hero-stat-num">4<sup>+</sup></div>
-      <div class="ag-hero-stat-lbl">Branchen abgedeckt</div>
-    </div>
-    <div class="ag-hero-stat">
-      <div class="ag-hero-stat-num">100<sup>%</sup></div>
-      <div class="ag-hero-stat-lbl">Geprüfte Bewerber</div>
     </div>
   </div>
 </div>
