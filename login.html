@@ -203,6 +203,33 @@
   margin-bottom: 12px;
   line-height: 1.4;
 }
+.consent-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0 4px;
+}
+.consent-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.consent-field label {
+  font-size: 13px;
+  color: var(--text-mid);
+  font-weight: 300;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.consent-field a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.consent-field a:hover { text-decoration: underline; }
 .lf-btn {
   width: 100%;
   background: var(--accent);
@@ -554,8 +581,12 @@
         <label>Passwort bestätigen</label>
         <input type="password" id="reg-pw2" placeholder="Passwort wiederholen" required autocomplete="new-password">
       </div>
+      <div class="consent-field">
+        <input type="checkbox" id="reg-consent" onchange="document.getElementById('reg-btn').disabled = !this.checked">
+        <label for="reg-consent">Ich habe die <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a> und die <a href="agb.html" target="_blank" rel="noopener">Nutzungsbedingungen</a> gelesen und stimme ihnen zu.</label>
+      </div>
       <div id="reg-error" class="form-error" style="display:none"></div>
-      <button type="submit" class="lf-btn" id="reg-btn">Konto erstellen</button>
+      <button type="submit" class="lf-btn" id="reg-btn" disabled>Konto erstellen</button>
     </form>
 
     <!-- Success -->
@@ -674,7 +705,7 @@ function showRegError(msg) {
   errEl.textContent = msg;
   errEl.style.display = 'block';
   document.getElementById('reg-btn').textContent = 'Konto erstellen';
-  document.getElementById('reg-btn').disabled = false;
+  document.getElementById('reg-btn').disabled = !document.getElementById('reg-consent').checked;
 }
 
 // ── LOGIN ──
@@ -757,9 +788,13 @@ async function doRegister(e) {
 
   if (!isPasswordStrongEnough(pw)) { showRegError(PASSWORD_HINWEIS); return; }
   if (pw !== pw2)    { showRegError('Passwörter stimmen nicht überein.'); return; }
+  if (!document.getElementById('reg-consent').checked) {
+    showRegError('Bitte stimme der Datenschutzerklärung zu, um fortzufahren.');
+    return;
+  }
 
   // Rollenspezifische Felder validieren + Profildaten sammeln
-  const profileData = { rolle: _currentRole, email };
+  const profileData = { rolle: _currentRole, email, datenschutz_akzeptiert_am: new Date().toISOString() };
 
   if (_currentRole === 'jobber') {
     const vorname  = document.getElementById('reg-vorname').value.trim();
