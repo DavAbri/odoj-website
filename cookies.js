@@ -34,7 +34,14 @@
   // ── Consent anwenden ───────────────────────────────────
   function applyConsent(c) {
     // Funktionale Cookies: localStorage-Rolle ist erlaubt wenn c.functional
-    // Analyse: Platzhalter für zukünftige Tools
+    // Analyse: Google Consent Mode - gtag() ist bereits im <head> jeder Seite
+    // per 'consent'-'default'-Aufruf auf 'denied' gesetzt; hier wird der
+    // tatsächliche Nutzerwille nachgereicht.
+    if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', {
+        analytics_storage: c.analytics ? 'granted' : 'denied'
+      });
+    }
     window.dispatchEvent(new CustomEvent('odoj-consent-changed', { detail: c }));
   }
 
@@ -366,7 +373,7 @@
                 <span class="ck-toggle-track"></span>
               </label>
             </div>
-            <p class="ck-cat-desc">Diese Cookies helfen uns zu verstehen, wie Besucher die Webseite nutzen, um sie kontinuierlich zu verbessern. Aktuell werden keine Analyse-Tools eingesetzt. Diese Einstellung gilt für zukünftige Implementierungen. Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO.</p>
+            <p class="ck-cat-desc">Diese Cookies (Google Analytics) helfen uns zu verstehen, wie Besucher die Webseite nutzen, um sie kontinuierlich zu verbessern. Sie werden nur aktiv, wenn du hier zustimmst. Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO.</p>
           </div>
         </div>
         <div class="ck-m-footer">
