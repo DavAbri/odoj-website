@@ -158,6 +158,7 @@
 .jd-apply-btn:disabled { background: #1a7a50; color: #fff; cursor: default; transform: none; }
 .jd-apply-btn.jd-applied { background: #1a7a50; color: #fff; cursor: default; }
 .jd-apply-btn.jd-applied:hover { background: #1a7a50; transform: none; }
+.jd-apply-btn.jd-apply-btn-warn:disabled { background: #DC2626; color: #fff; cursor: not-allowed; }
 .jd-login-hint {
   text-align: center; font-size: 13px; color: var(--text-lt); margin-top: 12px;
 }
@@ -709,13 +710,29 @@ function renderMain(job) {
   if (_jdIsMultiTermin && !allTermineApplied) updateBewerbenGate();
 }
 
+const JD_BEWERBEN_ICON = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>';
+const JD_WARN_ICON = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+
 function updateBewerbenGate() {
   const btn = document.getElementById('jd-bewerben-btn');
   if (!btn || !_jdIsMultiTermin) return;
   const min = _jdJob?.mindest_termine || 1;
   const checkedNew = document.querySelectorAll('#jd-termin-list input:checked:not(:disabled)').length;
   const total = checkedNew + _jdAppliedTerminIds.size;
-  btn.disabled = checkedNew === 0 || total < min;
+  const fehlend = min - total;
+
+  if (checkedNew === 0 || fehlend > 0) {
+    btn.disabled = true;
+    btn.classList.add('jd-apply-btn-warn');
+    const text = checkedNew === 0
+      ? 'Bitte Termin auswählen'
+      : (fehlend === 1 ? 'Noch 1 Termin auswählen' : `Noch ${fehlend} Termine auswählen`);
+    btn.innerHTML = `${JD_WARN_ICON} ${text}`;
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('jd-apply-btn-warn');
+    btn.innerHTML = `${JD_BEWERBEN_ICON} Jetzt bewerben`;
+  }
 }
 
 async function handleApply() {

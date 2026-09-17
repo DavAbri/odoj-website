@@ -117,7 +117,7 @@
   align-self: center;
 }
 .job-details-link:hover { color: var(--navy); }
-.job-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.job-card-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .job-card h3 {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 17px;
@@ -684,11 +684,13 @@ function renderJobCard(job, locked) {
   const terminAttr = job._terminId ? ` data-termin-id="${job._terminId}"` : '';
   const plaetze = job.plaetze === 1 ? '1 Platz frei' : (job.plaetze + ' Plätze frei');
   const ausgebuchtTag = job._terminAusgebucht ? '<span class="tag tag-ausgebucht">Ausgebucht</span>' : '';
+  const mehrtermineTag = job._isMultiTermin ? '<span class="tag tag-mehrtermine">📅 Mehrere Termine verfügbar</span>' : '';
 
   return `
     <div class="job-card fade-in" data-b="${job.branche}" data-mindestalter="${job.mindestalter || 15}"${lockedAttr}${terminAttr} onclick="goToJobDetail('${job.id}', this)">
       <div class="job-card-top">
         <span class="tag ${b.cls}">${b.label}</span>
+        ${mehrtermineTag}
         ${ausgebuchtTag}
       </div>
       <h3>${job.titel}</h3>

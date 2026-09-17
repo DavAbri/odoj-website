@@ -620,11 +620,11 @@ function renderArbeitgeber(session, profile) {
           <div style="display:grid;grid-template-columns:120px 1fr;gap:10px">
             <div class="profil-field">
               <label>PLZ</label>
-              <input type="text" id="ag-edit-plz" value="${escH(profile?.adresse_plz || '')}" placeholder="6850">
+              <input type="text" id="ag-edit-plz" value="${escH(profile?.adresse_plz || '')}" placeholder="z.B. 6850">
             </div>
             <div class="profil-field">
               <label>Ort</label>
-              <input type="text" id="ag-edit-ort" value="${escH(profile?.adresse_ort || '')}" placeholder="Dornbirn">
+              <input type="text" id="ag-edit-ort" value="${escH(profile?.adresse_ort || '')}" placeholder="z.B. Dornbirn">
             </div>
           </div>
           <div class="profil-field">
@@ -1314,11 +1314,11 @@ function renderJobber(session, profile) {
               <div class="profil-addr-row">
                 <div class="profil-field">
                   <label>PLZ</label>
-                  <input type="text" id="addr-plz" value="${escH(plz)}" placeholder="6850" maxlength="10">
+                  <input type="text" id="addr-plz" value="${escH(plz)}" placeholder="z.B. 6850" maxlength="10">
                 </div>
                 <div class="profil-field">
                   <label>Ort</label>
-                  <input type="text" id="addr-ort" value="${escH(ort)}" placeholder="Dornbirn">
+                  <input type="text" id="addr-ort" value="${escH(ort)}" placeholder="z.B. Dornbirn">
                 </div>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap">
