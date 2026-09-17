@@ -175,7 +175,8 @@
   width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
 }
 .jd-termin-check input[type="checkbox"]:disabled { cursor: default; }
-.jd-termin-label { font-size: 13px; color: var(--text); font-weight: 500; flex: 1; text-align: left; }
+.jd-termin-label { font-size: 13px; color: var(--text); font-weight: 500; flex: 1; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.jd-termin-zeit { font-size: 12px; color: var(--text-lt); font-weight: 300; }
 .jd-termin-applied { opacity: .7; }
 .jd-termin-full:not(.jd-termin-applied) { opacity: .55; }
 .jd-termin-full .jd-termin-label { text-decoration: line-through; }
@@ -581,9 +582,12 @@ function renderMain(job) {
           const badge = already
             ? '<span class="jd-termin-badge">✓ beworben</span>'
             : (t._voll ? '<span class="jd-termin-badge jd-termin-badge-full">Ausgebucht</span>' : '');
+          const zeitVon = (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5);
+          const zeitBis = (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5);
+          const zeitHtml = (zeitVon && zeitBis) ? `<span class="jd-termin-zeit">${esc(zeitVon)} – ${esc(zeitBis)} Uhr</span>` : '';
           return `<label class="jd-termin-check${already ? ' jd-termin-applied' : ''}${t._voll ? ' jd-termin-full' : ''}">
             <input type="checkbox" value="${t.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="updateBewerbenGate()">
-            <span class="jd-termin-label">${formatDate(t.datum)}</span>
+            <span class="jd-termin-label">${formatDate(t.datum)}${zeitHtml}</span>
             ${badge}
           </label>`;
         }).join('')}
@@ -685,10 +689,10 @@ function renderMain(job) {
         </div>
         <hr class="jd-apply-divider">
         ${terminRowHtml}
-        <div class="jd-apply-row">
+        ${!_jdIsMultiTermin ? `<div class="jd-apply-row">
           <span class="jd-apply-row-label">Uhrzeit</span>
           <span class="jd-apply-row-value">${stunden}</span>
-        </div>
+        </div>` : ''}
         <div class="jd-apply-row">
           <span class="jd-apply-row-label">Freie Plätze</span>
           <span class="jd-apply-row-value jd-spots-val">${plaetze}</span>

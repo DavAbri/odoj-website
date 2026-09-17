@@ -434,11 +434,14 @@ let _vfBewEmail = '';
   _vfAgProfile = agRes.data;
   _vfJobData   = jobRes.data;
 
-  // Bei Mehrtages-Jobs: das spezifische Termin-Datum dieser Bewerbung
-  // verwenden statt des repräsentativen (frühesten) jobs.datum.
+  // Bei Mehrtages-Jobs: das spezifische Termin-Datum (und ggf. eine davon
+  // abweichende Uhrzeit) dieser Bewerbung verwenden statt des repräsentativen
+  // (frühesten) jobs.datum bzw. der Job-Standardzeit.
   if (bew.termin_id && _vfJobData) {
-    const { data: termin } = await odojSb.from('job_termine').select('datum').eq('id', bew.termin_id).maybeSingle();
+    const { data: termin } = await odojSb.from('job_termine').select('datum, uhrzeit_von, uhrzeit_bis').eq('id', bew.termin_id).maybeSingle();
     if (termin?.datum) _vfJobData.datum = termin.datum;
+    if (termin?.uhrzeit_von) _vfJobData.uhrzeit_von = termin.uhrzeit_von.slice(0, 5);
+    if (termin?.uhrzeit_bis) _vfJobData.uhrzeit_bis = termin.uhrzeit_bis.slice(0, 5);
   }
 
   // Jobber-Profil: zuerst localStorage-Snapshot (von meine-inserate.html gesetzt),

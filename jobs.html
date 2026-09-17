@@ -801,6 +801,8 @@ async function checkJobsAuth() {
         .forEach(t => allJobs.push({
           ...job,
           datum: t.datum,
+          uhrzeit_von: (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5) || null,
+          uhrzeit_bis: (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5) || null,
           _terminId: t.id,
           _isMultiTermin: true,
           _terminAusgebucht: (acceptedCountByTermin[t.id] || 0) >= job.plaetze
