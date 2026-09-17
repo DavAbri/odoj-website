@@ -295,7 +295,35 @@
 .if-field textarea { resize: vertical; min-height: 88px; }
 .if-row   { display: grid; grid-template-columns: 1fr 1fr;     gap: 12px; }
 .if-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.if-row.if-row-collapse-1 { grid-template-columns: 1fr; }
 .if-hint  { font-size: 12px; color: var(--text-lt); margin-top: 4px; }
+.if-toggle-group { display: flex; gap: 8px; }
+.if-toggle-btn {
+  flex: 1; padding: 11px 16px; border: 1.5px solid var(--gray-lt); border-radius: var(--r-sm);
+  background: var(--off); color: var(--text-mid);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.if-toggle-btn.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.if-chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.if-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--off); border: 1.5px solid var(--gray-lt); border-radius: 100px;
+  padding: 6px 8px 6px 14px; font-size: 13px; color: var(--text); font-weight: 500;
+}
+.if-chip button {
+  background: none; border: none; cursor: pointer; color: var(--text-lt);
+  width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; line-height: 1; padding: 0;
+}
+.if-chip button:hover { background: var(--gray-lt); color: var(--navy); }
+.if-chip-add-btn {
+  padding: 0 20px; border-radius: var(--r-sm); border: 1.5px solid var(--navy);
+  background: var(--navy); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.if-chip-add-btn:hover { background: var(--navy-mid, #132847); }
+.if-chip-add-btn:disabled { opacity: .5; cursor: not-allowed; }
 .if-submit {
   width: 100%; background: var(--accent); color: var(--navy);
   font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
@@ -720,7 +748,14 @@
               <label>Jobtitel *</label>
               <input type="text" id="ins-titel" placeholder="z.B. Servicekraft, Lagerhelfer…" required>
             </div>
-            <div class="if-row">
+            <div class="if-field">
+              <label>Terminart</label>
+              <div class="if-toggle-group">
+                <button type="button" class="if-toggle-btn on" id="ins-modus-einzel" onclick="setTerminModus('einzel')">Einzelner Tag</button>
+                <button type="button" class="if-toggle-btn" id="ins-modus-mehrere" onclick="setTerminModus('mehrere')">Mehrere Tage</button>
+              </div>
+            </div>
+            <div class="if-row" id="ins-branche-datum-row">
               <div class="if-field">
                 <label>Branche *</label>
                 <select id="ins-branche" required>
@@ -732,10 +767,24 @@
                   <option value="sonstige">Sonstige</option>
                 </select>
               </div>
-              <div class="if-field">
+              <div class="if-field" id="ins-datum-einzel-wrap">
                 <label>Datum *</label>
                 <input type="date" id="ins-datum" required>
               </div>
+            </div>
+            <div class="if-field" id="ins-datum-mehrere-wrap" style="display:none">
+              <label>Termine * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(mind. 2 Tage)</span></label>
+              <div style="display:flex;gap:10px">
+                <input type="date" id="ins-termin-picker" style="flex:1">
+                <button type="button" class="if-chip-add-btn" onclick="addTerminChip()">+ Hinzufügen</button>
+              </div>
+              <div id="ins-termin-chips" class="if-chip-list"></div>
+              <div class="if-hint">Alle anderen Angaben (Titel, Zeit, Ort, Lohn, Beschreibung) gelten für jeden Termin gleichermaßen.</div>
+            </div>
+            <div class="if-field" id="ins-mindest-termine-wrap" style="display:none">
+              <label>Mindestanzahl an Terminen für die Bewerbung <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></label>
+              <input type="number" id="ins-mindest-termine" min="1">
+              <div class="if-hint">Leer lassen = Jobber kann sich schon für 1 Termin bewerben.</div>
             </div>
             <div class="if-row-3">
               <div class="if-field">
@@ -1105,13 +1154,21 @@ async function loadInserate() {
   }
 
   const jobIds = jobs.map(j => j.id);
-  const { data: bews } = await odojSb.from('bewerbungen').select('job_id, status').in('job_id', jobIds);
-  const countMap      = {};
-  const acceptedMap   = {};
-  const ausstehendMap = {};
+  const { data: bews } = await odojSb.from('bewerbungen').select('job_id, status, termin_id').in('job_id', jobIds);
+  const { data: alleTermine } = await odojSb.from('job_termine').select('id, job_id, datum').in('job_id', jobIds);
+  const termineByJob = {};
+  (alleTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push({ id: t.id, datum: t.datum }));
+  Object.values(termineByJob).forEach(list => list.sort((a, b) => a.datum.localeCompare(b.datum)));
+  const countMap        = {};
+  const acceptedMap     = {};
+  const ausstehendMap   = {};
+  const acceptedByTermin = {};
   bews?.forEach(b => {
     if (b.status !== 'abgelehnt') countMap[b.job_id] = (countMap[b.job_id] || 0) + 1;
-    if (b.status === 'angenommen')  acceptedMap[b.job_id]   = (acceptedMap[b.job_id]   || 0) + 1;
+    if (b.status === 'angenommen') {
+      acceptedMap[b.job_id] = (acceptedMap[b.job_id] || 0) + 1;
+      if (b.termin_id) acceptedByTermin[b.termin_id] = (acceptedByTermin[b.termin_id] || 0) + 1;
+    }
     if (b.status === 'ausstehend')  ausstehendMap[b.job_id] = (ausstehendMap[b.job_id] || 0) + 1;
   });
 
@@ -1134,16 +1191,21 @@ async function loadInserate() {
 
   const heute = new Date().toISOString().split('T')[0];
 
+  // Ein Mehrtages-Job gilt als "aktuell", solange MINDESTENS ein Termin noch
+  // aussteht - auch wenn sein frühester Termin (= jobs.datum) schon vorbei ist.
+  const hatZukunftsTermin = j => (termineByJob[j.id] || []).some(t => t.datum >= heute);
+  const istAktuell = j => (!j.datum || j.datum >= heute) || hatZukunftsTermin(j);
+
   // Sortierung: aktuelle aufsteigend, vergangene absteigend nach Datum
   const aktuelle  = jobs
-    .filter(j => !j.datum || j.datum >= heute)
+    .filter(istAktuell)
     .sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
   const vergangene = jobs
-    .filter(j => j.datum && j.datum < heute)
+    .filter(j => !istAktuell(j))
     .sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
 
   function renderSubGrid(list) {
-    return `<div class="ins-sub-grid">${list.map(j => renderInseratCard(j, countMap[j.id]||0, acceptedMap[j.id]||0, ausstehendMap[j.id]||0)).join('')}</div>`;
+    return `<div class="ins-sub-grid">${list.map(j => renderInseratCard(j, countMap[j.id]||0, acceptedMap[j.id]||0, ausstehendMap[j.id]||0, termineByJob[j.id], acceptedByTermin)).join('')}</div>`;
   }
 
   let html = '';
@@ -1188,14 +1250,25 @@ function toggleVergangene(btn) {
   btn.textContent = open ? 'Anzeigen ▾' : 'Ausblenden ▴';
 }
 
-function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
+function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine, acceptedByTermin) {
   bewCount        = bewCount        || 0;
   acceptedCount   = acceptedCount   || 0;
   ausstehendCount = ausstehendCount || 0;
+  acceptedByTermin = acceptedByTermin || {};
   const b = BRANCHEN[j.branche] || { label: j.branche, cls: '' };
-  const datum = j.datum
-    ? new Date(j.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : '–';
+  const fmtKurz = d => new Date(d + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const isMultiTermin = termine && termine.length > 0;
+  const datum = isMultiTermin
+    ? `${fmtKurz(termine[0].datum)} – ${fmtKurz(termine[termine.length - 1].datum)}`
+    : (j.datum ? fmtKurz(j.datum) : '–');
+  const terminBadge = isMultiTermin
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#EAF1FB;color:#1A5FA0;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px">📅 ${termine.length} Termine</span>`
+    : '';
+  // Bei Mehrtages-Jobs: Anzahl der bereits voll belegten Termine (nicht die
+  // kumulierte Bewerberzahl über alle Termine hinweg vs. plaetze vergleichen)
+  const vollTermine = isMultiTermin
+    ? termine.filter(t => (acceptedByTermin[t.id] || 0) >= (j.plaetze || 1)).length
+    : 0;
   const statusCls = j.status === 'aktiv' ? 'status-aktiv' : 'status-inaktiv';
   const stunden   = j.stundenanzahl ? j.stundenanzahl + ' Std.' : '';
   const gehalt    = Number(j.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -1205,17 +1278,23 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount) {
     ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben</span>`
     : '';
 
-  const remaining = (j.plaetze || 0) - acceptedCount;
-  const ausgebuchtBadge = remaining <= 0
+  // Bei Mehrtages-Jobs bezieht sich "Ausgebucht"/"offen" auf einzelne Termine,
+  // nicht auf die über alle Termine kumulierte Bewerberzahl vs. plaetze.
+  const remaining = isMultiTermin ? (termine.length - vollTermine) : ((j.plaetze || 0) - acceptedCount);
+  const alleVoll  = isMultiTermin ? (vollTermine >= termine.length) : (remaining <= 0);
+  const ausgebuchtBadge = alleVoll
     ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#FDE8E8;color:#c0392b;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Ausgebucht</span>`
     : '';
-  const remainingHtml = `<span class="inserat-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#22c55e"><circle cx="12" cy="12" r="10"/></svg> ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
+  const remainingHtml = isMultiTermin
+    ? `<span class="inserat-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#22c55e"><circle cx="12" cy="12" r="10"/></svg> ${remaining > 0 ? remaining + ' von ' + termine.length + ' Terminen noch offen' : 'Alle Termine ausgebucht'}</span>`
+    : `<span class="inserat-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#22c55e"><circle cx="12" cy="12" r="10"/></svg> ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
 
   return `
     <div class="inserat-card" onclick="openBewerbungen('${j.id}', '${titelEsc}', '${j.datum || ''}')">
       <div class="inserat-top">
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
           <div class="inserat-titel">${j.titel}</div>
+          ${terminBadge}
           ${vergebenBadge}
           ${ausgebuchtBadge}
           <div class="inserat-firma" style="width:100%">${j.firmenname || ''}</div>
@@ -1291,6 +1370,12 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   const tagesgehalt = jobRow?.tagesgehalt || 0;
   const odojConfig = await getOdojBankConfig();
 
+  // Termine dieses Jobs laden (nur bei Mehrtages-Jobs vorhanden), damit jede
+  // Bewerbungszeile ihr EIGENES Termin-Datum zeigt statt des einen jobDatum.
+  const { data: termine } = await odojSb.from('job_termine').select('id, datum').eq('job_id', jobId);
+  const terminMap = {};
+  (termine || []).forEach(t => { terminMap[t.id] = t.datum; });
+
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
   const acceptedBewIds = bewerbungen.filter(b => b.status === 'angenommen').map(b => b.id);
   let profileMap = {};
@@ -1324,7 +1409,10 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   });
   vertragRes?.data?.forEach(v => { vertragMap[v.bewerbung_id] = v.id; });
 
-  bodyEl.innerHTML = bewerbungen.map(b => renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], jobDatum, vertragMap[b.id], tagesgehalt, jobTitel, odojConfig)).join('');
+  bodyEl.innerHTML = bewerbungen.map(b => {
+    const effektivDatum = b.termin_id ? (terminMap[b.termin_id] || jobDatum) : jobDatum;
+    return renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], effektivDatum, vertragMap[b.id], tagesgehalt, jobTitel, odojConfig);
+  }).join('');
 }
 
 // ODOJ-Bankdaten für die Vermittlungsgebühr (einmalig geladen & gecached)
@@ -1440,6 +1528,7 @@ function renderBewItem(b, profile, bew, jobDatum, vertragId, tagesgehalt, jobTit
               ${realName}${bewBadge}
             </div>
             <div class="bew-item-date">Beworben am ${dateStr}</div>
+            ${b.termin_id && jobDatum ? `<div class="bew-item-date" style="font-weight:600;color:var(--navy)">📅 Termin: ${new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}</div>` : ''}
           </div>
         </div>
         <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
@@ -1619,10 +1708,15 @@ async function updateBewStatus(bewId, newStatus) {
   if (error) { alert('Fehler: ' + error.message); return; }
 
   const { data: bew } = await odojSb.from('bewerbungen')
-    .select('jobber_id, job_id')
+    .select('jobber_id, job_id, termin_id')
     .eq('id', bewId).single();
 
-  if (newStatus === 'angenommen' && bew?.job_id) {
+  // Automatische Job-Deaktivierung bei voller Belegung: nur für Einzeltag-
+  // Bewerbungen (termin_id = null). Bei Mehrtages-Jobs würde das sonst ALLE
+  // noch unbesetzten Zukunftstermine aus der Übersicht verschwinden lassen,
+  // sobald irgendein einzelner Termin voll ist - das übernimmt stattdessen
+  // die Pro-Termin-"Ausgebucht"-Anzeige auf jobs.html/job-detail.html.
+  if (newStatus === 'angenommen' && bew?.job_id && !bew.termin_id) {
     const { data: job } = await odojSb.from('jobs').select('id, plaetze, status').eq('id', bew.job_id).single();
     if (job && job.status === 'aktiv') {
       const { count } = await odojSb.from('bewerbungen')
@@ -1838,6 +1932,67 @@ function checkPauseWarning() {
   return true;
 }
 
+// ── MEHRFACH-TERMINE ──
+let _terminModus = 'einzel'; // 'einzel' | 'mehrere'
+let _terminChips = [];       // ['YYYY-MM-DD', ...] aufsteigend sortiert
+let _terminChipsLocked = false; // true beim Bearbeiten eines bestehenden Mehrtages-Jobs
+
+function setTerminModus(mode) {
+  _terminModus = mode;
+  document.getElementById('ins-modus-einzel').classList.toggle('on', mode === 'einzel');
+  document.getElementById('ins-modus-mehrere').classList.toggle('on', mode === 'mehrere');
+  document.getElementById('ins-datum-einzel-wrap').style.display = mode === 'einzel' ? 'block' : 'none';
+  document.getElementById('ins-branche-datum-row').classList.toggle('if-row-collapse-1', mode === 'mehrere');
+  document.getElementById('ins-datum-mehrere-wrap').style.display = mode === 'mehrere' ? 'block' : 'none';
+  document.getElementById('ins-mindest-termine-wrap').style.display = mode === 'mehrere' ? 'block' : 'none';
+  document.getElementById('ins-datum').required = mode === 'einzel';
+  if (mode === 'einzel') {
+    document.getElementById('ins-datum').value = '';
+  }
+}
+
+function addTerminChip() {
+  if (_terminChipsLocked) return;
+  const picker = document.getElementById('ins-termin-picker');
+  const val = picker.value;
+  if (!val) return;
+  const heute = new Date().toISOString().split('T')[0];
+  if (val < heute) { alert('Bitte ein Datum in der Zukunft wählen.'); return; }
+  if (_terminChips.includes(val)) { picker.value = ''; return; }
+  _terminChips.push(val);
+  _terminChips.sort();
+  picker.value = '';
+  renderTerminChips();
+}
+
+function removeTerminChip(datum) {
+  if (_terminChipsLocked) return;
+  _terminChips = _terminChips.filter(d => d !== datum);
+  renderTerminChips();
+}
+
+function renderTerminChips() {
+  const wrap = document.getElementById('ins-termin-chips');
+  wrap.innerHTML = _terminChips.map(d => {
+    const label = new Date(d + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    const removeBtn = _terminChipsLocked ? '' : `<button type="button" onclick="removeTerminChip('${d}')" aria-label="Termin entfernen">✕</button>`;
+    return `<span class="if-chip">${label}${removeBtn}</span>`;
+  }).join('');
+}
+
+function _resetTerminUI() {
+  _terminChips = [];
+  _terminChipsLocked = false;
+  document.getElementById('ins-termin-picker').disabled = false;
+  document.getElementById('ins-termin-picker').value = '';
+  document.querySelector('#ins-datum-mehrere-wrap .if-chip-add-btn').disabled = false;
+  const lockedHint = document.getElementById('ins-termine-locked-hint');
+  if (lockedHint) lockedHint.remove();
+  document.getElementById('ins-mindest-termine').value = '';
+  renderTerminChips();
+  setTerminModus('einzel');
+}
+
 // ── JOB SPEICHERN ──
 async function submitInserat(e) {
   e.preventDefault();
@@ -1863,7 +2018,18 @@ async function submitInserat(e) {
 
   const titel   = document.getElementById('ins-titel').value.trim();
   const branche = document.getElementById('ins-branche').value;
-  const datum   = document.getElementById('ins-datum').value;
+
+  if (_terminModus === 'mehrere' && !_terminChipsLocked && _terminChips.length < 2) {
+    errEl.textContent = 'Bitte mindestens 2 Termine hinzufügen (oder auf "Einzelner Tag" wechseln).';
+    errEl.style.display = 'block'; return;
+  }
+  const mindestTermineRaw = document.getElementById('ins-mindest-termine').value;
+  const mindestTermine = (_terminModus === 'mehrere' && mindestTermineRaw) ? parseInt(mindestTermineRaw, 10) : null;
+  if (_terminModus === 'mehrere' && mindestTermine && mindestTermine > _terminChips.length) {
+    errEl.textContent = 'Die Mindestanzahl an Terminen kann nicht größer sein als die Anzahl der gewählten Termine (' + _terminChips.length + ').';
+    errEl.style.display = 'block'; return;
+  }
+  const datum = _terminModus === 'mehrere' ? _terminChips[0] : document.getElementById('ins-datum').value;
   const von     = document.getElementById('ins-von').value;
   const bis     = document.getElementById('ins-bis').value;
   const stunden = parseFloat(document.getElementById('ins-stunden').value) || null;
@@ -1890,7 +2056,7 @@ async function submitInserat(e) {
 
   // ── BEARBEITEN MODUS: UPDATE statt INSERT ──
   if (_editJobId) {
-    const formData = { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, pause, beschr };
+    const formData = { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, pause, beschr, mindestTermine };
     await _startEditFlow(formData, btn, errEl, successEl);
     return;
   }
@@ -1905,18 +2071,36 @@ async function submitInserat(e) {
     tagesgehalt:   gehalt,
     adresse, ort, plaetze, mindestalter, pause,
     beschreibung:  beschr,
-    status:        'aktiv'
+    status:        'aktiv',
+    mindest_termine: mindestTermine
   }).select('id').single();
 
-  btn.textContent = 'Job speichern';
-  btn.disabled    = false;
-
   if (error) {
+    btn.textContent = 'Job speichern';
+    btn.disabled    = false;
     errEl.textContent = 'Fehler: ' + error.message;
     errEl.style.display = 'block'; return;
   }
 
+  // Bei "Mehrere Tage": Termine als eigene Zeilen speichern
+  if (_terminModus === 'mehrere' && newJob?.id) {
+    const { error: termineError } = await odojSb.from('job_termine').insert(
+      _terminChips.map(d => ({ job_id: newJob.id, datum: d }))
+    );
+    if (termineError) {
+      btn.textContent = 'Job speichern';
+      btn.disabled    = false;
+      errEl.textContent = 'Der Job wurde angelegt, aber die Termine konnten nicht gespeichert werden (' + termineError.message + '). Bitte lösche das Inserat "' + titel + '" in "Meine Inserate" und versuche es erneut.';
+      errEl.style.display = 'block';
+      return;
+    }
+  }
+
+  btn.textContent = 'Job speichern';
+  btn.disabled    = false;
+
   document.getElementById('ins-form').reset();
+  _resetTerminUI();
   successEl.textContent = 'Inserat wurde erfolgreich gespeichert! ✅';
   successEl.style.display = 'block';
 
@@ -2242,6 +2426,7 @@ async function editInserat(jobId) {
   // Job-Daten laden
   const { data: job, error } = await odojSb.from('jobs').select('*').eq('id', jobId).single();
   if (error || !job) { alert('Inserat konnte nicht geladen werden.'); return; }
+  const { data: termine } = await odojSb.from('job_termine').select('datum').eq('job_id', jobId).order('datum');
 
   // Zum Tab "inserieren" wechseln
   showTab('inserieren');
@@ -2249,7 +2434,6 @@ async function editInserat(jobId) {
   // Formular vorausfüllen
   document.getElementById('ins-titel').value     = job.titel || '';
   document.getElementById('ins-branche').value   = job.branche || '';
-  document.getElementById('ins-datum').value     = job.datum || '';
   document.getElementById('ins-von').value       = job.uhrzeit_von || '';
   document.getElementById('ins-bis').value       = job.uhrzeit_bis || '';
   document.getElementById('ins-stunden').value   = job.stundenanzahl || '';
@@ -2260,6 +2444,24 @@ async function editInserat(jobId) {
   document.getElementById('ins-adresse').value   = job.adresse || '';
   document.getElementById('ins-ort').value       = job.ort || '';
   document.getElementById('ins-beschr').value    = job.beschreibung || '';
+
+  if (termine && termine.length) {
+    // Mehrtages-Job: Termine gesperrt anzeigen (siehe _resetTerminUI/setTerminModus)
+    setTerminModus('mehrere');
+    _terminChips = termine.map(t => t.datum);
+    _terminChipsLocked = true;
+    document.getElementById('ins-mindest-termine').value = job.mindest_termine || '';
+    document.getElementById('ins-termin-picker').disabled = true;
+    document.querySelector('#ins-datum-mehrere-wrap .if-chip-add-btn').disabled = true;
+    if (!document.getElementById('ins-termine-locked-hint')) {
+      document.getElementById('ins-datum-mehrere-wrap').insertAdjacentHTML('beforeend',
+        '<div class="if-hint" id="ins-termine-locked-hint" style="color:#7a5500">🔒 Termine können nach Erstellung nicht mehr geändert werden.</div>');
+    }
+    renderTerminChips();
+  } else {
+    setTerminModus('einzel');
+    document.getElementById('ins-datum').value = job.datum || '';
+  }
 
   // Bearbeiten-Modus aktivieren
   _editJobId = jobId;
@@ -2276,6 +2478,7 @@ function cancelEditInserat() {
   _pendingEditData = null;
   _pendingBewerber = null;
   document.getElementById('ins-form').reset();
+  _resetTerminUI();
   document.getElementById('ins-edit-banner').style.display = 'none';
   document.getElementById('ins-btn').textContent = 'Job speichern';
   document.getElementById('ins-abbrechen-btn').style.display = 'none';
@@ -2329,7 +2532,7 @@ async function confirmEditUpdate() {
 }
 
 async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
-  const { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, pause, beschr } = formData;
+  const { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, pause, beschr, mindestTermine } = formData;
 
   const { error } = await odojSb.from('jobs').update({
     titel, branche, datum,
@@ -2338,7 +2541,8 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
     stundenanzahl: stunden,
     tagesgehalt:   gehalt,
     adresse, ort, plaetze, mindestalter, pause,
-    beschreibung:  beschr
+    beschreibung:  beschr,
+    mindest_termine: mindestTermine ?? null
   }).eq('id', _editJobId);
 
   btn.textContent = 'Änderungen speichern';

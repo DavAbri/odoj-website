@@ -86,7 +86,7 @@
     document.head.appendChild(style);
   }
 
-  window.showBewerbungsModal = function ({ titel, firma, datum, gehalt, onConfirm }) {
+  window.showBewerbungsModal = function ({ titel, firma, datum, datumList, gehalt, onConfirm }) {
     // Altes Modal entfernen
     const old = document.getElementById('odoj-modal-overlay');
     if (old) old.remove();
@@ -94,6 +94,17 @@
     const gehaltStr = gehalt
       ? '€ ' + Number(gehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
       : null;
+
+    const hasMultiDatum = Array.isArray(datumList) && datumList.length > 0;
+    const datumRowHtml = hasMultiDatum
+      ? `<div class="odoj-modal-row" style="align-items:flex-start">
+          <span class="odoj-modal-row-label">Termine (${datumList.length})</span>
+          <span class="odoj-modal-row-value">${datumList.map(escModal).join('<br>')}</span>
+        </div>`
+      : (datum ? `<div class="odoj-modal-row">
+          <span class="odoj-modal-row-label">Datum</span>
+          <span class="odoj-modal-row-value">${escModal(datum)}</span>
+        </div>` : '');
 
     const overlay = document.createElement('div');
     overlay.id = 'odoj-modal-overlay';
@@ -112,16 +123,13 @@
             <span class="odoj-modal-row-label">Unternehmen</span>
             <span class="odoj-modal-row-value">${escModal(firma)}</span>
           </div>
-          ${datum ? `<div class="odoj-modal-row">
-            <span class="odoj-modal-row-label">Datum</span>
-            <span class="odoj-modal-row-value">${escModal(datum)}</span>
-          </div>` : ''}
+          ${datumRowHtml}
           ${gehaltStr ? `<div class="odoj-modal-row">
             <span class="odoj-modal-row-label">Tagesgehalt</span>
             <span class="odoj-modal-row-value odoj-modal-gehalt">${gehaltStr} <span>/ Tag</span></span>
           </div>` : ''}
           <div id="odoj-modal-question">
-            Möchtest du dich wirklich für diesen Job bewerben?
+            ${hasMultiDatum ? 'Möchtest du dich wirklich für diese Termine bewerben?' : 'Möchtest du dich wirklich für diesen Job bewerben?'}
           </div>
         </div>
         <div id="odoj-modal-footer">

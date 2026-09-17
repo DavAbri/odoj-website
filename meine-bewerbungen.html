@@ -405,7 +405,7 @@
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
-let _bewMap = {}, _jobMap = {};
+let _bewMap = {}, _jobMap = {}, _terminDatumMap = {};
 
 const BRANCHEN = {
   gastro:       { label: 'Gastronomie',              cls: 'tag-gastro' },
@@ -421,8 +421,13 @@ function escH(s) {
 
 // Kompakte Karte für eine Spalte
 function renderCard(b, job, opts = {}) {
-  const jobDat = job?.datum
-    ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'short' })
+  // Bei Mehrtages-Jobs: das konkrete Termin-Datum DIESER Bewerbung zeigen,
+  // nicht das repräsentative (früheste) jobs.datum - sonst würden mehrere
+  // Bewerbungen zu unterschiedlichen Terminen desselben Jobs alle dasselbe
+  // (falsche) Datum anzeigen.
+  const effektivDatum = b.termin_id ? _terminDatumMap[b.termin_id] : job?.datum;
+  const jobDat = effektivDatum
+    ? new Date(effektivDatum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'short' })
     : '–';
   const gehalt = job?.tagesgehalt
     ? Number(job.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
@@ -515,6 +520,14 @@ async function loadMeineBewerbungen() {
       .in('id', jobIds);
     jobs?.forEach(j => { jobMap[j.id] = j; });
     _jobMap = jobMap;
+  }
+
+  // Termin-Daten laden (Mehrtages-Jobs): jede Bewerbung zeigt ihr EIGENES Datum
+  const terminIds = [...new Set(bewerbungen.map(b => b.termin_id).filter(Boolean))];
+  _terminDatumMap = {};
+  if (terminIds.length) {
+    const { data: termine } = await odojSb.from('job_termine').select('id, datum').in('id', terminIds);
+    termine?.forEach(t => { _terminDatumMap[t.id] = t.datum; });
   }
 
   // Echte Firmennamen aus Profile laden (Jobber sieht Firmenname des Arbeitgebers)

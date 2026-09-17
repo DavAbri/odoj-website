@@ -396,7 +396,7 @@ let _vfBewEmail = '';
 
   // Bewerbung laden – inkl. jobber_name/email als Fallback
   const { data: bew, error: bewErr } = await odojSb.from('bewerbungen')
-    .select('jobber_id, job_id, arbeitgeber_id, jobber_name, jobber_email')
+    .select('jobber_id, job_id, arbeitgeber_id, jobber_name, jobber_email, termin_id')
     .eq('id', _vfBewerbungId).maybeSingle();
 
   if (bewErr) console.error('[Vertrag] Bewerbung-Fehler:', bewErr.message);
@@ -433,6 +433,13 @@ let _vfBewEmail = '';
 
   _vfAgProfile = agRes.data;
   _vfJobData   = jobRes.data;
+
+  // Bei Mehrtages-Jobs: das spezifische Termin-Datum dieser Bewerbung
+  // verwenden statt des repräsentativen (frühesten) jobs.datum.
+  if (bew.termin_id && _vfJobData) {
+    const { data: termin } = await odojSb.from('job_termine').select('datum').eq('id', bew.termin_id).maybeSingle();
+    if (termin?.datum) _vfJobData.datum = termin.datum;
+  }
 
   // Jobber-Profil: zuerst localStorage-Snapshot (von meine-inserate.html gesetzt),
   // dann DB-Ergebnis, dann leeres Objekt

@@ -163,6 +163,29 @@
 }
 .jd-login-hint a { color: var(--accent); font-weight: 600; }
 
+/* ── MEHRFACH-TERMINE CHECKBOX-LISTE ── */
+.jd-termin-list { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 4px; width: 100%; }
+.jd-termin-check {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1.5px solid var(--gray-lt); border-radius: var(--r-sm);
+  cursor: pointer; transition: border-color .2s;
+}
+.jd-termin-check:hover { border-color: var(--accent); }
+.jd-termin-check input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
+}
+.jd-termin-check input[type="checkbox"]:disabled { cursor: default; }
+.jd-termin-label { font-size: 13px; color: var(--text); font-weight: 500; flex: 1; text-align: left; }
+.jd-termin-applied { opacity: .7; }
+.jd-termin-full:not(.jd-termin-applied) { opacity: .55; }
+.jd-termin-full .jd-termin-label { text-decoration: line-through; }
+.jd-termin-badge {
+  font-size: 11px; font-weight: 700; color: #1a7a50; background: #E6F5EE;
+  padding: 3px 9px; border-radius: 100px; white-space: nowrap;
+}
+.jd-termin-badge.jd-termin-badge-full { color: #991B1B; background: #FEE2E2; }
+.jd-mindest-hint { font-size: 12px; color: var(--text-lt); margin: 2px 0 8px; }
+
 /* ── ARBEITGEBER BLOCK ── */
 .jd-ag-block {
   display: flex; align-items: flex-start; gap: 16px;
@@ -322,6 +345,10 @@ let _jdJob      = null;
 let _jdApplied  = false;
 let _jdAgProfile = null;
 let _jdAgBew     = null;   // { avg, count }
+let _jdTermine        = [];          // job_termine-Zeilen (nur bei Mehrtages-Jobs befüllt)
+let _jdIsMultiTermin  = false;
+let _jdAppliedTerminIds = new Set(); // enthält `null` bei Einzeltag-Bewerbung
+let _jdClickedTerminId  = null;      // Termin, über dessen Karte der Jobber kam (?termin=)
 
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -333,8 +360,10 @@ function formatDate(d) {
 }
 
 async function initJobDetail() {
-  const jobId = new URLSearchParams(location.search).get('id');
+  const params = new URLSearchParams(location.search);
+  const jobId = params.get('id');
   if (!jobId) { showError('Keine Job-ID angegeben.'); return; }
+  _jdClickedTerminId = params.get('termin');
 
   // Session
   _jdSession = await odojGetSession();
@@ -348,11 +377,12 @@ async function initJobDetail() {
       odojSaveRolle(_jdRolle);
     } catch (_) { _jdRolle = localStorage.getItem('odoj_rolle') || 'jobber'; }
 
-    // Bereits beworben?
+    // Bereits beworben? (pro Termin; `null` = Einzeltag-Bewerbung)
     if (_jdRolle === 'jobber') {
-      const { data: bew } = await odojSb.from('bewerbungen')
-        .select('id').eq('jobber_id', _jdSession.user.id).eq('job_id', jobId).maybeSingle();
-      _jdApplied = !!bew;
+      const { data: bews } = await odojSb.from('bewerbungen')
+        .select('id, termin_id').eq('jobber_id', _jdSession.user.id).eq('job_id', jobId);
+      _jdAppliedTerminIds = new Set((bews || []).map(b => b.termin_id));
+      _jdApplied = _jdAppliedTerminIds.has(null);
     }
   }
 
@@ -360,6 +390,22 @@ async function initJobDetail() {
   const { data: job, error } = await odojSb.from('jobs').select('*').eq('id', jobId).single();
   if (error || !job) { showError('Dieser Job wurde nicht gefunden.'); return; }
   _jdJob = job;
+
+  // Termine laden (nur bei Mehrtages-Jobs vorhanden). Vergangene Termine werden
+  // ausgeblendet, außer der Jobber hat sich bereits dafür beworben.
+  const heuteDatum = new Date().toISOString().split('T')[0];
+  const { data: termine } = await odojSb.from('job_termine').select('*').eq('job_id', jobId).order('datum');
+  _jdTermine = (termine || []).filter(t => t.datum >= heuteDatum || _jdAppliedTerminIds.has(t.id));
+  _jdIsMultiTermin = _jdTermine.length > 0;
+
+  if (_jdIsMultiTermin) {
+    const terminIds = _jdTermine.map(t => t.id);
+    const { data: acceptedBews } = await odojSb
+      .from('bewerbungen').select('termin_id').eq('status', 'angenommen').in('termin_id', terminIds);
+    const acceptedCount = {};
+    (acceptedBews || []).forEach(b => { acceptedCount[b.termin_id] = (acceptedCount[b.termin_id] || 0) + 1; });
+    _jdTermine.forEach(t => { t._voll = (acceptedCount[t.id] || 0) >= (job.plaetze || 1); });
+  }
 
   // AG-Profil + Bewertungen parallel laden
   if (job.arbeitgeber_id) {
@@ -455,7 +501,7 @@ function renderHero(job) {
     <div class="jd-hero-meta">
       <span class="jd-hero-meta-item">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        ${datum}
+        ${_jdIsMultiTermin ? _jdTermine.length + ' Termine verfügbar' : datum}
       </span>
       <span class="jd-hero-meta-item">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -489,6 +535,7 @@ function renderMain(job) {
   const mapsUrl   = 'https://www.google.com/maps/search/?api=1&query=' + mapsQuery;
 
   // Bewerben-Button
+  const allTermineApplied = _jdIsMultiTermin && _jdTermine.every(t => _jdAppliedTerminIds.has(t.id));
   let applyBtn;
   if (!_jdSession) {
     applyBtn = `
@@ -497,7 +544,7 @@ function renderMain(job) {
         Anmelden um zu bewerben
       </button>
       <div class="jd-login-hint">Noch kein Konto? <a href="login.html">Kostenlos registrieren →</a></div>`;
-  } else if (_jdApplied) {
+  } else if (!_jdIsMultiTermin && _jdApplied) {
     applyBtn = `
       <button class="jd-apply-btn jd-applied" disabled>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
@@ -508,13 +555,45 @@ function renderMain(job) {
       <button class="jd-apply-btn" style="background:#E8EDF5;color:#7A8FA8;cursor:default" disabled>
         Als Arbeitgeber nicht verfügbar
       </button>`;
+  } else if (allTermineApplied) {
+    applyBtn = `
+      <button class="jd-apply-btn jd-applied" disabled>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+        ✓ Für alle Termine beworben
+      </button>`;
   } else {
     applyBtn = `
-      <button class="jd-apply-btn" id="jd-bewerben-btn" onclick="handleApply()">
+      <button class="jd-apply-btn" id="jd-bewerben-btn" onclick="handleApply()"${_jdIsMultiTermin ? ' disabled' : ''}>
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
         Jetzt bewerben
       </button>`;
   }
+
+  // Termin-Auswahl (Mehrtages-Jobs) statt der einzelnen Datumszeile
+  const terminRowHtml = _jdIsMultiTermin ? `
+    <div class="jd-apply-row" style="flex-direction:column;align-items:flex-start;gap:2px">
+      <span class="jd-apply-row-label" style="margin-bottom:6px">Termine – bitte auswählen</span>
+      <div class="jd-termin-list" id="jd-termin-list">
+        ${_jdTermine.map(t => {
+          const already = _jdAppliedTerminIds.has(t.id);
+          const checked = already || t.id === _jdClickedTerminId;
+          const disabled = already || t._voll;
+          const badge = already
+            ? '<span class="jd-termin-badge">✓ beworben</span>'
+            : (t._voll ? '<span class="jd-termin-badge jd-termin-badge-full">Ausgebucht</span>' : '');
+          return `<label class="jd-termin-check${already ? ' jd-termin-applied' : ''}${t._voll ? ' jd-termin-full' : ''}">
+            <input type="checkbox" value="${t.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="updateBewerbenGate()">
+            <span class="jd-termin-label">${formatDate(t.datum)}</span>
+            ${badge}
+          </label>`;
+        }).join('')}
+      </div>
+      ${job.mindest_termine ? `<div class="jd-mindest-hint">Mindestens ${job.mindest_termine} Termine erforderlich.</div>` : ''}
+    </div>` : `
+    <div class="jd-apply-row">
+      <span class="jd-apply-row-label">Datum</span>
+      <span class="jd-apply-row-value">${datum}</span>
+    </div>`;
 
   // AG-Block zusammenbauen
   const agName = _jdAgProfile?.firmenname || job.firmenname || 'Unbekannter Betrieb';
@@ -605,10 +684,7 @@ function renderMain(job) {
           </span>
         </div>
         <hr class="jd-apply-divider">
-        <div class="jd-apply-row">
-          <span class="jd-apply-row-label">Datum</span>
-          <span class="jd-apply-row-value">${datum}</span>
-        </div>
+        ${terminRowHtml}
         <div class="jd-apply-row">
           <span class="jd-apply-row-label">Uhrzeit</span>
           <span class="jd-apply-row-value">${stunden}</span>
@@ -625,10 +701,39 @@ function renderMain(job) {
       </div>
     </div>
   `;
+
+  if (_jdIsMultiTermin && !allTermineApplied) updateBewerbenGate();
+}
+
+function updateBewerbenGate() {
+  const btn = document.getElementById('jd-bewerben-btn');
+  if (!btn || !_jdIsMultiTermin) return;
+  const min = _jdJob?.mindest_termine || 1;
+  const checkedNew = document.querySelectorAll('#jd-termin-list input:checked:not(:disabled)').length;
+  const total = checkedNew + _jdAppliedTerminIds.size;
+  btn.disabled = checkedNew === 0 || total < min;
 }
 
 async function handleApply() {
   if (!_jdJob || !_jdSession) return;
+
+  if (_jdIsMultiTermin) {
+    const checkedIds = [...document.querySelectorAll('#jd-termin-list input:checked:not(:disabled)')].map(el => el.value);
+    if (!checkedIds.length) return;
+    const datumList = checkedIds
+      .map(id => _jdTermine.find(t => t.id === id))
+      .filter(Boolean)
+      .map(t => formatDate(t.datum));
+
+    showBewerbungsModal({
+      titel:  _jdJob.titel,
+      firma:  _jdAgProfile?.firmenname || _jdJob.firmenname || 'Unbekannter Betrieb',
+      datumList,
+      gehalt: _jdJob.tagesgehalt,
+      onConfirm: () => doApply(checkedIds)
+    });
+    return;
+  }
 
   const datum = _jdJob.datum
     ? new Date(_jdJob.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday:'short', day:'numeric', month:'long', year:'numeric' })
@@ -639,11 +744,11 @@ async function handleApply() {
     firma:  _jdAgProfile?.firmenname || _jdJob.firmenname || 'Unbekannter Betrieb',
     datum,
     gehalt: _jdJob.tagesgehalt,
-    onConfirm: doApply
+    onConfirm: () => doApply(null)
   });
 }
 
-async function doApply() {
+async function doApply(terminIds) {
   // Profil-Vollständigkeit prüfen
   if (!_jdProfile?.profil_vollstaendig) {
     showToast('Bitte vervollständige zuerst dein Profil (SV-Nummer + Adresse) → <a href="profil.html" style="color:#fff;text-decoration:underline">Zum Profil</a>', 'warn');
@@ -657,14 +762,18 @@ async function doApply() {
     ? ((_jdProfile.vorname || '') + ' ' + (_jdProfile.nachname || '')).trim() || _jdSession.user.email
     : _jdSession.user.email;
 
-  const { error } = await odojSb.from('bewerbungen').insert({
+  const idsToInsert = (terminIds && terminIds.length) ? terminIds : [null];
+  const rows = idsToInsert.map(terminId => ({
     job_id:         _jdJob.id,
     jobber_id:      _jdSession.user.id,
     arbeitgeber_id: _jdJob.arbeitgeber_id || null,
     jobber_name:    jobberName,
     jobber_email:   _jdSession.user.email,
-    status:         'ausstehend'
-  });
+    status:         'ausstehend',
+    termin_id:      terminId
+  }));
+
+  const { error } = await odojSb.from('bewerbungen').insert(rows);
 
   if (error) {
     showToast('Fehler: ' + error.message, 'error');
@@ -672,21 +781,22 @@ async function doApply() {
     return;
   }
 
-  _jdApplied = true;
-  if (btn) {
-    btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> ✓ Beworben';
-    btn.classList.add('jd-applied');
-    btn.disabled = true;
-    btn.onclick  = null;
-  }
+  idsToInsert.forEach(id => _jdAppliedTerminIds.add(id));
+  if (!_jdIsMultiTermin) _jdApplied = true;
+  renderMain(_jdJob); // Checkbox-Liste/Button auf neuen Zustand bringen
   showToast('✓ Bewerbung erfolgreich gesendet!', 'success');
 
-  // Bestätigungs-E-Mail an Jobber senden (non-blocking)
+  const terminInfo = (_jdIsMultiTermin && terminIds && terminIds.length)
+    ? terminIds.map(id => _jdTermine.find(t => t.id === id)).filter(Boolean).map(t => formatDate(t.datum)).join(', ')
+    : undefined;
+
+  // Bestätigungs-E-Mail an Jobber senden (non-blocking) - EIN Versand pro Klick, nicht pro Termin
   odojSb.functions.invoke('send-email', {
     body: {
       type:        'bewerbung_bestaetigt',
       recipientId: _jdSession.user.id,
       jobTitel:    _jdJob?.titel || '',
+      terminInfo
     }
   }).catch(err => console.error('[E-Mail] Bewerbungsbestätigung fehlgeschlagen:', err));
 
@@ -698,6 +808,7 @@ async function doApply() {
         recipientId: _jdJob.arbeitgeber_id,
         jobTitel:    _jdJob.titel || '',
         jobberName:  jobberName,
+        terminInfo
       }
     }).catch(err => console.error('[E-Mail] Arbeitgeber-Benachrichtigung fehlgeschlagen:', err));
   }

@@ -147,27 +147,6 @@
 .job-pay { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy); }
 .job-pay span { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 300; color: var(--text-lt); }
 .job-spots { font-size: 12px; color: var(--accent); font-weight: 600; }
-.job-apply {
-  background: var(--navy);
-  color: var(--white);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 9px 18px;
-  border-radius: var(--r-sm);
-  border: none;
-  cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  transition: background .2s, transform .15s;
-  text-decoration: none;
-  display: inline-block;
-}
-.job-apply:hover { background: var(--navy-soft); transform: translateY(-1px); }
-.job-applied {
-  background: #1a7a50 !important;
-  color: white !important;
-  cursor: default !important;
-}
-.job-applied:hover { transform: none !important; }
 .job-urgent {
   display: inline-block;
   background: #fff0f0;
@@ -577,7 +556,6 @@ let _odojJobsSession  = null;
 let _odojJobsRolle    = null;
 let _odojJobsProfile  = null;
 let _jobberAlter      = null;   // berechnetes Alter aus geburtsdatum
-const _appliedJobIds  = new Set();
 
 function _berechneAlter(geburtsdatum) {
   if (!geburtsdatum) return null;
@@ -612,64 +590,6 @@ function buildBranchenFilter(usedBranchen) {
   });
 }
 
-// ── TOAST ──
-function showJobsToast(msg, type) {
-  const t = document.createElement('div');
-  t.className = 'odoj-toast' + (type ? ' toast-' + type : '');
-  t.innerHTML = msg;
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; }, 2500);
-  setTimeout(() => t.remove(), 3000);
-}
-
-function zeigeBewerbungsToast() {
-  const alt = document.getElementById('bewerbungs-toast');
-  if (alt) alt.remove();
-
-  const toast = document.createElement('div');
-  toast.id = 'bewerbungs-toast';
-  toast.style.cssText = `
-    position:fixed; bottom:28px; left:50%;
-    transform:translateX(-50%);
-    background:#0B1628; color:#fff;
-    padding:16px 24px; border-radius:12px;
-    box-shadow:0 8px 32px rgba(0,0,0,0.3);
-    z-index:9999; display:flex; align-items:center;
-    gap:16px; font-size:14px;
-    font-family:'Plus Jakarta Sans',sans-serif;
-    white-space:nowrap; animation:bToastUp 0.3s ease;
-  `;
-  toast.innerHTML = `
-    <span>Bewerbung erfolgreich abgeschickt!</span>
-    <a href="meine-bewerbungen.html" style="background:#e6a01e;color:#0B1628;padding:8px 16px;border-radius:8px;font-weight:700;text-decoration:none;font-size:13px;white-space:nowrap">Meine Bewerbungen →</a>
-    <button onclick="document.getElementById('bewerbungs-toast').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;padding:0;line-height:1">×</button>
-  `;
-
-  if (!document.getElementById('bewerbungs-toast-css')) {
-    const s = document.createElement('style');
-    s.id = 'bewerbungs-toast-css';
-    s.textContent = `
-      @keyframes bToastUp {
-        from { opacity:0; transform:translateX(-50%) translateY(20px); }
-        to   { opacity:1; transform:translateX(-50%) translateY(0); }
-      }
-      @media (max-width:600px) {
-        #bewerbungs-toast {
-          left:16px; right:16px; bottom:16px;
-          transform:none; white-space:normal; flex-wrap:wrap;
-        }
-      }
-    `;
-    document.head.appendChild(s);
-  }
-
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    const el = document.getElementById('bewerbungs-toast');
-    if (el) { el.style.transition = 'opacity 0.3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }
-  }, 8000);
-}
-
 // ── FILTER STATE ──
 let _activeBranche = 'alle';
 let _activeAlter   = null;   // null = alle, 16 / 18 / 21
@@ -678,7 +598,6 @@ let _currentSort   = 'datum'; // 'datum' = nächster Termin zuerst, 'neu' = neue
 // ── SORTIER-STATE (für erneutes Rendern beim Wechsel der Sortierung) ──
 let _allJobsGlobal    = [];
 let _unlockedGlobal   = false;
-let _hideApplyGlobal  = false;
 
 function _sortJobs(jobs, mode) {
   const arr = [...jobs];
@@ -692,7 +611,7 @@ function _sortJobs(jobs, mode) {
 
 function handleSortChange(value) {
   _currentSort = value;
-  renderJobs(_sortJobs(_allJobsGlobal, _currentSort), _unlockedGlobal, _hideApplyGlobal);
+  renderJobs(_sortJobs(_allJobsGlobal, _currentSort), _unlockedGlobal);
 }
 
 function toggleFilters() {
@@ -750,127 +669,27 @@ function goToJobDetail(jobId, cardEl) {
     window.location.href = 'login.html';
     return;
   }
-  window.location.href = 'job-detail.html?id=' + jobId;
-}
-
-// ── BEWERBEN KLICK ──
-function handleApplyClick(btn) {
-  const jobId = btn.dataset.jobId;
-  const agId  = btn.dataset.agId;
-  const titel  = btn.dataset.titel  || '';
-  const firma  = btn.dataset.firma  || '';
-  const datum  = btn.dataset.datum  || '';
-  const gehalt = btn.dataset.gehalt || '';
-
-  showBewerbungsModal({
-    titel, firma, datum, gehalt,
-    onConfirm: () => applyForJob(jobId, agId, btn, titel)
-  });
-}
-
-async function applyForJob(jobId, agId, btnEl, jobTitel) {
-  // Nicht eingeloggt
-  if (!_odojJobsSession) {
-    window.location.href = 'login.html';
-    return;
-  }
-  // Arbeitgeber
-  if (_odojJobsRolle === 'arbeitgeber') {
-    showJobsToast('Als Arbeitgeber kannst du dich nicht bewerben.', 'warn');
-    return;
-  }
-  // Bereits beworben
-  if (_appliedJobIds.has(jobId)) return;
-
-  // Profil-Vollständigkeitsprüfung
-  const { data: profCheck } = await odojSb
-    .from('Profile')
-    .select('profil_vollstaendig')
-    .eq('user_id', _odojJobsSession.user.id)
-    .single();
-  if (!profCheck?.profil_vollstaendig) {
-    showJobsToast('Bitte vervollständige zuerst dein Profil (SV-Nummer + Adresse) → <a href="profil.html" style="color:#fff;text-decoration:underline">Zum Profil</a>', 'warn');
-    return;
-  }
-
-  btnEl.disabled = true;
-  btnEl.textContent = 'Speichern…';
-
-  const jobberName = _odojJobsProfile
-    ? ((_odojJobsProfile.vorname || '') + ' ' + (_odojJobsProfile.nachname || '')).trim() || _odojJobsSession.user.email
-    : _odojJobsSession.user.email;
-
-  const { error } = await odojSb.from('bewerbungen').insert({
-    job_id:         jobId,
-    jobber_id:      _odojJobsSession.user.id,
-    arbeitgeber_id: agId,
-    jobber_name:    jobberName,
-    jobber_email:   _odojJobsSession.user.email,
-    status:         'ausstehend'
-  });
-
-  if (error) {
-    btnEl.disabled = false;
-    btnEl.textContent = 'Bewerben';
-    showJobsToast('Fehler: ' + error.message, 'error');
-    return;
-  }
-
-  _appliedJobIds.add(jobId);
-  btnEl.textContent = 'Beworben';
-  btnEl.classList.add('job-applied');
-  btnEl.style.background = '#1a7a50';
-  btnEl.style.cursor = 'default';
-  btnEl.disabled = true;
-  zeigeBewerbungsToast();
-
-  // Bestätigungs-E-Mail an Jobber senden (non-blocking)
-  odojSb.functions.invoke('send-email', {
-    body: {
-      type:        'bewerbung_bestaetigt',
-      recipientId: _odojJobsSession.user.id,
-      jobTitel:    jobTitel || '',
-    }
-  }).catch(err => console.error('[E-Mail] Bewerbungsbestätigung fehlgeschlagen:', err));
-
-  // Benachrichtigungs-E-Mail an Arbeitgeber senden (non-blocking)
-  if (agId) {
-    odojSb.functions.invoke('send-email', {
-      body: {
-        type:        'neue_bewerbung_arbeitgeber',
-        recipientId: agId,
-        jobTitel:    jobTitel || '',
-        jobberName:  jobberName,
-      }
-    }).catch(err => console.error('[E-Mail] Arbeitgeber-Benachrichtigung fehlgeschlagen:', err));
-  }
+  const terminId = cardEl.dataset.terminId;
+  window.location.href = 'job-detail.html?id=' + jobId + (terminId ? '&termin=' + terminId : '');
 }
 
 // ── JOB CARD HTML ──
-function renderJobCard(job, locked, hideApply) {
+function renderJobCard(job, locked) {
   const b = JOB_BRANCHEN[job.branche] || { label: job.branche || '–', cls: '' };
   const datum = job.datum
     ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long' })
     : '–';
   const gehalt  = Number(job.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const lockedAttr = locked ? ' data-locked="true"' : '';
+  const terminAttr = job._terminId ? ` data-termin-id="${job._terminId}"` : '';
   const plaetze = job.plaetze === 1 ? '1 Platz frei' : (job.plaetze + ' Plätze frei');
-
-  let applyHtml;
-  if (hideApply) {
-    applyHtml = '';
-  } else if (locked) {
-    applyHtml = '<a href="login.html" class="job-apply" onclick="event.stopPropagation()">Bewerben</a>';
-  } else if (_appliedJobIds.has(job.id)) {
-    applyHtml = '<button class="job-apply job-applied" style="background:#1a7a50;cursor:default" disabled onclick="event.stopPropagation()">Beworben</button>';
-  } else {
-    applyHtml = `<button class="job-apply" data-job-id="${job.id}" data-ag-id="${job.arbeitgeber_id || ''}" data-titel="${job.titel}" data-firma="${job._agName || job.firmenname || ''}" data-datum="${datum}" data-gehalt="${job.tagesgehalt || ''}" onclick="event.stopPropagation();handleApplyClick(this)">Bewerben</button>`;
-  }
+  const ausgebuchtTag = job._terminAusgebucht ? '<span class="tag tag-ausgebucht">Ausgebucht</span>' : '';
 
   return `
-    <div class="job-card fade-in" data-b="${job.branche}" data-mindestalter="${job.mindestalter || 15}"${lockedAttr} onclick="goToJobDetail('${job.id}', this)">
+    <div class="job-card fade-in" data-b="${job.branche}" data-mindestalter="${job.mindestalter || 15}"${lockedAttr}${terminAttr} onclick="goToJobDetail('${job.id}', this)">
       <div class="job-card-top">
         <span class="tag ${b.cls}">${b.label}</span>
+        ${ausgebuchtTag}
       </div>
       <h3>${job.titel}</h3>
       ${(job._agName || job.firmenname) ? `<div class="job-company">${job._agName || job.firmenname}</div>` : ''}
@@ -896,19 +715,17 @@ function renderJobCard(job, locked, hideApply) {
         <div style="display:flex;flex-direction:column;gap:4px">
           <div class="job-pay">€ ${gehalt} <span>/ Tag</span></div>
           <div class="job-spots">${plaetze}</div>
-          <a href="job-detail.html?id=${job.id}" class="job-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
+          <a href="job-detail.html?id=${job.id}${job._terminId ? '&termin=' + job._terminId : ''}" class="job-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
         </div>
-        ${applyHtml}
       </div>
     </div>`;
 }
 
 // ── JOBS RENDERN ──
-function renderJobs(jobs, unlocked, hideApply) {
+function renderJobs(jobs, unlocked) {
   window._odojJobsUnlocked = unlocked;
   _allJobsGlobal   = jobs;
   _unlockedGlobal  = unlocked;
-  _hideApplyGlobal = !!hideApply;
   const grid = document.getElementById('jobsGrid');
   const loadEl = document.getElementById('jobs-loading');
   if (loadEl) loadEl.remove();
@@ -925,7 +742,7 @@ function renderJobs(jobs, unlocked, hideApply) {
     filteredJobs = jobs.filter(job => !job.mindestalter || job.mindestalter <= _jobberAlter);
   }
 
-  grid.innerHTML = filteredJobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3, hideApply)).join('');
+  grid.innerHTML = filteredJobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
 
   // Filter anwenden (behält aktive Branche + Alter)
   _applyFilters();
@@ -948,16 +765,51 @@ async function checkJobsAuth() {
   const heuteDatum = new Date().toISOString().split('T')[0];
   console.log('[ODOJ] Datum-Filter aktiv ab:', heuteDatum);
 
-  const { data: rawJobs } = await odojSb
-    .from('jobs')
-    .select('*')
-    .eq('status', 'aktiv')
-    .gte('datum', heuteDatum)
-    .order('datum', { ascending: true });
+  // Kein serverseitiger Datumsfilter mehr auf "jobs" selbst: bei Mehrtages-Jobs
+  // ist jobs.datum nur der früheste Termin - ein Job mit vergangenem
+  // Erst-Termin aber zukünftigen Terminen soll trotzdem erscheinen.
+  const [{ data: rawJobs }, { data: rawTermine }] = await Promise.all([
+    odojSb.from('jobs').select('*').eq('status', 'aktiv'),
+    odojSb.from('job_termine').select('*').gte('datum', heuteDatum)
+  ]);
 
-  // Client-seitiger Filter als Sicherheitsnetz (falls DB-Vergleich abweicht)
-  const allJobs = (rawJobs || []).filter(j => !j.datum || j.datum >= heuteDatum);
-  console.log('[ODOJ] Jobs nach Server-Filter:', rawJobs?.length, '→ nach Client-Filter:', allJobs.length);
+  const termineByJob = {};
+  (rawTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push(t));
+
+  // Angenommene Bewerbungen pro Termin zählen, um "Ausgebucht" pro Termin zu erkennen
+  let acceptedCountByTermin = {};
+  const allTerminIds = (rawTermine || []).map(t => t.id);
+  if (allTerminIds.length) {
+    const { data: acceptedBews } = await odojSb
+      .from('bewerbungen')
+      .select('termin_id')
+      .eq('status', 'angenommen')
+      .in('termin_id', allTerminIds);
+    (acceptedBews || []).forEach(b => {
+      acceptedCountByTermin[b.termin_id] = (acceptedCountByTermin[b.termin_id] || 0) + 1;
+    });
+  }
+
+  // Jobs mit Terminen -> eine Karte pro zukünftigem Termin. Jobs ohne
+  // job_termine-Zeilen (heutiger Normalfall) laufen exakt wie bisher.
+  const allJobs = [];
+  (rawJobs || []).forEach(job => {
+    const termine = termineByJob[job.id];
+    if (termine && termine.length) {
+      termine
+        .sort((a, b) => a.datum.localeCompare(b.datum))
+        .forEach(t => allJobs.push({
+          ...job,
+          datum: t.datum,
+          _terminId: t.id,
+          _isMultiTermin: true,
+          _terminAusgebucht: (acceptedCountByTermin[t.id] || 0) >= job.plaetze
+        }));
+    } else if (!job.datum || job.datum >= heuteDatum) {
+      allJobs.push(job);
+    }
+  });
+  console.log('[ODOJ] Jobs nach Server-Filter:', rawJobs?.length, '→ Karten nach Termin-Expansion:', allJobs.length);
 
   // Branche-Filter dynamisch: nur Kategorien anzeigen, die in aktiven Inseraten vorkommen
   const usedBranchen = new Set(allJobs.map(j => j.branche).filter(Boolean));
@@ -1008,15 +860,8 @@ async function checkJobsAuth() {
     if (rolle === 'arbeitgeber') {
       document.getElementById('ag-info-banner').style.display = 'flex';
       document.getElementById('jobs-lock-banner').style.display = 'none';
-      renderJobs(allJobs, true, true);
+      renderJobs(allJobs, true);
     } else {
-      // Bereits-beworben-IDs laden
-      const { data: bewerbungen } = await odojSb
-        .from('bewerbungen')
-        .select('job_id')
-        .eq('jobber_id', session.user.id);
-      if (bewerbungen) bewerbungen.forEach(b => _appliedJobIds.add(b.job_id));
-
       document.getElementById('ag-info-banner').style.display   = 'none';
       document.getElementById('jobs-lock-banner').style.display = 'none';
       renderJobs(allJobs, true);

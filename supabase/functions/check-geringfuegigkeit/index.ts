@@ -77,27 +77,52 @@ serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
 
-    // Datum des betroffenen Jobs laden -> bestimmt den relevanten Kalendermonat
-    const { data: job } = await admin.from("jobs").select("datum").eq("id", record.job_id).single();
-    if (!job?.datum) return new Response(JSON.stringify({ ok: true, skipped: "kein Job-Datum" }), { headers: cors });
+    // Datum des betroffenen Einsatzes laden -> bestimmt den relevanten Kalendermonat.
+    // Bei Mehrtages-Jobs hat die Bewerbung ein eigenes termin_id: das TERMIN-Datum
+    // ist maßgeblich, nicht jobs.datum (das bei Mehrtages-Jobs nur der früheste
+    // von mehreren Terminen ist und in einem anderen Monat liegen kann).
+    let jobDatumStr: string | null = null;
+    if (record.termin_id) {
+      const { data: termin } = await admin.from("job_termine").select("datum").eq("id", record.termin_id).maybeSingle();
+      jobDatumStr = termin?.datum || null;
+    }
+    if (!jobDatumStr) {
+      const { data: job } = await admin.from("jobs").select("datum").eq("id", record.job_id).single();
+      jobDatumStr = job?.datum || null;
+    }
+    if (!jobDatumStr) return new Response(JSON.stringify({ ok: true, skipped: "kein Job-Datum" }), { headers: cors });
 
-    const jobDate = new Date(job.datum + "T00:00:00Z");
+    const jobDate = new Date(jobDatumStr + "T00:00:00Z");
     const jahr  = jobDate.getUTCFullYear();
     const monat = jobDate.getUTCMonth() + 1; // 1-12
     const monatStart = `${jahr}-${String(monat).padStart(2, "0")}-01`;
     const monatEndeTag = new Date(Date.UTC(jahr, monat, 0)).getUTCDate();
     const monatEnde = `${jahr}-${String(monat).padStart(2, "0")}-${String(monatEndeTag).padStart(2, "0")}`;
 
-    // Alle bestätigten Einsätze des Jobbers in diesem Kalendermonat summieren
+    // Alle bestätigten Einsätze des Jobbers laden. Die Monatsfilterung passiert
+    // unten in JS anhand des jeweils EIGENEN Datums pro Zeile (Termin-Datum bei
+    // Mehrtages-Jobs, sonst jobs.datum) - PostgREST kann den Join nicht
+    // bedingt zwischen "jobs" und "job_termine" umschalten.
     const { data: bews } = await admin
       .from("bewerbungen")
-      .select("jobs!inner(tagesgehalt, datum)")
+      .select("termin_id, jobs!inner(tagesgehalt, datum)")
       .eq("jobber_id", record.jobber_id)
-      .eq("anwesenheit_bestaetigt", true)
-      .gte("jobs.datum", monatStart)
-      .lte("jobs.datum", monatEnde);
+      .eq("anwesenheit_bestaetigt", true);
 
-    const summe = (bews || []).reduce((s: number, b: any) => s + Number(b.jobs?.tagesgehalt || 0), 0);
+    const terminIds = [...new Set((bews || []).map((b: any) => b.termin_id).filter(Boolean))];
+    const terminDatumMap: Record<string, string> = {};
+    if (terminIds.length) {
+      const { data: termine } = await admin.from("job_termine").select("id, datum").in("id", terminIds);
+      (termine || []).forEach((t: any) => { terminDatumMap[t.id] = t.datum; });
+    }
+
+    const summe = (bews || []).reduce((s: number, b: any) => {
+      const effDatum = b.termin_id ? terminDatumMap[b.termin_id] : b.jobs?.datum;
+      if (effDatum && effDatum >= monatStart && effDatum <= monatEnde) {
+        return s + Number(b.jobs?.tagesgehalt || 0);
+      }
+      return s;
+    }, 0);
 
     // Konfigurierte Grenze für das jeweilige Jahr laden (mit Fallback)
     const { data: setting } = await admin

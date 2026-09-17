@@ -36,18 +36,34 @@ serve(async (req) => {
 
   const result = { jobber_reminder: 0, ag_reminder: 0, ueberfaellig: 0, fehler: [] as string[] };
 
+  // PostgREST kann einen Join nicht bedingt zwischen "jobs" und "job_termine"
+  // umschalten. Für Mehrtages-Bewerbungen (termin_id gesetzt) ist das relevante
+  // Datum das des Termins, nicht das repräsentative (früheste) jobs.datum -
+  // deshalb läuft jede der drei Abfragen unten in zwei Zweigen (Einzeltag /
+  // Mehrtermin) und die Ergebnisse werden danach zusammengeführt.
   try {
     // ── 1) Jobber-Reminder: 3 Tage nach Einsatz, Zahlung noch ausstehend ──
-    const { data: jobberFaellig, error: jErr } = await admin
-      .from("bewerbungen")
-      .select("id, jobber_id, jobs!inner(titel, datum)")
-      .eq("anwesenheit_bestaetigt", true)
-      .eq("zahlung_status", "ausstehend")
-      .is("jobber_reminder_gesendet_am", null)
-      .eq("jobs.datum", jobberReminderDatum);
-    if (jErr) result.fehler.push("jobber-query: " + jErr.message);
+    const [jLegacy, jMulti] = await Promise.all([
+      admin.from("bewerbungen")
+        .select("id, jobber_id, jobs!inner(titel, datum)")
+        .is("termin_id", null)
+        .eq("anwesenheit_bestaetigt", true)
+        .eq("zahlung_status", "ausstehend")
+        .is("jobber_reminder_gesendet_am", null)
+        .eq("jobs.datum", jobberReminderDatum),
+      admin.from("bewerbungen")
+        .select("id, jobber_id, jobs(titel), job_termine!inner(datum)")
+        .not("termin_id", "is", null)
+        .eq("anwesenheit_bestaetigt", true)
+        .eq("zahlung_status", "ausstehend")
+        .is("jobber_reminder_gesendet_am", null)
+        .eq("job_termine.datum", jobberReminderDatum),
+    ]);
+    if (jLegacy.error) result.fehler.push("jobber-query (einzeltag): " + jLegacy.error.message);
+    if (jMulti.error)  result.fehler.push("jobber-query (mehrtermin): " + jMulti.error.message);
+    const jobberFaellig = [...(jLegacy.data || []), ...(jMulti.data || [])];
 
-    for (const b of jobberFaellig || []) {
+    for (const b of jobberFaellig) {
       const { data: { user } } = await admin.auth.admin.getUserById(b.jobber_id);
       if (!user?.email) continue;
       const { data: profile } = await admin.from("Profile").select("vorname").eq("user_id", b.jobber_id).single();
@@ -62,16 +78,27 @@ serve(async (req) => {
     }
 
     // ── 2) Arbeitgeber-Reminder: 5 Tage nach Einsatz, Zahlung noch ausstehend ──
-    const { data: agFaellig, error: aErr } = await admin
-      .from("bewerbungen")
-      .select("id, jobber_id, arbeitgeber_id, jobber_name, job_id, jobs!inner(titel, datum, tagesgehalt)")
-      .eq("anwesenheit_bestaetigt", true)
-      .eq("zahlung_status", "ausstehend")
-      .is("ag_reminder_gesendet_am", null)
-      .eq("jobs.datum", agReminderDatum);
-    if (aErr) result.fehler.push("ag-query: " + aErr.message);
+    const [aLegacy, aMulti] = await Promise.all([
+      admin.from("bewerbungen")
+        .select("id, jobber_id, arbeitgeber_id, jobber_name, job_id, jobs!inner(titel, datum, tagesgehalt)")
+        .is("termin_id", null)
+        .eq("anwesenheit_bestaetigt", true)
+        .eq("zahlung_status", "ausstehend")
+        .is("ag_reminder_gesendet_am", null)
+        .eq("jobs.datum", agReminderDatum),
+      admin.from("bewerbungen")
+        .select("id, jobber_id, arbeitgeber_id, jobber_name, job_id, jobs(titel, tagesgehalt), job_termine!inner(datum)")
+        .not("termin_id", "is", null)
+        .eq("anwesenheit_bestaetigt", true)
+        .eq("zahlung_status", "ausstehend")
+        .is("ag_reminder_gesendet_am", null)
+        .eq("job_termine.datum", agReminderDatum),
+    ]);
+    if (aLegacy.error) result.fehler.push("ag-query (einzeltag): " + aLegacy.error.message);
+    if (aMulti.error)  result.fehler.push("ag-query (mehrtermin): " + aMulti.error.message);
+    const agFaellig = [...(aLegacy.data || []), ...(aMulti.data || [])];
 
-    for (const b of agFaellig || []) {
+    for (const b of agFaellig) {
       const jobTitel = (b as any).jobs?.titel || "Tagesjob";
       const betrag   = Number((b as any).jobs?.tagesgehalt || 0);
       await sendEmail(admin, {
@@ -93,16 +120,27 @@ serve(async (req) => {
     }
 
     // ── 3) Überfällig-Flag: 10+ Tage nach Einsatz, Zahlung noch ausstehend ──
-    const { data: ueberfaellig, error: uErr } = await admin
-      .from("bewerbungen")
-      .select("id, jobs!inner(datum)")
-      .eq("anwesenheit_bestaetigt", true)
-      .eq("zahlung_status", "ausstehend")
-      .eq("zahlung_ueberfaellig", false)
-      .lte("jobs.datum", ueberfaelligDatum);
-    if (uErr) result.fehler.push("ueberfaellig-query: " + uErr.message);
+    const [uLegacy, uMulti] = await Promise.all([
+      admin.from("bewerbungen")
+        .select("id, jobs!inner(datum)")
+        .is("termin_id", null)
+        .eq("anwesenheit_bestaetigt", true)
+        .eq("zahlung_status", "ausstehend")
+        .eq("zahlung_ueberfaellig", false)
+        .lte("jobs.datum", ueberfaelligDatum),
+      admin.from("bewerbungen")
+        .select("id, job_termine!inner(datum)")
+        .not("termin_id", "is", null)
+        .eq("anwesenheit_bestaetigt", true)
+        .eq("zahlung_status", "ausstehend")
+        .eq("zahlung_ueberfaellig", false)
+        .lte("job_termine.datum", ueberfaelligDatum),
+    ]);
+    if (uLegacy.error) result.fehler.push("ueberfaellig-query (einzeltag): " + uLegacy.error.message);
+    if (uMulti.error)  result.fehler.push("ueberfaellig-query (mehrtermin): " + uMulti.error.message);
+    const ueberfaellig = [...(uLegacy.data || []), ...(uMulti.data || [])];
 
-    if (ueberfaellig?.length) {
+    if (ueberfaellig.length) {
       const ids = ueberfaellig.map((b: any) => b.id);
       await admin.from("bewerbungen").update({ zahlung_ueberfaellig: true }).in("id", ids);
       result.ueberfaellig = ids.length;

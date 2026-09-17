@@ -107,7 +107,7 @@ function workConfirmedTemplate(recipientName: string, firmenname: string, jobTit
   </td></tr>`);
 }
 
-function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string): string {
+function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string, terminInfo?: string): string {
   const dashboardUrl = `${SITE_URL}/meine-bewerbungen.html`;
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
   return baseTemplate(`
@@ -117,6 +117,7 @@ function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string): s
     <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
       Deine Bewerbung für den Job <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> wurde erfolgreich übermittelt.
     </p>
+    ${terminInfo ? `<p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">Termine: <strong style="color:#0f1f3d">${esc(terminInfo)}</strong></p>` : ""}
     <div style="background:#e6f5ee;border:1.5px solid #a8d9be;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#1a5c3a;line-height:1.6">
       ✅ Der Arbeitgeber wurde benachrichtigt und wird deine Bewerbung so bald wie möglich prüfen.<br><br>
       Sobald es ein Update gibt – ob Zusage, Absage oder Rückfrage – wirst du sofort per E-Mail und auf der Plattform benachrichtigt.
@@ -133,7 +134,7 @@ function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string): s
   </td></tr>`);
 }
 
-function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: string, jobTitel: string): string {
+function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: string, jobTitel: string, terminInfo?: string): string {
   const inserateUrl = `${SITE_URL}/meine-inserate.html`;
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
   return baseTemplate(`
@@ -144,6 +145,7 @@ function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: str
       <strong style="color:#0f1f3d">${esc(jobberName)}</strong> hat sich für deinen Job
       <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> beworben.
     </p>
+    ${terminInfo ? `<p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">Termine: <strong style="color:#0f1f3d">${esc(terminInfo)}</strong></p>` : ""}
     <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a5500;line-height:1.6">
       📋 Melde dich in deinem ODOJ-Konto an, um die Bewerbung zu prüfen und zu antworten.
     </div>
@@ -272,7 +274,8 @@ serve(async (req) => {
   try {
     const {
       type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
-      datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag
+      datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
+      terminInfo
     } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
@@ -317,10 +320,10 @@ serve(async (req) => {
       html = workConfirmedTemplate(recipientName, firmenname || "", jobTitel || "", bewId || "");
     } else if (type === "bewerbung_bestaetigt") {
       subject = `Deine Bewerbung wurde erfolgreich übermittelt ✓`;
-      html = bewerbungBestaetigtTemplate(recipientName, jobTitel || "");
+      html = bewerbungBestaetigtTemplate(recipientName, jobTitel || "", terminInfo || "");
     } else if (type === "neue_bewerbung_arbeitgeber") {
       subject = `Neue Bewerbung für deinen Job: ${jobTitel || ""}`;
-      html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "");
+      html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", terminInfo || "");
     } else if (type === "payment_request") {
       subject = `Zahlungsaufforderung – ${jobTitel || "Einsatz"} (${jobberName || ""})`;
       html = paymentRequestTemplate(
