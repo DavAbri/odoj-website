@@ -574,6 +574,14 @@
 .bew-btn-presence { background: #E6F5EE; color: #1A7A50; }
 .bew-btn-presence:hover { background: #1A7A50; color: white; }
 .bew-btn-presence-done { background: #1A7A50 !important; color: white !important; cursor: default !important; }
+.bew-termin-line { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--navy); flex-wrap: wrap; }
+.bew-termin-line svg { opacity: .6; flex-shrink: 0; }
+.bew-termin-block { margin-top: 12px; }
+.bew-termin-block-extra {
+  margin-top: 16px; margin-left: 18px; padding: 14px 0 0 16px;
+  border-top: 1px dashed var(--gray-lt);
+  border-left: 2px solid var(--gray-lt);
+}
 
 /* Badge auf Inserat-Card */
 .bew-count-badge {
@@ -1422,10 +1430,34 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   });
   vertragRes?.data?.forEach(v => { vertragMap[v.bewerbung_id] = v.id; });
 
-  bodyEl.innerHTML = bewerbungen.map(b => {
-    const effektivDatum = b.termin_id ? (terminMap[b.termin_id] || jobDatum) : jobDatum;
-    return renderBewItem(b, profileMap[b.jobber_id], bewMap[b.jobber_id], effektivDatum, vertragMap[b.id], tagesgehalt, jobTitel, odojConfig);
-  }).join('');
+  // Effektives Termin-Datum je Bewerbung auflösen und vorab anhängen
+  bewerbungen.forEach(b => {
+    b._effDatum = b.termin_id ? (terminMap[b.termin_id] || jobDatum) : jobDatum;
+  });
+
+  // Nach Person (jobber_id) gruppieren: mehrere Termine derselben Person für
+  // dieses Inserat werden zu EINER Karte zusammengefasst, statt Name/
+  // Bewertung/"Beworben am"/persönliche Daten mehrfach zu wiederholen.
+  // Bewerbungen ohne jobber_id (sollte nicht vorkommen) bleiben je eine eigene Gruppe.
+  const groupsMap = new Map();
+  bewerbungen.forEach(b => {
+    const key = b.jobber_id || ('_' + b.id);
+    if (!groupsMap.has(key)) groupsMap.set(key, []);
+    groupsMap.get(key).push(b);
+  });
+  const groups = [...groupsMap.values()].map(g =>
+    g.sort((a, b) => (a._effDatum || '').localeCompare(b._effDatum || ''))
+  );
+  // Gruppen untereinander wie bisher nach (frühestem) erstellt_am sortiert (neueste zuerst)
+  groups.sort((a, b) => {
+    const aMax = Math.max(...a.map(x => new Date(x.erstellt_am || 0).getTime()));
+    const bMax = Math.max(...b.map(x => new Date(x.erstellt_am || 0).getTime()));
+    return bMax - aMax;
+  });
+
+  bodyEl.innerHTML = groups.map(group =>
+    renderBewGroup(group, profileMap[group[0].jobber_id], bewMap[group[0].jobber_id], vertragMap, tagesgehalt, jobTitel, odojConfig)
+  ).join('');
 }
 
 // ODOJ-Bankdaten für die Vermittlungsgebühr (einmalig geladen & gecached)
@@ -1476,43 +1508,65 @@ function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) {
     </div>`;
 }
 
-function renderBewItem(b, profile, bew, jobDatum, vertragId, tagesgehalt, jobTitel, odojConfig) {
-  // Echter Name aus Profile, Fallback auf gespeicherten jobber_name, dann E-Mail-Prefix
-  const vorname  = profile?.vorname  || '';
-  const nachname = profile?.nachname || '';
-  const realName = (vorname + ' ' + nachname).trim()
-    || b.jobber_name
-    || (b.jobber_email ? b.jobber_email.split('@')[0] : 'Unbekannt');
-  const initials = realName.split(' ').map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 2) || '?';
+// ── Statusbadge-Klasse/Text (wiederverwendet für Header- und Termin-Badges) ──
+function _bewStatusInfo(status) {
+  if (status === 'angenommen') return { cls: 'bew-st-angenommen', label: 'Angenommen' };
+  if (status === 'abgelehnt')  return { cls: 'bew-st-abgelehnt',  label: 'Abgelehnt' };
+  return { cls: 'bew-st-ausstehend', label: 'Ausstehend' };
+}
 
-  // Rating-Badge
-  const bewBadge = bew
-    ? `<span style="font-size:12px;color:#e6a01e;font-weight:600;margin-left:8px">★ ${bew.avg.toFixed(1)} <span style="color:var(--text-lt);font-weight:300">(${bew.count})</span></span>`
-    : '';
-
-  const dateStr = b.erstellt_am
-    ? new Date(b.erstellt_am).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
-    : '–';
-  const stCls   = b.status === 'angenommen' ? 'bew-st-angenommen'
-                : b.status === 'abgelehnt'  ? 'bew-st-abgelehnt'
-                : 'bew-st-ausstehend';
-  const stLabel = b.status === 'angenommen' ? 'Angenommen'
-                : b.status === 'abgelehnt'  ? 'Abgelehnt'
-                : 'Ausstehend';
+// ── Aktions-Buttons für EINEN Termin (Annehmen/Ablehnen/Nachricht/Vertrag/Anwesenheit) ──
+function renderBewActions(b, realName, vertragId, effDatum) {
   const acceptBtn = b.status !== 'angenommen'
     ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${b.id}','angenommen')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
   const rejectBtn = b.status !== 'abgelehnt'
     ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '';
 
   const heute = new Date().toISOString().split('T')[0];
-  const jobDatumErreicht = !jobDatum || jobDatum <= heute;
+  const jobDatumErreicht = !effDatum || effDatum <= heute;
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
         ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigt</button>`
         : jobDatumErreicht
           ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">Erst ab ${new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
+          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">Erst ab ${new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
     : '';
+
+  return `${acceptBtn}${rejectBtn}
+    <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
+    ${b.status === 'angenommen' ? (vertragId
+      ? `<a href="vertrag-ansehen.html?id=${vertragId}" class="bew-btn" style="background:#E6F5EE;color:#1A7A50;border:1px solid #B3E0CA;text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>`
+      : `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>`)
+      : ''}
+    ${presenceBtn}`;
+}
+
+// ── Eine Bewerbungs-"Karte" pro JOBBER: bei Mehrtermine-Bewerbungen derselben
+// Person werden alle Termine dieser Person in EINER Karte zusammengefasst
+// (Name/Bewertung/"Beworben am"/persönliche Daten nur einmal oben), statt als
+// mehrere komplett separate, sich wiederholende Karten.
+function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, odojConfig) {
+  const primary = group[0];
+  const extras  = group.slice(1);
+
+  // Echter Name aus Profile, Fallback auf gespeicherten jobber_name, dann E-Mail-Prefix
+  const vorname  = profile?.vorname  || '';
+  const nachname = profile?.nachname || '';
+  const realName = (vorname + ' ' + nachname).trim()
+    || primary.jobber_name
+    || (primary.jobber_email ? primary.jobber_email.split('@')[0] : 'Unbekannt');
+  const initials = realName.split(' ').map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 2) || '?';
+  const nameEsc = realName.replace(/'/g, "\\'");
+
+  const bewBadge = bew
+    ? `<span style="font-size:12px;color:#e6a01e;font-weight:600;margin-left:8px">★ ${bew.avg.toFixed(1)} <span style="color:var(--text-lt);font-weight:300">(${bew.count})</span></span>`
+    : '';
+
+  // "Beworben am" = frühester Bewerbungszeitpunkt dieser Person für diesen Job
+  const earliestErstelltAm = group.reduce((min, b) => (!min || (b.erstellt_am && b.erstellt_am < min)) ? b.erstellt_am : min, null);
+  const dateStr = earliestErstelltAm
+    ? new Date(earliestErstelltAm).toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    : '–';
 
   let gebStr = '';
   if (profile?.geburtsdatum) {
@@ -1523,7 +1577,6 @@ function renderBewItem(b, profile, bew, jobDatum, vertragId, tagesgehalt, jobTit
     if (m < 0 || (m === 0 && heute.getDate() < geb.getDate())) alter--;
     gebStr = geb.toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' }) + ` (${alter} Jahre)`;
   }
-
   const profileDetails = (profile?.adresse || profile?.svnummer || gebStr) ? `
     <div class="bew-item-profile">
       ${gebStr             ? `<span class="bew-profile-field">${gebStr}</span>` : ''}
@@ -1531,32 +1584,55 @@ function renderBewItem(b, profile, bew, jobDatum, vertragId, tagesgehalt, jobTit
       ${profile?.svnummer  ? `<span class="bew-profile-field">SV-Nr.: ${profile.svnummer}</span>` : ''}
     </div>` : '';
 
+  const primarySt = _bewStatusInfo(primary.status);
+  const primaryTerminHtml = primary._effDatum ? `
+    <div class="bew-termin-line">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Termin: ${new Date(primary._effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}
+    </div>` : '';
+
+  const extrasHtml = extras.map(b => {
+    const st = _bewStatusInfo(b.status);
+    const terminDatum = b._effDatum
+      ? new Date(b._effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+      : '–';
+    return `
+    <div class="bew-termin-block bew-termin-block-extra" id="bew-item-${b.id}">
+      <div class="bew-termin-line">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Termin: ${terminDatum}
+        <span class="bew-st-badge ${st.cls}" id="bew-badge-${b.id}">${st.label}</span>
+      </div>
+      ${b.anwesenheit_bestaetigt ? renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) : ''}
+      <div class="bew-item-actions" id="bew-actions-${b.id}">
+        ${renderBewActions(b, realName, vertragMap[b.id], b._effDatum)}
+      </div>
+    </div>`;
+  }).join('');
+
   return `
-    <div class="bew-item" id="bew-item-${b.id}">
+    <div class="bew-item" id="bew-group-${primary.jobber_id || primary.id}" data-jobber-id="${primary.jobber_id || ''}">
       <div class="bew-item-header">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${initials}</div>
           <div>
-            <div class="bew-item-name" onclick="showJobberProfile('${b.jobber_id || ''}', '${realName.replace(/'/g,"\\'")}')">
+            <div class="bew-item-name" onclick="showJobberProfile('${primary.jobber_id || ''}', '${nameEsc}')">
               ${realName}${bewBadge}
             </div>
             <div class="bew-item-date">Beworben am ${dateStr}</div>
-            ${b.termin_id && jobDatum ? `<div class="bew-item-date" style="font-weight:600;color:var(--navy)">📅 Termin: ${new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })}</div>` : ''}
           </div>
         </div>
-        <span class="bew-st-badge ${stCls}" id="bew-badge-${b.id}">${stLabel}</span>
+        <span class="bew-st-badge ${primarySt.cls}" id="bew-badge-${primary.id}">${primarySt.label}</span>
       </div>
       ${profileDetails}
-      ${b.anwesenheit_bestaetigt ? renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) : ''}
-      <div class="bew-item-actions" id="bew-actions-${b.id}">
-        ${acceptBtn}${rejectBtn}
-        <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
-        ${b.status === 'angenommen' ? (vertragId
-          ? `<a href="vertrag-ansehen.html?id=${vertragId}" class="bew-btn" style="background:#E6F5EE;color:#1A7A50;border:1px solid #B3E0CA;text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>`
-          : `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>`)
-          : ''}
-        ${presenceBtn}
+      <div class="bew-termin-block" id="bew-item-${primary.id}">
+        ${primaryTerminHtml}
+        ${primary.anwesenheit_bestaetigt ? renderZahlungsBlock(primary, profile, tagesgehalt, jobTitel, odojConfig) : ''}
+        <div class="bew-item-actions" id="bew-actions-${primary.id}">
+          ${renderBewActions(primary, realName, vertragMap[primary.id], primary._effDatum)}
+        </div>
       </div>
+      ${extrasHtml}
     </div>`;
 }
 
@@ -1772,12 +1848,20 @@ async function updateBewStatus(bewId, newStatus) {
   }
 
   if (newStatus === 'abgelehnt') {
-    const itemEl = document.getElementById('bew-item-' + bewId);
+    // itemEl ist der Termin-Block dieser einen Bewerbung (bei Mehrtermine-
+    // Gruppen primär oder zusätzlich) - nicht zwingend die ganze Karte, da
+    // eine Person noch weitere, nicht abgelehnte Termine haben kann.
+    const itemEl  = document.getElementById('bew-item-' + bewId);
+    const groupEl = itemEl?.closest('.bew-item') || null;
     if (itemEl) {
       itemEl.style.transition = 'opacity .25s';
       itemEl.style.opacity = '0';
       setTimeout(() => {
         itemEl.remove();
+        // Ganze Karte nur entfernen, wenn keine Termine dieser Person mehr übrig sind
+        if (groupEl && !groupEl.querySelector('.bew-termin-block')) {
+          groupEl.remove();
+        }
         const body = document.getElementById('bew-overlay-body');
         if (body && !body.querySelector('.bew-item')) {
           body.innerHTML = `
@@ -1805,14 +1889,21 @@ async function updateBewStatus(bewId, newStatus) {
           .select('vorname, nachname').eq('user_id', jobberId).maybeSingle();
         jobberName = [prof?.vorname, prof?.nachname].filter(Boolean).join(' ') || 'Jobber';
       }
-      // Job-Datum laden für Datumssperre
+      // Termin-Datum laden für Datumssperre (bei Mehrtermine-Bewerbungen das
+      // spezifische Termin-Datum, sonst das jobs.datum wie bei Einzeltag-Jobs)
       let jobDatumErreicht = true;
-      if (bew?.job_id) {
+      let effDatum = null;
+      if (bew?.termin_id) {
+        const { data: terminD } = await odojSb.from('job_termine').select('datum').eq('id', bew.termin_id).maybeSingle();
+        effDatum = terminD?.datum || null;
+      }
+      if (!effDatum && bew?.job_id) {
         const { data: jobD } = await odojSb.from('jobs').select('datum').eq('id', bew.job_id).maybeSingle();
+        effDatum = jobD?.datum || null;
+      }
+      if (effDatum) {
         const heute = new Date().toISOString().split('T')[0];
-        if (jobD?.datum && jobD.datum > heute) {
-          jobDatumErreicht = false;
-        }
+        if (effDatum > heute) jobDatumErreicht = false;
       }
       const nameEsc = jobberName.replace(/'/g, "\\'");
       actEl.innerHTML =
@@ -1821,7 +1912,7 @@ async function updateBewStatus(bewId, newStatus) {
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>` +
         (jobDatumErreicht
           ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled>Erst ab Einsatzdatum verfügbar</button>`);
+          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">${effDatum ? 'Erst ab ' + new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' }) + ' verfügbar' : 'Erst ab Einsatzdatum verfügbar'}</button>`);
     }
   }
   loadInserate();
