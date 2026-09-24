@@ -913,6 +913,15 @@ async function doRegister(e) {
     }
   }
 
+  // Interne Benachrichtigung an info@odoj.at bei jeder neuen Registrierung
+  // (zusätzlich zur Bestätigungsmail, die der Nutzer selbst erhält).
+  const regName = _currentRole === 'arbeitgeber'
+    ? profileData.firmenname
+    : `${profileData.vorname || ''} ${profileData.nachname || ''}`.trim();
+  odojSb.functions.invoke('send-email', {
+    body: { type: 'neue_registrierung_intern', regType: _currentRole, regName, regEmail: email, regRefCode: refCode }
+  }).catch(err => console.error('Interne Registrierungs-Benachrichtigung fehlgeschlagen:', err));
+
   // ref_code wurde bereits in profileData/insertData übernommen (ggf. auch in
   // odoj_pending_profile für die spätere Wiederherstellung) - hier aufräumen.
   localStorage.removeItem('odoj_ref_code');
@@ -963,6 +972,16 @@ async function doRegister(e) {
 (function() {
   if (location.pathname.indexOf('registrieren') !== -1) {
     setMode('register');
+  }
+})();
+
+// Standardauswahl auf der Registrierungsseite: normal aufgerufen -> Jobber
+// (bestehender Default). Über einen trackbaren ref-Link aufgerufen -> Arbeitgeber
+// vorausgewählt, da diese Links i.d.R. gezielt an potenzielle Arbeitgeber
+// weitergegeben werden. Manuell bleibt die Auswahl jederzeit änderbar.
+(function() {
+  if (new URLSearchParams(location.search).get('ref')) {
+    setRole('arbeitgeber');
   }
 })();
 

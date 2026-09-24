@@ -262,6 +262,23 @@ function paymentReminderAgTemplate(recipientName: string, jobTitel: string, jobb
   </td></tr>`);
 }
 
+function neueRegistrierungInternTemplate(regType: string, regName: string, regEmail: string, regRefCode: string | null): string {
+  const typLabel = regType === 'arbeitgeber' ? 'Arbeitgeber' : 'Jobber';
+  const zeitpunkt = new Date().toLocaleString('de-AT', { timeZone: 'Europe/Vienna', dateStyle: 'medium', timeStyle: 'short' });
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Interne Benachrichtigung</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">Neue Registrierung</h2>
+    <ul style="margin:0;padding:0 0 0 18px;font-size:15px;color:#444;line-height:2">
+      <li><strong style="color:#0f1f3d">Nutzertyp:</strong> ${esc(typLabel)}</li>
+      <li><strong style="color:#0f1f3d">Name/Firma:</strong> ${esc(regName || '–')}</li>
+      <li><strong style="color:#0f1f3d">E-Mail:</strong> ${esc(regEmail)}</li>
+      <li><strong style="color:#0f1f3d">Registriert am:</strong> ${esc(zeitpunkt)}</li>
+      <li><strong style="color:#0f1f3d">Herkunft (ref):</strong> ${esc(regRefCode || 'Direkt (kein Ref-Link)')}</li>
+    </ul>
+  </td></tr>`);
+}
+
 function esc(s: string): string {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
@@ -275,7 +292,7 @@ serve(async (req) => {
     const {
       type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
       datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
-      terminInfo
+      terminInfo, regType, regName, regEmail, regRefCode
     } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
@@ -289,6 +306,28 @@ serve(async (req) => {
           to: email,
           subject: "Du bist auf der ODOJ-Warteliste! 🎉",
           html: waitlistTemplate(email),
+        }),
+      });
+      const resBody = await res.json();
+      if (!res.ok) throw new Error(resBody?.message || "Resend-Fehler");
+      return new Response(JSON.stringify({ ok: true, id: resBody.id }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Interne Registrierungs-Benachrichtigung ans ODOJ-Team: fixe Zieladresse,
+    // kein recipientId nötig (info@odoj.at ist kein Supabase-Auth-Nutzer).
+    if (type === 'neue_registrierung_intern') {
+      if (!regEmail) return new Response(JSON.stringify({ error: "regEmail fehlt" }), { status: 400, headers: cors });
+      const typLabel = regType === 'arbeitgeber' ? 'Arbeitgeber' : 'Jobber';
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: FROM,
+          to: "info@odoj.at",
+          subject: `Neue Registrierung: ${typLabel} – ${regName || regEmail}`,
+          html: neueRegistrierungInternTemplate(regType, regName, regEmail, regRefCode),
         }),
       });
       const resBody = await res.json();
