@@ -289,6 +289,25 @@
         <div class="chart-title">Registrierungen pro Woche (letzte 10 Wochen)</div>
         <div class="bar-chart" id="chart-reg-woche"></div>
       </div>
+
+      <div class="chart-card" style="margin-top:16px">
+        <div class="chart-title">Registrierungen nach Herkunft (trackbarer Link)</div>
+        <div class="table-controls">
+          <input type="text" class="search-input" id="nutzer-quelle-search" placeholder="Name oder E-Mail suchen…" oninput="filterNutzerQuelle()">
+          <select class="filter-select" id="nutzer-quelle-filter" onchange="filterNutzerQuelle()">
+            <option value="">Alle Quellen</option>
+            <option value="__direkt__">Direkt (kein Ref-Link)</option>
+          </select>
+        </div>
+        <div class="table-wrap" style="margin-top:16px">
+          <table>
+            <thead><tr><th>Name / Firma</th><th>E-Mail</th><th>Rolle</th><th>Quelle</th><th>Registriert am</th></tr></thead>
+            <tbody id="nutzer-quelle-tbody">
+              <tr><td colspan="5" class="table-empty">Wird geladen…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- 2. NEWSLETTER-ÜBERSICHT -->
@@ -418,6 +437,8 @@
   async function loadAllData() {
     await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist()]);
     renderNutzerStats();
+    populateNutzerQuelleFilter();
+    filterNutzerQuelle();
     renderNewsletterStats();
     filterInserate();
     renderRechnungenAgTable();
@@ -529,6 +550,47 @@
         </div>
       </div>`;
     }).join('');
+  }
+
+  // ── Registrierungsquelle (trackbarer Link, ?ref=...) ──
+  function populateNutzerQuelleFilter() {
+    const sel = document.getElementById('nutzer-quelle-filter');
+    if (!sel) return;
+    const current = sel.value;
+    const codes = [...new Set(allNutzer.map(n => n.ref_code).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Alle Quellen</option><option value="__direkt__">Direkt (kein Ref-Link)</option>' +
+      codes.map(c => `<option value="${escAttr(c)}">${c}</option>`).join('');
+    sel.value = (current === '__direkt__' || codes.includes(current)) ? current : '';
+  }
+
+  function filterNutzerQuelle() {
+    const q   = (document.getElementById('nutzer-quelle-search')?.value || '').toLowerCase();
+    const val = document.getElementById('nutzer-quelle-filter')?.value || '';
+    let list = allNutzer;
+    if (val === '__direkt__') list = list.filter(n => !n.ref_code);
+    else if (val)             list = list.filter(n => n.ref_code === val);
+    if (q) {
+      list = list.filter(n =>
+        nutzerName(n).toLowerCase().includes(q) || (n.email || '').toLowerCase().includes(q)
+      );
+    }
+    renderNutzerQuelleTable(list);
+  }
+
+  function escAttr(s) { return String(s || '').replace(/"/g, '&quot;'); }
+
+  function renderNutzerQuelleTable(list) {
+    const tbody = document.getElementById('nutzer-quelle-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = !list.length
+      ? '<tr><td colspan="5" class="table-empty">Keine Nutzer gefunden</td></tr>'
+      : list.map(n => `<tr>
+          <td>${nutzerName(n)}</td>
+          <td style="font-size:12px;color:var(--text2)">${n.email || '–'}</td>
+          <td>${n.rolle === 'arbeitgeber' ? 'Arbeitgeber' : 'Jobber'}</td>
+          <td>${n.ref_code ? `<span style="background:#EAF1FB;color:#1A5FA0;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600">${n.ref_code}</span>` : '<span style="color:var(--text2)">Direkt</span>'}</td>
+          <td style="font-size:12px;color:var(--text2)">${fmtDate(n.erstellt_am)}</td>
+        </tr>`).join('');
   }
 
   // ── 2. Newsletter ──

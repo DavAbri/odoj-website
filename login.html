@@ -14,6 +14,22 @@
 </script>
 
 <meta charset="UTF-8">
+<script>
+// Trackbarer Registrierungslink (z.B. odoj.at/registrieren?ref=xyz): überspringt
+// die Zugangscode-Abfrage automatisch und merkt sich die Herkunft (ref) für die
+// Registrierung, muss deshalb vor auth-check.js laufen.
+(function () {
+  var params = new URLSearchParams(location.search);
+  var ref = params.get('ref');
+  var isRegisterLink = location.pathname.indexOf('registrieren') !== -1;
+  if (ref || isRegisterLink) {
+    localStorage.setItem('odoj_access', 'granted');
+  }
+  if (ref) {
+    localStorage.setItem('odoj_ref_code', ref);
+  }
+})();
+</script>
 <script src="auth-check.js"></script>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
@@ -804,7 +820,9 @@ async function doRegister(e) {
   }
 
   // Rollenspezifische Felder validieren + Profildaten sammeln
-  const profileData = { rolle: _currentRole, email, datenschutz_akzeptiert_am: new Date().toISOString() };
+  // Herkunft über einen trackbaren Registrierungslink (?ref=...) mitspeichern, falls vorhanden
+  const refCode = localStorage.getItem('odoj_ref_code') || null;
+  const profileData = { rolle: _currentRole, email, datenschutz_akzeptiert_am: new Date().toISOString(), ref_code: refCode };
 
   if (_currentRole === 'jobber') {
     const vorname  = document.getElementById('reg-vorname').value.trim();
@@ -895,6 +913,10 @@ async function doRegister(e) {
     }
   }
 
+  // ref_code wurde bereits in profileData/insertData übernommen (ggf. auch in
+  // odoj_pending_profile für die spätere Wiederherstellung) - hier aufräumen.
+  localStorage.removeItem('odoj_ref_code');
+
   // 3. Rolle speichern
   odojSaveRolle(_currentRole);
 
@@ -933,6 +955,14 @@ async function doRegister(e) {
       agTab.classList.add('highlight');
       agTab.addEventListener('click', () => agTab.classList.remove('highlight'), { once: true });
     }
+  }
+})();
+
+// Trackbarer Registrierungslink (odoj.at/registrieren[?ref=...]): direkt den
+// Registrieren-Tab aktivieren statt der Anmelden-Ansicht.
+(function() {
+  if (location.pathname.indexOf('registrieren') !== -1) {
+    setMode('register');
   }
 })();
 
