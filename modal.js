@@ -128,6 +128,10 @@
             <span class="odoj-modal-row-label">Tagesgehalt</span>
             <span class="odoj-modal-row-value odoj-modal-gehalt">${gehaltStr} <span>/ Tag</span></span>
           </div>` : ''}
+          <p style="margin:0 0 12px;font-size:12.5px;color:#8a8f99;line-height:1.5">
+            Bei Annahme werden deine Daten (Name, Geburtsdatum, SV-Nummer, Adresse, IBAN) automatisch
+            per Datenblatt an den Arbeitgeber übermittelt.
+          </p>
           <div id="odoj-modal-question">
             ${hasMultiDatum ? 'Möchtest du dich wirklich für diese Termine bewerben?' : 'Möchtest du dich wirklich für diesen Job bewerben?'}
           </div>

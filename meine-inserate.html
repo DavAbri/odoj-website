@@ -1530,13 +1530,48 @@ function renderBewActions(b, realName, vertragId, effDatum) {
           : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">Erst ab ${new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
     : '';
 
+  const datenblattBtn = b.status === 'angenommen'
+    ? `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>`
+    : '';
+
   return `${acceptBtn}${rejectBtn}
     <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
     ${b.status === 'angenommen' ? (vertragId
       ? `<a href="vertrag-ansehen.html?id=${vertragId}" class="bew-btn" style="background:#E6F5EE;color:#1A7A50;border:1px solid #B3E0CA;text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>`
       : `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>`)
       : ''}
+    ${datenblattBtn}
     ${presenceBtn}`;
+}
+
+// ── Datenblatt-PDF herunterladen (Arbeitgeber-Ansicht, nur für die eigenen Bewerbungen) ──
+async function downloadDatenblatt(bewId) {
+  const btn = document.querySelector(`button[onclick="downloadDatenblatt('${bewId}')"]`);
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Wird erstellt…'; }
+  try {
+    const { data, error } = await odojSb.functions.invoke('generate-datenblatt', { body: { bewId } });
+    if (error || !data?.pdfBase64) {
+      alert('Datenblatt konnte nicht geladen werden: ' + (error?.message || data?.error || 'Unbekannter Fehler'));
+      return;
+    }
+    const byteChars = atob(data.pdfBase64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = data.filename || 'Datenblatt.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Datenblatt konnte nicht geladen werden: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+  }
 }
 
 // ── Eine Bewerbungs-"Karte" pro JOBBER: bei Mehrtermine-Bewerbungen derselben
@@ -1840,9 +1875,12 @@ async function updateBewStatus(bewId, newStatus) {
     }
   }
 
-  // Wenn angenommen: Vertrags-Modal öffnen
+  // Wenn angenommen: Vertrags-Modal öffnen + Datenblatt-PDF per E-Mail auslösen
   if (newStatus === 'angenommen') {
     openVertragModal(bewId);
+    odojSb.functions.invoke('send-email', {
+      body: { type: 'bewerbung_angenommen_datenblatt', recipientId: _agSession?.user?.id, bewId }
+    }).catch(err => console.error('Datenblatt-E-Mail fehlgeschlagen:', err));
   }
 
   if (newStatus === 'abgelehnt') {
@@ -1908,6 +1946,7 @@ async function updateBewStatus(bewId, newStatus) {
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
         `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>` +
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>` +
+        `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>` +
         (jobDatumErreicht
           ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
           : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">${effDatum ? 'Erst ab ' + new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' }) + ' verfügbar' : 'Erst ab Einsatzdatum verfügbar'}</button>`);

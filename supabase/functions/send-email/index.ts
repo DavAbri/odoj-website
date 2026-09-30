@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchDatenblattData, buildDatenblattPdf } from "../_shared/datenblatt.ts";
 
 const RESEND_API_KEY      = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
@@ -279,6 +280,33 @@ function neueRegistrierungInternTemplate(regType: string, regName: string, regEm
   </td></tr>`);
 }
 
+function bewerbungAngenommenDatenblattTemplate(recipientName: string, jobberName: string, jobTitel: string, datumStr: string): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Bewerbung angenommen</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      die Bewerbung von <strong style="color:#0f1f3d">${esc(jobberName)}</strong> für
+      <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> am <strong style="color:#0f1f3d">${esc(datumStr)}</strong>
+      wurde angenommen.
+    </p>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      Im Anhang findest du ein PDF-Datenblatt mit allen Daten für Anmeldung, Lohnverrechnung und
+      Bezahlung – du kannst es direkt an deinen Steuerberater bzw. deine Lohnverrechnung weiterleiten.
+    </p>
+    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:14px 18px;margin:0 0 24px;font-size:14px;color:#7a5500;line-height:1.6">
+      ⏱ Die Anmeldung muss vor Arbeitsantritt erfolgen.
+    </div>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/meine-inserate.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">
+        Zur Plattform &rarr;
+      </a>
+    </td></tr></table>
+    <p style="margin:24px 0 0;font-size:13px;color:#aaa">Das Datenblatt kannst du jederzeit erneut unter „Meine Inserate" herunterladen.</p>
+  </td></tr>`);
+}
+
 function esc(s: string): string {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
@@ -350,8 +378,22 @@ serve(async (req) => {
 
     let subject = "";
     let html = "";
+    let attachments: Array<{ filename: string; content: string }> | undefined;
 
-    if (type === "new_message") {
+    if (type === "bewerbung_angenommen_datenblatt") {
+      if (!bewId) return new Response(JSON.stringify({ error: "bewId fehlt" }), { status: 400, headers: cors });
+      const result = await fetchDatenblattData(admin, bewId);
+      if (!result) return new Response(JSON.stringify({ error: "Bewerbung nicht gefunden" }), { status: 404, headers: cors });
+      const jobberName = `${result.data.jobber.vorname || ""} ${result.data.jobber.nachname || ""}`.trim() || "Ein Jobber";
+      const jobTitelStr = result.data.job.titel || "einen Einsatz";
+      const datumStr = result.data.einsatzDatum
+        ? new Date(result.data.einsatzDatum + "T00:00:00").toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : "unbekanntes Datum";
+      subject = `Bewerbung angenommen: ${jobberName} – ${jobTitelStr} am ${datumStr}`;
+      html = bewerbungAngenommenDatenblattTemplate(recipientName, jobberName, jobTitelStr, datumStr);
+      const { bytes, filename } = await buildDatenblattPdf(result.data);
+      attachments = [{ filename, content: btoa(String.fromCharCode(...bytes)) }];
+    } else if (type === "new_message") {
       subject = `💬 Neue Nachricht von ${senderName} – ODOJ`;
       html = newMessageTemplate(recipientName, senderName || "", jobTitel || "", bewId || "");
     } else if (type === "work_confirmed") {
@@ -383,7 +425,7 @@ serve(async (req) => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: user.email, subject, html }),
+      body: JSON.stringify({ from: FROM, to: user.email, subject, html, ...(attachments ? { attachments } : {}) }),
     });
 
     const resBody = await res.json();
