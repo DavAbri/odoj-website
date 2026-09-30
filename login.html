@@ -390,6 +390,11 @@
       <button class="auth-mode-tab" id="mode-register" onclick="setMode('register')">Registrieren</button>
     </div>
 
+    <!-- Hinweis: Registrierung bereits vor dem offiziellen Start möglich -->
+    <div id="register-hint" style="display:none;background:rgba(232,160,32,.12);border:1px solid rgba(232,160,32,.35);color:#E8A020;font-size:13px;font-weight:600;text-align:center;border-radius:10px;padding:10px 14px;margin-bottom:16px">
+      Du kannst dich schon jetzt registrieren – wir informieren dich, sobald es losgeht.
+    </div>
+
     <!-- Login Form -->
     <form id="form-login" onsubmit="doLogin(event)">
       <div class="lf-field">
@@ -688,6 +693,7 @@ function setMode(mode) {
   document.getElementById('form-register').style.display = mode === 'register' ? 'block' : 'none';
   document.getElementById('form-reset').style.display    = mode === 'reset'    ? 'block' : 'none';
   document.getElementById('form-new-pw').style.display   = mode === 'new-pw'   ? 'block' : 'none';
+  document.getElementById('register-hint').style.display = mode === 'register' ? 'block' : 'none';
   document.getElementById('auth-success').style.display  = 'none';
 }
 
@@ -969,15 +975,15 @@ async function doRegister(e) {
   // 3. Rolle speichern
   odojSaveRolle(_currentRole);
 
-  // 4. Weiterleiten oder Bestätigungsmail
-  if (data.session) {
-    redirectAfterAuth(_currentRole);
-  } else {
-    document.getElementById('form-register').style.display = 'none';
-    document.getElementById('auth-success').style.display  = 'block';
-    document.getElementById('auth-success-msg').textContent =
-      'Wir haben dir eine Bestätigungs-E-Mail geschickt. Bitte klick auf den Link, dann kannst du dich anmelden.';
-  }
+  // 4. Bestätigung anzeigen ("Bald geht's los") statt direkt auf die volle
+  // Plattform weiterzuleiten - die ist vor dem offiziellen Start noch nicht
+  // öffentlich live, unabhängig davon, ob eine E-Mail-Bestätigung nötig ist.
+  document.getElementById('form-register').style.display = 'none';
+  document.getElementById('register-hint').style.display = 'none';
+  document.getElementById('auth-success').style.display  = 'block';
+  document.getElementById('auth-success-msg').textContent = data.session
+    ? 'Deine Registrierung war erfolgreich. Der Start von ODOJ steht kurz bevor – wir benachrichtigen dich, sobald es losgeht.'
+    : 'Wir haben dir eine Bestätigungs-E-Mail geschickt. Bitte klick auf den Link darin, dann ist deine Registrierung abgeschlossen. Der Start von ODOJ steht kurz bevor – wir benachrichtigen dich, sobald es losgeht.';
 }
 
 // Maximales Geburtsdatum setzen (heute - 15 Jahre)

@@ -374,32 +374,14 @@
       <h1>Coming Soon</h1>
       <p class="subtitle">
         ODOJ startet bald – die Plattform für Tagesjobs in Vorarlberg.<br>
-        Trag dich ein und erfahre als Erster, wenn es losgeht.
+        Registrier dich jetzt schon kostenlos – wir informieren dich, sobald es losgeht.
       </p>
 
       <hr class="divider">
 
-      <!-- E-Mail Formular -->
+      <!-- Registrierung -->
       <div id="waitlist-form">
-        <div class="input-wrap">
-          <input
-            type="email"
-            id="emailInput"
-            placeholder="deine@email.at"
-            autocomplete="email"
-          />
-        </div>
-        <div class="error-msg" id="emailError"></div>
-        <button class="btn" id="waitlistBtn" onclick="submitWaitlist()">Jetzt eintragen &rarr;</button>
-      </div>
-
-      <!-- Erfolgs-Zustand (versteckt) -->
-      <div id="waitlist-success" style="display:none">
-        <div class="success-wrap">
-          <div class="success-icon">✓</div>
-          <div class="success-title">Du bist dabei!</div>
-          <p class="success-text">Wir haben deine E-Mail-Adresse eingetragen und dir eine Bestätigung geschickt. Sobald ODOJ live geht, melden wir uns.</p>
-        </div>
+        <a href="/registrieren" class="btn" style="display:block;text-decoration:none;text-align:center">Jetzt schon kostenlos registrieren &rarr;</a>
       </div>
 
     </div>
@@ -490,54 +472,6 @@
       }
     }
 
-    // ── Waitlist ─────────────────────────────────────────────────────
-    const emailInput = document.getElementById('emailInput');
-    const emailError = document.getElementById('emailError');
-    const waitlistBtn = document.getElementById('waitlistBtn');
-
-    emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitWaitlist(); });
-    emailInput.addEventListener('input', () => {
-      emailInput.classList.remove('error');
-      emailError.textContent = '';
-    });
-
-    async function submitWaitlist() {
-      const email = emailInput.value.trim().toLowerCase();
-
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        emailInput.classList.add('error');
-        emailError.textContent = 'Bitte gib eine gültige E-Mail-Adresse ein.';
-        emailInput.focus();
-        return;
-      }
-
-      waitlistBtn.disabled = true;
-      waitlistBtn.textContent = 'Wird eingetragen …';
-
-      const { error } = await _sbGate.from('waitlist').insert({ email });
-
-      if (error) {
-        waitlistBtn.disabled = false;
-        waitlistBtn.textContent = 'Jetzt eintragen →';
-        if (error.code === '23505') {
-          emailInput.classList.add('error');
-          emailError.textContent = 'Diese E-Mail-Adresse ist bereits eingetragen.';
-        } else {
-          emailError.textContent = 'Etwas ist schiefgelaufen. Bitte versuche es erneut.';
-          console.error('Waitlist error:', error);
-        }
-        return;
-      }
-
-      // Bestätigungs-E-Mail (fire-and-forget)
-      _sbGate.functions.invoke('send-email', {
-        body: { type: 'waitlist', email }
-      }).catch(() => {});
-
-      // Erfolg anzeigen
-      document.getElementById('waitlist-form').style.display = 'none';
-      document.getElementById('waitlist-success').style.display = 'block';
-    }
   </script>
 <script src="cookies.js"></script>
 </body>
