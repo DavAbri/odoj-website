@@ -431,10 +431,19 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // Testumgebung/Staging: odoj.at/www.odoj.at nutzt das Live-Projekt, jede andere
+    // Adresse automatisch das getrennte Staging-Projekt (siehe auch auth.js).
+    const _odojIsLive = ['odoj.at', 'www.odoj.at'].includes(location.hostname);
     const _sbGate = supabase.createClient(
-      'https://vixarulzbsfwnbfucbih.supabase.co',
-      'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
+      _odojIsLive ? 'https://vixarulzbsfwnbfucbih.supabase.co' : 'https://mdpyqmaqjmqhaqtmdsnh.supabase.co',
+      _odojIsLive ? 'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9' : 'sb_publishable_BfNPgPXP8WmwrkcwruL4_A_IvZcwTVj'
     );
+    if (!_odojIsLive) {
+      const _b = document.createElement('div');
+      _b.textContent = '⚠ TESTUMGEBUNG – nicht die echte Plattform';
+      _b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#E8A020;color:#0B1F3A;text-align:center;font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-size:13px;padding:6px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+      document.body.prepend(_b);
+    }
 
     // ── Login Modal ──────────────────────────────────────────────────
     function openLoginModal() {

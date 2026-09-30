@@ -75,10 +75,19 @@
   // Nur diese E-Mail-Adressen dürfen rein - muss mit admin/index.html übereinstimmen.
   const ADMIN_EMAILS = ['mail4david85@gmail.com', 'admin@odoj.at'];
 
+  // Testumgebung/Staging: odoj.at/www.odoj.at nutzt das Live-Projekt, jede andere
+  // Adresse automatisch das getrennte Staging-Projekt (siehe auch auth.js).
+  const _odojIsLive = ['odoj.at', 'www.odoj.at'].includes(location.hostname);
   const sb = supabase.createClient(
-    'https://vixarulzbsfwnbfucbih.supabase.co',
-    'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
+    _odojIsLive ? 'https://vixarulzbsfwnbfucbih.supabase.co' : 'https://mdpyqmaqjmqhaqtmdsnh.supabase.co',
+    _odojIsLive ? 'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9' : 'sb_publishable_BfNPgPXP8WmwrkcwruL4_A_IvZcwTVj'
   );
+  if (!_odojIsLive) {
+    const _b = document.createElement('div');
+    _b.textContent = '⚠ TESTUMGEBUNG – nicht die echte Plattform';
+    _b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#E8A020;color:#0B1F3A;text-align:center;font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-size:13px;padding:6px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+    document.body.prepend(_b);
+  }
 
   // Falls schon eine gültige Admin-Session besteht, direkt weiter.
   (async () => {

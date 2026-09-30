@@ -9,6 +9,13 @@ const SITE_URL            = Deno.env.get("SITE_URL") || "https://odoj.at";
 // Für Tests: "onboarding@resend.dev" verwenden (kein Domain-Verify nötig)
 // Für Produktion: eigene verifizierte Domain eintragen, z.B. "noreply@odoj.at"
 const FROM                = Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev";
+// Staging-Umgebung (siehe Testumgebungs-Setup): kennzeichnet jeden Betreff eindeutig
+// als Test, statt E-Mails ganz zu unterdrücken - so bleiben echte und Test-Mails
+// (inkl. der internen Benachrichtigung an info@odoj.at) klar unterscheidbar.
+const IS_STAGING          = Deno.env.get("ODOJ_ENV") === "staging";
+function withTestPrefix(subject: string): string {
+  return IS_STAGING ? `[TEST] ${subject}` : subject;
+}
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -332,7 +339,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: FROM,
           to: email,
-          subject: "Du bist auf der ODOJ-Warteliste! 🎉",
+          subject: withTestPrefix("Du bist auf der ODOJ-Warteliste! 🎉"),
           html: waitlistTemplate(email),
         }),
       });
@@ -354,7 +361,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: FROM,
           to: "info@odoj.at",
-          subject: `Neue Registrierung: ${typLabel} – ${regName || regEmail}`,
+          subject: withTestPrefix(`Neue Registrierung: ${typLabel} – ${regName || regEmail}`),
           html: neueRegistrierungInternTemplate(regType, regName, regEmail, regRefCode),
         }),
       });
@@ -425,7 +432,7 @@ serve(async (req) => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: user.email, subject, html, ...(attachments ? { attachments } : {}) }),
+      body: JSON.stringify({ from: FROM, to: user.email, subject: withTestPrefix(subject), html, ...(attachments ? { attachments } : {}) }),
     });
 
     const resBody = await res.json();

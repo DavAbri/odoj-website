@@ -1,9 +1,32 @@
 // ── ODOJ Auth – Supabase v2 ──────────────────────────
 // Supabase CDN muss VOR diesem Script geladen sein.
-window.odojSb = supabase.createClient(
-  'https://vixarulzbsfwnbfucbih.supabase.co',
-  'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
-);
+//
+// Umgebungs-Erkennung (Testumgebung/Staging): odoj.at bzw. www.odoj.at nutzt
+// das Live-Projekt, JEDE andere Adresse (Staging-Branch-URL, aber z.B. auch
+// localhost beim lokalen Testen) nutzt automatisch das getrennte
+// Staging-Projekt - gleicher Code, nie versehentlich echte Daten beim Testen.
+const ODOJ_IS_LIVE = ['odoj.at', 'www.odoj.at'].includes(location.hostname);
+const ODOJ_SUPABASE_URL = ODOJ_IS_LIVE
+  ? 'https://vixarulzbsfwnbfucbih.supabase.co'
+  : 'https://mdpyqmaqjmqhaqtmdsnh.supabase.co';
+const ODOJ_SUPABASE_KEY = ODOJ_IS_LIVE
+  ? 'sb_publishable_uSI5RFn7x4OSdbZa2qt7Cg_8bhguUE9'
+  : 'sb_publishable_BfNPgPXP8WmwrkcwruL4_A_IvZcwTVj';
+
+window.odojSb = supabase.createClient(ODOJ_SUPABASE_URL, ODOJ_SUPABASE_KEY);
+
+function odojShowTestBanner() {
+  if (document.getElementById('odoj-test-banner')) return;
+  const b = document.createElement('div');
+  b.id = 'odoj-test-banner';
+  b.textContent = '⚠ TESTUMGEBUNG – nicht die echte Plattform';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#E8A020;color:#0B1F3A;text-align:center;font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-size:13px;padding:6px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+  document.body.prepend(b);
+}
+if (!ODOJ_IS_LIVE) {
+  if (document.body) odojShowTestBanner();
+  else document.addEventListener('DOMContentLoaded', odojShowTestBanner);
+}
 
 async function odojGetSession() {
   const { data } = await odojSb.auth.getSession();
