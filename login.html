@@ -458,6 +458,11 @@
           <small style="font-size:12px;color:var(--text-lt);margin-top:4px;display:block">Mindestens 15 Jahre alt</small>
         </div>
         <div class="lf-field">
+          <label>Sozialversicherungsnummer</label>
+          <input type="text" id="reg-svnummer" placeholder="z.B. 1234 010190" inputmode="numeric" maxlength="12">
+          <small style="font-size:12px;color:var(--text-lt);margin-top:4px;display:block">Steht auf deiner e-card, 10 Ziffern</small>
+        </div>
+        <div class="lf-field">
           <label>Staatsangehörigkeit</label>
           <select id="reg-staatsangehoerigkeit" autocomplete="country-name">
             <option value="">Bitte wählen…</option>
@@ -801,6 +806,37 @@ async function doLogin(e) {
   redirectAfterAuth(tatsaechlicheRolle);
 }
 
+// Österreichische SV-Nummer prüfen: 10 Ziffern, Prüfziffer-Algorithmus, optional
+// Geburtsdatum-Abgleich (Ziffern 5-10 der SVN kodieren TTMMJJ). Identische Logik wie
+// in profil.html (validiereOesterreichischeSVN), hier dupliziert, da beide Seiten
+// eigenständige statische Skripte ohne gemeinsames JS-Modul sind.
+function validiereOesterreichischeSVN(svn, geburtsdatum) {
+  const z = svn.replace(/\D/g, '');
+
+  if (z.length !== 10)
+    return { gueltig: false, fehler: 'SV-Nummer muss genau 10 Ziffern haben (z.B. 1234 010190).' };
+
+  if (parseInt(z.substring(4,6)) < 1 || parseInt(z.substring(4,6)) > 31)
+    return { gueltig: false, fehler: 'Ungültiger Tag im Geburtsdatum der SV-Nummer.' };
+
+  if (parseInt(z.substring(6,8)) < 1 || parseInt(z.substring(6,8)) > 12)
+    return { gueltig: false, fehler: 'Ungültiger Monat im Geburtsdatum der SV-Nummer.' };
+
+  const mult = [3,7,9,0,5,8,4,2,1,6];
+  const pruef = [].reduce.call(z, (s,c,i) => s + parseInt(c)*mult[i], 0) % 11;
+
+  if (pruef !== parseInt(z[3]))
+    return { gueltig: false, fehler: 'Prüfziffer falsch. Bitte SV-Nummer von der e-card prüfen.' };
+
+  if (geburtsdatum) {
+    const t = geburtsdatum.split('-');
+    if (z.substring(4,6) !== t[2] || z.substring(6,8) !== t[1] || z.substring(8,10) !== t[0].substring(2))
+      return { gueltig: false, fehler: 'Geburtsdatum in der SV-Nummer stimmt nicht mit dem eingegebenen Geburtsdatum überein.' };
+  }
+
+  return { gueltig: true, fehler: null };
+}
+
 // ── REGISTRIERUNG ──
 async function doRegister(e) {
   e.preventDefault();
@@ -828,6 +864,7 @@ async function doRegister(e) {
     const vorname  = document.getElementById('reg-vorname').value.trim();
     const nachname = document.getElementById('reg-nachname').value.trim();
     const gebDat   = document.getElementById('reg-geburtsdatum').value;
+    const svnummer = document.getElementById('reg-svnummer').value.trim();
     const staatsangehoerigkeit = document.getElementById('reg-staatsangehoerigkeit').value;
     if (!vorname)  { showRegError('Bitte Vorname eingeben.'); return; }
     if (!nachname) { showRegError('Bitte Nachname eingeben.'); return; }
@@ -840,9 +877,12 @@ async function doRegister(e) {
     const mDiff = heute.getMonth() - geb.getMonth();
     if (mDiff < 0 || (mDiff === 0 && heute.getDate() < geb.getDate())) alter--;
     if (alter < 15) { showRegError('Du musst mindestens 15 Jahre alt sein.'); return; }
+    const svnPruefung = validiereOesterreichischeSVN(svnummer, gebDat);
+    if (!svnPruefung.gueltig) { showRegError(svnPruefung.fehler); return; }
     profileData.vorname      = vorname;
     profileData.nachname     = nachname;
     profileData.geburtsdatum = gebDat;
+    profileData.svnummer     = svnummer.replace(/\D/g, '');
     profileData.staatsangehoerigkeit = staatsangehoerigkeit;
   } else {
     const firmenname = document.getElementById('reg-firmenname').value.trim();
