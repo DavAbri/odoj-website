@@ -770,7 +770,7 @@ async function handleApply() {
 async function doApply(terminIds) {
   // Profil-Vollständigkeit prüfen
   if (!_jdProfile?.profil_vollstaendig) {
-    showToast('Bitte vervollständige zuerst dein Profil (SV-Nummer + Adresse) → <a href="profil.html" style="color:#fff;text-decoration:underline">Zum Profil</a>', 'warn');
+    showToast('Bitte vervollständige zuerst dein Profil (SV-Nummer, Adresse + IBAN) → <a href="profil.html" style="color:#fff;text-decoration:underline">Zum Profil</a>', 'warn');
     return;
   }
 
