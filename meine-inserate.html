@@ -2372,6 +2372,12 @@ function _berechneAlter(geburtsdatum) {
   return alter;
 }
 
+async function _odojViewLebenslauf(pfad) {
+  const { data, error } = await odojSb.storage.from('lebenslaeufe').createSignedUrl(pfad, 60);
+  if (error || !data?.signedUrl) { alert('Dokument konnte nicht geöffnet werden: ' + (error?.message || 'unbekannter Fehler')); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
 async function showJobberProfile(jobberId, jobberName) {
   const overlay = document.getElementById('jp-overlay');
   const body    = document.getElementById('jp-modal-body');
@@ -2390,7 +2396,7 @@ async function showJobberProfile(jobberId, jobberName) {
 
   const { data: profile } = await odojSb
     .from('Profile')
-    .select('vorname, nachname, geburtsdatum, adresse, adresse_plz, adresse_ort, svnummer')
+    .select('vorname, nachname, geburtsdatum, adresse, adresse_plz, adresse_ort, svnummer, lebenslauf_pfad, lebenslauf_dateiname')
     .eq('user_id', jobberId)
     .single();
 
@@ -2406,6 +2412,12 @@ async function showJobberProfile(jobberId, jobberName) {
   const adresseStr = adresseTeile.length ? adresseTeile.join(', ') : (profile?.adresse || null);
   if (adresseStr) fields.push({ icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>', label: 'Wohnadresse', value: escJ(adresseStr) });
   if (profile?.svnummer) fields.push({ icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>', label: 'SV-Nummer', value: escJ(profile.svnummer) });
+  if (profile?.lebenslauf_pfad) fields.push({
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    label: 'Lebenslauf',
+    value: `<a href="#" onclick="_odojViewLebenslauf('${profile.lebenslauf_pfad}'); return false;" style="color:var(--accent);text-decoration:underline;cursor:pointer">Lebenslauf ansehen</a>`,
+    sub: profile.lebenslauf_dateiname ? escJ(profile.lebenslauf_dateiname) : ''
+  });
 
   if (fields.length === 0) {
     body.innerHTML = `<p style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px 0">Dieser Bewerber hat noch keine weiteren Profildaten hinterlegt.</p>`;

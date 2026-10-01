@@ -1157,6 +1157,8 @@ function renderJobber(session, profile) {
   const telefon  = profile?.telefon      || '';
   const iban     = profile?.iban         || '';
   const geburt   = profile?.geburtsdatum || '';
+  const lebenslaufPfad     = profile?.lebenslauf_pfad     || '';
+  const lebenslaufDateiname = profile?.lebenslauf_dateiname || '';
   const staatsangehoerigkeit = profile?.staatsangehoerigkeit || '';
   const bio      = profile?.bio          || '';
   const verfueg  = Array.isArray(profile?.verfuegbarkeit) ? profile.verfuegbarkeit : [];
@@ -1283,6 +1285,28 @@ function renderJobber(session, profile) {
             <button class="btn-edit" onclick="toggleJbPers(false)">Abbrechen</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Hinweis zur Profilvollständigkeit -->
+    <div style="background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#7a5500;line-height:1.5">
+      💡 <strong>Tipp:</strong> Je mehr du über dich angibst, desto besser stehen deine Chancen, bei einem Job angenommen zu werden – Arbeitgeber entscheiden sich lieber für ein vollständiges Profil.
+    </div>
+
+    <!-- Lebenslauf / Dokument -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Lebenslauf <span style="font-weight:300;text-transform:none;letter-spacing:0;color:var(--text-lt)">(optional)</span></h2>
+      <div class="profil-field-group">
+        <div class="profil-field-group-head">
+          <div style="flex:1;min-width:0">
+            <div class="profil-field-group-title">Lebenslauf, Zeugnis o.ä.</div>
+            <div class="profil-field-value" id="doc-display">${lebenslaufPfad ? escH(lebenslaufDateiname || 'Dokument hochgeladen') : empty}</div>
+          </div>
+        </div>
+        <div id="doc-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${_renderDocActions(lebenslaufPfad, session.user.id)}</div>
+        <div id="doc-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px;margin-top:10px"></div>
+        <div id="doc-progress" style="display:none;font-size:13px;color:var(--text-lt);margin-top:10px">Wird hochgeladen…</div>
+        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" onchange="uploadDokument('${session.user.id}')">
       </div>
     </div>
 
@@ -1771,6 +1795,94 @@ async function checkProfilVollstaendig(userId) {
   await odojSb.from('Profile')
     .update({ profil_vollstaendig: vollstaendig })
     .eq('user_id', userId);
+}
+
+// ─────────────────────────────────────────
+// LEBENSLAUF / DOKUMENT-UPLOAD
+// ─────────────────────────────────────────
+const DOC_MAX_SIZE    = 5 * 1024 * 1024; // 5 MB
+const DOC_ALLOWED_EXT = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+
+function _renderDocActions(lebenslaufPfad, userId) {
+  const uploadLabel = lebenslaufPfad ? 'Ersetzen' : 'Hochladen';
+  let html = `<button type="button" class="btn-edit" onclick="document.getElementById('doc-file-input').click()">${uploadLabel}</button>`;
+  if (lebenslaufPfad) {
+    html += `<button type="button" class="btn-edit" onclick="viewDokument('${userId}')">Ansehen</button>`;
+    html += `<button type="button" class="btn-edit" style="color:#C0392B" onclick="deleteDokument('${userId}')">Löschen</button>`;
+  }
+  return html;
+}
+
+async function uploadDokument(userId) {
+  const input = document.getElementById('doc-file-input');
+  const file  = input.files[0];
+  input.value = '';
+  if (!file) return;
+
+  const errEl = document.getElementById('doc-error');
+  errEl.style.display = 'none';
+
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!DOC_ALLOWED_EXT.includes(ext)) {
+    errEl.textContent = 'Nicht unterstütztes Dateiformat. Erlaubt: PDF, DOC, DOCX, JPG, PNG.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (file.size > DOC_MAX_SIZE) {
+    errEl.textContent = 'Die Datei ist zu groß (max. 5 MB).';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const progressEl = document.getElementById('doc-progress');
+  progressEl.style.display = 'block';
+
+  try {
+    const { data: existing } = await odojSb.from('Profile').select('lebenslauf_pfad').eq('user_id', userId).single();
+    if (existing?.lebenslauf_pfad) {
+      await odojSb.storage.from('lebenslaeufe').remove([existing.lebenslauf_pfad]);
+    }
+
+    const path = `${userId}/lebenslauf.${ext}`;
+    const { error: upErr } = await odojSb.storage.from('lebenslaeufe').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+
+    const { error: dbErr } = await odojSb.from('Profile')
+      .update({ lebenslauf_pfad: path, lebenslauf_dateiname: file.name })
+      .eq('user_id', userId);
+    if (dbErr) throw dbErr;
+
+    document.getElementById('doc-display').textContent = file.name;
+    document.getElementById('doc-actions').innerHTML = _renderDocActions(path, userId);
+    showToast('Dokument hochgeladen');
+  } catch (err) {
+    errEl.textContent = 'Fehler beim Hochladen: ' + err.message;
+    errEl.style.display = 'block';
+  } finally {
+    progressEl.style.display = 'none';
+  }
+}
+
+async function viewDokument(userId) {
+  const { data: profile } = await odojSb.from('Profile').select('lebenslauf_pfad').eq('user_id', userId).single();
+  if (!profile?.lebenslauf_pfad) return;
+  const { data, error } = await odojSb.storage.from('lebenslaeufe').createSignedUrl(profile.lebenslauf_pfad, 60);
+  if (error || !data?.signedUrl) { alert('Dokument konnte nicht geöffnet werden: ' + (error?.message || 'unbekannter Fehler')); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
+async function deleteDokument(userId) {
+  if (!confirm('Dokument wirklich löschen?')) return;
+  const { data: profile } = await odojSb.from('Profile').select('lebenslauf_pfad').eq('user_id', userId).single();
+  if (profile?.lebenslauf_pfad) {
+    await odojSb.storage.from('lebenslaeufe').remove([profile.lebenslauf_pfad]);
+  }
+  await odojSb.from('Profile').update({ lebenslauf_pfad: null, lebenslauf_dateiname: null }).eq('user_id', userId);
+
+  const empty = '<span style="color:var(--text-lt);font-style:italic">Noch nicht eingetragen</span>';
+  document.getElementById('doc-display').innerHTML = empty;
+  document.getElementById('doc-actions').innerHTML = _renderDocActions('', userId);
+  showToast('Dokument gelöscht');
 }
 
 // ─────────────────────────────────────────
