@@ -1214,6 +1214,7 @@ function renderJobber(session, profile) {
     <div class="profil-card">
       <h2 class="profil-section-title">Persönliche Daten</h2>
       ${!vorname || !nachname ? '<div class="pflicht-badge" id="pers-name-badge">Bitte trage deinen echten Namen ein – er wird Arbeitgebern angezeigt</div>' : ''}
+      ${!telefon ? '<div class="pflicht-badge" id="pers-telefon-badge">Telefonnummer fehlt – Pflichtfeld, wird für Bewerbungen benötigt</div>' : ''}
       ${!iban ? '<div class="pflicht-badge" id="pers-iban-badge">IBAN fehlt – Pflichtfeld, wird für Bewerbungen benötigt</div>' : ''}
 
       <div id="jb-pers-view">
@@ -1575,6 +1576,7 @@ async function saveJbPers(userId) {
   toggleJbPers(false);
   showToast('Persönliche Daten gespeichert');
   if (vorname && nachname) document.getElementById('pers-name-badge')?.remove();
+  if (telefon) document.getElementById('pers-telefon-badge')?.remove();
   if (iban) document.getElementById('pers-iban-badge')?.remove();
   await checkProfilVollstaendig(userId);
 }
@@ -1764,7 +1766,7 @@ async function saveAddr(userId) {
 
 async function checkProfilVollstaendig(userId) {
   const p = await _loadProfileRow(userId);
-  const vollstaendig = !!(p?.svnummer && p?.adresse && p?.adresse_plz && p?.adresse_ort && p?.iban);
+  const vollstaendig = !!(p?.svnummer && p?.adresse && p?.adresse_plz && p?.adresse_ort && p?.iban && p?.telefon);
   console.log('[Profile] profil_vollstaendig =', vollstaendig);
   await odojSb.from('Profile')
     .update({ profil_vollstaendig: vollstaendig })
