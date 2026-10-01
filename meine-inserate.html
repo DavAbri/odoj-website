@@ -2307,12 +2307,20 @@ async function submitInserat(e) {
     try {
       const { data: profile } = await odojSb
         .from('Profile')
-        .select('rolle, firmenname, uid_nummer')
+        .select('rolle, firmenname, uid_nummer, adresse, adresse_ort')
         .eq('user_id', session.user.id)
         .single();
       if (profile?.rolle)      rolle      = profile.rolle;
       if (profile?.firmenname) firmenname = profile.firmenname;
       if (profile?.uid_nummer) _agUidNummer = profile.uid_nummer;
+      // Adressfeld im "Inserat erstellen"-Formular mit der Firmenadresse aus dem
+      // Profil vorausfüllen (nur als Startwert für ein neues Inserat, bleibt editierbar).
+      if (_editJobId === null) {
+        const adresseEl = document.getElementById('ins-adresse');
+        const ortEl     = document.getElementById('ins-ort');
+        if (adresseEl && !adresseEl.value && profile?.adresse) adresseEl.value = profile.adresse;
+        if (ortEl && !ortEl.value && profile?.adresse_ort)     ortEl.value     = profile.adresse_ort;
+      }
     } catch (_) {}
 
     odojSaveRolle(rolle);
