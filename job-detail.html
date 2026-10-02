@@ -792,7 +792,7 @@ async function doApply(terminIds) {
     termin_id:      terminId
   }));
 
-  const { error } = await odojSb.from('bewerbungen').insert(rows);
+  const { data: insertedBews, error } = await odojSb.from('bewerbungen').insert(rows).select('id');
 
   if (error) {
     showToast('Fehler: ' + error.message, 'error');
@@ -808,6 +808,21 @@ async function doApply(terminIds) {
   const terminInfo = (_jdIsMultiTermin && terminIds && terminIds.length)
     ? terminIds.map(id => _jdTermine.find(t => t.id === id)).filter(Boolean).map(t => formatDate(t.datum)).join(', ')
     : undefined;
+
+  // Benachrichtigung im Nachrichtenbereich des Arbeitgebers (neue Bewerbung),
+  // verlinkt direkt auf das Inserat + diese Bewerbung in "Meine Inserate".
+  if (_jdJob?.arbeitgeber_id && insertedBews?.[0]?.id) {
+    const datumText = terminInfo || (_jdJob.datum ? formatDate(_jdJob.datum) : '');
+    const nachricht = `📋 Neue Bewerbung\n\nFür „${_jdJob.titel || 'dein Inserat'}"${datumText ? ' (' + datumText + ')' : ''} hat sich ${jobberName} beworben.\n\nmeine-inserate.html?job=${_jdJob.id}&bew=${insertedBews[0].id}`;
+    odojSb.from('nachrichten').insert({
+      bewerbung_id:  insertedBews[0].id,
+      sender_id:     _jdSession.user.id,
+      empfaenger_id: _jdJob.arbeitgeber_id,
+      nachricht,
+      gelesen:       false,
+      erstellt_am:   new Date().toISOString()
+    }).then(({ error: msgErr }) => { if (msgErr) console.warn('[Bewerbungs-Nachricht] Fehler:', msgErr.message); });
+  }
 
   // Bestätigungs-E-Mail an Jobber senden (non-blocking) - EIN Versand pro Klick, nicht pro Termin
   odojSb.functions.invoke('send-email', {

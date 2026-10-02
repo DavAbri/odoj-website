@@ -1173,8 +1173,26 @@ async function loadInserate() {
   }
 
   const jobIds = jobs.map(j => j.id);
-  const { data: bews } = await odojSb.from('bewerbungen').select('job_id, status, termin_id').in('job_id', jobIds);
+  const { data: bews } = await odojSb.from('bewerbungen').select('id, job_id, status, termin_id').in('job_id', jobIds);
   const { data: alleTermine } = await odojSb.from('job_termine').select('id, job_id, datum').in('job_id', jobIds);
+
+  // Ungesehene neue Bewerbungen pro Inserat (für das "neu"-Badge auf der Karte):
+  // Bewerbungen dieses Arbeitgebers mit mind. einer ungelesenen Nachricht.
+  const unseenMap = {};
+  const bewIdsAll = (bews || []).map(b => b.id);
+  if (bewIdsAll.length) {
+    const { data: unreadMsgs } = await odojSb
+      .from('nachrichten')
+      .select('bewerbung_id')
+      .eq('empfaenger_id', _agSession.user.id)
+      .eq('gelesen', false)
+      .in('bewerbung_id', bewIdsAll);
+    const unreadBewIds = new Set((unreadMsgs || []).map(m => m.bewerbung_id));
+    (bews || []).forEach(b => {
+      if (unreadBewIds.has(b.id)) unseenMap[b.job_id] = (unseenMap[b.job_id] || 0) + 1;
+    });
+  }
+
   const termineByJob = {};
   (alleTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push({ id: t.id, datum: t.datum }));
   Object.values(termineByJob).forEach(list => list.sort((a, b) => a.datum.localeCompare(b.datum)));
@@ -1224,7 +1242,7 @@ async function loadInserate() {
     .sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
 
   function renderSubGrid(list) {
-    return `<div class="ins-sub-grid">${list.map(j => renderInseratCard(j, countMap[j.id]||0, acceptedMap[j.id]||0, ausstehendMap[j.id]||0, termineByJob[j.id], acceptedByTermin)).join('')}</div>`;
+    return `<div class="ins-sub-grid">${list.map(j => renderInseratCard(j, countMap[j.id]||0, acceptedMap[j.id]||0, ausstehendMap[j.id]||0, termineByJob[j.id], acceptedByTermin, unseenMap[j.id]||0)).join('')}</div>`;
   }
 
   let html = '';
@@ -1269,10 +1287,11 @@ function toggleVergangene(btn) {
   btn.textContent = open ? 'Anzeigen ▾' : 'Ausblenden ▴';
 }
 
-function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine, acceptedByTermin) {
+function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine, acceptedByTermin, unseenCount) {
   bewCount        = bewCount        || 0;
   acceptedCount   = acceptedCount   || 0;
   ausstehendCount = ausstehendCount || 0;
+  unseenCount     = unseenCount     || 0;
   acceptedByTermin = acceptedByTermin || {};
   const b = BRANCHEN[j.branche] || { label: j.branche, cls: '' };
   const fmtKurz = d => new Date(d + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -1297,6 +1316,10 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
     ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${acceptedCount} Stelle${acceptedCount !== 1 ? 'n' : ''} vergeben</span>`
     : '';
 
+  const unseenBadge = unseenCount > 0
+    ? `<span id="unseen-badge-${j.id}" style="display:inline-flex;align-items:center;gap:5px;background:#e74c3c;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">🔔 ${unseenCount} neue Bewerbung${unseenCount !== 1 ? 'en' : ''}</span>`
+    : '';
+
   // Bei Mehrtages-Jobs bezieht sich "Ausgebucht"/"offen" auf einzelne Termine,
   // nicht auf die über alle Termine kumulierte Bewerberzahl vs. plaetze.
   const remaining = isMultiTermin ? (termine.length - vollTermine) : ((j.plaetze || 0) - acceptedCount);
@@ -1316,6 +1339,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
           ${terminBadge}
           ${vergebenBadge}
           ${ausgebuchtBadge}
+          ${unseenBadge}
           <div class="inserat-firma" style="width:100%">${j.firmenname || ''}</div>
         </div>
         <span class="status-badge ${statusCls}">${j.status || 'aktiv'}</span>
@@ -1354,6 +1378,35 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
     </div>`;
 }
 
+// ── DEEP-LINK: direkt zu einer Bewerbung springen (z.B. aus einer Nachricht) ──
+async function handleDeepLinkBewerbung() {
+  const params = new URLSearchParams(location.search);
+  const jobId  = params.get('job');
+  const bewId  = params.get('bew');
+  if (!jobId || !_agSession?.user?.id) return;
+
+  const { data: job } = await odojSb
+    .from('jobs').select('titel, datum')
+    .eq('id', jobId).eq('arbeitgeber_id', _agSession.user.id)
+    .maybeSingle();
+  if (!job) return;
+
+  showTab('inserate');
+  await openBewerbungen(jobId, job.titel || '', job.datum || '');
+
+  if (bewId) {
+    setTimeout(() => {
+      const el = document.getElementById('bew-item-' + bewId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'box-shadow .3s';
+        el.style.boxShadow = '0 0 0 3px var(--accent)';
+        setTimeout(() => { el.style.boxShadow = ''; }, 2500);
+      }
+    }, 300);
+  }
+}
+
 // ── BEWERBUNGEN OVERLAY ──
 async function openBewerbungen(jobId, jobTitel, jobDatum) {
   document.getElementById('bew-overlay-titel').textContent = jobTitel;
@@ -1372,6 +1425,24 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   if (error) {
     bodyEl.innerHTML = '<p style="color:#c0392b;padding:24px">Fehler: ' + error.message + '</p>';
     return;
+  }
+
+  // Bewerbung(en) gelten als "angesehen": zugehörige ungelesene Nachrichten
+  // (z.B. die "Neue Bewerbung"-Systemnachricht) als gelesen markieren und
+  // Badges (Mein Profil, Nachrichten, Karte dieses Inserats) aktualisieren.
+  const allBewIdsForJob = (alle || []).map(b => b.id);
+  if (allBewIdsForJob.length) {
+    odojSb.from('nachrichten')
+      .update({ gelesen: true })
+      .in('bewerbung_id', allBewIdsForJob)
+      .eq('empfaenger_id', _agSession.user.id)
+      .eq('gelesen', false)
+      .then(async () => {
+        document.getElementById('unseen-badge-' + jobId)?.remove();
+        if (_agSession?.user?.id) {
+          odojUpdateUnreadDot(await odojCountUnread(_agSession.user.id));
+        }
+      });
   }
 
   const bewerbungen = (alle || []).filter(b => b.status !== 'abgelehnt');
@@ -2333,6 +2404,7 @@ async function submitInserat(e) {
       document.getElementById('mi-dashboard').style.display = 'block';
       applyUidCheck(_agUidNummer);
       loadInserate();
+      handleDeepLinkBewerbung();
       pruefeAbgelaufeneInserate();
       if (window.odojNotifications) {
         window.odojNotifications.markAllRead(session.user.id).catch(() => {});
