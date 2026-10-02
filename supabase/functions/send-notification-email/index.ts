@@ -64,6 +64,25 @@ serve(async (req) => {
       ? record.nachricht.substring(0, 200) + (record.nachricht.length > 200 ? "..." : "")
       : ""
 
+    // Betreff anhand des Nachrichtentyps wählen (gleiche Erkennung wie im
+    // Chat-Frontend), damit Annahme/Ablehnung/Vertragsbestätigung eine
+    // passende, klare Betreffzeile statt der generischen "Neue Nachricht" bekommen.
+    const text = record.nachricht || ""
+    let subject = `Neue Nachricht von ${senderName} auf ODOJ`
+    if (text.startsWith("Herzlichen Glückwunsch! Deine Bewerbung")) {
+      subject = "Deine Bewerbung wurde angenommen! 🎉"
+    } else if (text.startsWith("Vielen Dank für deine Bewerbung")) {
+      subject = "Update zu deiner Bewerbung"
+    } else if (text.startsWith("✅ Vertragsbestätigung")) {
+      subject = "Der Dienstvertrag wurde akzeptiert"
+    }
+
+    // Deep-Link zur konkreten Bewerbung/Konversation statt nur zum
+    // allgemeinen Nachrichtenbereich, falls bewerbung_id vorhanden ist.
+    const chatLink = record.bewerbung_id
+      ? `${SITE_URL}/chat.html?bew=${record.bewerbung_id}`
+      : `${SITE_URL}/chat.html`
+
     // E-Mail HTML Template
     const htmlContent = `
 <!DOCTYPE html>
@@ -108,7 +127,7 @@ serve(async (req) => {
 
             <!-- CTA Button -->
             <div style="text-align:center;margin-bottom:28px;">
-              <a href="${SITE_URL}/chat.html"
+              <a href="${chatLink}"
                  style="display:inline-block;background:#E8A020;color:#0B1F3A;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">
                 Nachricht lesen →
               </a>
@@ -148,7 +167,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: `${FROM_NAME} <${FROM_EMAIL}>`,
         to: [empfaengerEmail],
-        subject: `Neue Nachricht von ${senderName} auf ODOJ`,
+        subject,
         html: htmlContent
       })
     })
