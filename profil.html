@@ -756,10 +756,10 @@ async function saveAgProfil(userId) {
 async function loadRechnungen(agId) {
   const bodyEl = document.getElementById('rechnungen-body');
   const { data: rechnungen, error } = await odojSb
-    .from('rechnungen')
-    .select('*')
+    .from('invoices')
+    .select('id, invoice_number, bewerbung_id, amount, issued_at, due_at, payment_status')
     .eq('arbeitgeber_id', agId)
-    .order('datum', { ascending: false });
+    .order('issued_at', { ascending: false });
 
   if (error) { bodyEl.innerHTML = `<p style="color:#c0392b;padding:16px">Fehler: ${error.message}</p>`; return; }
 
@@ -771,26 +771,36 @@ async function loadRechnungen(agId) {
     return;
   }
 
-  const summeLohn    = rechnungen.reduce((s, r) => s + Number(r.lohn_betrag || 0), 0);
-  const summeGebuehr = rechnungen.reduce((s, r) => s + Number(r.vermittlungsgebuehr || r.betrag || 15), 0);
-  const summeGesamt  = rechnungen.reduce((s, r) => s + Number(r.gesamt_betrag || (Number(r.lohn_betrag||0) + Number(r.betrag||15))), 0);
+  // Jobtitel über bewerbung_id -> bewerbungen.job_id -> jobs auflösen statt
+  // doppelt in invoices zu speichern.
+  const bewIds = [...new Set(rechnungen.map(r => r.bewerbung_id).filter(Boolean))];
+  let jobTitelMap = {};
+  if (bewIds.length) {
+    const { data: bews } = await odojSb.from('bewerbungen').select('id, job_id').in('id', bewIds);
+    const jobIds = [...new Set((bews || []).map(b => b.job_id).filter(Boolean))];
+    let jobMap = {};
+    if (jobIds.length) {
+      const { data: jobs } = await odojSb.from('jobs').select('id, titel').in('id', jobIds);
+      jobs?.forEach(j => { jobMap[j.id] = j.titel; });
+    }
+    (bews || []).forEach(b => { jobTitelMap[b.id] = jobMap[b.job_id] || '–'; });
+  }
 
+  const summeGebuehr = rechnungen.reduce((s, r) => s + Number(r.amount || 0), 0);
   const fmt = n => Number(n).toLocaleString('de-AT', { minimumFractionDigits: 2 });
+  const STATUS_LABEL = { offen: 'Offen', bezahlt: 'Bezahlt', storniert: 'Storniert' };
+  const STATUS_STYLE = {
+    offen:     'background:#FFF4E0;color:#A05000',
+    bezahlt:   'background:#E6F5EE;color:#1A7A50',
+    storniert: 'background:#F0F0F2;color:#888'
+  };
 
   bodyEl.innerHTML = `
-    <!-- Summary Cards -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;">
-      <div style="background:var(--off);border:1.5px solid var(--gray-lt);border-radius:12px;padding:20px;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-lt);margin-bottom:8px;">Gezahlte Löhne gesamt</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:var(--navy);">€ ${fmt(summeLohn)}</div>
-      </div>
-      <div style="background:var(--off);border:1.5px solid var(--gray-lt);border-radius:12px;padding:20px;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-lt);margin-bottom:8px;">Vermittlungsgebühren gesamt</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:var(--accent);">€ ${fmt(summeGebuehr)}</div>
-      </div>
-      <div style="background:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:20px;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.5);margin-bottom:8px;">Gesamtausgaben</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:#fff;">€ ${fmt(summeGesamt)}</div>
+    <!-- Summary Card -->
+    <div style="display:grid;grid-template-columns:1fr;max-width:320px;gap:14px;margin-bottom:24px;">
+      <div style="background:var(--navy);border-radius:12px;padding:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.5);margin-bottom:8px;">Vermittlungsgebühren gesamt</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:#fff;">€ ${fmt(summeGebuehr)}</div>
       </div>
     </div>
     <!-- Tabelle -->
@@ -800,35 +810,31 @@ async function loadRechnungen(agId) {
           <tr>
             <th>Rechnungsnr.</th>
             <th>Datum</th>
-            <th>Jobber</th>
+            <th>Fällig am</th>
             <th>Job</th>
-            <th>Lohn (€)</th>
-            <th>Gebühr (€)</th>
-            <th>Gesamt (€)</th>
+            <th>Betrag (€)</th>
             <th>Status</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           ${rechnungen.map((r, i) => {
-            const dat = r.datum
-              ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+            const dat = r.issued_at
+              ? new Date(r.issued_at + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
               : '–';
-            const lohn    = fmt(r.lohn_betrag || 0);
-            const gebuehr = fmt(r.vermittlungsgebuehr || r.betrag || 15);
-            const gesamt  = fmt(r.gesamt_betrag || (Number(r.lohn_betrag||0) + Number(r.betrag||15)));
-            const rnr     = r.rechnungsnummer || ('ODOJ-' + String(r.id || i+1).padStart(5,'0'));
-            const bg      = i % 2 === 0 ? '' : 'background:#fafbfd';
+            const faellig = r.due_at
+              ? new Date(r.due_at + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
+              : '–';
+            const betrag = fmt(r.amount || 15);
+            const bg = i % 2 === 0 ? '' : 'background:#fafbfd';
             return `<tr style="${bg}">
-              <td style="font-size:12px;color:var(--text-lt);font-weight:600;">${escH(rnr)}</td>
+              <td style="font-size:12px;color:var(--text-lt);font-weight:600;">${escH(r.invoice_number)}</td>
               <td>${dat}</td>
-              <td>${escH(r.jobber_name || '–')}</td>
-              <td>${escH(r.job_titel || '–')}</td>
-              <td class="rechnung-betrag">€ ${lohn}</td>
-              <td style="color:var(--accent);font-weight:700;">€ ${gebuehr}</td>
-              <td class="rechnung-betrag">€ ${gesamt}</td>
-              <td><span class="rechnung-status">Bezahlt</span></td>
-              <td><button class="btn-download" onclick='printRechnung(${JSON.stringify(r)})'>⬇ PDF</button></td>
+              <td>${faellig}</td>
+              <td>${escH(jobTitelMap[r.bewerbung_id] || '–')}</td>
+              <td class="rechnung-betrag">€ ${betrag}</td>
+              <td><span class="rechnung-status" style="${STATUS_STYLE[r.payment_status] || ''}">${STATUS_LABEL[r.payment_status] || r.payment_status}</span></td>
+              <td><button class="btn-download" onclick='printRechnung(${JSON.stringify({ id: r.id })})'>⬇ PDF</button></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -843,13 +849,34 @@ async function loadAuszahlungen(jobberId) {
   const bodyEl = document.getElementById('auszahlungen-body');
   if (!bodyEl) return;
 
-  const { data: auszahlungen, error } = await odojSb
-    .from('rechnungen')
-    .select('*')
+  // Abgeleitet direkt aus bewerbungen+jobs statt aus einer eigenen Tabelle -
+  // vermeidet doppelt gespeicherte Job-/Namensdaten (siehe invoices-System).
+  const { data: bews, error } = await odojSb
+    .from('bewerbungen')
+    .select('id, job_id, arbeitgeber_id, bestaetigt_am')
     .eq('jobber_id', jobberId)
-    .order('datum', { ascending: false });
+    .eq('status', 'abgeschlossen')
+    .order('bestaetigt_am', { ascending: false });
 
   if (error) { bodyEl.innerHTML = `<p style="color:#c0392b;padding:16px">Fehler: ${error.message}</p>`; return; }
+
+  const jobIds = [...new Set((bews || []).map(b => b.job_id).filter(Boolean))];
+  let jobMap = {};
+  if (jobIds.length) {
+    const { data: jobs } = await odojSb.from('jobs').select('id, titel, tagesgehalt, datum').in('id', jobIds);
+    jobs?.forEach(j => { jobMap[j.id] = j; });
+  }
+
+  const auszahlungen = (bews || []).map(b => {
+    const job = jobMap[b.job_id] || {};
+    return {
+      datum:          b.bestaetigt_am ? b.bestaetigt_am.split('T')[0] : (job.datum || null),
+      lohn_betrag:    job.tagesgehalt || 0,
+      arbeitgeber_id: b.arbeitgeber_id,
+      job_titel:      job.titel || '–',
+      jobber_id:      jobberId
+    };
+  });
 
   if (!auszahlungen || auszahlungen.length === 0) {
     bodyEl.innerHTML = `<div class="profil-empty">
@@ -1886,132 +1913,31 @@ async function deleteDokument(userId) {
 }
 
 // ─────────────────────────────────────────
-// DRUCKANSICHT RECHNUNG
+// RECHNUNG HERUNTERLADEN (ARBEITGEBER)
 // ─────────────────────────────────────────
 async function printRechnung(r) {
-  // Firmenname des Arbeitgebers laden
-  let agFirma = '';
-  if (r.arbeitgeber_id) {
-    const { data: agProfile } = await odojSb.from('Profile').select('firmenname, vorname, nachname').eq('user_id', r.arbeitgeber_id).single();
-    agFirma = agProfile?.firmenname || [agProfile?.vorname, agProfile?.nachname].filter(Boolean).join(' ') || '';
+  if (!r.id) { alert('Rechnung konnte nicht geladen werden.'); return; }
+  try {
+    const { data, error } = await odojSb.functions.invoke('rechnung-pdf', { body: { invoiceId: r.id } });
+    if (error || !data?.pdfBase64) {
+      alert('Rechnung konnte nicht geladen werden: ' + (error?.message || data?.error || 'Unbekannter Fehler'));
+      return;
+    }
+    const byteChars = atob(data.pdfBase64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = data.filename || 'Rechnung.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Rechnung konnte nicht geladen werden: ' + err.message);
   }
-
-  const datum = r.datum
-    ? new Date(r.datum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
-    : new Date().toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
-
-  const lohnBetrag    = Number(r.lohn_betrag || 0);
-  const gebuehr       = Number(r.vermittlungsgebuehr || r.betrag || 15);
-  const gesamtBetrag  = Number(r.gesamt_betrag || (lohnBetrag + gebuehr));
-  const rechnungsNr   = r.rechnungsnummer || ('ODOJ-' + String(r.id || 0).padStart(5, '0'));
-
-  const fmt2 = n => Number(n).toLocaleString('de-AT', { minimumFractionDigits: 2 });
-
-  // Adresse des Arbeitgebers laden
-  let agAdresse = '';
-  if (r.arbeitgeber_id) {
-    const { data: agP } = await odojSb.from('Profile').select('firmenname,vorname,nachname,adresse,adresse_plz,adresse_ort').eq('user_id', r.arbeitgeber_id).single();
-    agFirma = agP?.firmenname || [agP?.vorname, agP?.nachname].filter(Boolean).join(' ') || agFirma;
-    agAdresse = [agP?.adresse, agP?.adresse_plz, agP?.adresse_ort].filter(Boolean).join(', ');
-  }
-
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
-<title>Rechnung ${rechnungsNr}</title>
-<link rel="stylesheet" href="/fonts/plus-jakarta-sans.css">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #0B1F3A; padding: 60px; max-width: 820px; margin: 0 auto; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; border-bottom: 3px solid #0B1F3A; padding-bottom: 28px; }
-  .logo { font-size: 30px; font-weight: 800; color: #0B1F3A; letter-spacing: -1px; margin-bottom: 8px; }
-  .logo span { color: #E8A020; }
-  .sender-info { font-size: 13px; color: #7A8FA8; line-height: 1.8; }
-  .rechnung-title { font-size: 36px; font-weight: 800; color: #0B1F3A; }
-  .rechnung-meta { font-size: 13px; color: #7A8FA8; line-height: 1.9; margin-top: 8px; text-align: right; }
-  .rechnung-meta strong { color: #0B1F3A; }
-  .section { margin-bottom: 32px; }
-  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #7A8FA8; display: block; margin-bottom: 6px; }
-  .section p { font-size: 15px; line-height: 1.6; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-  th { text-align: left; padding: 11px 16px; background: #0B1F3A; color: #fff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
-  th:last-child { text-align: right; }
-  td { padding: 14px 16px; border-bottom: 1px solid #E8EDF5; font-size: 14px; }
-  td:last-child { text-align: right; font-weight: 600; }
-  tr:nth-child(even) td { background: #F8FAFD; }
-  .total-row td { font-size: 18px; font-weight: 800; color: #0B1F3A; border-top: 2px solid #0B1F3A; border-bottom: none; background: #fff !important; padding-top: 18px; }
-  .divider { border: none; border-top: 2px solid #E8EDF5; margin: 32px 0; }
-  .footer-note { font-size: 12px; color: #7A8FA8; line-height: 1.8; }
-  .badge { display: inline-block; background: #E6F5EE; color: #1A7A50; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 100px; text-transform: uppercase; margin-bottom: 24px; }
-  .btn-print { background: #0B1F3A; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 40px; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
-  .btn-print:hover { background: #E8A020; color: #0B1F3A; }
-  @media print { .btn-print { display: none; } body { padding: 20px; } }
-</style>
-</head>
-<body>
-<div class="header">
-  <div>
-    <div class="logo">O<span>D</span>O<span>J</span></div>
-    <div class="sender-info">ODOJ OG · Vorarlberg, Österreich<br>hallo@odoj.at · odojweb.netlify.app</div>
-  </div>
-  <div>
-    <div class="rechnung-title">Rechnung</div>
-    <div class="rechnung-meta">
-      <strong>Rechnungsnummer:</strong> ${rechnungsNr}<br>
-      <strong>Datum:</strong> ${datum}
-    </div>
-  </div>
-</div>
-
-<span class="badge"${r.status === 'bezahlt' ? '' : ' style="background:#FFF8E8;color:#A05000"'}>${r.status === 'bezahlt' ? '✓ Bezahlt' : 'Zahlung ausstehend'}</span>
-
-<div class="section">
-  <span class="section-label">Rechnungsempfänger</span>
-  <p><strong>${escH(agFirma || 'Arbeitgeber')}</strong>${agAdresse ? '<br>' + escH(agAdresse) : ''}</p>
-</div>
-
-<table>
-  <thead>
-    <tr>
-      <th>Beschreibung</th>
-      <th>Betrag</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Lohn ${escH(r.jobber_name || '–')} – ${escH(r.job_titel || 'Tagesjob')} – ${datum}</td>
-      <td>€ ${fmt2(lohnBetrag)}</td>
-    </tr>
-    <tr>
-      <td>Vermittlungsgebühr ODOJ</td>
-      <td>€ ${fmt2(gebuehr)}</td>
-    </tr>
-    <tr class="total-row">
-      <td>Gesamt</td>
-      <td>€ ${fmt2(gesamtBetrag)}</td>
-    </tr>
-  </tbody>
-</table>
-
-<hr class="divider">
-<div class="footer-note">
-  Die Zahlung erfolgt per Banküberweisung. Lohn und Vermittlungsgebühr sind gesondert zu überweisen (siehe Zahlungsaufforderung).<br>
-  Diese Rechnung wurde automatisch über die ODOJ-Plattform erstellt.<br><br>
-  Bei Fragen: hallo@odoj.at
-</div>
-
-<button class="btn-print" onclick="window.print()">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-  Drucken / Speichern als PDF
-</button>
-</body>
-</html>`);
-  win.document.close();
 }
 
 // ─────────────────────────────────────────

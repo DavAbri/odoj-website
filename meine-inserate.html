@@ -1468,22 +1468,25 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
 
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
   const acceptedBewIds = bewerbungen.filter(b => b.status === 'angenommen').map(b => b.id);
+  const bewIdsAll = bewerbungen.map(b => b.id);
   let profileMap = {};
   let bewMap = {};
   let vertragMap = {};
-  const queries = [
+  const [profRes, ratRes, vertragRes, invoiceRes] = await Promise.all([
     odojSb.from('Profile')
       .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum, iban')
       .in('user_id', jobberIds.length ? jobberIds : ['none']),
     odojSb.from('bewertungen')
       .select('bewertet_id, sterne')
       .in('bewertet_id', jobberIds.length ? jobberIds : ['none'])
-      .eq('rolle_bewerter', 'arbeitgeber')
-  ];
-  if (acceptedBewIds.length) {
-    queries.push(odojSb.from('vertraege').select('bewerbung_id, id').in('bewerbung_id', acceptedBewIds));
-  }
-  const [profRes, ratRes, vertragRes] = await Promise.all(queries);
+      .eq('rolle_bewerter', 'arbeitgeber'),
+    odojSb.from('vertraege').select('bewerbung_id, id')
+      .in('bewerbung_id', acceptedBewIds.length ? acceptedBewIds : ['00000000-0000-0000-0000-000000000000']),
+    odojSb.from('invoices').select('bewerbung_id, invoice_number')
+      .in('bewerbung_id', bewIdsAll.length ? bewIdsAll : ['00000000-0000-0000-0000-000000000000'])
+  ]);
+  const invoiceMap = {};
+  invoiceRes.data?.forEach(i => { invoiceMap[i.bewerbung_id] = i.invoice_number; });
   profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
   // Profile-Snapshot für Vertrag-Erstellung cachen (bewerbung_id → profile)
   bewerbungen.forEach(b => {
@@ -1525,7 +1528,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   });
 
   bodyEl.innerHTML = groups.map(group =>
-    renderBewGroup(group, profileMap[group[0].jobber_id], bewMap[group[0].jobber_id], vertragMap, tagesgehalt, jobTitel, odojConfig)
+    renderBewGroup(group, profileMap[group[0].jobber_id], bewMap[group[0].jobber_id], vertragMap, tagesgehalt, jobTitel, odojConfig, invoiceMap)
   ).join('');
 }
 
@@ -1545,14 +1548,14 @@ function toggleZahlungDetails(bewId) {
   document.getElementById('bew-zahlung-' + bewId)?.classList.toggle('open');
 }
 
-function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) {
+function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invoiceNumber) {
   const bezahlt = b.zahlung_status === 'bestaetigt';
   const fmt = n => Number(n || 0).toLocaleString('de-AT', { minimumFractionDigits: 2 });
   const dat = b.bestaetigt_am
     ? new Date(b.bestaetigt_am).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '';
   const verwendungszweckLohn    = `ODOJ – ${jobTitel} – ${dat}`;
-  const verwendungszweckGebuehr = `ODOJ – Vermittlungsgebühr`;
+  const verwendungszweckGebuehr = invoiceNumber || 'ODOJ – Vermittlungsgebühr';
   return `
     <div class="bew-zahlung-box" id="bew-zahlung-${b.id}">
       <div class="bew-zahlung-head" onclick="toggleZahlungDetails('${b.id}')">
@@ -1649,7 +1652,7 @@ async function downloadDatenblatt(bewId) {
 // Person werden alle Termine dieser Person in EINER Karte zusammengefasst
 // (Name/Bewertung/"Beworben am"/persönliche Daten nur einmal oben), statt als
 // mehrere komplett separate, sich wiederholende Karten.
-function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, odojConfig) {
+function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, odojConfig, invoiceMap) {
   const primary = group[0];
   const extras  = group.slice(1);
 
@@ -1707,7 +1710,7 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
         Termin: ${terminDatum}
         <span class="bew-st-badge ${st.cls}" id="bew-badge-${b.id}">${st.label}</span>
       </div>
-      ${b.anwesenheit_bestaetigt ? renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) : ''}
+      ${b.anwesenheit_bestaetigt ? renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invoiceMap?.[b.id]) : ''}
       <div class="bew-item-actions" id="bew-actions-${b.id}">
         ${renderBewActions(b, realName, vertragMap[b.id], b._effDatum)}
       </div>
@@ -1731,7 +1734,7 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
       ${profileDetails}
       <div class="bew-termin-block" id="bew-item-${primary.id}">
         ${primaryTerminHtml}
-        ${primary.anwesenheit_bestaetigt ? renderZahlungsBlock(primary, profile, tagesgehalt, jobTitel, odojConfig) : ''}
+        ${primary.anwesenheit_bestaetigt ? renderZahlungsBlock(primary, profile, tagesgehalt, jobTitel, odojConfig, invoiceMap?.[primary.id]) : ''}
         <div class="bew-item-actions" id="bew-actions-${primary.id}">
           ${renderBewActions(primary, realName, vertragMap[primary.id], primary._effDatum)}
         </div>
@@ -1768,30 +1771,27 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     if (jobData?.tagesgehalt) lohnBetrag = Number(jobData.tagesgehalt) || 0;
   }
 
-  // Rechnungsnummer generieren: ODOJ-YYYY-NNN
-  const year = new Date().getFullYear();
-  const { count: rCount } = await odojSb.from('rechnungen').select('*', { count: 'exact', head: true });
-  const laufNr = String((rCount || 0) + 1).padStart(3, '0');
-  const rechnungsnummer = `ODOJ-${year}-${laufNr}`;
-
+  // Rechnung anlegen: Nummerierung + Insert laufen atomar server-seitig
+  // (Edge Function "rechnung-erstellen"), damit zwei gleichzeitige
+  // Bestätigungen niemals dieselbe Rechnungsnummer bekommen können.
   const vermittlungsgebuehr = 15;
   const gesamtBetrag = lohnBetrag + vermittlungsgebuehr;
 
-  const today = new Date().toISOString().split('T')[0];
-  const { error: rechErr } = await odojSb.from('rechnungen').insert({
-    arbeitgeber_id:     agId,
-    jobber_id:          jobberId,
-    bewerbung_id:       bewId,
-    job_titel:          jobTitel,
-    jobber_name:        jobberName,
-    betrag:             vermittlungsgebuehr,
-    lohn_betrag:        lohnBetrag,
-    vermittlungsgebuehr: vermittlungsgebuehr,
-    gesamt_betrag:      gesamtBetrag,
-    rechnungsnummer:    rechnungsnummer,
-    datum:              today
-  });
-  if (rechErr) console.warn('Rechnung konnte nicht gespeichert werden:', rechErr.message);
+  let rechnungsnummer = '';
+  try {
+    const { data: rechnungResult, error: rechErr } = await odojSb.functions.invoke('rechnung-erstellen', {
+      body: { bewerbungId: bewId }
+    });
+    if (rechErr) throw rechErr;
+    rechnungsnummer = rechnungResult?.invoiceNumber || '';
+    if (rechnungResult?.versandBereit && rechnungResult?.invoiceId) {
+      odojSb.functions.invoke('send-email', {
+        body: { type: 'rechnung_erstellt', recipientId: agId, invoiceId: rechnungResult.invoiceId }
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn('Rechnung konnte nicht angelegt werden:', e?.message || e);
+  }
 
   const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
   const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
@@ -1856,7 +1856,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     const actionsEl = document.getElementById('bew-actions-' + bewId);
     if (itemEl && actionsEl && !document.getElementById('bew-zahlung-' + bewId)) {
       const fakeBew = { id: bewId, zahlung_status: 'ausstehend', zahlung_ueberfaellig: false, bestaetigt_am: now };
-      actionsEl.insertAdjacentHTML('beforebegin', renderZahlungsBlock(fakeBew, jobberProfil, lohnBetrag, jobTitel, { iban: odojIban, kontoinhaber: odojKontoinhaber }));
+      actionsEl.insertAdjacentHTML('beforebegin', renderZahlungsBlock(fakeBew, jobberProfil, lohnBetrag, jobTitel, { iban: odojIban, kontoinhaber: odojKontoinhaber }, rechnungsnummer));
     }
 
     odojSb.functions.invoke('send-email', {

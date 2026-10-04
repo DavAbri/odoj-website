@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchDatenblattData, buildDatenblattPdf } from "../_shared/datenblatt.ts";
+import { fetchRechnungData, buildRechnungPdf } from "../_shared/rechnung.ts";
 
 const RESEND_API_KEY      = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
@@ -249,6 +250,28 @@ function paymentReminderJobberTemplate(recipientName: string, jobTitel: string, 
   </td></tr>`);
 }
 
+function rechnungErstelltTemplate(recipientName: string, invoiceNumber: string, jobTitel: string, amount: number): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Neue Rechnung</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#444;line-height:1.7">
+      anbei die Rechnung <strong style="color:#0f1f3d">${esc(invoiceNumber)}</strong> für die Vermittlung des Einsatzes
+      <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> über <strong style="color:#0f1f3d">€ ${fmt(amount)}</strong>.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;color:#7a5500;background:#fff8e8;border-radius:8px;padding:12px 16px;line-height:1.6">
+      Bitte gib bei der Überweisung als Verwendungszweck die Rechnungsnummer <strong>${esc(invoiceNumber)}</strong> an.
+    </p>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/profil.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">
+        Rechnung ansehen &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
 function paymentReminderAgTemplate(recipientName: string, jobTitel: string, jobberName: string, betrag: number): string {
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
   const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -327,7 +350,7 @@ serve(async (req) => {
     const {
       type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
       datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
-      terminInfo, regType, regName, regEmail, regRefCode
+      terminInfo, regType, regName, regEmail, regRefCode, invoiceId
     } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
@@ -399,6 +422,14 @@ serve(async (req) => {
       subject = `Bewerbung angenommen: ${jobberName} – ${jobTitelStr} am ${datumStr}`;
       html = bewerbungAngenommenDatenblattTemplate(recipientName, jobberName, jobTitelStr, datumStr);
       const { bytes, filename } = await buildDatenblattPdf(result.data);
+      attachments = [{ filename, content: btoa(String.fromCharCode(...bytes)) }];
+    } else if (type === "rechnung_erstellt") {
+      if (!invoiceId) return new Response(JSON.stringify({ error: "invoiceId fehlt" }), { status: 400, headers: cors });
+      const result = await fetchRechnungData(admin, invoiceId);
+      if (!result) return new Response(JSON.stringify({ error: "Rechnung nicht gefunden" }), { status: 404, headers: cors });
+      subject = `Deine Rechnung ${result.data.invoiceNumber} von ODOJ`;
+      html = rechnungErstelltTemplate(recipientName, result.data.invoiceNumber, result.data.job.titel || "", result.data.amount);
+      const { bytes, filename } = await buildRechnungPdf(result.data);
       attachments = [{ filename, content: btoa(String.fromCharCode(...bytes)) }];
     } else if (type === "new_message") {
       subject = `💬 Neue Nachricht von ${senderName} – ODOJ`;
