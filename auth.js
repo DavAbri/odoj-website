@@ -23,7 +23,7 @@ window.odojSb = supabase.createClient(ODOJ_SUPABASE_URL, ODOJ_SUPABASE_KEY);
 // Zentrale Stelle für den Zeitrahmen-Text im Vorschau-Modus, damit er sich
 // später mit einer Änderung überall anpassen lässt (oder gegen einen
 // Countdown aus app_settings.launch_datum getauscht werden kann).
-const ODOJ_LAUNCH_ZEITRAHMEN = 'unter 10 Tagen';
+const ODOJ_LAUNCH_ZEITRAHMEN = '< 10 Tagen';
 
 let _odojAppSettingsPromise = null;
 function odojGetAppSettings() {
