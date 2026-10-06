@@ -433,7 +433,12 @@ footer {
   cursor: pointer; width: 100%; text-align: left; background: none; border: none;
 }
 .nav-profil-dropdown .nav-dd-item { color: #0B1F3A; }
-.nav-dd-item:hover { background: #F4F7FB; color: #0B1F3A; }
+/* Höhere Spezifität als .nav-links a:hover (die Hauptnav-Regel für weiße
+   Hover-Schrift) nötig: .nav-profil-dropdown liegt als Kind von #nav-auth
+   innerhalb von .nav-links, wird von dessen a:hover-Regel also mitgetroffen
+   und hätte sonst wegen eines zusätzlichen Element-Selektors (a) die
+   gleiche bzw. höhere Spezifität gewonnen. */
+.nav-profil-dropdown .nav-dd-item:hover { background: #F4F7FB; color: #0B1F3A; }
 .nav-dd-divider { height: 1px; background: #E8EDF5; margin: 4px 6px; }
 .nav-dd-logout { color: #e74c3c !important; }
 .nav-dd-logout:hover { background: #FEF2F2 !important; }
