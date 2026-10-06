@@ -776,31 +776,18 @@
               <input type="text" id="ins-titel" placeholder="z.B. Servicekraft, Lagerhelfer…" required>
             </div>
             <div class="if-field">
-              <label>Terminart</label>
-              <div class="if-toggle-group">
-                <button type="button" class="if-toggle-btn on" id="ins-modus-einzel" onclick="setTerminModus('einzel')">Einzelner Tag</button>
-                <button type="button" class="if-toggle-btn" id="ins-modus-mehrere" onclick="setTerminModus('mehrere')">Mehrere Tage</button>
-              </div>
+              <label>Branche *</label>
+              <select id="ins-branche" required>
+                <option value="" disabled selected>Bitte wählen</option>
+                <option value="gastro">Gastronomie</option>
+                <option value="events">Veranstaltungen &amp; Events</option>
+                <option value="hotel">Hotellerie</option>
+                <option value="einzelhandel">Einzelhandel</option>
+                <option value="sonstige">Sonstige</option>
+              </select>
             </div>
-            <div class="if-row" id="ins-branche-datum-row">
-              <div class="if-field">
-                <label>Branche *</label>
-                <select id="ins-branche" required>
-                  <option value="" disabled selected>Bitte wählen</option>
-                  <option value="gastro">Gastronomie</option>
-                  <option value="events">Veranstaltungen &amp; Events</option>
-                  <option value="hotel">Hotellerie</option>
-                  <option value="einzelhandel">Einzelhandel</option>
-                  <option value="sonstige">Sonstige</option>
-                </select>
-              </div>
-              <div class="if-field" id="ins-datum-einzel-wrap">
-                <label>Datum *</label>
-                <input type="date" id="ins-datum" required>
-              </div>
-            </div>
-            <div class="if-field" id="ins-datum-mehrere-wrap" style="display:none">
-              <label>Termine * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(mind. 2 Tage)</span></label>
+            <div class="if-field" id="ins-datum-mehrere-wrap">
+              <label>Termine *</label>
               <div style="display:flex;gap:10px">
                 <input type="date" id="ins-termin-picker" style="flex:1">
                 <button type="button" class="if-chip-add-btn" onclick="addTerminChip()">+ Hinzufügen</button>
@@ -831,9 +818,9 @@
             </div>
             <div class="if-field" id="ins-zeit-toggle-wrap" style="display:none">
               <button type="button" class="if-toggle-btn on" id="ins-zeit-fuer-alle-btn" onclick="toggleZeitFuerAlle()" style="width:auto;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px">
-                <span id="ins-zeit-fuer-alle-icon">✓</span> Diese Uhrzeit für alle Termine übernehmen
+                <span id="ins-zeit-fuer-alle-icon">✓</span> Arbeitszeiten anpassen
               </button>
-              <div class="if-hint">Klicke erneut, um für jeden Termin eine eigene Uhrzeit einzustellen.</div>
+              <div class="if-hint">Standardmäßig übernehmen alle Termine die oben eingegebene Uhrzeit. Klicke hier, um für jeden Termin eine eigene Uhrzeit einzustellen.</div>
             </div>
             <div class="if-row">
               <div class="if-field">
@@ -2134,23 +2121,22 @@ function updatePauseHinweis() {
 }
 
 // ── MEHRFACH-TERMINE ──
-let _terminModus = 'einzel'; // 'einzel' | 'mehrere'
 let _terminChips = [];       // [{ datum, von, bis, id }, ...] aufsteigend sortiert nach datum
 let _terminChipsLocked = false; // true beim Bearbeiten eines bestehenden Mehrtages-Jobs (Daten fix, Zeiten editierbar)
 let _zeitFuerAlle = true;    // true = eine gemeinsame Uhrzeit für alle Termine, false = pro Termin individuell
 
-function setTerminModus(mode) {
-  _terminModus = mode;
-  document.getElementById('ins-modus-einzel').classList.toggle('on', mode === 'einzel');
-  document.getElementById('ins-modus-mehrere').classList.toggle('on', mode === 'mehrere');
-  document.getElementById('ins-datum-einzel-wrap').style.display = mode === 'einzel' ? 'block' : 'none';
-  document.getElementById('ins-branche-datum-row').classList.toggle('if-row-collapse-1', mode === 'mehrere');
-  document.getElementById('ins-datum-mehrere-wrap').style.display = mode === 'mehrere' ? 'block' : 'none';
-  document.getElementById('ins-mindest-termine-wrap').style.display = mode === 'mehrere' ? 'block' : 'none';
-  document.getElementById('ins-zeit-toggle-wrap').style.display = mode === 'mehrere' ? 'block' : 'none';
-  document.getElementById('ins-datum').required = mode === 'einzel';
-  if (mode === 'einzel') {
-    document.getElementById('ins-datum').value = '';
+// "Mindestanzahl Termine" und "Arbeitszeiten anpassen" ergeben nur ab zwei
+// Terminen Sinn - bei genau einem Termin verhält sich das Inserat technisch
+// und optisch wie ein klassisches Einzeltag-Inserat (kein job_termine-Eintrag,
+// siehe submitInserat/_executeJobUpdate).
+function updateTerminExtrasVisibility() {
+  const multi = _terminChips.length > 1;
+  document.getElementById('ins-mindest-termine-wrap').style.display = multi ? 'block' : 'none';
+  document.getElementById('ins-zeit-toggle-wrap').style.display = multi ? 'block' : 'none';
+  if (!multi && !_zeitFuerAlle) {
+    _zeitFuerAlle = true;
+    document.getElementById('ins-zeit-fuer-alle-btn').classList.add('on');
+    document.getElementById('ins-zeit-fuer-alle-icon').textContent = '✓';
   }
 }
 
@@ -2186,12 +2172,14 @@ function addTerminChip() {
   _terminChips.sort((a, b) => a.datum.localeCompare(b.datum));
   picker.value = '';
   renderTerminChips();
+  updateTerminExtrasVisibility();
 }
 
 function removeTerminChip(datum) {
   if (_terminChipsLocked) return;
   _terminChips = _terminChips.filter(c => c.datum !== datum);
   renderTerminChips();
+  updateTerminExtrasVisibility();
 }
 
 function updateTerminZeit(datum, feld, value) {
@@ -2235,7 +2223,7 @@ function _resetTerminUI() {
   if (lockedHint) lockedHint.remove();
   document.getElementById('ins-mindest-termine').value = '';
   renderTerminChips();
-  setTerminModus('einzel');
+  updateTerminExtrasVisibility();
 }
 
 // ── JOB SPEICHERN ──
@@ -2264,21 +2252,21 @@ async function submitInserat(e) {
   const titel   = document.getElementById('ins-titel').value.trim();
   const branche = document.getElementById('ins-branche').value;
 
-  if (_terminModus === 'mehrere' && !_terminChipsLocked && _terminChips.length < 2) {
-    errEl.textContent = 'Bitte mindestens 2 Termine hinzufügen (oder auf "Einzelner Tag" wechseln).';
+  if (!_terminChipsLocked && _terminChips.length < 1) {
+    errEl.textContent = 'Bitte mindestens einen Termin hinzufügen.';
     errEl.style.display = 'block'; return;
   }
   const mindestTermineRaw = document.getElementById('ins-mindest-termine').value;
-  const mindestTermine = (_terminModus === 'mehrere' && mindestTermineRaw) ? parseInt(mindestTermineRaw, 10) : null;
-  if (_terminModus === 'mehrere' && mindestTermine && mindestTermine > _terminChips.length) {
+  const mindestTermine = (_terminChips.length > 1 && mindestTermineRaw) ? parseInt(mindestTermineRaw, 10) : null;
+  if (mindestTermine && mindestTermine > _terminChips.length) {
     errEl.textContent = 'Die Mindestanzahl an Terminen kann nicht größer sein als die Anzahl der gewählten Termine (' + _terminChips.length + ').';
     errEl.style.display = 'block'; return;
   }
-  if (_terminModus === 'mehrere' && !_zeitFuerAlle && _terminChips.some(c => !c.von || !c.bis)) {
+  if (!_zeitFuerAlle && _terminChips.some(c => !c.von || !c.bis)) {
     errEl.textContent = 'Bitte für jeden Termin eine Uhrzeit (von/bis) angeben.';
     errEl.style.display = 'block'; return;
   }
-  const datum = _terminModus === 'mehrere' ? _terminChips[0].datum : document.getElementById('ins-datum').value;
+  const datum = _terminChips[0].datum;
   const von     = document.getElementById('ins-von').value;
   const bis     = document.getElementById('ins-bis').value;
   const stunden = parseFloat(document.getElementById('ins-stunden').value) || null;
@@ -2326,7 +2314,7 @@ async function submitInserat(e) {
   }
 
   // Bei "Mehrere Tage": Termine als eigene Zeilen speichern
-  if (_terminModus === 'mehrere' && newJob?.id) {
+  if (_terminChips.length > 1 && newJob?.id) {
     const { error: termineError } = await odojSb.from('job_termine').insert(
       _terminChips.map(c => ({
         job_id: newJob.id,
@@ -2716,7 +2704,6 @@ async function editInserat(jobId) {
 
   if (termine && termine.length) {
     // Mehrtages-Job: Termine (Datum) gesperrt anzeigen, Uhrzeiten bleiben editierbar
-    setTerminModus('mehrere');
     const hatIndividuelleZeiten = termine.some(t => t.uhrzeit_von || t.uhrzeit_bis);
     _zeitFuerAlle = !hatIndividuelleZeiten;
     document.getElementById('ins-zeit-fuer-alle-btn').classList.toggle('on', _zeitFuerAlle);
@@ -2735,11 +2722,16 @@ async function editInserat(jobId) {
       document.getElementById('ins-datum-mehrere-wrap').insertAdjacentHTML('beforeend',
         '<div class="if-hint" id="ins-termine-locked-hint" style="color:#7a5500">🔒 Termine (Datum) können nach Erstellung nicht mehr geändert werden. Die Uhrzeit pro Termin ist weiterhin anpassbar.</div>');
     }
-    renderTerminChips();
   } else {
-    setTerminModus('einzel');
-    document.getElementById('ins-datum').value = job.datum || '';
+    // Bisheriges Einzeltag-Inserat: als ein einzelner, frei editierbarer
+    // Termin-Chip dargestellt - passt zur vereinheitlichten Ansicht, ohne
+    // dass dafür bereits eine job_termine-Zeile existieren muss.
+    _terminChips = [{ id: null, datum: job.datum || '', von: '', bis: '' }];
+    _terminChipsLocked = false;
+    document.getElementById('ins-mindest-termine').value = '';
   }
+  renderTerminChips();
+  updateTerminExtrasVisibility();
 
   // Bearbeiten-Modus aktivieren
   _editJobId = jobId;
@@ -2832,12 +2824,25 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
     return;
   }
 
-  // Bei Mehrtages-Jobs: Termin-Uhrzeiten aktualisieren (Datum bleibt fix/gesperrt)
-  if (_terminChipsLocked && _terminChips.length) {
-    await Promise.all(_terminChips.map(c => odojSb.from('job_termine').update({
-      uhrzeit_von: _zeitFuerAlle ? null : (c.von || null),
-      uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null)
-    }).eq('id', c.id)));
+  // Bei mehr als einem Termin: bestehende Termin-Uhrzeiten aktualisieren
+  // (Datum bleibt bei bereits bestehenden Terminen fix/gesperrt) und neu
+  // hinzugefügte Termine (z.B. aus einem vormals einzelnen Termin heraus
+  // erweitert) als job_termine-Zeilen anlegen.
+  if (_terminChips.length > 1) {
+    const bestehende = _terminChips.filter(c => c.id);
+    const neue        = _terminChips.filter(c => !c.id);
+    await Promise.all([
+      ...bestehende.map(c => odojSb.from('job_termine').update({
+        uhrzeit_von: _zeitFuerAlle ? null : (c.von || null),
+        uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null)
+      }).eq('id', c.id)),
+      ...(neue.length ? [odojSb.from('job_termine').insert(neue.map(c => ({
+        job_id: _editJobId,
+        datum: c.datum,
+        uhrzeit_von: _zeitFuerAlle ? null : (c.von || null),
+        uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null)
+      })))] : [])
+    ]);
   }
 
   // Bewerber benachrichtigen
