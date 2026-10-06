@@ -351,6 +351,20 @@ let _jdTermine        = [];          // job_termine-Zeilen (nur bei Mehrtages-Jo
 let _jdIsMultiTermin  = false;
 let _jdAppliedTerminIds = new Set(); // enthält `null` bei Einzeltag-Bewerbung
 let _jdClickedTerminId  = null;      // Termin, über dessen Karte der Jobber kam (?termin=)
+let _jdZuJung          = false;      // Einzeltermin-Job: Jobber am Einsatzdatum zu jung
+let _jdKeinGeburtsdatum = false;     // Job hat Mindestalter, Jobber hat kein Geburtsdatum hinterlegt
+
+// Exaktes Alter an einem bestimmten Datum (Jahr/Monat/Tag) - für die
+// Mindestalter-Prüfung zählt das Alter AM EINSATZTAG, nicht heute.
+function _berechneAlterAm(geburtsdatum, zieldatum) {
+  if (!geburtsdatum || !zieldatum) return null;
+  const geb = new Date(geburtsdatum + 'T00:00:00');
+  const ziel = new Date(zieldatum + 'T00:00:00');
+  let alter = ziel.getFullYear() - geb.getFullYear();
+  const mDiff = ziel.getMonth() - geb.getMonth();
+  if (mDiff < 0 || (mDiff === 0 && ziel.getDate() < geb.getDate())) alter--;
+  return alter;
+}
 
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -372,7 +386,7 @@ async function initJobDetail() {
   if (_jdSession) {
     try {
       const { data: p } = await odojSb.from('Profile')
-        .select('rolle,vorname,nachname,profil_vollstaendig')
+        .select('rolle,vorname,nachname,profil_vollstaendig,geburtsdatum')
         .eq('user_id', _jdSession.user.id).single();
       _jdProfile = p;
       _jdRolle   = p?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
@@ -407,6 +421,22 @@ async function initJobDetail() {
     const acceptedCount = {};
     (acceptedBews || []).forEach(b => { acceptedCount[b.termin_id] = (acceptedCount[b.termin_id] || 0) + 1; });
     _jdTermine.forEach(t => { t._voll = (acceptedCount[t.id] || 0) >= (job.plaetze || 1); });
+  }
+
+  // Mindestalter-Prüfung (nur für eingeloggte Jobber, nur wenn das Inserat
+  // überhaupt ein Mindestalter hat). Clientseitig nur für die Anzeige -
+  // die eigentliche Absicherung läuft über einen DB-Trigger auf bewerbungen.
+  if (_jdSession && _jdRolle === 'jobber' && job.mindestalter) {
+    if (!_jdProfile?.geburtsdatum) {
+      _jdKeinGeburtsdatum = true;
+      if (_jdIsMultiTermin) _jdTermine.forEach(t => { t._zuJung = true; });
+    } else if (_jdIsMultiTermin) {
+      _jdTermine.forEach(t => {
+        t._zuJung = _berechneAlterAm(_jdProfile.geburtsdatum, t.datum) < job.mindestalter;
+      });
+    } else {
+      _jdZuJung = _berechneAlterAm(_jdProfile.geburtsdatum, job.datum) < job.mindestalter;
+    }
   }
 
   // AG-Profil + Bewertungen parallel laden
@@ -557,6 +587,18 @@ function renderMain(job) {
       <button class="jd-apply-btn" style="background:#E8EDF5;color:#7A8FA8;cursor:default" disabled>
         Als Arbeitgeber nicht verfügbar
       </button>`;
+  } else if (!_jdIsMultiTermin && _jdKeinGeburtsdatum) {
+    applyBtn = `
+      <button class="jd-apply-btn" style="background:#E8EDF5;color:#7A8FA8;cursor:default" disabled>
+        Geburtsdatum fehlt
+      </button>
+      <div class="jd-login-hint">Bitte ergänze dein Geburtsdatum im <a href="profil.html">Profil</a>, um dich zu bewerben.</div>`;
+  } else if (!_jdIsMultiTermin && _jdZuJung) {
+    applyBtn = `
+      <button class="jd-apply-btn" style="background:#E8EDF5;color:#7A8FA8;cursor:default" disabled>
+        Mindestalter nicht erfüllt
+      </button>
+      <div class="jd-login-hint">Für diesen Job musst du mindestens ${job.mindestalter} Jahre alt sein.</div>`;
   } else if (allTermineApplied) {
     applyBtn = `
       <button class="jd-apply-btn jd-applied" disabled>
@@ -572,6 +614,11 @@ function renderMain(job) {
   }
 
   // Termin-Auswahl (Mehrtages-Jobs) statt der einzelnen Datumszeile
+  const altersBannerHtml = (_jdIsMultiTermin && (_jdKeinGeburtsdatum || _jdTermine.some(t => t._zuJung)))
+    ? (_jdKeinGeburtsdatum
+        ? `<div class="jd-mindest-hint">Bitte ergänze dein Geburtsdatum im <a href="profil.html">Profil</a>, um dich für Termine mit Mindestalter bewerben zu können.</div>`
+        : `<div class="jd-mindest-hint">Für ausgegraute Termine musst du mindestens ${job.mindestalter} Jahre alt sein.</div>`)
+    : '';
   const terminRowHtml = _jdIsMultiTermin ? `
     <div class="jd-apply-row" style="flex-direction:column;align-items:flex-start;gap:2px">
       <span class="jd-apply-row-label" style="margin-bottom:6px">Termine – bitte auswählen</span>
@@ -579,20 +626,22 @@ function renderMain(job) {
         ${_jdTermine.map(t => {
           const already = _jdAppliedTerminIds.has(t.id);
           const checked = already || t.id === _jdClickedTerminId;
-          const disabled = already || t._voll;
+          const disabled = already || t._voll || t._zuJung;
           const badge = already
             ? '<span class="jd-termin-badge">✓ beworben</span>'
-            : (t._voll ? '<span class="jd-termin-badge jd-termin-badge-full">Ausgebucht</span>' : '');
+            : (t._zuJung ? '<span class="jd-termin-badge jd-termin-badge-full">Mindestalter nicht erfüllt</span>'
+              : (t._voll ? '<span class="jd-termin-badge jd-termin-badge-full">Ausgebucht</span>' : ''));
           const zeitVon = (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5);
           const zeitBis = (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5);
           const zeitHtml = (zeitVon && zeitBis) ? `<span class="jd-termin-zeit">${esc(zeitVon)} – ${esc(zeitBis)} Uhr</span>` : '';
-          return `<label class="jd-termin-check${already ? ' jd-termin-applied' : ''}${t._voll ? ' jd-termin-full' : ''}">
+          return `<label class="jd-termin-check${already ? ' jd-termin-applied' : ''}${(t._voll || t._zuJung) ? ' jd-termin-full' : ''}">
             <input type="checkbox" value="${t.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="updateBewerbenGate()">
             <span class="jd-termin-label">${formatDate(t.datum)}${zeitHtml}</span>
             ${badge}
           </label>`;
         }).join('')}
       </div>
+      ${altersBannerHtml}
       ${job.mindest_termine ? `<div class="jd-mindest-hint">Mindestens ${job.mindest_termine} Termine erforderlich.</div>` : ''}
     </div>` : `
     <div class="jd-apply-row">
@@ -720,8 +769,19 @@ function updateBewerbenGate() {
   const checkedNew = document.querySelectorAll('#jd-termin-list input:checked:not(:disabled)').length;
   const total = checkedNew + _jdAppliedTerminIds.size;
   const fehlend = min - total;
+  // Maximal erreichbare Gesamtzahl, wenn auch noch alle übrigen auswählbaren
+  // (nicht deaktivierten) Termine angehakt würden - entscheidet, ob die
+  // Mindestanzahl wegen Altersbeschränkung grundsätzlich unerreichbar ist.
+  const enabledCount = document.querySelectorAll('#jd-termin-list input:not(:disabled)').length;
+  const maxTotal = enabledCount + _jdAppliedTerminIds.size;
+  const altersbedingtUnmoeglich = maxTotal < min && _jdTermine.some(t => t._zuJung);
 
-  if (checkedNew === 0 || fehlend > 0) {
+  if (altersbedingtUnmoeglich) {
+    // Altershinweis hat Vorrang vor der generischen "Mehr Termine nötig"-Meldung.
+    btn.disabled = true;
+    btn.classList.add('jd-apply-btn-warn');
+    btn.innerHTML = `${JD_WARN_ICON} Mindestalter nicht erfüllt`;
+  } else if (checkedNew === 0 || fehlend > 0) {
     btn.disabled = true;
     btn.classList.add('jd-apply-btn-warn');
     const text = checkedNew === 0

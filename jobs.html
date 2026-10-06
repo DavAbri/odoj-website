@@ -147,6 +147,11 @@
 .job-pay { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy); }
 .job-pay span { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 300; color: var(--text-lt); }
 .job-spots { font-size: 12px; color: var(--accent); font-weight: 600; }
+.job-card-altershinweis {
+  font-size: 12px; color: var(--text-lt); background: var(--off);
+  border: 1px solid var(--gray-lt); border-radius: 8px;
+  padding: 6px 10px; margin: 2px 0 10px;
+}
 .job-urgent {
   display: inline-block;
   background: #fff0f0;
@@ -555,15 +560,18 @@ window._odojJobsUnlocked = false;
 let _odojJobsSession  = null;
 let _odojJobsRolle    = null;
 let _odojJobsProfile  = null;
-let _jobberAlter      = null;   // berechnetes Alter aus geburtsdatum
+let _jobberGeburtsdatum = null;   // rohes Geburtsdatum aus dem Profil (für Mindestalter-Prüfung pro Einsatzdatum)
 
-function _berechneAlter(geburtsdatum) {
-  if (!geburtsdatum) return null;
-  const heute = new Date();
-  const geb   = new Date(geburtsdatum);
-  let alter = heute.getFullYear() - geb.getFullYear();
-  const mDiff = heute.getMonth() - geb.getMonth();
-  if (mDiff < 0 || (mDiff === 0 && heute.getDate() < geb.getDate())) alter--;
+// Exaktes Alter an einem bestimmten Datum (nicht "heute") - Jahr/Monat/Tag,
+// damit z.B. ein zwischen heute und dem Einsatzdatum liegender Geburtstag
+// korrekt mitzählt.
+function _berechneAlterAm(geburtsdatum, zieldatum) {
+  if (!geburtsdatum || !zieldatum) return null;
+  const geb = new Date(geburtsdatum + 'T00:00:00');
+  const ziel = new Date(zieldatum + 'T00:00:00');
+  let alter = ziel.getFullYear() - geb.getFullYear();
+  const mDiff = ziel.getMonth() - geb.getMonth();
+  if (mDiff < 0 || (mDiff === 0 && ziel.getDate() < geb.getDate())) alter--;
   return alter;
 }
 
@@ -686,6 +694,13 @@ function renderJobCard(job, locked) {
   const ausgebuchtTag = job._terminAusgebucht ? '<span class="tag tag-ausgebucht">Ausgebucht</span>' : '';
   const mehrtermineTag = job._isMultiTermin ? '<span class="tag tag-mehrtermine">📅 Mehrere Termine verfügbar</span>' : '';
 
+  // Dezenter Hinweis statt Ausblenden: nur wenn eindeutig feststeht (Geburtsdatum
+  // bekannt), dass der Jobber am Einsatzdatum dieser Karte zu jung ist.
+  const zuJung = job.mindestalter && _jobberGeburtsdatum
+    ? _berechneAlterAm(_jobberGeburtsdatum, job.datum) < job.mindestalter
+    : false;
+  const altersHinweis = zuJung ? '<div class="job-card-altershinweis">Mindestalter nicht erfüllt</div>' : '';
+
   return `
     <div class="job-card fade-in" data-b="${job.branche}" data-mindestalter="${job.mindestalter || 15}"${lockedAttr}${terminAttr} onclick="goToJobDetail('${job.id}', this)">
       <div class="job-card-top">
@@ -713,6 +728,7 @@ function renderJobCard(job, locked) {
           ${job.ort}
         </span>
       </div>
+      ${altersHinweis}
       <div class="job-footer">
         <div style="display:flex;flex-direction:column;gap:4px">
           <div class="job-pay">€ ${gehalt} <span>/ Tag</span></div>
@@ -738,13 +754,10 @@ function renderJobs(jobs, unlocked) {
     return;
   }
 
-  // Mindestalter-Filter: nur für eingeloggte Jobber
-  let filteredJobs = jobs;
-  if (_jobberAlter !== null) {
-    filteredJobs = jobs.filter(job => !job.mindestalter || job.mindestalter <= _jobberAlter);
-  }
-
-  grid.innerHTML = filteredJobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
+  // Kein automatischer Ausschluss nach Mindestalter mehr: Inserate bleiben
+  // für alle sichtbar, renderJobCard zeigt pro Karte nur einen dezenten
+  // Hinweis, falls der eingeloggte Jobber am Einsatzdatum zu jung ist.
+  grid.innerHTML = jobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
 
   // Filter anwenden (behält aktive Branche + Alter)
   _applyFilters();
@@ -856,7 +869,7 @@ async function checkJobsAuth() {
         .from('Profile').select('rolle, vorname, nachname, geburtsdatum').eq('user_id', session.user.id).single();
       if (profile?.rolle) rolle = profile.rolle;
       _odojJobsProfile = profile;
-      if (profile?.geburtsdatum) _jobberAlter = _berechneAlter(profile.geburtsdatum);
+      if (profile?.geburtsdatum && (profile?.rolle || rolle) === 'jobber') _jobberGeburtsdatum = profile.geburtsdatum;
     } catch (_) {}
     _odojJobsRolle = rolle;
     odojSaveRolle(rolle);
