@@ -389,6 +389,18 @@
 }
 .uid-warning-link:hover { background: var(--accent-lt); }
 
+/* ── VORSCHAU-MODUS-BANNER ── */
+.ins-vorschau-banner {
+  background: #FDF3DC;
+  border: 1.5px solid #E8A020;
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+  color: #7a5500;
+  line-height: 1.5;
+}
+
 /* ── BEWERTUNGS-MODAL ── */
 .bew-rate-overlay {
   position: fixed; inset: 0;
@@ -739,6 +751,7 @@
         <h2>Meine Inserate</h2>
         <button class="dash-tab" id="btn-neuer-job" style="background:var(--navy);border-color:var(--navy);color:var(--white)" onclick="showTab('inserieren')">+ Neuer Job</button>
       </div>
+      <div id="ins-vorschau-banner-list"></div>
       <div class="inserate-grid" id="inserate-grid">
         <div class="dash-loading">Lade Inserate…</div>
       </div>
@@ -761,6 +774,8 @@
         <div class="insert-card">
           <h2>Job inserieren</h2>
           <p>Fülle das Formular aus – dein Inserat erscheint sofort in der Jobsuche.</p>
+
+          <div id="ins-vorschau-banner-form"></div>
 
           <div id="ins-edit-banner" style="display:none;padding:12px 16px;background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;font-size:13px;color:#7a5500;margin-bottom:12px;align-items:center;justify-content:space-between;gap:10px">
             <span>✏️ <strong>Sie bearbeiten ein bestehendes Inserat</strong></span>
@@ -981,6 +996,36 @@ function toggleMenu() { document.getElementById('navMobile').classList.toggle('o
 let _agSession    = null;
 let _agFirmenname = '';
 let _agUidNummer  = '';
+let _odojVorschauModus = false; // true solange jobs_sichtbar = false
+let _odojLaunchKw      = null;
+let _odojLaunchMinDatum = null; // Montag der Launch-KW (YYYY-MM-DD) - Termine davor sind gesperrt
+
+// Montag einer ISO-Kalenderwoche im angegebenen Jahr (bzw. dem aktuellen,
+// falls kein Jahr übergeben wird) als YYYY-MM-DD.
+function _isoWeekMontag(week, year) {
+  year = year || new Date().getFullYear();
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Tag = (jan4.getUTCDay() + 6) % 7; // Montag = 0
+  const woche1Montag = new Date(jan4);
+  woche1Montag.setUTCDate(jan4.getUTCDate() - jan4Tag);
+  const ziel = new Date(woche1Montag);
+  ziel.setUTCDate(woche1Montag.getUTCDate() + (week - 1) * 7);
+  return ziel.toISOString().split('T')[0];
+}
+
+async function initVorschauModusUi() {
+  const settings = await odojGetAppSettings();
+  _odojVorschauModus = !settings.jobs_sichtbar;
+  _odojLaunchKw = settings.launch_kw;
+  _odojLaunchMinDatum = (_odojVorschauModus && settings.launch_kw) ? _isoWeekMontag(settings.launch_kw) : null;
+  if (!_odojVorschauModus) return;
+
+  const bannerHtml = `<div class="ins-vorschau-banner">⏳ Ihre Inserate sind gespeichert, aber noch nicht für Jobber sichtbar. Bis zum Launch in KW ${_odojLaunchKw} sind alle Jobs gesperrt.</div>`;
+  const formBanner = document.getElementById('ins-vorschau-banner-form');
+  if (formBanner) formBanner.outerHTML = bannerHtml.replace('class="ins-vorschau-banner"', 'class="ins-vorschau-banner" id="ins-vorschau-banner-form"');
+  const listBanner = document.getElementById('ins-vorschau-banner-list');
+  if (listBanner) listBanner.outerHTML = bannerHtml.replace('class="ins-vorschau-banner"', 'class="ins-vorschau-banner" id="ins-vorschau-banner-list"');
+}
 let _editJobId    = null; // null = neues Inserat, sonst Job-ID die bearbeitet wird
 let _pendingEditData  = null; // zwischengespeicherte Formulardaten für Bearbeiten-Bestätigung
 let _pendingBewerber  = null; // Bewerber die benachrichtigt werden sollen
@@ -2162,6 +2207,7 @@ function addTerminChip() {
   if (!val) return;
   const heute = new Date().toISOString().split('T')[0];
   if (val < heute) { alert('Bitte ein Datum in der Zukunft wählen.'); return; }
+  if (_odojLaunchMinDatum && val < _odojLaunchMinDatum) { alert('Dieser Termin liegt vor dem Start der Plattform – Jobber können sich dafür nicht bewerben.'); return; }
   if (_terminChips.some(c => c.datum === val)) { picker.value = ''; return; }
   _terminChips.push({
     datum: val,
@@ -2337,7 +2383,9 @@ async function submitInserat(e) {
 
   document.getElementById('ins-form').reset();
   _resetTerminUI();
-  successEl.textContent = 'Inserat wurde erfolgreich gespeichert! ✅';
+  successEl.textContent = _odojVorschauModus
+    ? `Inserat wurde erfolgreich gespeichert! ✅ Ihre Inserate sind gespeichert, aber noch nicht für Jobber sichtbar. Bis zum Launch in KW ${_odojLaunchKw} sind alle Jobs gesperrt.`
+    : 'Inserat wurde erfolgreich gespeichert! ✅';
   successEl.style.display = 'block';
 
   // Stammkräfte laden und Modal anzeigen
@@ -2393,6 +2441,7 @@ async function submitInserat(e) {
       if (fnEl && firmenname) fnEl.textContent = firmenname;
       document.getElementById('mi-dashboard').style.display = 'block';
       applyUidCheck(_agUidNummer);
+      initVorschauModusUi();
       loadInserate();
       handleDeepLinkBewerbung();
       pruefeAbgelaufeneInserate();

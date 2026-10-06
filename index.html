@@ -85,9 +85,24 @@
   gap: 56px;
   align-items: center;
 }
+.hero-layout.jr-no-cards {
+  grid-template-columns: 1fr;
+  max-width: 720px;
+}
 .hero-inner {
   position: relative;
 }
+
+/* ── JETZT REGISTRIEREN (Vorschau-Modus) ── */
+.jr-vorschau {
+  background: #0B1F3A;
+  padding: 56px 24px;
+  text-align: center;
+}
+.jr-vorschau-inner { max-width: 640px; margin: 0 auto; }
+.jr-vorschau h2 { color: #fff; font-size: 28px; margin-bottom: 12px; }
+.jr-vorschau p { color: rgba(255,255,255,.78); font-size: 15px; line-height: 1.6; margin-bottom: 26px; }
+.jr-vorschau-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 
 /* ── HERO VISUAL (rechte Seite) ── */
 .hero-visual {
@@ -532,7 +547,7 @@
     </div>
 
     <!-- RECHTE SEITE: gestapelte Job-Card-Vorschau -->
-    <div class="hero-cards-outer">
+    <div class="hero-cards-outer" id="hero-cards-outer">
     <div class="hero-visual" aria-hidden="true">
 
       <!-- Card 1 – oben, vorne -->
@@ -618,6 +633,18 @@
     <div class="teaser-link">Mehr erfahren <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
   </a>
 </div>
+
+<!-- VORSCHAU-MODUS: Jetzt registrieren (nur sichtbar, solange Jobs noch gesperrt sind) -->
+<section class="jr-vorschau" id="jr-vorschau-section" style="display:none">
+  <div class="jr-vorschau-inner">
+    <h2>Jetzt registrieren</h2>
+    <p>ODOJ startet bald – sichere dir jetzt schon deinen Platz, damit es für dich sofort losgehen kann.</p>
+    <div class="jr-vorschau-btns">
+      <a href="login.html?rolle=jobber" class="btn btn-accent">Ich suche Jobs</a>
+      <a href="login.html?rolle=arbeitgeber" class="btn btn-outline">Ich biete Jobs</a>
+    </div>
+  </div>
+</section>
 
 <!-- HOW IT WORKS -->
 <section class="how">
@@ -746,6 +773,20 @@ const obs = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+// Vorschau-Modus: solange Jobs noch nicht freigegeben sind, Registrierungs-
+// Aufruf zeigen und die dekorativen Beispiel-Job-Karten im Hero ausblenden.
+odojGetAppSettings().then((settings) => {
+  if (settings.jobs_sichtbar) return;
+  const jrSection = document.getElementById('jr-vorschau-section');
+  if (jrSection) jrSection.style.display = 'block';
+  const cardsOuter = document.getElementById('hero-cards-outer');
+  if (cardsOuter) {
+    cardsOuter.style.display = 'none';
+    const heroLayout = cardsOuter.closest('.hero-layout');
+    if (heroLayout) heroLayout.classList.add('jr-no-cards');
+  }
+});
 </script>
 <script src="cookies.js"></script>
 

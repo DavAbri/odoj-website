@@ -983,9 +983,17 @@ async function doRegister(e) {
   document.getElementById('form-register').style.display = 'none';
   document.getElementById('register-hint').style.display = 'none';
   document.getElementById('auth-success').style.display  = 'block';
+
+  const appSettings = await odojGetAppSettings();
+  let kernsatz = 'Der Start von ODOJ steht kurz bevor – wir benachrichtigen dich, sobald es losgeht.';
+  if (!appSettings.jobs_sichtbar) {
+    kernsatz = _currentRole === 'arbeitgeber'
+      ? `Du bist dabei! Du kannst jetzt schon Inserate erstellen – sie werden automatisch sichtbar, sobald die Plattform in ${ODOJ_LAUNCH_ZEITRAHMEN} startet.`
+      : `Du bist dabei! Die Jobs sind in ${ODOJ_LAUNCH_ZEITRAHMEN} sichtbar. Vervollständige jetzt dein Profil, damit du dich ab dem ersten Tag sofort bewerben kannst.`;
+  }
   document.getElementById('auth-success-msg').textContent = data.session
-    ? 'Deine Registrierung war erfolgreich. Der Start von ODOJ steht kurz bevor – wir benachrichtigen dich, sobald es losgeht.'
-    : 'Wir haben dir eine Bestätigungs-E-Mail geschickt. Bitte klick auf den Link darin, dann ist deine Registrierung abgeschlossen. Der Start von ODOJ steht kurz bevor – wir benachrichtigen dich, sobald es losgeht.';
+    ? `Deine Registrierung war erfolgreich. ${kernsatz}`
+    : `Wir haben dir eine Bestätigungs-E-Mail geschickt. Bitte klick auf den Link darin, dann ist deine Registrierung abgeschlossen. ${kernsatz}`;
 }
 
 // Maximales Geburtsdatum setzen (heute - 15 Jahre)
@@ -1020,6 +1028,16 @@ async function doRegister(e) {
 (function() {
   if (location.pathname.indexOf('registrieren') !== -1) {
     setMode('register');
+  }
+})();
+
+// Direkter Registrierungs-Link mit Rollen-Vorauswahl (z.B. von der Startseite
+// im Vorschau-Modus: login.html?rolle=jobber bzw. ?rolle=arbeitgeber).
+(function() {
+  const rolleParam = new URLSearchParams(location.search).get('rolle');
+  if (rolleParam === 'jobber' || rolleParam === 'arbeitgeber') {
+    setMode('register');
+    setRole(rolleParam);
   }
 })();
 
