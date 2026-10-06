@@ -152,6 +152,26 @@
   border: 1px solid var(--gray-lt); border-radius: 8px;
   padding: 6px 10px; margin: 2px 0 10px;
 }
+.jobs-preview-placeholder {
+  grid-column: 1 / -1;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  background: var(--navy); border-radius: var(--r-lg, 20px);
+  padding: 64px 32px; margin: 8px 0 24px;
+  box-shadow: 0 12px 40px rgba(11,31,58,.18);
+}
+.jobs-preview-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(232,160,32,.15); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 22px;
+}
+.jobs-preview-placeholder h2 {
+  color: #fff; font-size: 26px; font-weight: 800; margin-bottom: 12px;
+}
+.jobs-preview-placeholder p {
+  color: rgba(255,255,255,.65); font-size: 15px; max-width: 420px;
+  line-height: 1.6; margin-bottom: 28px;
+}
 .job-urgent {
   display: inline-block;
   background: #fff0f0;
@@ -775,8 +795,45 @@ const obs = new IntersectionObserver((entries) => {
 }, { threshold: 0.08 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 
+// ── VORSCHAU-MODUS: Platzhalter statt Jobliste ──
+async function renderJobsPreviewPlaceholder() {
+  document.querySelector('.filter-bar').style.display = 'none';
+  const loadEl = document.getElementById('jobs-loading');
+  if (loadEl) loadEl.remove();
+
+  const session = await odojGetSession();
+  let btnHtml = `<a href="login.html" class="btn btn-accent">Jetzt registrieren</a>`;
+  if (session) {
+    let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
+    try {
+      const { data: profile } = await odojSb.from('Profile').select('rolle').eq('user_id', session.user.id).single();
+      if (profile?.rolle) rolle = profile.rolle;
+    } catch (_) {}
+    btnHtml = rolle === 'arbeitgeber'
+      ? `<a href="meine-inserate.html" class="btn btn-accent">Zu deinen Inseraten</a>`
+      : `<a href="profil.html" class="btn btn-accent">Profil vervollständigen</a>`;
+  }
+
+  document.getElementById('jobsGrid').innerHTML = `
+    <div class="jobs-preview-placeholder">
+      <div class="jobs-preview-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h2>Jobs sichtbar in ${ODOJ_LAUNCH_ZEITRAHMEN}</h2>
+      <p>Registriere dich jetzt und vervollständige dein Profil, dann kannst du dich ab dem ersten Tag bewerben.</p>
+      ${btnHtml}
+    </div>`;
+  document.getElementById('jobCount').textContent = '';
+}
+
 // ── AUTH CHECK + JOBS LADEN ──
 async function checkJobsAuth() {
+  const appSettings = await odojGetAppSettings();
+  if (!appSettings.jobs_sichtbar) {
+    await renderJobsPreviewPlaceholder();
+    return;
+  }
+
   const heuteDatum = new Date().toISOString().split('T')[0];
   console.log('[ODOJ] Datum-Filter aktiv ab:', heuteDatum);
 

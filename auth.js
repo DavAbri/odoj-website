@@ -15,6 +15,26 @@ const ODOJ_SUPABASE_KEY = ODOJ_IS_LIVE
 
 window.odojSb = supabase.createClient(ODOJ_SUPABASE_URL, ODOJ_SUPABASE_KEY);
 
+// ── Vorschau-Modus: zentrale app_settings einmal pro Seitenaufruf laden ──
+// Bei Fehlern wird bewusst in den Vorschau-Modus "fail-closed" gegangen
+// (Jobs lieber einmal fälschlich verstecken als vor dem Launch versehentlich
+// zeigen) - die eigentliche Absicherung läuft ohnehin über RLS, das hier ist
+// nur fürs Anzeigen/Ausblenden im Frontend.
+// Zentrale Stelle für den Zeitrahmen-Text im Vorschau-Modus, damit er sich
+// später mit einer Änderung überall anpassen lässt (oder gegen einen
+// Countdown aus app_settings.launch_datum getauscht werden kann).
+const ODOJ_LAUNCH_ZEITRAHMEN = 'unter 14 Tagen';
+
+let _odojAppSettingsPromise = null;
+function odojGetAppSettings() {
+  if (!_odojAppSettingsPromise) {
+    _odojAppSettingsPromise = odojSb.from('app_settings').select('jobs_sichtbar, launch_kw, launch_datum').eq('id', 1).single()
+      .then(({ data }) => data || { jobs_sichtbar: false, launch_kw: null, launch_datum: null })
+      .catch(() => ({ jobs_sichtbar: false, launch_kw: null, launch_datum: null }));
+  }
+  return _odojAppSettingsPromise;
+}
+
 function odojShowTestBanner() {
   if (document.getElementById('odoj-test-banner')) return;
   const b = document.createElement('div');

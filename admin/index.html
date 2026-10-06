@@ -228,6 +228,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Rechnungen
       </a>
+      <a href="#" class="nav-link" data-section="launch" onclick="showSection('launch');return false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        Launch
+      </a>
     </nav>
     <div class="sidebar-footer">
       <div class="admin-badge">
@@ -371,6 +375,38 @@
       </div>
     </div>
 
+    <!-- 5. LAUNCH / VORSCHAU-MODUS -->
+    <div id="section-launch" class="admin-section">
+      <div class="stat-grid">
+        <div class="stat-card" id="launch-status-card">
+          <div class="stat-label">Status</div>
+          <div class="stat-value" id="launch-status-value" style="font-size:20px">–</div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:16px;max-width:520px">
+        <div class="chart-title">Kalenderwoche für den Start</div>
+        <p style="font-size:13px;color:var(--text-muted,#6b7280);margin-bottom:14px;line-height:1.5">
+          Solange die Jobs noch nicht freigegeben sind, wird Arbeitgebern und Jobbern diese Kalenderwoche
+          als voraussichtlicher Start angezeigt (z.B. "Bis zum Launch in KW 42 sind alle Jobs gesperrt.").
+        </p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label for="launch-kw-input" style="font-size:13px;font-weight:600;color:var(--navy)">KW</label>
+          <input type="number" id="launch-kw-input" min="1" max="53" style="width:90px;padding:8px 10px;border:1.5px solid #d8dde3;border-radius:8px;font-size:14px">
+          <button class="btn-refresh" onclick="saveLaunchKw()">Kalenderwoche speichern</button>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:16px;max-width:520px">
+        <div class="chart-title">Jobs freigeben</div>
+        <p style="font-size:13px;color:var(--text-muted,#6b7280);margin-bottom:14px;line-height:1.5">
+          Schaltet die Plattform für alle sichtbar auf "live": Jobber sehen alle Inserate, Bewerbungen sind
+          wieder möglich. Lässt sich bei Bedarf auch wieder zurückschalten.
+        </p>
+        <button class="btn-refresh" id="btn-launch-toggle" onclick="toggleJobsSichtbar()" style="background:var(--navy);color:var(--white);border-color:var(--navy)">Jobs jetzt freigeben</button>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -395,6 +431,7 @@
   const ADMIN_EMAILS = ['mail4david85@gmail.com', 'admin@odoj.at'];
 
   let allNutzer = [], allJobs = [], allBewerbungen = [], allRechnungen = [], allWaitlist = [], allEinstellungen = [];
+  let appSettings = { jobs_sichtbar: false, launch_kw: null };
 
   // ── Auth Check ──
   (async () => {
@@ -419,6 +456,7 @@
     newsletter:  { title: 'Newsletter',  sub: '"Benachrichtigung beim Start"-Anmeldungen' },
     inserate:    { title: 'Inserate',    sub: 'Alle Jobinserate im Überblick' },
     rechnungen:  { title: 'Rechnungen',  sub: 'Vermittlungsgebühren pro Arbeitgeber' },
+    launch:      { title: 'Launch',      sub: 'Vorschau-Modus & Start der Plattform' },
   };
 
   function showSection(name) {
@@ -439,7 +477,7 @@
 
   // ── Data Loading ──
   async function loadAllData() {
-    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadEinstellungen()]);
+    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadEinstellungen(), loadAppSettings()]);
     renderNutzerStats();
     populateNutzerQuelleFilter();
     filterNutzerQuelle();
@@ -447,6 +485,57 @@
     filterInserate();
     renderRechnungenAgTable();
     renderRechnungenBanner();
+    renderLaunchSection();
+  }
+
+  async function loadAppSettings() {
+    try {
+      const { data } = await odojSb.from('app_settings').select('jobs_sichtbar, launch_kw, launch_datum').eq('id', 1).single();
+      if (data) appSettings = data;
+    } catch (_) {}
+  }
+
+  function renderLaunchSection() {
+    const statusEl = document.getElementById('launch-status-value');
+    const statusCard = document.getElementById('launch-status-card');
+    const toggleBtn = document.getElementById('btn-launch-toggle');
+    const kwInput = document.getElementById('launch-kw-input');
+    if (!statusEl) return;
+    if (appSettings.jobs_sichtbar) {
+      statusEl.textContent = '🟢 Live – Jobs sind sichtbar';
+      statusCard.classList.remove('blue');
+      toggleBtn.textContent = 'Zurück in Vorschau-Modus';
+      toggleBtn.style.background = '#fff';
+      toggleBtn.style.color = 'var(--navy)';
+    } else {
+      statusEl.textContent = '🔒 Vorschau-Modus – Jobs noch gesperrt';
+      toggleBtn.textContent = 'Jobs jetzt freigeben';
+      toggleBtn.style.background = 'var(--navy)';
+      toggleBtn.style.color = 'var(--white)';
+    }
+    if (kwInput && document.activeElement !== kwInput) kwInput.value = appSettings.launch_kw || '';
+  }
+
+  async function saveLaunchKw() {
+    const val = parseInt(document.getElementById('launch-kw-input').value, 10);
+    if (!val || val < 1 || val > 53) { showToast('Bitte eine gültige Kalenderwoche (1-53) eingeben', 'error'); return; }
+    const { error } = await odojSb.from('app_settings').update({ launch_kw: val }).eq('id', 1);
+    if (error) { showToast('Fehler: ' + error.message, 'error'); return; }
+    appSettings.launch_kw = val;
+    showToast('Kalenderwoche gespeichert', 'success');
+  }
+
+  async function toggleJobsSichtbar() {
+    const neu = !appSettings.jobs_sichtbar;
+    const frage = neu
+      ? 'Jobs jetzt wirklich für alle freigeben? Jobber können danach sofort alle Inserate sehen und sich bewerben.'
+      : 'Wirklich zurück in den Vorschau-Modus? Jobs werden für Jobber und andere Arbeitgeber wieder gesperrt.';
+    if (!confirm(frage)) return;
+    const { error } = await odojSb.from('app_settings').update({ jobs_sichtbar: neu }).eq('id', 1);
+    if (error) { showToast('Fehler: ' + error.message, 'error'); return; }
+    appSettings.jobs_sichtbar = neu;
+    renderLaunchSection();
+    showToast(neu ? 'Jobs sind jetzt live!' : 'Zurück in den Vorschau-Modus geschaltet', 'success');
   }
 
   async function loadEinstellungen() {
