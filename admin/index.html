@@ -97,6 +97,11 @@
     .stat-card.blue::before { background: #3b82f6; }
     .stat-card.green::before { background: var(--success); }
     .stat-card.red::before { background: var(--danger); }
+    .stat-card.clickable { cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+    .stat-card.clickable:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+    .stat-card.clickable.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(232,160,32,.25); }
+    #nutzer-quelle-tbody tr { cursor: pointer; }
+    #nutzer-quelle-tbody tr:hover { background: #F8FAFC; }
     .stat-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
     .stat-value { font-size: 30px; font-weight: 800; color: var(--navy); line-height: 1; }
     .stat-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
@@ -159,6 +164,16 @@
     .modal-title { font-size: 18px; font-weight: 700; color: var(--navy); }
     .modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--bg); border: none; cursor: pointer; font-size: 16px; color: var(--text2); display: flex; align-items: center; justify-content: center; }
     .modal-close:hover { background: var(--border); }
+
+    .nd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-bottom: 24px; }
+    .nd-field { min-width: 0; }
+    .nd-label { display: block; font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+    .nd-value { font-size: 14px; color: var(--navy); font-weight: 600; word-break: break-word; }
+    .nd-section-title { font-size: 13px; font-weight: 700; color: var(--navy); margin: 24px 0 10px 0; padding-top: 16px; border-top: 1px solid var(--border); }
+    .nd-list-item { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .nd-list-item:last-child { border-bottom: none; }
+    .nd-badge { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 11px; font-weight: 600; background: var(--bg); color: var(--text2); }
+    @media (max-width: 560px) { .nd-grid { grid-template-columns: 1fr; } }
 
     .chart-card { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 28px; }
     .chart-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
@@ -262,15 +277,15 @@
     <!-- 1. NUTZER-ÜBERSICHT -->
     <div id="section-nutzer" class="admin-section visible">
       <div class="stat-grid">
-        <div class="stat-card">
+        <div class="stat-card clickable active" id="stat-card-alle" onclick="setNutzerRolleFilter('')">
           <div class="stat-label">Nutzer gesamt</div>
           <div class="stat-value" id="stat-nutzer">–</div>
         </div>
-        <div class="stat-card blue">
+        <div class="stat-card blue clickable" id="stat-card-jobber" onclick="setNutzerRolleFilter('jobber')">
           <div class="stat-label">Jobber</div>
           <div class="stat-value" id="stat-jobber">–</div>
         </div>
-        <div class="stat-card blue">
+        <div class="stat-card blue clickable" id="stat-card-ag" onclick="setNutzerRolleFilter('arbeitgeber')">
           <div class="stat-label">Arbeitgeber</div>
           <div class="stat-value" id="stat-ag">–</div>
         </div>
@@ -417,6 +432,17 @@
   </div>
 </div>
 
+<!-- Nutzer-Detailansicht -->
+<div class="modal-overlay" id="nutzer-detail-modal">
+  <div class="modal-box" style="max-width:720px">
+    <div class="modal-header">
+      <div class="modal-title" id="nutzer-detail-modal-title">Nutzerdetails</div>
+      <button class="modal-close" onclick="closeModal('nutzer-detail-modal')">✕</button>
+    </div>
+    <div id="nutzer-detail-modal-content"></div>
+  </div>
+</div>
+
 <div id="admin-toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -426,7 +452,7 @@
   // Neues Team-Mitglied hinzufügen: hier ergänzen (Absprache mit Entwickler).
   const ADMIN_EMAILS = ['mail4david85@gmail.com', 'admin@odoj.at'];
 
-  let allNutzer = [], allJobs = [], allBewerbungen = [], allRechnungen = [], allWaitlist = [];
+  let allNutzer = [], allJobs = [], allBewerbungen = [], allRechnungen = [], allWaitlist = [], allBewertungen = [];
   let appSettings = { jobs_sichtbar: false, launch_kw: null };
 
   // ── Auth Check ──
@@ -473,7 +499,7 @@
 
   // ── Data Loading ──
   async function loadAllData() {
-    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadAppSettings()]);
+    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadAppSettings(), loadBewertungen()]);
     renderNutzerStats();
     populateNutzerQuelleFilter();
     filterNutzerQuelle();
@@ -576,6 +602,13 @@
     } catch (_) { allWaitlist = []; }
   }
 
+  async function loadBewertungen() {
+    try {
+      const { data } = await odojSb.from('bewertungen').select('*');
+      allBewertungen = data || [];
+    } catch (_) { allBewertungen = []; }
+  }
+
   // ── Helfer ──
   function nutzerName(n) {
     if (!n) return '–';
@@ -588,8 +621,10 @@
   function fmtEuro(v)     { if (v == null || v === '') return '–'; return '€ ' + parseFloat(v).toFixed(2).replace('.', ','); }
 
   function statusBadge(s) {
-    const m = { aktiv: 'badge-green', inaktiv: 'badge-gray', erledigt: 'badge-yellow', offen: 'badge-yellow', bezahlt: 'badge-green' };
-    const labels = { aktiv: 'Aktiv', inaktiv: 'Inaktiv', erledigt: 'Erledigt', offen: 'Offen', bezahlt: 'Bezahlt' };
+    const m = { aktiv: 'badge-green', inaktiv: 'badge-gray', erledigt: 'badge-yellow', offen: 'badge-yellow', bezahlt: 'badge-green',
+      ausstehend: 'badge-yellow', angenommen: 'badge-green', abgelehnt: 'badge-gray', abgeschlossen: 'badge-green' };
+    const labels = { aktiv: 'Aktiv', inaktiv: 'Inaktiv', erledigt: 'Erledigt', offen: 'Offen', bezahlt: 'Bezahlt',
+      ausstehend: 'Ausstehend', angenommen: 'Angenommen', abgelehnt: 'Abgelehnt', abgeschlossen: 'Abgeschlossen' };
     return `<span class="badge ${m[s] || 'badge-gray'}">${labels[s] || s || '–'}</span>`;
   }
 
@@ -652,10 +687,20 @@
     sel.value = (current === '__direkt__' || codes.includes(current)) ? current : '';
   }
 
+  let _nutzerRolleFilter = '';
+  function setNutzerRolleFilter(rolle) {
+    _nutzerRolleFilter = rolle;
+    document.getElementById('stat-card-alle').classList.toggle('active', rolle === '');
+    document.getElementById('stat-card-jobber').classList.toggle('active', rolle === 'jobber');
+    document.getElementById('stat-card-ag').classList.toggle('active', rolle === 'arbeitgeber');
+    filterNutzerQuelle();
+  }
+
   function filterNutzerQuelle() {
     const q   = (document.getElementById('nutzer-quelle-search')?.value || '').toLowerCase();
     const val = document.getElementById('nutzer-quelle-filter')?.value || '';
     let list = allNutzer;
+    if (_nutzerRolleFilter) list = list.filter(n => n.rolle === _nutzerRolleFilter);
     if (val === '__direkt__') list = list.filter(n => !n.ref_code);
     else if (val)             list = list.filter(n => n.ref_code === val);
     if (q) {
@@ -667,19 +712,108 @@
   }
 
   function escAttr(s) { return String(s || '').replace(/"/g, '&quot;'); }
+  function escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
 
   function renderNutzerQuelleTable(list) {
     const tbody = document.getElementById('nutzer-quelle-tbody');
     if (!tbody) return;
     tbody.innerHTML = !list.length
       ? '<tr><td colspan="5" class="table-empty">Keine Nutzer gefunden</td></tr>'
-      : list.map(n => `<tr>
-          <td>${nutzerName(n)}</td>
-          <td style="font-size:12px;color:var(--text2)">${n.email || '–'}</td>
+      : list.map(n => `<tr onclick="openNutzerDetail('${n.user_id}')">
+          <td>${escHtml(nutzerName(n))}</td>
+          <td style="font-size:12px;color:var(--text2)">${escHtml(n.email) || '–'}</td>
           <td>${n.rolle === 'arbeitgeber' ? 'Arbeitgeber' : 'Jobber'}</td>
-          <td>${n.ref_code ? `<span style="background:#EAF1FB;color:#1A5FA0;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600">${n.ref_code}</span>` : '<span style="color:var(--text2)">Direkt</span>'}</td>
+          <td>${n.ref_code ? `<span style="background:#EAF1FB;color:#1A5FA0;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600">${escHtml(n.ref_code)}</span>` : '<span style="color:var(--text2)">Direkt</span>'}</td>
           <td style="font-size:12px;color:var(--text2)">${fmtDate(n.erstellt_am)}</td>
         </tr>`).join('');
+  }
+
+  // ── Nutzer-Detailansicht ──
+  function ndField(label, value) {
+    return `<div class="nd-field"><span class="nd-label">${escHtml(label)}</span><span class="nd-value">${value}</span></div>`;
+  }
+
+  function openNutzerDetail(userId) {
+    const n = findNutzer(userId);
+    if (!n) { showToast('Nutzer nicht gefunden', 'error'); return; }
+
+    document.getElementById('nutzer-detail-modal-title').textContent = nutzerName(n);
+
+    const isAg = n.rolle === 'arbeitgeber';
+    let html = '<div class="nd-grid">';
+    if (isAg) {
+      html += ndField('Firmenname', escHtml(n.firmenname) || '–');
+      html += ndField('Ansprechperson', escHtml(((n.vorname || '') + ' ' + (n.nachname || '')).trim()) || '–');
+      html += ndField('E-Mail', escHtml(n.email) || '–');
+      html += ndField('Telefon', escHtml(n.telefon) || '–');
+      html += ndField('Adresse', escHtml([n.adresse, [n.adresse_plz || n.plz, n.adresse_ort || n.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ')) || '–');
+      html += ndField('Website', n.website ? `<a href="${escAttr(n.website)}" target="_blank" rel="noopener">${escHtml(n.website)}</a>` : '–');
+      html += ndField('Branche', escHtml(n.branche) || '–');
+      html += ndField('UID-Nummer', escHtml(n.uid_nummer) || '–');
+    } else {
+      html += ndField('Name', escHtml(((n.vorname || '') + ' ' + (n.nachname || '')).trim()) || '–');
+      html += ndField('E-Mail', escHtml(n.email) || '–');
+      html += ndField('Telefon', escHtml(n.telefon) || '–');
+      const alter = n.geburtsdatum ? Math.floor((Date.now() - new Date(n.geburtsdatum)) / 31557600000) : null;
+      html += ndField('Geburtsdatum', n.geburtsdatum ? (fmtDate(n.geburtsdatum) + ' (' + alter + ' Jahre)') : '–');
+      html += ndField('Adresse / Ort', escHtml([n.adresse, [n.adresse_plz || n.plz, n.adresse_ort || n.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ')) || '–');
+    }
+    html += ndField('Registriert am', fmtDate(n.erstellt_am));
+    html += ndField('Profil vollständig', n.profil_vollstaendig ? '✓ Ja' : '✕ Nein');
+    html += ndField('E-Mail bestätigt', '<span id="nd-email-confirmed">Lädt…</span>');
+    html += ndField('Letzter Login', '<span id="nd-last-login">Lädt…</span>');
+    html += '</div>';
+
+    if (isAg) {
+      const jobs = allJobs.filter(j => j.arbeitgeber_id === userId).sort((a, b) => (b.erstellt_am || '').localeCompare(a.erstellt_am || ''));
+      html += `<div class="nd-section-title">Inserate (${jobs.length})</div>`;
+      html += jobs.length
+        ? jobs.map(j => `<div class="nd-list-item"><span>${escHtml(j.titel)}</span><span style="color:var(--text2)">${fmtDate(j.datum)}</span>${statusBadge(j.status)}</div>`).join('')
+        : '<div class="table-empty">Keine Inserate</div>';
+    } else {
+      const bews = allBewerbungen.filter(b => b.jobber_id === userId).sort((a, b) => (b.erstellt_am || '').localeCompare(a.erstellt_am || ''));
+      html += `<div class="nd-section-title">Bewerbungen (${bews.length})</div>`;
+      html += bews.length
+        ? bews.map(b => {
+            const job = findJob(b.job_id);
+            return `<div class="nd-list-item"><span>${escHtml(job ? job.titel : '(Inserat gelöscht)')}</span><span style="color:var(--text2)">${fmtDate(b.erstellt_am)}</span>${statusBadge(b.status)}</div>`;
+          }).join('')
+        : '<div class="table-empty">Keine Bewerbungen</div>';
+    }
+
+    const bewertungen = allBewertungen.filter(bw => bw.bewertet_id === userId).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    html += `<div class="nd-section-title">Bewertungen (${bewertungen.length})</div>`;
+    html += bewertungen.length
+      ? bewertungen.map(bw => `<div class="nd-list-item"><span>${'★'.repeat(bw.sterne || 0)}${'☆'.repeat(5 - (bw.sterne || 0))} ${escHtml(bw.kommentar) || ''}</span><span style="color:var(--text2)">${fmtDate(bw.created_at)}</span></div>`).join('')
+      : '<div class="table-empty">Keine Bewertungen</div>';
+
+    document.getElementById('nutzer-detail-modal-content').innerHTML = html;
+    openModal('nutzer-detail-modal');
+    loadNutzerAuthInfo(userId);
+  }
+
+  async function loadNutzerAuthInfo(userId) {
+    try {
+      const { data, error } = await odojSb.functions.invoke('admin-user-detail', { body: { userId } });
+      const confEl = document.getElementById('nd-email-confirmed');
+      const loginEl = document.getElementById('nd-last-login');
+      if (error || !data || data.error) {
+        if (confEl) confEl.textContent = 'Nicht verfügbar';
+        if (loginEl) loginEl.textContent = 'Nicht verfügbar';
+        return;
+      }
+      if (confEl) confEl.textContent = data.email_confirmed_at ? ('✓ Ja (' + fmtDate(data.email_confirmed_at) + ')') : '✕ Nein';
+      if (loginEl) loginEl.textContent = data.last_sign_in_at ? fmtDate(data.last_sign_in_at) : '–';
+    } catch (_) {
+      const confEl = document.getElementById('nd-email-confirmed');
+      const loginEl = document.getElementById('nd-last-login');
+      if (confEl) confEl.textContent = 'Nicht verfügbar';
+      if (loginEl) loginEl.textContent = 'Nicht verfügbar';
+    }
   }
 
   // ── 2. Newsletter ──
