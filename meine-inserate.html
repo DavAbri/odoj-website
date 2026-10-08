@@ -1490,15 +1490,17 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
     return;
   }
 
-  const { data: jobRow } = await odojSb.from('jobs').select('tagesgehalt').eq('id', jobId).single();
+  const { data: jobRow } = await odojSb.from('jobs').select('tagesgehalt, uhrzeit_von').eq('id', jobId).single();
   const tagesgehalt = jobRow?.tagesgehalt || 0;
   const odojConfig = await getOdojBankConfig();
 
   // Termine dieses Jobs laden (nur bei Mehrtages-Jobs vorhanden), damit jede
-  // Bewerbungszeile ihr EIGENES Termin-Datum zeigt statt des einen jobDatum.
-  const { data: termine } = await odojSb.from('job_termine').select('id, datum').eq('job_id', jobId);
+  // Bewerbungszeile ihr EIGENES Termin-Datum (und ggf. eigene Uhrzeit) zeigt
+  // statt des einen jobDatum - nötig für die Einsatzbeginn-Zeitsperre (A1).
+  const { data: termine } = await odojSb.from('job_termine').select('id, datum, uhrzeit_von').eq('job_id', jobId);
   const terminMap = {};
-  (termine || []).forEach(t => { terminMap[t.id] = t.datum; });
+  const terminUhrzeitMap = {};
+  (termine || []).forEach(t => { terminMap[t.id] = t.datum; terminUhrzeitMap[t.id] = t.uhrzeit_von; });
 
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
   const acceptedBewIds = bewerbungen.filter(b => b.status === 'angenommen').map(b => b.id);
@@ -1539,6 +1541,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   // Effektives Termin-Datum je Bewerbung auflösen und vorab anhängen
   bewerbungen.forEach(b => {
     b._effDatum = b.termin_id ? (terminMap[b.termin_id] || jobDatum) : jobDatum;
+    b._effUhrzeit = b.termin_id ? (terminUhrzeitMap[b.termin_id] || jobRow?.uhrzeit_von) : jobRow?.uhrzeit_von;
   });
 
   // Nach Person (jobber_id) gruppieren: mehrere Termine derselben Person für
@@ -1621,6 +1624,25 @@ function _bewStatusInfo(status) {
   return { cls: 'bew-st-ausstehend', label: 'Ausstehend' };
 }
 
+// Einsatzbeginn (Datum + Uhrzeit) als Date-Objekt - Anwesenheit darf serverseitig
+// (Trigger) und hier im Frontend erst danach bestätigt werden, nicht nur ab
+// Mitternacht des Einsatztags.
+function _einsatzStart(datum, uhrzeitVon) {
+  if (!datum) return null;
+  return new Date(datum + 'T' + (uhrzeitVon ? uhrzeitVon.slice(0, 5) : '00:00') + ':00');
+}
+function _istEinsatzbeginnErreicht(datum, uhrzeitVon) {
+  const start = _einsatzStart(datum, uhrzeitVon);
+  return !start || start <= new Date();
+}
+function _fmtEinsatzStart(datum, uhrzeitVon) {
+  const start = _einsatzStart(datum, uhrzeitVon);
+  if (!start) return '';
+  const d = start.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit' });
+  const t = start.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+  return uhrzeitVon ? `${d}, ${t} Uhr` : d;
+}
+
 // ── Aktions-Buttons für EINEN Termin (Annehmen/Ablehnen/Nachricht/Vertrag/Anwesenheit) ──
 function renderBewActions(b, realName, vertragId, effDatum) {
   const acceptBtn = b.status !== 'angenommen'
@@ -1628,14 +1650,13 @@ function renderBewActions(b, realName, vertragId, effDatum) {
   const rejectBtn = b.status !== 'abgelehnt'
     ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '';
 
-  const heute = new Date().toISOString().split('T')[0];
-  const jobDatumErreicht = !effDatum || effDatum <= heute;
+  const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, b._effUhrzeit);
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
         ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigt</button>`
         : jobDatumErreicht
           ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">Erst ab ${new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
+          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzbeginn verfügbar">Erst ab ${_fmtEinsatzStart(effDatum, b._effUhrzeit)} verfügbar</button>`)
     : '';
 
   const datenblattBtn = b.status === 'angenommen'
@@ -2032,22 +2053,22 @@ async function updateBewStatus(bewId, newStatus) {
           .select('vorname, nachname').eq('user_id', jobberId).maybeSingle();
         jobberName = [prof?.vorname, prof?.nachname].filter(Boolean).join(' ') || 'Jobber';
       }
-      // Termin-Datum laden für Datumssperre (bei Mehrtermine-Bewerbungen das
-      // spezifische Termin-Datum, sonst das jobs.datum wie bei Einzeltag-Jobs)
-      let jobDatumErreicht = true;
+      // Termin-Datum+Uhrzeit laden für die Einsatzbeginn-Sperre (A1) - bei
+      // Mehrtermine-Bewerbungen das spezifische Termin-Datum/-Uhrzeit, sonst
+      // jobs.datum/uhrzeit_von wie bei Einzeltag-Jobs.
       let effDatum = null;
+      let effUhrzeit = null;
       if (bew?.termin_id) {
-        const { data: terminD } = await odojSb.from('job_termine').select('datum').eq('id', bew.termin_id).maybeSingle();
+        const { data: terminD } = await odojSb.from('job_termine').select('datum, uhrzeit_von').eq('id', bew.termin_id).maybeSingle();
         effDatum = terminD?.datum || null;
+        effUhrzeit = terminD?.uhrzeit_von || null;
       }
-      if (!effDatum && bew?.job_id) {
-        const { data: jobD } = await odojSb.from('jobs').select('datum').eq('id', bew.job_id).maybeSingle();
-        effDatum = jobD?.datum || null;
+      if (bew?.job_id && (!effDatum || !effUhrzeit)) {
+        const { data: jobD } = await odojSb.from('jobs').select('datum, uhrzeit_von').eq('id', bew.job_id).maybeSingle();
+        if (!effDatum) effDatum = jobD?.datum || null;
+        if (!effUhrzeit) effUhrzeit = jobD?.uhrzeit_von || null;
       }
-      if (effDatum) {
-        const heute = new Date().toISOString().split('T')[0];
-        if (effDatum > heute) jobDatumErreicht = false;
-      }
+      const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, effUhrzeit);
       const nameEsc = jobberName.replace(/'/g, "\\'");
       actEl.innerHTML =
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
@@ -2056,7 +2077,7 @@ async function updateBewStatus(bewId, newStatus) {
         `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>` +
         (jobDatumErreicht
           ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">${effDatum ? 'Erst ab ' + new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' }) + ' verfügbar' : 'Erst ab Einsatzdatum verfügbar'}</button>`);
+          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzbeginn verfügbar">${effDatum ? 'Erst ab ' + _fmtEinsatzStart(effDatum, effUhrzeit) + ' verfügbar' : 'Erst ab Einsatzbeginn verfügbar'}</button>`);
     }
   }
   loadInserate();

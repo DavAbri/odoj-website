@@ -74,17 +74,8 @@ function newMessageTemplate(recipientName: string, senderName: string, jobTitel:
 }
 
 function workConfirmedTemplate(recipientName: string, firmenname: string, jobTitel: string, bewId: string): string {
-  const bewertungBase = `${SITE_URL}/bewertung.html?bew=${bewId}&sterne=`;
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
-
-  const stars = [1, 2, 3, 4, 5].map(n => {
-    const filled  = "⭐".repeat(n);
-    const label   = ["Schlecht", "Nicht so gut", "Ok", "Gut", "Sehr gut"][n - 1];
-    return `<td style="padding:4px 6px;text-align:center">
-      <a href="${bewertungBase}${n}" style="display:block;font-size:22px;line-height:1;text-decoration:none" title="${label}">${filled}</a>
-      <span style="font-size:10px;color:#999;display:block;margin-top:4px">${label}</span>
-    </td>`;
-  }).join("");
+  const firmaLabel = firmenname || "dem Betrieb";
 
   return baseTemplate(`
   <tr><td style="padding:36px 32px 28px">
@@ -95,21 +86,18 @@ function workConfirmedTemplate(recipientName: string, firmenname: string, jobTit
       als <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> wurde offiziell bestätigt. Großartige Arbeit!
     </p>
     <div style="background:#e6f5ee;border:1.5px solid #a8d9be;border-radius:10px;padding:16px 20px;margin:20px 0;font-size:14px;color:#1a5c3a;line-height:1.6">
-      ✅ Deine Anwesenheit & Bezahlung wurde bestätigt.
+      ✅ Deine Anwesenheit wurde bestätigt.
     </div>
 
-    <!-- BEWERTUNG -->
-    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:22px 24px;margin-top:8px">
-      <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#0f1f3d">Wie war deine Erfahrung mit ODOJ?</p>
+    <!-- BEWERTUNG: nur ein Link/Button, Sterne gibt es ausschließlich auf der Webseite -->
+    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:22px 24px;margin-top:8px;text-align:center">
+      <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#0f1f3d">Wie war es mit ${esc(firmaLabel)}?</p>
       <p style="margin:0 0 18px;font-size:13px;color:#888;line-height:1.6">Wir würden uns sehr über dein Feedback freuen – es hilft uns, unseren Service zu verbessern.</p>
-      <table cellpadding="0" cellspacing="0" style="margin:0 auto 16px">
-        <tr>${stars}</tr>
-      </table>
-      <p style="margin:0;text-align:center">
-        <a href="${SITE_URL}/bewertung.html?bew=${bewId}" style="font-size:12px;color:#E8A020;text-decoration:none;font-weight:600">
-          Oder direkt zur Bewertungsseite &rarr;
+      <table cellpadding="0" cellspacing="0" style="margin:0 auto"><tr><td style="background:#0f1f3d;border-radius:8px">
+        <a href="${SITE_URL}/bewertung.html?bew=${bewId}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+          Jetzt bewerten &rarr;
         </a>
-      </p>
+      </td></tr></table>
     </div>
 
     <p style="margin:24px 0 0;font-size:13px;color:#aaa">Wir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!</p>
@@ -435,7 +423,7 @@ serve(async (req) => {
       subject = `💬 Neue Nachricht von ${senderName} – ODOJ`;
       html = newMessageTemplate(recipientName, senderName || "", jobTitel || "", bewId || "");
     } else if (type === "work_confirmed") {
-      subject = `✅ Einsatz abgeschlossen – Wie war deine Erfahrung?`;
+      subject = `✅ Einsatz abgeschlossen – Wie war es mit ${firmenname || "deinem Einsatz"}?`;
       html = workConfirmedTemplate(recipientName, firmenname || "", jobTitel || "", bewId || "");
     } else if (type === "bewerbung_bestaetigt") {
       subject = `Deine Bewerbung wurde erfolgreich übermittelt ✓`;
