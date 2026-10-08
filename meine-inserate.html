@@ -1837,7 +1837,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     erstellt_am:   new Date().toISOString()
   }).select().single();
   if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
-  if (presMsg) odojSb.functions.invoke('send-notification-email', { body: { record: presMsg } }).catch(() => {});
+  if (presMsg) odojSb.functions.invoke('send-notification-email', { body: { record: presMsg } }).catch(err => console.error('[E-Mail] Einsatz-abgeschlossen-Benachrichtigung fehlgeschlagen:', err));
 
   // BEW_REQ sofort senden — Jobber kann immer bewerten, unabhängig vom AG-Rating
   if (jobberId && bewData?.job_id) {
@@ -1976,7 +1976,9 @@ async function updateBewStatus(bewId, newStatus) {
         erstellt_am:   new Date().toISOString()
       }).select().single();
       if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
-      if (insertedMsg) odojSb.functions.invoke('send-notification-email', { body: { record: insertedMsg } }).catch(() => {});
+      if (insertedMsg) odojSb.functions.invoke('send-notification-email', {
+        body: { record: insertedMsg, subjectHint: newStatus === 'angenommen' ? 'bewerbung_angenommen' : 'bewerbung_nicht_beruecksichtigt' }
+      }).catch(err => console.error('[E-Mail] Annahme/Absage-Benachrichtigung fehlgeschlagen:', err));
     }
   }
 
@@ -3031,7 +3033,7 @@ async function vertragSelbstErstellen() {
     erstellt_am:   new Date().toISOString()
   };
   const { data: ins } = await odojSb.from('nachrichten').insert(msgPayload).select().single();
-  if (ins) odojSb.functions.invoke('send-notification-email', { body: { record: ins } }).catch(() => {});
+  if (ins) odojSb.functions.invoke('send-notification-email', { body: { record: ins } }).catch(err => console.error('[E-Mail] "Vertrag selbst erstellen"-Benachrichtigung fehlgeschlagen:', err));
 }
 </script>
 </body>

@@ -1423,7 +1423,7 @@ async function acceptVertrag(vertragId, bewId) {
     gelesen: false,
     erstellt_am: new Date().toISOString()
   }).select().single();
-  if (insertedMsg) odojSb.functions.invoke('send-notification-email', { body: { record: insertedMsg } }).catch(() => {});
+  if (insertedMsg) odojSb.functions.invoke('send-notification-email', { body: { record: insertedMsg, subjectHint: 'vertrag_bestaetigt' } }).catch(err => console.error('[E-Mail] Vertragsbestätigung fehlgeschlagen:', err));
 
   showToast('Vertrag angenommen! Arbeitgeber wurde benachrichtigt.', 'success');
   await loadMessages(false);

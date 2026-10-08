@@ -675,7 +675,7 @@ async function submitZurueckziehen() {
       gelesen:       false,
       erstellt_am:   now
     }).select().single();
-    if (agMsg) odojSb.functions.invoke('send-notification-email', { body: { record: agMsg } }).catch(() => {});
+    if (agMsg) odojSb.functions.invoke('send-notification-email', { body: { record: agMsg } }).catch(err => console.error('[E-Mail] Storno-Benachrichtigung an Arbeitgeber fehlgeschlagen:', err));
   }
 
   const { data: jobberMsg } = await odojSb.from('nachrichten').insert({
@@ -686,7 +686,7 @@ async function submitZurueckziehen() {
     gelesen:       false,
     erstellt_am:   now
   }).select().single();
-  if (jobberMsg) odojSb.functions.invoke('send-notification-email', { body: { record: jobberMsg } }).catch(() => {});
+  if (jobberMsg) odojSb.functions.invoke('send-notification-email', { body: { record: jobberMsg } }).catch(err => console.error('[E-Mail] Storno-Selbstnotiz fehlgeschlagen:', err));
 
   closeZurueckziehenModal();
   loadMeineBewerbungen();
