@@ -2810,12 +2810,17 @@ function stammkraefteAlleAuswaehlen(checked) {
 }
 
 async function ladeStammkraefte() {
-  const { data: { user } } = await odojSb.auth.getUser();
-  if (!user) return [];
+  // Immer den gerade aktiven Arbeitgeber verwenden (_agSession) statt der
+  // echten Supabase-Sitzung - im Support-Modus ist das der vertretene
+  // Arbeitgeber, nicht der Admin selbst (odojSb.auth.getUser() lieferte
+  // vorher fälschlich die Admin-eigene Sitzung und damit dessen eigene
+  // Bewertungen statt der des vertretenen Arbeitgebers).
+  if (!_agSession?.user?.id) return [];
+  const agId = _agSession.user.id;
 
   // 1. Alle Jobs dieses Arbeitgebers
   const { data: agJobs } = await odojSb
-    .from('jobs').select('id').eq('arbeitgeber_id', user.id);
+    .from('jobs').select('id').eq('arbeitgeber_id', agId);
   const agJobIds = (agJobs || []).map(j => j.id);
   if (!agJobIds.length) return [];
 
@@ -2828,17 +2833,27 @@ async function ladeStammkraefte() {
   const jobberIds = [...new Set((bews || []).map(b => b.jobber_id))];
   if (!jobberIds.length) return [];
 
-  // 3. Bewertungen >= 3 aus bewertungen Tabelle laden
+  // 3. Alle Bewertungen dieses Arbeitgebers für diese Jobber laden (kein
+  // sterne-Filter hier - bei Mehrfachbewertungen zählt die zeitlich LETZTE
+  // Bewertung, die könnte auch unter 3 Sterne liegen und muss dann die
+  // Stammkraft-Eigenschaft aufheben, selbst wenn eine frühere Bewertung
+  // besser war).
   const { data: bewertungen } = await odojSb
-    .from('bewertungen').select('bewertet_id, sterne')
-    .eq('bewerter_id', user.id).eq('rolle_bewerter', 'arbeitgeber')
-    .in('bewertet_id', jobberIds).gte('sterne', 3);
+    .from('bewertungen').select('bewertet_id, sterne, created_at')
+    .eq('bewerter_id', agId).eq('rolle_bewerter', 'arbeitgeber')
+    .in('bewertet_id', jobberIds);
   if (!bewertungen?.length) return [];
 
-  const bewMap = {};
+  // Pro Jobber nur die zeitlich letzte Bewertung dieses Arbeitgebers behalten.
+  const letzteMap = {};
   bewertungen.forEach(b => {
-    if (!bewMap[b.bewertet_id] || b.sterne > bewMap[b.bewertet_id]) bewMap[b.bewertet_id] = b.sterne;
+    const bisherige = letzteMap[b.bewertet_id];
+    if (!bisherige || new Date(b.created_at) > new Date(bisherige.created_at)) letzteMap[b.bewertet_id] = b;
   });
+
+  const bewMap = {};
+  Object.values(letzteMap).forEach(b => { if (b.sterne >= 3) bewMap[b.bewertet_id] = b.sterne; });
+  if (!Object.keys(bewMap).length) return [];
 
   // 4. Profile laden
   const { data: profiles } = await odojSb
