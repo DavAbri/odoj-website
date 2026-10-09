@@ -297,6 +297,10 @@
 .if-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .if-row.if-row-collapse-1 { grid-template-columns: 1fr; }
 .if-hint  { font-size: 12px; color: var(--text-lt); margin-top: 4px; }
+.if-field.if-invalid input,
+.if-field.if-invalid select,
+.if-field.if-invalid textarea { border-color: #C0392B; background: #FFF5F5; }
+.if-field-errmsg { font-size: 12px; color: #C0392B; font-weight: 600; margin-top: 4px; }
 .if-toggle-group { display: flex; gap: 8px; }
 .if-toggle-btn {
   flex: 1; padding: 11px 16px; border: 1.5px solid var(--gray-lt); border-radius: var(--r-sm);
@@ -355,6 +359,10 @@
   background: #FFF0F0; border: 1px solid #FFBBBB; color: #C0392B;
   font-size: 13px; padding: 10px 14px; border-radius: var(--r-sm); margin-bottom: 12px;
 }
+.if-error strong { display: block; font-size: 14px; margin-bottom: 6px; }
+.if-error ul { margin: 0; padding-left: 20px; }
+.if-error li { margin-bottom: 3px; }
+.if-error a { color: #C0392B; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .if-success {
   background: #E6F5EE; border: 1px solid #A3D9BB; color: #1A7A50;
   font-size: 14px; font-weight: 500; padding: 12px 16px;
@@ -783,9 +791,9 @@
           </div>
           <div id="ins-success" class="if-success" style="display:none">Job erfolgreich gespeichert!</div>
           <div id="ins-tipp" style="display:none;margin-top:10px;padding:12px 16px;background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;font-size:13px;color:#7a5500;line-height:1.5">💡 <strong>Tipp:</strong> Bewerten Sie Ihre Jobber nach dem Einsatz – gute Jobber (3+ Sterne) werden beim nächsten Inserat als Stammkraft vorgeschlagen und können direkt benachrichtigt werden.</div>
-          <div id="ins-error"   class="if-error"   style="display:none"></div>
+          <div id="ins-error"   class="if-error"   style="display:none" role="alert"></div>
 
-          <form id="ins-form" onsubmit="submitInserat(event)">
+          <form id="ins-form" onsubmit="submitInserat(event)" novalidate>
             <div class="if-field">
               <label>Jobtitel *</label>
               <input type="text" id="ins-titel" placeholder="z.B. Servicekraft, Lagerhelfer…" required>
@@ -812,8 +820,8 @@
             </div>
             <div class="if-field" id="ins-mindest-termine-wrap" style="display:none">
               <label>Mindestanzahl an Terminen für die Bewerbung <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></label>
-              <input type="number" id="ins-mindest-termine" min="1">
-              <div class="if-hint">Leer lassen = Jobber kann sich schon für 1 Termin bewerben.</div>
+              <input type="number" id="ins-mindest-termine" min="1" step="1" value="1">
+              <div class="if-hint">Bei einem neuen Inserat automatisch auf 1 gesetzt, jederzeit änderbar. Leer lassen = Jobber kann sich schon für 1 Termin bewerben.</div>
             </div>
             <div class="if-row-3">
               <div class="if-field">
@@ -2267,6 +2275,7 @@ function renderTerminChips() {
       </div>`;
     }).join('');
   }
+  _insRevalidateIfShown();
 }
 
 function _resetTerminUI() {
@@ -2280,10 +2289,159 @@ function _resetTerminUI() {
   document.querySelector('#ins-datum-mehrere-wrap .if-chip-add-btn').disabled = false;
   const lockedHint = document.getElementById('ins-termine-locked-hint');
   if (lockedHint) lockedHint.remove();
-  document.getElementById('ins-mindest-termine').value = '';
+  // Vorbelegung "1" nur beim frischen/neuen Inserat - editInserat() überschreibt
+  // dies anschließend mit dem gespeicherten Wert, falls ein bestehender Job
+  // bearbeitet wird (siehe dort).
+  document.getElementById('ins-mindest-termine').value = '1';
   renderTerminChips();
   updateTerminExtrasVisibility();
+  _insClearAllInvalid();
+  document.getElementById('ins-error').style.display = 'none';
+  document.getElementById('ins-error').innerHTML = '';
+  _insLastProblems = [];
+  _insSummaryActive = false;
 }
+
+// ── FORMULAR-VALIDIERUNG (Pflichtfelder + sinnvolle Werte) ──
+// Prüft alle echten Pflichtfelder des Formulars und liefert eine geordnete
+// Liste der Probleme (gleiche Reihenfolge wie im Formular). Wird sowohl beim
+// Absenden als auch live beim Tippen verwendet (_insRevalidateIfShown), damit
+// Markierungen verschwinden, sobald ein Feld korrekt ausgefüllt ist.
+function _insValidateRequired() {
+  const problems = [];
+
+  const titel = document.getElementById('ins-titel').value.trim();
+  if (!titel) problems.push({ id: 'ins-titel', label: 'Jobtitel', msg: 'Bitte ausfüllen' });
+
+  const branche = document.getElementById('ins-branche').value;
+  if (!branche) problems.push({ id: 'ins-branche', label: 'Branche', msg: 'Bitte auswählen' });
+
+  if (!_terminChipsLocked && _terminChips.length < 1) {
+    problems.push({ id: 'ins-datum-mehrere-wrap', label: 'Termine', msg: 'Bitte mindestens einen Termin hinzufügen' });
+  }
+
+  const mindestTermineRaw = document.getElementById('ins-mindest-termine').value;
+  if (mindestTermineRaw) {
+    const n = parseInt(mindestTermineRaw, 10);
+    if (!Number.isInteger(n) || n < 1) {
+      problems.push({ id: 'ins-mindest-termine', label: 'Mindestanzahl an Terminen', msg: 'Bitte eine gültige Zahl ab 1 eingeben oder leer lassen' });
+    } else if (_terminChips.length > 1 && n > _terminChips.length) {
+      problems.push({ id: 'ins-mindest-termine', label: 'Mindestanzahl an Terminen', msg: 'Darf nicht größer sein als die Anzahl der gewählten Termine (' + _terminChips.length + ')' });
+    }
+  }
+
+  if (!_zeitFuerAlle && _terminChips.some(c => !c.von || !c.bis)) {
+    problems.push({ id: 'ins-termin-chips', label: 'Arbeitszeiten pro Termin', msg: 'Bitte für jeden Termin eine Uhrzeit (von/bis) angeben' });
+  }
+
+  if (!document.getElementById('ins-von').value) problems.push({ id: 'ins-von', label: 'Uhrzeit von', msg: 'Bitte ausfüllen' });
+  if (!document.getElementById('ins-bis').value) problems.push({ id: 'ins-bis', label: 'Uhrzeit bis', msg: 'Bitte ausfüllen' });
+
+  const gehaltRaw = document.getElementById('ins-gehalt').value;
+  const gehaltNum = parseFloat(gehaltRaw);
+  if (!gehaltRaw || isNaN(gehaltNum) || gehaltNum <= 0) {
+    problems.push({ id: 'ins-gehalt', label: 'Tagesgehalt in €', msg: 'Bitte einen gültigen Betrag größer 0 eingeben' });
+  }
+
+  const plaetzeRaw = document.getElementById('ins-plaetze').value;
+  const plaetzeNum = parseInt(plaetzeRaw, 10);
+  if (!plaetzeRaw || !Number.isInteger(plaetzeNum) || plaetzeNum < 1) {
+    problems.push({ id: 'ins-plaetze', label: 'Anzahl Plätze', msg: 'Bitte eine gültige Zahl ab 1 eingeben' });
+  }
+
+  const mindestalterRaw = document.getElementById('ins-mindestalter').value;
+  const mindestalterNum = parseInt(mindestalterRaw, 10);
+  if (!mindestalterRaw || !Number.isInteger(mindestalterNum) || mindestalterNum < 15 || mindestalterNum > 65) {
+    problems.push({ id: 'ins-mindestalter', label: 'Mindestalter', msg: 'Bitte eine gültige Zahl zwischen 15 und 65 eingeben' });
+  }
+
+  if (!document.getElementById('ins-adresse').value.trim()) problems.push({ id: 'ins-adresse', label: 'Adresse / Straße', msg: 'Bitte ausfüllen' });
+  if (!document.getElementById('ins-ort').value.trim())     problems.push({ id: 'ins-ort',     label: 'Ort',              msg: 'Bitte ausfüllen' });
+
+  return problems;
+}
+
+function _insEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function _insMarkInvalid(fieldId, msg) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) el.setAttribute('aria-invalid', 'true');
+  const wrap = el.closest('.if-field') || el;
+  wrap.classList.add('if-invalid');
+  let msgEl = wrap.querySelector('.if-field-errmsg');
+  if (!msgEl) { msgEl = document.createElement('div'); msgEl.className = 'if-field-errmsg'; wrap.appendChild(msgEl); }
+  msgEl.textContent = msg;
+}
+
+function _insClearInvalid(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  el.removeAttribute('aria-invalid');
+  const wrap = el.closest('.if-field') || el;
+  wrap.classList.remove('if-invalid');
+  const msgEl = wrap.querySelector('.if-field-errmsg');
+  if (msgEl) msgEl.remove();
+}
+
+function _insClearAllInvalid() {
+  document.querySelectorAll('#ins-form .if-invalid').forEach(w => w.classList.remove('if-invalid'));
+  document.querySelectorAll('#ins-form .if-field-errmsg').forEach(m => m.remove());
+  document.querySelectorAll('#ins-form [aria-invalid]').forEach(e => e.removeAttribute('aria-invalid'));
+}
+
+function _insJumpTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const focusable = el.matches('input,select,textarea,button') ? el : el.querySelector('input,select,textarea,button');
+  setTimeout(() => { try { (focusable || el).focus(); } catch (_) {} }, 350);
+}
+
+let _insLastProblems = []; // aktuell angezeigte Probleme, hält Liste/Markierungen beim Tippen synchron
+let _insSummaryActive = false; // true nur, solange die strukturierte Pflichtfelder-Zusammenfassung angezeigt wird (nicht z.B. die UID- oder Server-Fehlermeldung)
+
+function _insRenderSummaryList() {
+  const errEl = document.getElementById('ins-error');
+  if (!_insLastProblems.length) { errEl.style.display = 'none'; errEl.innerHTML = ''; return; }
+  errEl.innerHTML = '<strong>Bitte ergänze noch folgende Angaben:</strong><ul>' +
+    _insLastProblems.map(p => '<li><a href="#" onclick="_insJumpTo(\'' + p.id + '\');return false">' + _insEsc(p.label) + '</a></li>').join('') +
+    '</ul>';
+  errEl.style.display = 'block';
+}
+
+// Zeigt die Zusammenfassung initial beim fehlgeschlagenen Absenden. Gibt true
+// zurück, wenn Probleme vorhanden sind (submitInserat bricht dann ab).
+function _insShowValidationSummary(problems) {
+  _insClearAllInvalid();
+  _insLastProblems = problems;
+  _insSummaryActive = problems.length > 0;
+  if (!problems.length) {
+    document.getElementById('ins-error').style.display = 'none';
+    document.getElementById('ins-error').innerHTML = '';
+    return false;
+  }
+  problems.forEach(p => _insMarkInvalid(p.id, p.msg));
+  _insRenderSummaryList();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  return true;
+}
+
+// Live-Abgleich beim Tippen/Ändern: nur aktiv, solange UNSERE strukturierte
+// Zusammenfassung angezeigt wird - nicht, wenn stattdessen z.B. die UID- oder
+// eine Server-Fehlermeldung im selben Kasten steht (_insSummaryActive false).
+function _insRevalidateIfShown() {
+  if (!_insSummaryActive) return;
+  const problems = _insValidateRequired();
+  _insClearAllInvalid();
+  problems.forEach(p => _insMarkInvalid(p.id, p.msg));
+  _insLastProblems = problems;
+  _insSummaryActive = problems.length > 0;
+  _insRenderSummaryList();
+}
+
+document.getElementById('ins-form').addEventListener('input', _insRevalidateIfShown);
+document.getElementById('ins-form').addEventListener('change', _insRevalidateIfShown);
 
 // ── JOB SPEICHERN ──
 async function submitInserat(e) {
@@ -2293,6 +2451,7 @@ async function submitInserat(e) {
   const successEl = document.getElementById('ins-success');
   errEl.style.display = 'none';
   successEl.style.display = 'none';
+  _insSummaryActive = false;
 
   // UID-Nummer serverseitig prüfen
   if (_agSession) {
@@ -2308,23 +2467,13 @@ async function submitInserat(e) {
     return;
   }
 
+  const problems = _insValidateRequired();
+  if (_insShowValidationSummary(problems)) return;
+
   const titel   = document.getElementById('ins-titel').value.trim();
   const branche = document.getElementById('ins-branche').value;
-
-  if (!_terminChipsLocked && _terminChips.length < 1) {
-    errEl.textContent = 'Bitte mindestens einen Termin hinzufügen.';
-    errEl.style.display = 'block'; return;
-  }
   const mindestTermineRaw = document.getElementById('ins-mindest-termine').value;
   const mindestTermine = (_terminChips.length > 1 && mindestTermineRaw) ? parseInt(mindestTermineRaw, 10) : null;
-  if (mindestTermine && mindestTermine > _terminChips.length) {
-    errEl.textContent = 'Die Mindestanzahl an Terminen kann nicht größer sein als die Anzahl der gewählten Termine (' + _terminChips.length + ').';
-    errEl.style.display = 'block'; return;
-  }
-  if (!_zeitFuerAlle && _terminChips.some(c => !c.von || !c.bis)) {
-    errEl.textContent = 'Bitte für jeden Termin eine Uhrzeit (von/bis) angeben.';
-    errEl.style.display = 'block'; return;
-  }
   const datum = _terminChips[0].datum;
   const von     = document.getElementById('ins-von').value;
   const bis     = document.getElementById('ins-bis').value;
@@ -2335,11 +2484,6 @@ async function submitInserat(e) {
   const plaetze      = parseInt(document.getElementById('ins-plaetze').value, 10);
   const mindestalter = parseInt(document.getElementById('ins-mindestalter').value, 10) || 18;
   const beschr  = document.getElementById('ins-beschr').value.trim();
-
-  if (!titel || !branche || !datum || !von || !bis || !gehalt || !adresse || !ort || plaetze < 1) {
-    errEl.textContent = 'Bitte alle Pflichtfelder ausfüllen.';
-    errEl.style.display = 'block'; return;
-  }
 
   btn.textContent = 'Speichern…';
   btn.disabled    = true;
@@ -2794,6 +2938,14 @@ async function editInserat(jobId) {
 
   // Zum Tab "inserieren" wechseln
   showTab('inserieren');
+
+  // Validierungs-Markierungen eines vorherigen Versuchs (anderes Inserat)
+  // nicht mit hinübernehmen.
+  _insClearAllInvalid();
+  document.getElementById('ins-error').style.display = 'none';
+  document.getElementById('ins-error').innerHTML = '';
+  _insLastProblems = [];
+  _insSummaryActive = false;
 
   // Formular vorausfüllen
   document.getElementById('ins-titel').value     = job.titel || '';
