@@ -482,6 +482,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
+<script src="support-mode.js"></script>
 <script src="notifications.js"></script>
 <script src="info-tooltip.js"></script>
 <script>
@@ -693,7 +694,18 @@ async function saveAgProfil(userId) {
     telefon, website, branche, uid_nummer, beschreibung
   };
 
-  const { data, error } = await _saveProfileFields(userId, fields);
+  let error;
+  if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) {
+    // Support-Modus: läuft über die geloggte, feldbeschränkte Edge Function
+    // statt direkt über die Tabelle.
+    const { data: fnData, error: fnErr } = await odojSb.functions.invoke('support-profile-update', {
+      body: { sessionId: window.ODOJ_SUPPORT.sessionId, fields }
+    });
+    error = fnErr || fnData?.error ? { message: fnData?.error || fnErr.message } : null;
+  } else {
+    const res = await _saveProfileFields(userId, fields);
+    error = res.error;
+  }
 
   btn.disabled = false;
   btn.textContent = 'Speichern';
@@ -2041,6 +2053,22 @@ async function loadAgBewertungen(userId) {
 async function initProfil() {
   const session = await odojGetSession();
   if (!session) { window.location.href = 'login.html'; return; }
+
+  // ── Support-Modus (ODOJ-Admin-Support-Zugriff) ─────────────────────
+  // Eigener, klar abgegrenzter Block, gleiches Prinzip wie in meine-inserate.html:
+  // echte Sitzung bleibt die des Admins, nur die angezeigten Profildaten
+  // werden auf den Ziel-Arbeitgeber umgebogen. Schreiben läuft über
+  // support-profile-update (siehe saveAgProfil).
+  if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) {
+    const targetId = window.ODOJ_SUPPORT.targetUserId;
+    const { data: targetProfile } = await odojSb.from('Profile').select('*').eq('user_id', targetId).maybeSingle();
+    if (targetProfile?.rolle !== 'arbeitgeber') {
+      document.getElementById('profil-body').innerHTML = '<div class="profil-card">Dieses Konto ist kein Arbeitgeber-Konto.</div>';
+      return;
+    }
+    renderArbeitgeber({ user: { id: targetId, email: targetProfile.email || '(Support-Modus)' } }, targetProfile);
+    return;
+  }
 
   // Falls direkt nach der Registrierung über den Bestätigungslink hierher
   // navigiert wurde, bevor odojInitNav() auf der vorherigen Seite fertig war.

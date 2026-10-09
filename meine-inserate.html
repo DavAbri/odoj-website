@@ -989,6 +989,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js"></script>
+<script src="support-mode.js"></script>
 <script src="notifications.js"></script>
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
@@ -1180,6 +1181,17 @@ const BRANCHEN = {
 };
 
 // ── INSERATE LADEN ──
+// Nur im Support-Modus sichtbar: Inserat pausieren/reaktivieren über die
+// geloggte Edge Function, nie direkt über die Tabelle.
+async function supportToggleJobStatus(jobId, neuerStatus) {
+  if (!(window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active)) return;
+  const { data, error } = await odojSb.functions.invoke('support-job-upsert', {
+    body: { sessionId: window.ODOJ_SUPPORT.sessionId, jobId, fields: { status: neuerStatus } }
+  });
+  if (error || data?.error) { alert('Fehler: ' + (data?.error || error.message)); return; }
+  loadInserate();
+}
+
 async function loadInserate() {
   const grid = document.getElementById('inserate-grid');
   grid.innerHTML = '<div class="dash-loading">Lade Inserate…</div>';
@@ -1394,6 +1406,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
         </div>
         <div class="inserat-card-footer-actions">
           <a href="job-detail.html?id=${j.id}" class="inserat-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
+          ${(window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) ? `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="event.stopPropagation();supportToggleJobStatus('${j.id}','${j.status === 'aktiv' ? 'inaktiv' : 'aktiv'}')">${j.status === 'aktiv' ? 'Pausieren' : 'Reaktivieren'}</button>` : ''}
           <button class="bew-count-badge"
             data-job-id="${j.id}" data-job-titel="${titelEsc}" data-job-datum="${j.datum || ''}"
             onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel, this.dataset.jobDatum)">
@@ -2361,9 +2374,7 @@ async function submitInserat(e) {
     return;
   }
 
-  const { data: newJob, error } = await odojSb.from('jobs').insert({
-    arbeitgeber_id: _agSession.user.id,
-    firmenname:     _agFirmenname,
+  const jobFields = {
     titel, branche, datum,
     uhrzeit_von:   von,
     uhrzeit_bis:   bis,
@@ -2373,7 +2384,25 @@ async function submitInserat(e) {
     beschreibung:  beschr,
     status:        'aktiv',
     mindest_termine: mindestTermine
-  }).select('id').single();
+  };
+  const terminRows = _terminChips.length > 1
+    ? _terminChips.map(c => ({ datum: c.datum, uhrzeit_von: _zeitFuerAlle ? null : c.von, uhrzeit_bis: _zeitFuerAlle ? null : c.bis }))
+    : null;
+
+  let newJob, error;
+  if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) {
+    // Support-Modus: läuft über die geloggte, feldbeschränkte Edge Function
+    // statt direkt über die Tabelle - gleiche Fehlerbehandlung wie normal,
+    // damit der Admin exakt den Fehler sieht, den der Arbeitgeber sähe.
+    const { data, error: fnErr } = await odojSb.functions.invoke('support-job-upsert', {
+      body: { sessionId: window.ODOJ_SUPPORT.sessionId, fields: jobFields, termine: terminRows }
+    });
+    if (fnErr || data?.error) { error = new Error(data?.error || fnErr.message); }
+    else { newJob = data.job; }
+  } else {
+    const res = await odojSb.from('jobs').insert({ arbeitgeber_id: _agSession.user.id, firmenname: _agFirmenname, ...jobFields }).select('id').single();
+    newJob = res.data; error = res.error;
+  }
 
   if (error) {
     btn.textContent = 'Job speichern';
@@ -2382,8 +2411,9 @@ async function submitInserat(e) {
     errEl.style.display = 'block'; return;
   }
 
-  // Bei "Mehrere Tage": Termine als eigene Zeilen speichern
-  if (_terminChips.length > 1 && newJob?.id) {
+  // Bei "Mehrere Tage": Termine als eigene Zeilen speichern (Support-Modus
+  // hat das oben schon über die Edge Function miterledigt).
+  if (!(window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) && _terminChips.length > 1 && newJob?.id) {
     const { error: termineError } = await odojSb.from('job_termine').insert(
       _terminChips.map(c => ({
         job_id: newJob.id,
@@ -2431,6 +2461,34 @@ async function submitInserat(e) {
 
     if (!session) {
       window.location.href = 'login.html';
+      return;
+    }
+
+    // ── Support-Modus (ODOJ-Admin-Support-Zugriff) ─────────────────────
+    // Eigener, klar abgegrenzter Block: die echte Supabase-Sitzung bleibt
+    // die des Admins, nur die Daten-Abfragen in diesem Dashboard werden auf
+    // den Ziel-Arbeitgeber umgebogen (_agSession.user.id). Lesen läuft über
+    // die normalen Admin-Leserechte, jede Schreibaktion läuft separat über
+    // die support-*-Edge-Functions (siehe submitInserat/pauseInserat).
+    if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) {
+      const targetId = window.ODOJ_SUPPORT.targetUserId;
+      const { data: targetProfile } = await odojSb
+        .from('Profile')
+        .select('rolle, firmenname, uid_nummer, adresse, adresse_ort')
+        .eq('user_id', targetId)
+        .single();
+      if (targetProfile?.rolle !== 'arbeitgeber') {
+        document.getElementById('mi-wrong-role').style.display = 'flex';
+        return;
+      }
+      _agSession    = { user: { id: targetId, email: null } };
+      _agFirmenname = targetProfile.firmenname || '';
+      _agUidNummer  = targetProfile.uid_nummer || '';
+      const fnEl = document.getElementById('mi-firmenname');
+      if (fnEl) fnEl.textContent = _agFirmenname + ' (Support-Modus)';
+      document.getElementById('mi-dashboard').style.display = 'block';
+      applyUidCheck(_agUidNummer);
+      loadInserate();
       return;
     }
 
@@ -2875,8 +2933,7 @@ async function confirmEditUpdate() {
 
 async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
   const { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, beschr, mindestTermine } = formData;
-
-  const { error } = await odojSb.from('jobs').update({
+  const updateFields = {
     titel, branche, datum,
     uhrzeit_von:   von,
     uhrzeit_bis:   bis,
@@ -2885,7 +2942,33 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
     adresse, ort, plaetze, mindestalter,
     beschreibung:  beschr,
     mindest_termine: mindestTermine ?? null
-  }).eq('id', _editJobId);
+  };
+
+  let error;
+  if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) {
+    // Support-Modus: Termine werden hier komplett ersetzt (einfacher, sicherer
+    // Ersatz statt der feingranularen Chip-für-Chip-Logik unten).
+    const terminRows = _terminChips.length > 1
+      ? _terminChips.map(c => ({ datum: c.datum, uhrzeit_von: _zeitFuerAlle ? null : (c.von || null), uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null) }))
+      : null;
+    const { data, error: fnErr } = await odojSb.functions.invoke('support-job-upsert', {
+      body: { sessionId: window.ODOJ_SUPPORT.sessionId, jobId: _editJobId, fields: updateFields, termine: terminRows }
+    });
+    error = fnErr || data?.error ? new Error(data?.error || fnErr.message) : null;
+    btn.textContent = 'Änderungen speichern';
+    btn.disabled = false;
+    if (error) { errEl.textContent = 'Fehler beim Speichern: ' + error.message; errEl.style.display = 'block'; return; }
+    successEl.textContent = 'Inserat aktualisiert (Support-Modus).';
+    successEl.style.display = 'block';
+    document.getElementById('ins-form').reset();
+    _resetTerminUI();
+    cancelEditInserat();
+    loadInserate();
+    return;
+  }
+
+  const res = await odojSb.from('jobs').update(updateFields).eq('id', _editJobId);
+  error = res.error;
 
   btn.textContent = 'Änderungen speichern';
   btn.disabled = false;
