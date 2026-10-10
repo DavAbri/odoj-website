@@ -110,10 +110,13 @@ serve(async (req) => {
     }
 
     // ── 2-4) Rechnungs-Abwicklung je Job ──────────────────────────────────
+    // "angenommen" UND "abgeschlossen" (confirmPresence() setzt den Status
+    // beim Bestätigen auf "abgeschlossen" - wer das hier ausließe, würde nie
+    // abgerechnet, siehe rechnung_erstellen_fuer_job()-Fix gegen denselben Bug).
     const { data: alleAngenommen, error: angErr } = await admin
       .from("bewerbungen")
       .select("id, job_id, anwesenheit_bestaetigt, nicht_gekommen, termin_id, jobs!inner(id, titel, datum, arbeitgeber_id, rechnung_blockiert, rechnung_erinnerung_gesendet_am), job_termine(datum)")
-      .eq("status", "angenommen");
+      .in("status", ["angenommen", "abgeschlossen"]);
     if (angErr) result.fehler.push("job-abwicklung-query: " + angErr.message);
 
     const { data: bestehendeRechnungen } = await admin.from("invoices").select("job_id");
