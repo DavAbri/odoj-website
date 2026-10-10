@@ -668,41 +668,11 @@ async function submitZurueckziehen() {
   const job = bew ? _jobMap[bew.job_id] : null;
   const wasAngenommen = _withdrawBewStatus === 'angenommen';
 
-  // 1. Bewerbung auf abgelehnt setzen - zurueckgezogen=true unterscheidet das
-  // von einer Ablehnung durch den Arbeitgeber (gleicher status-Wert,
-  // unterschiedliche Anzeige/Behandlung, siehe odojStatusLabel in auth.js).
-  const { error: updErr } = await odojSb
-    .from('bewerbungen')
-    .update({ status: 'abgelehnt', zurueckgezogen: true })
-    .eq('id', _withdrawBewId);
-
-  if (updErr) { alert('Fehler: ' + updErr.message); btn.disabled = false; btn.textContent = 'Zurückziehen'; return; }
-
-  // 2. Wenn 'angenommen' war → Jobvertrag ggf. auch auf abgelehnt setzen
-  if (wasAngenommen) {
-    await odojSb
-      .from('vertraege')
-      .update({ status: 'abgelehnt_jobber' })
-      .eq('bewerbung_id', _withdrawBewId)
-      .neq('status', 'beide_zugestimmt');
-  }
-
-  // 3. E9: NUR eine Mail an den Arbeitgeber (Name, Inserat, Datum, Grund) -
-  // bewusst KEINE Chat-Nachricht (weder an ihn noch eine Selbstnotiz an den
-  // Jobber selbst).
-  const jobTitle = job?.titel || 'dem Job';
-  const agId = job?.arbeitgeber_id;
-  const datumStr = job?.datum
-    ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : '';
-  const { data: meinProfil } = await odojSb.from('Profile').select('vorname, nachname').eq('user_id', session.user.id).maybeSingle();
-  const jobberName = [meinProfil?.vorname, meinProfil?.nachname].filter(Boolean).join(' ') || 'Ein Jobber';
-
-  if (agId) {
-    odojSb.functions.invoke('send-email', {
-      body: { type: 'bewerbung_storniert', recipientId: agId, jobberName, jobTitel: jobTitle, datum: datumStr, grund: reason, warAngenommen }
-    }).catch(err => console.error('[E-Mail] Storno-Benachrichtigung an Arbeitgeber fehlgeschlagen:', err));
-  }
+  const { error } = await odojZurueckziehenBewerbung({
+    bewId: _withdrawBewId, wasAngenommen,
+    jobTitel: job?.titel, jobDatum: job?.datum, agId: job?.arbeitgeber_id, reason
+  });
+  if (error) { alert('Fehler: ' + error.message); btn.disabled = false; btn.textContent = 'Zurückziehen'; return; }
 
   closeZurueckziehenModal();
   loadMeineBewerbungen();

@@ -38,6 +38,48 @@ function odojStatusLabel(bew) {
   return ODOJ_BEWERBUNG_STATUS_LABEL[bew] || bew || '';
 }
 
+// ── Block E9: zentrale Zurückziehen/Stornieren-Logik ─────────────────────
+// Wiederverwendet von meine-bewerbungen.html, job-detail.html und chat.html,
+// damit das Verhalten (insbesondere: KEINE Chat-Nachricht, nur eine direkte
+// Mail an den Arbeitgeber) an genau einer Stelle gepflegt wird.
+async function odojZurueckziehenBewerbung({ bewId, wasAngenommen, jobTitel, jobDatum, agId, reason }) {
+  // 1. Bewerbung auf abgelehnt setzen - zurueckgezogen=true unterscheidet das
+  // von einer Ablehnung durch den Arbeitgeber (gleicher status-Wert,
+  // unterschiedliche Anzeige/Behandlung, siehe odojStatusLabel oben).
+  const { error: updErr } = await odojSb
+    .from('bewerbungen')
+    .update({ status: 'abgelehnt', zurueckgezogen: true })
+    .eq('id', bewId);
+  if (updErr) return { error: updErr };
+
+  // 2. Wenn 'angenommen' war → Jobvertrag ggf. auch auf abgelehnt setzen
+  if (wasAngenommen) {
+    await odojSb
+      .from('vertraege')
+      .update({ status: 'abgelehnt_jobber' })
+      .eq('bewerbung_id', bewId)
+      .neq('status', 'beide_zugestimmt');
+  }
+
+  // 3. NUR eine Mail an den Arbeitgeber - bewusst KEINE Chat-Nachricht.
+  const datumStr = jobDatum
+    ? new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '';
+  const session = await odojGetSession();
+  const { data: meinProfil } = session
+    ? await odojSb.from('Profile').select('vorname, nachname').eq('user_id', session.user.id).maybeSingle()
+    : { data: null };
+  const jobberName = [meinProfil?.vorname, meinProfil?.nachname].filter(Boolean).join(' ') || 'Ein Jobber';
+
+  if (agId) {
+    odojSb.functions.invoke('send-email', {
+      body: { type: 'bewerbung_storniert', recipientId: agId, jobberName, jobTitel: jobTitel || 'dem Job', datum: datumStr, grund: reason, warAngenommen }
+    }).catch(err => console.error('[E-Mail] Storno-Benachrichtigung an Arbeitgeber fehlgeschlagen:', err));
+  }
+
+  return { error: null };
+}
+
 // ── Vorschau-Modus: zentrale app_settings einmal pro Seitenaufruf laden ──
 // Bei Fehlern wird bewusst in den Vorschau-Modus "fail-closed" gegangen
 // (Jobs lieber einmal fälschlich verstecken als vor dem Launch versehentlich
