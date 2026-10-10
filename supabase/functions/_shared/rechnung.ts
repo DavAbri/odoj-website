@@ -10,11 +10,12 @@ const TEXT_DARK = rgb(0.15, 0.15, 0.18);
 const TEXT_MUTED = rgb(0.4, 0.4, 0.45);
 const HINT_BG = rgb(0.965, 0.965, 0.97);
 
-// ODOJ-Stammdaten (Rechnungssteller) - fix, nicht konfigurierbar, da Firmendaten.
+// ODOJ-Stammdaten (Rechnungssteller) - Name/Adresse fix (ändern sich faktisch
+// nie), Firmenbuchnummer/-gericht und ein optionaler USt-Hinweistext kommen
+// dagegen aus "einstellungen" (Block B4 - zentral korrigierbar ohne Code-
+// Änderung, z.B. falls das Firmenbuchgericht noch bestätigt werden muss).
 const ODOJ_FIRMENNAME = "ODOJ OG";
 const ODOJ_ADRESSE = "Rheinfähre 22, 6845 Hohenems";
-const ODOJ_FN = "FN 685548i";
-const ODOJ_FIRMENBUCHGERICHT = "Firmenbuchgericht Feldkirch";
 
 export interface RechnungPosition {
   beschreibung: string;
@@ -40,6 +41,9 @@ export interface RechnungData {
   odojUidNummer: string | null;
   odojIban: string | null;
   odojKontoinhaber: string | null;
+  odojFirmenbuchnummer: string | null;
+  odojFirmenbuchgericht: string | null;
+  odojUstHinweis: string | null;
 }
 
 export async function fetchRechnungData(admin: any, invoiceId: string): Promise<{ data: RechnungData; arbeitgeberId: string } | null> {
@@ -70,7 +74,7 @@ export async function fetchRechnungData(admin: any, invoiceId: string): Promise<
   const { data: settings } = await admin
     .from("einstellungen")
     .select("schluessel, wert_text")
-    .in("schluessel", ["odoj_iban", "odoj_kontoinhaber", "odoj_uid_nummer"]);
+    .in("schluessel", ["odoj_iban", "odoj_kontoinhaber", "odoj_uid_nummer", "odoj_firmenbuchnummer", "odoj_firmenbuchgericht", "odoj_ust_hinweis"]);
   const settingsMap: Record<string, string> = {};
   (settings || []).forEach((s: any) => { settingsMap[s.schluessel] = s.wert_text; });
 
@@ -92,6 +96,9 @@ export async function fetchRechnungData(admin: any, invoiceId: string): Promise<
       odojUidNummer: settingsMap["odoj_uid_nummer"] || null,
       odojIban: settingsMap["odoj_iban"] || null,
       odojKontoinhaber: settingsMap["odoj_kontoinhaber"] || null,
+      odojFirmenbuchnummer: settingsMap["odoj_firmenbuchnummer"] || null,
+      odojFirmenbuchgericht: settingsMap["odoj_firmenbuchgericht"] || null,
+      odojUstHinweis: settingsMap["odoj_ust_hinweis"] || null,
     },
   };
 }
@@ -137,6 +144,16 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
   const marginX = 40;
   const lineGap = 16;
 
+  // B4: jede Nicht-"ODOJ-"-Rechnungsnummer (z.B. Staging-Praefix "TEST-")
+  // bekommt einen deutlich sichtbaren, roten Hinweis - verhindert, dass eine
+  // Testrechnung je mit einer echten verwechselt werden kann.
+  if (!d.invoiceNumber.startsWith("ODOJ-")) {
+    const warnH = 26;
+    page.drawRectangle({ x: 0, y: y - warnH + lineGap, width, height: warnH, color: rgb(0.75, 0.11, 0.17) });
+    page.drawText("TESTRECHNUNG – UNGÜLTIG", { x: marginX, y: y - warnH + lineGap + 8, size: 12, font: fontBold, color: WHITE });
+    y -= warnH + 10;
+  }
+
   // Rechnungssteller / Rechnungsempfänger nebeneinander
   page.drawText("Rechnungssteller", { x: marginX, y, size: 10, font: fontBold, color: TEXT_MUTED });
   page.drawText("Rechnungsempfänger", { x: marginX + 300, y, size: 10, font: fontBold, color: TEXT_MUTED });
@@ -147,7 +164,16 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
     : "nicht angegeben";
   // Kleinunternehmerregelung: UID-Nummer ist optional und erscheint nur,
   // wenn sie als Einstellung gepflegt ist - kein Platzhaltertext (B4).
-  const stellerLines = [ODOJ_FIRMENNAME, ODOJ_ADRESSE, ODOJ_FN, ODOJ_FIRMENBUCHGERICHT];
+  // Firmenbuchnummer/-gericht kommen jetzt ebenfalls aus den Einstellungen;
+  // ein Fallback-Platzhalter macht eine fehlende Pflege sofort sichtbar,
+  // statt sie stillschweigend wegzulassen (anders als bei der UID, die laut
+  // Prompt tatsächlich optional ist).
+  const stellerLines = [
+    ODOJ_FIRMENNAME,
+    ODOJ_ADRESSE,
+    nv(d.odojFirmenbuchnummer),
+    d.odojFirmenbuchgericht ? `Firmenbuchgericht: ${d.odojFirmenbuchgericht}` : "Firmenbuchgericht: nicht angegeben",
+  ];
   if (d.odojUidNummer && d.odojUidNummer.trim()) stellerLines.push(`UID-Nummer: ${d.odojUidNummer.trim()}`);
   const empfaengerLines = [nv(d.arbeitgeber.firmenname), agAdresse];
 
@@ -208,6 +234,13 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
   page.drawText("Rechnungsbetrag gesamt", { x: marginX + 14, y: y - 12, size: 11, font: fontBold, color: TEXT_MUTED });
   page.drawText(`€ ${amountFmt}`, { x: width - marginX - 110, y: y - 14, size: 16, font: fontBold, color: NAVY });
   y -= 60;
+
+  // Optionaler USt-Hinweistext (Standard leer = nichts angezeigt, siehe B4) -
+  // nur gesetzt, falls der Steuerberater das später empfiehlt.
+  if (d.odojUstHinweis && d.odojUstHinweis.trim()) {
+    page.drawText(d.odojUstHinweis.trim(), { x: marginX, y, size: 9, font: fontRegular, color: TEXT_MUTED });
+    y -= 20;
+  }
 
   sectionTitle("Zahlungshinweis");
   row("IBAN:", nv(d.odojIban));
