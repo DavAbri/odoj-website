@@ -1533,10 +1533,10 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
     odojSb.from('Profile')
       .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum, iban')
       .in('user_id', jobberIds.length ? jobberIds : ['none']),
-    odojSb.from('bewertungen')
-      .select('bewertet_id, sterne')
-      .in('bewertet_id', jobberIds.length ? jobberIds : ['none'])
-      .eq('rolle_bewerter', 'arbeitgeber'),
+    // Reputation (Schnitt+Anzahl über ALLE Arbeitgeber) läuft über die
+    // security-definer Funktion statt direkt über die Tabelle - liefert nie
+    // einzelne Bewertungen, bewerter_id oder Kommentar anderer Arbeitgeber.
+    odojSb.rpc('bewertung_reputation', { p_bewertet_ids: jobberIds, p_rolle: 'arbeitgeber' }),
     odojSb.from('vertraege').select('bewerbung_id, id')
       .in('bewerbung_id', acceptedBewIds.length ? acceptedBewIds : ['00000000-0000-0000-0000-000000000000']),
     odojSb.from('invoices').select('bewerbung_id, invoice_number')
@@ -1549,13 +1549,8 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   bewerbungen.forEach(b => {
     if (profileMap[b.jobber_id]) _bewerbungProfileCache[b.id] = profileMap[b.jobber_id];
   });
-  const rawRatings = {};
   ratRes.data?.forEach(r => {
-    if (!rawRatings[r.bewertet_id]) rawRatings[r.bewertet_id] = [];
-    rawRatings[r.bewertet_id].push(r.sterne);
-  });
-  Object.entries(rawRatings).forEach(([uid, sterne]) => {
-    bewMap[uid] = { avg: sterne.reduce((a,b)=>a+b,0)/sterne.length, count: sterne.length };
+    bewMap[r.bewertet_id] = { avg: Number(r.avg_sterne), count: r.anzahl };
   });
   vertragRes?.data?.forEach(v => { vertragMap[v.bewerbung_id] = v.id; });
 

@@ -465,15 +465,16 @@ async function initJobDetail() {
         .select('firmenname, vorname, nachname, adresse, plz, ort, telefon, website')
         .eq('user_id', job.arbeitgeber_id)
         .maybeSingle(),
-      odojSb.from('bewertungen')
-        .select('sterne')
-        .eq('bewertet_id', job.arbeitgeber_id)
-        .eq('rolle_bewerter', 'jobber')
+      // Reputation (Schnitt+Anzahl über ALLE Jobber) läuft über die
+      // security-definer Funktion statt direkt über die Tabelle - diese
+      // Seite ist auch ohne Login sichtbar, die Funktion gibt aber nie
+      // einzelne Bewertungen, bewerter_id oder Kommentar preis.
+      odojSb.rpc('bewertung_reputation', { p_bewertet_ids: [job.arbeitgeber_id], p_rolle: 'jobber' })
     ]);
     _jdAgProfile = profRes.data || null;
-    if (bewRes.data && bewRes.data.length > 0) {
-      const sum = bewRes.data.reduce((a, b) => a + (b.sterne || 0), 0);
-      _jdAgBew = { avg: sum / bewRes.data.length, count: bewRes.data.length };
+    const bewRow = bewRes.data?.[0];
+    if (bewRow && bewRow.anzahl > 0) {
+      _jdAgBew = { avg: Number(bewRow.avg_sterne), count: bewRow.anzahl };
     }
   }
 
