@@ -1662,7 +1662,7 @@ function _fmtEinsatzStart(datum, uhrzeitVon) {
 // ── Aktions-Buttons für EINEN Termin (Annehmen/Ablehnen/Nachricht/Vertrag/Anwesenheit) ──
 function renderBewActions(b, realName, vertragId, effDatum) {
   const acceptBtn = b.status !== 'angenommen'
-    ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${b.id}','angenommen')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
+    ? `<button class="bew-btn bew-btn-accept" onclick="confirmAnnehmen('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
   const rejectBtn = b.status !== 'abgelehnt'
     ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '';
 
@@ -1683,7 +1683,7 @@ function renderBewActions(b, realName, vertragId, effDatum) {
     : '';
 
   return `${acceptBtn}${rejectBtn}
-    <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
+    <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In Kontakt treten</button>
     ${b.status === 'angenommen' ? (vertragId
       ? `<a href="vertrag-ansehen.html?id=${vertragId}" class="bew-btn" style="background:#E6F5EE;color:#1A7A50;border:1px solid #B3E0CA;text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>`
       : `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>`)
@@ -1803,7 +1803,10 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
             <div class="bew-item-date">Beworben am ${dateStr}</div>
           </div>
         </div>
-        <span class="bew-st-badge ${primarySt.cls}" id="bew-badge-${primary.id}">${primarySt.label}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="bew-btn" style="background:transparent;border:1px solid var(--gray-lt);color:var(--text-mid);padding:5px 12px;font-size:12px" onclick="showJobberProfile('${primary.jobber_id || ''}', '${nameEsc}')">Details anzeigen</button>
+          <span class="bew-st-badge ${primarySt.cls}" id="bew-badge-${primary.id}">${primarySt.label}</span>
+        </div>
       </div>
       ${profileDetails}
       <div class="bew-termin-block" id="bew-item-${primary.id}">
@@ -1980,6 +1983,22 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   }
 }
 
+// D3: Annehmen erst nach explizitem Bestätigungsschritt.
+let _annahmeBewId = null;
+function confirmAnnehmen(bewId) {
+  _annahmeBewId = bewId;
+  document.getElementById('annahme-confirm-overlay').style.display = 'flex';
+}
+function closeAnnahmeConfirm() {
+  document.getElementById('annahme-confirm-overlay').style.display = 'none';
+  _annahmeBewId = null;
+}
+async function bestaetigeAnnehmen() {
+  const bewId = _annahmeBewId;
+  closeAnnahmeConfirm();
+  if (bewId) await updateBewStatus(bewId, 'angenommen');
+}
+
 async function updateBewStatus(bewId, newStatus) {
   const { error } = await odojSb.from('bewerbungen').update({ status: newStatus }).eq('id', bewId);
   if (error) { alert('Fehler: ' + error.message); return; }
@@ -2102,7 +2121,7 @@ async function updateBewStatus(bewId, newStatus) {
       actEl.innerHTML =
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
         `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>` +
-        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>` +
+        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In Kontakt treten</button>` +
         `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>` +
         (jobDatumErreicht
           ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigen</button>`
@@ -3244,6 +3263,18 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
 </div>
 
 <!-- LÖSCHEN BESTÄTIGEN MODAL -->
+<!-- D3: Bestätigungsschritt "Bewerbung annehmen" -->
+<div id="annahme-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeAnnahmeConfirm()">
+  <div style="background:var(--white);border-radius:20px;max-width:380px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:32px 28px;text-align:center">
+    <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">Bewerbung wirklich annehmen?</h3>
+    <p style="font-size:13px;color:var(--text-lt);line-height:1.6;margin-bottom:24px">Der Bewerber wird benachrichtigt und der Platz gilt als vergeben.</p>
+    <div style="display:flex;gap:10px">
+      <button onclick="bestaetigeAnnehmen()" style="flex:1;background:var(--accent);color:var(--navy);border:none;border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Eingabe bestätigen</button>
+      <button onclick="closeAnnahmeConfirm()" style="flex:1;background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeDeleteModal()">
   <div style="background:var(--white);border-radius:20px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:36px 32px;text-align:center">
     <div style="width:56px;height:56px;background:#fff0f0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
@@ -3287,13 +3318,10 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
       <div style="display:flex;flex-direction:column;gap:10px">
         <a id="vertrag-modal-link" href="#" class="btn btn-accent" style="text-align:center;justify-content:center;text-decoration:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Jetzt Vertrag ausfüllen
+          Vorlage verwenden
         </a>
-        <button onclick="closeVertragModal()" style="background:transparent;border:2px solid var(--gray-lt);color:var(--text-mid);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;padding:12px;border-radius:var(--r-sm);cursor:pointer;transition:all .2s">
-          Später
-        </button>
-        <button onclick="vertragSelbstErstellen()" style="background:transparent;border:none;color:var(--text-lt);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:500;padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">
-          Ich erstelle den Dienstvertrag selbst
+        <button onclick="vertragSelbstErstellen()" style="background:transparent;border:2px solid var(--gray-lt);color:var(--text-mid);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;padding:12px;border-radius:var(--r-sm);cursor:pointer;transition:all .2s">
+          Nicht benötigt
         </button>
       </div>
     </div>
@@ -3329,7 +3357,7 @@ async function vertragSelbstErstellen() {
     bewerbung_id:  _currentVertragBewId,
     sender_id:     _agSession.user.id,
     empfaenger_id: bew.jobber_id,
-    nachricht:     'ℹ️ Dienstvertrag\n\nDer Arbeitgeber wird den Dienstvertrag selbst erstellen und dir direkt zukommen lassen.',
+    nachricht:     'ℹ️ Dienstvertrag\n\nFür diesen Einsatz wird kein Dienstvertrag über die Plattform benötigt.',
     gelesen:       false,
     erstellt_am:   new Date().toISOString()
   };
