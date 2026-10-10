@@ -1669,10 +1669,13 @@ function renderBewActions(b, realName, vertragId, effDatum) {
   const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, b._effUhrzeit);
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
-        ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigt</button>`
-        : jobDatumErreicht
-          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzbeginn verfügbar">Erst ab ${_fmtEinsatzStart(effDatum, b._effUhrzeit)} verfügbar</button>`)
+        ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigt</button>`
+        : b.nicht_gekommen
+          ? `<button class="bew-btn" style="background:#FDE8E8;color:#c0392b;border:1px solid #f3b8b8" disabled>Nicht gekommen gemeldet</button>`
+          : jobDatumErreicht
+            ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigen</button>`
+            + `<a class="bew-btn" style="background:#FFF0F0;color:#c0392b;border:1px solid #f3b8b8;text-decoration:none;display:inline-flex;align-items:center" href="nicht-erschienen.html?bew=${b.id}">Nicht gekommen</a>`
+            : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzbeginn verfügbar">Erst ab ${_fmtEinsatzStart(effDatum, b._effUhrzeit)} verfügbar</button>`)
     : '';
 
   const datenblattBtn = b.status === 'angenommen'
@@ -1842,27 +1845,15 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     if (jobData?.tagesgehalt) lohnBetrag = Number(jobData.tagesgehalt) || 0;
   }
 
-  // Rechnung anlegen: Nummerierung + Insert laufen atomar server-seitig
-  // (Edge Function "rechnung-erstellen"), damit zwei gleichzeitige
-  // Bestätigungen niemals dieselbe Rechnungsnummer bekommen können.
+  // Unsere Vermittlungsgebühr wird NICHT mehr hier pro Bestätigung einzeln
+  // in Rechnung gestellt - die geplante Funktion "anwesenheit-abwicklung"
+  // legt eine konsolidierte Rechnung je Job an, sobald für alle Bewerbungen
+  // dieses Jobs eine Entscheidung vorliegt und der letzte Einsatztag vorbei
+  // ist (siehe Block B1/B2/B5 - Rechnung als eigener, zeitlich entkoppelter
+  // Schritt statt an diesen Klick gebunden).
   const vermittlungsgebuehr = 15;
   const gesamtBetrag = lohnBetrag + vermittlungsgebuehr;
-
-  let rechnungsnummer = '';
-  try {
-    const { data: rechnungResult, error: rechErr } = await odojSb.functions.invoke('rechnung-erstellen', {
-      body: { bewerbungId: bewId }
-    });
-    if (rechErr) throw rechErr;
-    rechnungsnummer = rechnungResult?.invoiceNumber || '';
-    if (rechnungResult?.versandBereit && rechnungResult?.invoiceId) {
-      odojSb.functions.invoke('send-email', {
-        body: { type: 'rechnung_erstellt', recipientId: agId, invoiceId: rechnungResult.invoiceId }
-      }).catch(() => {});
-    }
-  } catch (e) {
-    console.warn('Rechnung konnte nicht angelegt werden:', e?.message || e);
-  }
+  const rechnungsnummer = '';
 
   const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
   const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
@@ -2092,7 +2083,8 @@ async function updateBewStatus(bewId, newStatus) {
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>` +
         `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>` +
         (jobDatumErreicht
-          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
+          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigen</button>`
+            + `<a class="bew-btn" style="background:#FFF0F0;color:#c0392b;border:1px solid #f3b8b8;text-decoration:none;display:inline-flex;align-items:center" href="nicht-erschienen.html?bew=${bewId}">Nicht gekommen</a>`
           : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzbeginn verfügbar">${effDatum ? 'Erst ab ' + _fmtEinsatzStart(effDatum, effUhrzeit) + ' verfügbar' : 'Erst ab Einsatzbeginn verfügbar'}</button>`);
     }
   }

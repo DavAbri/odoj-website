@@ -1,9 +1,13 @@
-// Legt für einen erfolgreich abgeschlossenen Einsatz (bewerbungen-Zeile) genau
-// eine Rechnung an - aufgerufen vom Arbeitgeber beim Bestätigen der Anwesenheit
-// (meine-inserate.html). Die eigentliche Nummerierung + das Anlegen laufen
-// atomar in der Datenbankfunktion rechnung_erstellen() (siehe Migration), die
-// hier als der AUFRUFENDE Arbeitgeber (nicht als service_role) ausgeführt wird,
-// damit auth.uid() und RLS korrekt greifen.
+// Legt für einen Job eine konsolidierte Rechnung an (eine Position pro
+// abgerechneter Bewerbung, siehe rechnung_erstellen_fuer_job() in der
+// Migration). Normalerweise löst das die geplante Funktion
+// "anwesenheit-abwicklung" automatisch aus, sobald der letzte Arbeitstag
+// vorbei und für alle Bewerbungen entschieden ist. Diese Funktion dient als
+// manueller Weg für den Admin, falls eine Rechnung automatisch blockiert
+// wurde (jobs.rechnung_blockiert, siehe Block B2) und nach Prüfung doch
+// erstellt werden soll - läuft als der aufrufende Nutzer (nicht
+// service_role), damit auth.uid()/RLS innerhalb der Datenbankfunktion
+// korrekt greifen.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -20,8 +24,6 @@ function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 }
 
-// Grobe, serverseitige Gültigkeitsprüfung statt auf den exakten Platzhalter-Text
-// zu prüfen - erkennt auch künftige abweichende Platzhalter-Formulierungen.
 function isRealIban(v: string | null): boolean {
   return !!v && /^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(v.replace(/\s+/g, "").toUpperCase());
 }
@@ -38,25 +40,26 @@ serve(async (req) => {
     if (!token) return json({ error: "Nicht angemeldet." }, 401);
 
     const body = await req.json().catch(() => ({}));
-    const bewerbungId = body?.bewerbungId;
-    if (!bewerbungId) return json({ error: "bewerbungId fehlt." }, 400);
+    const jobId = body?.jobId;
+    if (!jobId) return json({ error: "jobId fehlt." }, 400);
 
-    // Als der aufrufende Arbeitgeber selbst (nicht service_role) - RLS und
-    // auth.uid() innerhalb der SQL-Funktion greifen dadurch korrekt.
     const callerClient = createClient(SUPABASE_URL, ANON_KEY, {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
 
     const { data: invoice, error: rpcErr } = await callerClient
-      .rpc("rechnung_erstellen", { p_bewerbung_id: bewerbungId })
+      .rpc("rechnung_erstellen_fuer_job", { p_job_id: jobId })
       .single();
 
     if (rpcErr || !invoice) {
-      console.error("rechnung_erstellen RPC error:", rpcErr?.message);
+      console.error("rechnung_erstellen_fuer_job RPC error:", rpcErr?.message);
       return json({ error: rpcErr?.message || "Rechnung konnte nicht angelegt werden." }, 400);
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+    // Blockade aufheben, falls dies der manuelle Weg nach B2-Stopp war.
+    await admin.from("jobs").update({ rechnung_blockiert: false }).eq("id", jobId);
+
     const { data: settings } = await admin
       .from("einstellungen")
       .select("schluessel, wert_text")
@@ -66,8 +69,8 @@ serve(async (req) => {
     const versandBereit = isRealIban(iban) && isRealUid(uid);
 
     return json({
-      invoiceId: invoice.id,
-      invoiceNumber: invoice.invoice_number,
+      invoiceId: (invoice as any).id,
+      invoiceNumber: (invoice as any).invoice_number,
       versandBereit,
     }, 200);
   } catch (error) {

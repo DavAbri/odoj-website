@@ -16,6 +16,12 @@ const ODOJ_ADRESSE = "Rheinfähre 22, 6845 Hohenems";
 const ODOJ_FN = "FN 685548i";
 const ODOJ_FIRMENBUCHGERICHT = "Firmenbuchgericht Feldkirch";
 
+export interface RechnungPosition {
+  beschreibung: string;
+  einsatzdatum: string | null;
+  betrag: number;
+}
+
 export interface RechnungData {
   invoiceNumber: string;
   issuedAt: string;
@@ -29,8 +35,8 @@ export interface RechnungData {
   };
   job: {
     titel: string | null;
-    datum: string | null;
   };
+  positionen: RechnungPosition[];
   odojUidNummer: string | null;
   odojIban: string | null;
   odojKontoinhaber: string | null;
@@ -39,28 +45,21 @@ export interface RechnungData {
 export async function fetchRechnungData(admin: any, invoiceId: string): Promise<{ data: RechnungData; arbeitgeberId: string } | null> {
   const { data: invoice } = await admin
     .from("invoices")
-    .select("id, invoice_number, bewerbung_id, arbeitgeber_id, amount, issued_at, due_at")
+    .select("id, invoice_number, job_id, arbeitgeber_id, amount, issued_at, due_at")
     .eq("id", invoiceId)
     .single();
   if (!invoice) return null;
 
-  const { data: bew } = await admin
-    .from("bewerbungen")
-    .select("job_id, termin_id")
-    .eq("id", invoice.bewerbung_id)
-    .single();
+  const [{ data: job }, { data: items }] = await Promise.all([
+    admin.from("jobs").select("titel").eq("id", invoice.job_id).maybeSingle(),
+    admin.from("invoice_items").select("beschreibung, einsatzdatum, betrag").eq("invoice_id", invoice.id).order("einsatzdatum"),
+  ]);
 
-  let jobTitel: string | null = null;
-  let jobDatum: string | null = null;
-  if (bew?.job_id) {
-    const { data: job } = await admin.from("jobs").select("titel, datum").eq("id", bew.job_id).single();
-    jobTitel = job?.titel || null;
-    jobDatum = job?.datum || null;
-  }
-  if (bew?.termin_id) {
-    const { data: termin } = await admin.from("job_termine").select("datum").eq("id", bew.termin_id).single();
-    if (termin?.datum) jobDatum = termin.datum;
-  }
+  const positionen: RechnungPosition[] = (items || []).map((it: any) => ({
+    beschreibung: it.beschreibung,
+    einsatzdatum: it.einsatzdatum,
+    betrag: Number(it.betrag),
+  }));
 
   const { data: agProfile } = await admin
     .from("Profile")
@@ -88,7 +87,8 @@ export async function fetchRechnungData(admin: any, invoiceId: string): Promise<
         adresse_plz: agProfile?.adresse_plz || null,
         adresse_ort: agProfile?.adresse_ort || null,
       },
-      job: { titel: jobTitel, datum: jobDatum },
+      job: { titel: job?.titel || null },
+      positionen,
       odojUidNummer: settingsMap["odoj_uid_nummer"] || null,
       odojIban: settingsMap["odoj_iban"] || null,
       odojKontoinhaber: settingsMap["odoj_kontoinhaber"] || null,
@@ -145,7 +145,10 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
   const agAdresse = d.arbeitgeber.adresse
     ? `${d.arbeitgeber.adresse}, ${nv(d.arbeitgeber.adresse_plz)} ${nv(d.arbeitgeber.adresse_ort)}`
     : "nicht angegeben";
-  const stellerLines = [ODOJ_FIRMENNAME, ODOJ_ADRESSE, ODOJ_FN, ODOJ_FIRMENBUCHGERICHT, `UID-Nummer: ${nv(d.odojUidNummer)}`];
+  // Kleinunternehmerregelung: UID-Nummer ist optional und erscheint nur,
+  // wenn sie als Einstellung gepflegt ist - kein Platzhaltertext (B4).
+  const stellerLines = [ODOJ_FIRMENNAME, ODOJ_ADRESSE, ODOJ_FN, ODOJ_FIRMENBUCHGERICHT];
+  if (d.odojUidNummer && d.odojUidNummer.trim()) stellerLines.push(`UID-Nummer: ${d.odojUidNummer.trim()}`);
   const empfaengerLines = [nv(d.arbeitgeber.firmenname), agAdresse];
 
   const startY = y;
@@ -176,15 +179,33 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
   row("Fälligkeitsdatum:", fmtDatum(d.dueAt));
 
   y -= 10;
-  sectionTitle("Leistungsbeschreibung");
-  row("Leistung:", "Vermittlung eines Einsatzes");
+  sectionTitle("Leistungspositionen");
   row("Tätigkeit:", nv(d.job.titel));
-  row("Einsatzdatum:", fmtDatum(d.job.datum));
+  y -= 6;
 
-  y -= 10;
+  const colDatum = marginX;
+  const colBeschr = marginX + 90;
+  const colBetrag = width - marginX - 70;
+  page.drawText("Datum", { x: colDatum, y, size: 9, font: fontBold, color: TEXT_MUTED });
+  page.drawText("Leistung", { x: colBeschr, y, size: 9, font: fontBold, color: TEXT_MUTED });
+  page.drawText("Betrag", { x: colBetrag, y, size: 9, font: fontBold, color: TEXT_MUTED });
+  y -= 8;
+  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 0.5, color: TEXT_MUTED });
+  y -= 14;
+
+  for (const pos of d.positionen) {
+    page.drawText(fmtDatum(pos.einsatzdatum), { x: colDatum, y, size: 10, font: fontRegular, color: TEXT_DARK });
+    page.drawText(pos.beschreibung, { x: colBeschr, y, size: 10, font: fontRegular, color: TEXT_DARK });
+    page.drawText(`€ ${pos.betrag.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, { x: colBetrag, y, size: 10, font: fontRegular, color: TEXT_DARK });
+    y -= 15;
+  }
+  y -= 4;
+  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 0.5, color: TEXT_MUTED });
+  y -= 20;
+
   const amountFmt = d.amount.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   page.drawRectangle({ x: marginX, y: y - 34, width: width - marginX * 2, height: 40, color: HINT_BG });
-  page.drawText("Rechnungsbetrag", { x: marginX + 14, y: y - 12, size: 11, font: fontBold, color: TEXT_MUTED });
+  page.drawText("Rechnungsbetrag gesamt", { x: marginX + 14, y: y - 12, size: 11, font: fontBold, color: TEXT_MUTED });
   page.drawText(`€ ${amountFmt}`, { x: width - marginX - 110, y: y - 14, size: 16, font: fontBold, color: NAVY });
   y -= 60;
 

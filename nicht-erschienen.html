@@ -173,47 +173,41 @@
 <!-- FORM -->
 <div class="ne-main">
   <div class="ne-form-wrap" id="ne-form-wrap">
+    <div id="ne-missing" style="display:none;text-align:center;padding:32px;color:var(--text-lt)">
+      Keine Bewerbung ausgewählt. Bitte über „Nicht gekommen" bei der jeweiligen Bewerbung in
+      <a href="meine-inserate.html">Meine Inserate</a> öffnen.
+    </div>
+
+    <div id="ne-content">
     <h2>Meldeformular</h2>
     <p>Alle mit * markierten Felder sind Pflichtfelder.</p>
 
     <div class="ne-note">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span>Der Jobber wird erst bezahlt, wenn Sie die Anwesenheit bestätigen. Bitte dokumentieren Sie den Vorfall hier, damit wir entsprechende Maßnahmen einleiten können.</span>
+      <span>Dieser Tag wird nicht berechnet und der Jobber nicht bezahlt. Bitte kurz beschreiben, was vorgefallen ist.</span>
     </div>
 
     <form id="ne-form" onsubmit="submitMeldung(event)">
       <div class="ne-field-row">
         <div class="ne-field">
-          <label>Firmenname</label>
-          <input type="text" id="ne-firma" readonly placeholder="Wird aus Profil geladen…">
+          <label>Job</label>
+          <input type="text" id="ne-job" readonly>
         </div>
         <div class="ne-field">
-          <label>Ansprechperson</label>
-          <input type="text" id="ne-person" readonly placeholder="Wird aus Profil geladen…">
+          <label>Jobber</label>
+          <input type="text" id="ne-jobber-name" readonly>
         </div>
-      </div>
-
-      <div class="ne-field">
-        <label>Job-Auswahl *</label>
-        <select id="ne-job" required>
-          <option value="">– Job auswählen –</option>
-        </select>
       </div>
 
       <div class="ne-field-row">
         <div class="ne-field">
-          <label>Name des Jobbers *</label>
-          <input type="text" id="ne-jobber-name" placeholder="Vor- und Nachname" required>
+          <label>Datum des Einsatzes</label>
+          <input type="text" id="ne-datum" readonly>
         </div>
         <div class="ne-field">
-          <label>Datum des Einsatzes *</label>
-          <input type="date" id="ne-datum" required>
+          <label>Vereinbarte Uhrzeit</label>
+          <input type="text" id="ne-uhrzeit" readonly>
         </div>
-      </div>
-
-      <div class="ne-field">
-        <label>Vereinbarte Uhrzeit *</label>
-        <input type="time" id="ne-uhrzeit" required style="max-width:200px">
       </div>
 
       <div class="ne-field">
@@ -238,6 +232,8 @@
         <input type="text" id="ne-wie" placeholder="z.B. Telefon, WhatsApp, E-Mail…">
       </div>
 
+      <div class="ne-error" id="ne-error" style="display:none;color:#c0392b;font-size:13px;margin-bottom:12px"></div>
+
       <button type="submit" class="ne-btn-submit" id="ne-submit-btn">
         Meldung einreichen
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -246,7 +242,8 @@
 
     <div class="ne-success" id="ne-success">
       <div class="ne-success-title">Meldung erfolgreich eingereicht</div>
-      <div class="ne-success-text">Ihre Meldung wurde erfolgreich eingereicht. Wir werden den Fall prüfen und uns bei Bedarf melden.</div>
+      <div class="ne-success-text">Dieser Einsatz wird nicht berechnet. Du findest die Meldung jederzeit bei dieser Bewerbung in „Meine Inserate".</div>
+    </div>
     </div>
   </div>
 </div>
@@ -278,77 +275,92 @@ function onKontaktChange(val) {
   document.getElementById('ne-label-nein').classList.toggle('checked', val === 'nein');
 }
 
-// ── AUTH GUARD (nur Arbeitgeber) ──
+// ── AUTH GUARD (nur Arbeitgeber) + Bewerbung laden ──
+let _neBewId = null;
+let _neAgId  = null;
+
 (async () => {
   const session = await odojGetSession();
-  if (!session) { window.location.href = 'login.html?redirect=nicht-erschienen.html'; return; }
+  if (!session) { window.location.href = 'login.html?redirect=' + encodeURIComponent('nicht-erschienen.html' + location.search); return; }
   let rolle = session.user.user_metadata?.rolle || localStorage.getItem('odoj_rolle') || 'jobber';
   try {
-    const { data: profile } = await odojSb
-      .from('Profile')
-      .select('rolle, firmenname, vorname, nachname')
-      .eq('user_id', session.user.id)
-      .single();
+    const { data: profile } = await odojSb.from('Profile').select('rolle').eq('user_id', session.user.id).single();
     if (profile?.rolle) rolle = profile.rolle;
     if (rolle !== 'arbeitgeber') { window.location.href = 'index.html'; return; }
-
-    // Felder vorbefüllen
-    document.getElementById('ne-firma').value  = profile.firmenname || '';
-    document.getElementById('ne-person').value = ((profile.vorname || '') + ' ' + (profile.nachname || '')).trim();
   } catch (_) {}
 
-  // Jobs des AG laden
-  try {
-    const { data: jobs } = await odojSb
-      .from('jobs')
-      .select('id, titel, datum')
-      .eq('arbeitgeber_id', session.user.id)
-      .order('datum', { ascending: false })
-      .limit(50);
-    const sel = document.getElementById('ne-job');
-    (jobs || []).forEach(j => {
-      const opt = document.createElement('option');
-      opt.value = j.id;
-      const d = j.datum ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-      opt.textContent = j.titel + (d ? ' (' + d + ')' : '');
-      sel.appendChild(opt);
-    });
-  } catch (_) {}
+  _neAgId = session.user.id;
+  _neBewId = new URLSearchParams(location.search).get('bew');
+  if (!_neBewId) {
+    document.getElementById('ne-content').style.display = 'none';
+    document.getElementById('ne-missing').style.display = 'block';
+    return;
+  }
+
+  const { data: bew, error } = await odojSb
+    .from('bewerbungen')
+    .select('id, job_id, jobber_id, termin_id, status, anwesenheit_bestaetigt, nicht_gekommen, jobs(titel, datum, uhrzeit_von, arbeitgeber_id), job_termine(datum, uhrzeit_von)')
+    .eq('id', _neBewId)
+    .maybeSingle();
+
+  if (error || !bew || bew.jobs?.arbeitgeber_id !== _neAgId) {
+    document.getElementById('ne-content').style.display = 'none';
+    document.getElementById('ne-missing').innerHTML = 'Diese Bewerbung wurde nicht gefunden oder gehört nicht zu deinem Konto.';
+    document.getElementById('ne-missing').style.display = 'block';
+    return;
+  }
+  if (bew.anwesenheit_bestaetigt || bew.nicht_gekommen) {
+    document.getElementById('ne-content').style.display = 'none';
+    document.getElementById('ne-missing').innerHTML = 'Für diese Bewerbung liegt bereits eine Entscheidung vor.';
+    document.getElementById('ne-missing').style.display = 'block';
+    return;
+  }
+
+  const { data: jobberProfil } = await odojSb.from('Profile').select('vorname, nachname').eq('user_id', bew.jobber_id).maybeSingle();
+  const effDatum   = bew.job_termine?.datum || bew.jobs?.datum || '';
+  const effUhrzeit = bew.job_termine?.uhrzeit_von || bew.jobs?.uhrzeit_von || '';
+
+  document.getElementById('ne-job').value = bew.jobs?.titel || '';
+  document.getElementById('ne-jobber-name').value = ((jobberProfil?.vorname || '') + ' ' + (jobberProfil?.nachname || '')).trim() || 'Jobber';
+  document.getElementById('ne-datum').value = effDatum
+    ? new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '–';
+  document.getElementById('ne-uhrzeit').value = effUhrzeit ? effUhrzeit.slice(0, 5) : '–';
 })();
 
-function submitMeldung(e) {
+async function submitMeldung(e) {
   e.preventDefault();
   const btn = document.getElementById('ne-submit-btn');
+  const errEl = document.getElementById('ne-error');
+  errEl.style.display = 'none';
   const kontakt = document.querySelector('input[name="ne-kontakt"]:checked')?.value;
-  if (!kontakt) { alert('Bitte angeben, ob der Jobber kontaktiert wurde.'); return; }
+  if (!kontakt) { errEl.textContent = 'Bitte angeben, ob der Jobber kontaktiert wurde.'; errEl.style.display = 'block'; return; }
 
-  const firma      = document.getElementById('ne-firma').value;
-  const person     = document.getElementById('ne-person').value;
-  const job        = document.getElementById('ne-job').options[document.getElementById('ne-job').selectedIndex]?.text || '';
-  const jobberName = document.getElementById('ne-jobber-name').value;
-  const datum      = document.getElementById('ne-datum').value;
-  const uhrzeit    = document.getElementById('ne-uhrzeit').value;
-  const beschr     = document.getElementById('ne-beschr').value;
-  const wie        = document.getElementById('ne-wie').value;
+  const beschr = document.getElementById('ne-beschr').value.trim();
+  const wie    = document.getElementById('ne-wie').value.trim();
+  if (!beschr) { errEl.textContent = 'Bitte beschreiben, was vorgefallen ist.'; errEl.style.display = 'block'; return; }
 
-  const body = encodeURIComponent(
-    `Firmenname: ${firma}\n` +
-    `Ansprechperson: ${person}\n` +
-    `Job: ${job}\n` +
-    `Jobber: ${jobberName}\n` +
-    `Datum des Einsatzes: ${datum}\n` +
-    `Vereinbarte Uhrzeit: ${uhrzeit}\n\n` +
-    `Was ist passiert:\n${beschr}\n\n` +
-    `Jobber vorher kontaktiert: ${kontakt}` +
-    (wie ? `\nArt der Kontaktaufnahme: ${wie}` : '')
-  );
-
-  const mailto = `mailto:ODOJ_EMAIL_HIER_EINFUEGEN@example.com?subject=${encodeURIComponent('Meldung: Jobber nicht erschienen – ' + firma)}&body=${body}`;
-  window.location.href = mailto;
-
-  // Erfolgsmeldung
   btn.disabled = true;
+  btn.textContent = 'Wird gespeichert…';
+
+  const grund = `Vorfall: ${beschr}\nJobber vorher kontaktiert: ${kontakt === 'ja' ? 'Ja' : 'Nein'}${wie ? ' (' + wie + ')' : ''}`;
+
+  const { error } = await odojSb.from('bewerbungen').update({
+    nicht_gekommen: true,
+    nicht_gekommen_am: new Date().toISOString(),
+    nicht_gekommen_grund: grund
+  }).eq('id', _neBewId);
+
+  if (error) {
+    errEl.textContent = 'Fehler beim Speichern: ' + error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Meldung einreichen';
+    return;
+  }
+
   document.getElementById('ne-form').style.opacity = '.4';
+  document.getElementById('ne-form').style.pointerEvents = 'none';
   document.getElementById('ne-success').style.display = 'block';
   document.getElementById('ne-success').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
