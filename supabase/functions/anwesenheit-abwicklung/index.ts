@@ -60,9 +60,38 @@ serve(async (req) => {
   const gesternIso = isoDaysAgo(1);
   const dreiTageVorIso = isoDaysAgo(3);
 
-  const result = { einsatzbeginn_mails: 0, rechnungen_erstellt: 0, rechnung_erinnerungen: 0, rechnung_blockiert: 0, fehler: [] as string[] };
+  const result = { auto_abgelehnt: 0, einsatzbeginn_mails: 0, rechnungen_erstellt: 0, rechnung_erinnerungen: 0, rechnung_blockiert: 0, fehler: [] as string[] };
 
   try {
+    // ── 0) E2: unbeantwortete Bewerbungen nach Ablauf des Einsatzdatums ──
+    // "Ausstehend" + das (Termin- bzw. Job-)Datum liegt in der Vergangenheit
+    // → automatisch auf "abgelehnt" (zeigt sich als "Nicht berücksichtigt",
+    // NICHT "Zurückgezogen" - zurueckgezogen bleibt false, das ist ja kein
+    // Rückzug durch den Jobber). Nur status='ausstehend' wird angefasst,
+    // 'angenommen' bleibt unberührt - kein Termin gilt dadurch versehentlich
+    // als Zusage oder verliert eine bestehende Zusage.
+    const [rLegacy, rMulti] = await Promise.all([
+      admin.from("bewerbungen")
+        .select("id, jobs!inner(datum)")
+        .is("termin_id", null)
+        .eq("status", "ausstehend")
+        .lt("jobs.datum", heute),
+      admin.from("bewerbungen")
+        .select("id, job_termine!inner(datum)")
+        .not("termin_id", "is", null)
+        .eq("status", "ausstehend")
+        .lt("job_termine.datum", heute),
+    ]);
+    if (rLegacy.error) result.fehler.push("auto-reject-query (einzeltag): " + rLegacy.error.message);
+    if (rMulti.error)  result.fehler.push("auto-reject-query (mehrtermin): " + rMulti.error.message);
+
+    const autoRejectIds = [...(rLegacy.data || []).map((b: any) => b.id), ...(rMulti.data || []).map((b: any) => b.id)];
+    if (autoRejectIds.length) {
+      const { error: rejErr } = await admin.from("bewerbungen").update({ status: "abgelehnt" }).in("id", autoRejectIds);
+      if (rejErr) result.fehler.push("auto-reject-update: " + rejErr.message);
+      else result.auto_abgelehnt = autoRejectIds.length;
+    }
+
     // ── 1) Einsatzbeginn erreicht, noch keine Entscheidung + noch keine Mail ──
     const [eLegacy, eMulti] = await Promise.all([
       admin.from("bewerbungen")
