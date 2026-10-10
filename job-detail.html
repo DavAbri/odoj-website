@@ -448,6 +448,7 @@ let _jdTermine        = [];          // job_termine-Zeilen (nur bei Mehrtages-Jo
 let _jdIsMultiTermin  = false;
 let _jdAppliedTerminIds = new Set(); // enthält `null` bei Einzeltag-Bewerbung
 let _jdOwnBews = {}; // E5: termin_id (oder '_single') -> { id, status } der eigenen Bewerbung(en)
+let _jdJobVoll = false; // H3/H5: Einzeltag-Job bereits vollständig besetzt (nur bei !_jdIsMultiTermin relevant)
 let _jdClickedTerminId  = null;      // Termin, über dessen Karte der Jobber kam (?termin=)
 let _jdZuJung          = false;      // Einzeltermin-Job: Jobber am Einsatzdatum zu jung
 let _jdKeinGeburtsdatum = false;     // Job hat Mindestalter, Jobber hat kein Geburtsdatum hinterlegt
@@ -541,6 +542,16 @@ async function initJobDetail() {
     const acceptedCount = {};
     (acceptedBews || []).forEach(b => { acceptedCount[b.termin_id] = (acceptedCount[b.termin_id] || 0) + 1; });
     _jdTermine.forEach(t => { t._voll = (acceptedCount[t.id] || 0) >= (job.plaetze || 1); });
+  } else {
+    // H3/H5: auch Einzeltag-Jobs können "ausgebucht" sein (alle Plätze
+    // bereits angenommen) - vorher gab es hierfür keine Prüfung, Bewerben
+    // auf einen bereits voll besetzten Job war clientseitig uneingeschränkt
+    // möglich (serverseitig jetzt zusätzlich über den H5-Annahme-Trigger
+    // abgesichert, aber Bewerben selbst soll hier erst gar nicht angeboten werden).
+    const { count: acceptedCount } = await odojSb
+      .from('bewerbungen').select('id', { count: 'exact', head: true })
+      .eq('job_id', jobId).is('termin_id', null).eq('status', 'angenommen');
+    _jdJobVoll = (acceptedCount || 0) >= (job.plaetze || 1);
   }
 
   // Mindestalter-Prüfung (nur für eingeloggte Jobber, nur wenn das Inserat
@@ -710,6 +721,11 @@ function renderMain(job) {
     applyBtn = `
       <button class="jd-apply-btn" style="background:#E8EDF5;color:#7A8FA8;cursor:default" disabled>
         Als Arbeitgeber nicht verfügbar
+      </button>`;
+  } else if (!_jdIsMultiTermin && _jdJobVoll) {
+    applyBtn = `
+      <button class="jd-apply-btn" style="background:#FDE8E8;color:#c0392b;cursor:default" disabled>
+        Ausgebucht
       </button>`;
   } else if (!_jdIsMultiTermin && _jdKeinGeburtsdatum) {
     applyBtn = `
@@ -892,7 +908,12 @@ const JD_WARN_ICON = '<svg width="16" height="16" fill="none" stroke="currentCol
 function updateBewerbenGate() {
   const btn = document.getElementById('jd-bewerben-btn');
   if (!btn || !_jdIsMultiTermin) return;
-  const min = _jdJob?.mindest_termine || 1;
+  const rawMin = _jdJob?.mindest_termine || 1;
+  // H2: wirksame Mindestanzahl = kleinere Zahl aus (eingestellter
+  // Mindestanzahl, noch freier [=nicht ausgebuchter] Termine) - sonst wäre
+  // der letzte freie Termin nie mehr buchbar (H1-Beispiel).
+  const freieTermine = _jdTermine.filter(t => !t._voll).length;
+  const min = Math.min(rawMin, Math.max(freieTermine, 1));
   const checkedNew = document.querySelectorAll('#jd-termin-list input:checked:not(:disabled)').length;
   const total = checkedNew + _jdAppliedTerminIds.size;
   const fehlend = min - total;

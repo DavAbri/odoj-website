@@ -711,7 +711,6 @@ function renderJobCard(job, locked) {
   const lockedAttr = locked ? ' data-locked="true"' : '';
   const terminAttr = job._terminId ? ` data-termin-id="${job._terminId}"` : '';
   const plaetze = job.plaetze === 1 ? '1 Platz frei' : (job.plaetze + ' Plätze frei');
-  const ausgebuchtTag = job._terminAusgebucht ? '<span class="tag tag-ausgebucht">Ausgebucht</span>' : '';
   const mehrtermineTag = job._isMultiTermin ? '<span class="tag tag-mehrtermine">📅 Mehrere Termine verfügbar</span>' : '';
 
   // Dezenter Hinweis statt Ausblenden: nur wenn eindeutig feststeht (Geburtsdatum
@@ -726,7 +725,6 @@ function renderJobCard(job, locked) {
       <div class="job-card-top">
         <span class="tag ${b.cls}">${b.label}</span>
         ${mehrtermineTag}
-        ${ausgebuchtTag}
       </div>
       <h3>${job.titel}</h3>
       ${(job._agName || job.firmenname) ? `<div class="job-company">${job._agName || job.firmenname}</div>` : ''}
@@ -848,7 +846,8 @@ async function checkJobsAuth() {
   const termineByJob = {};
   (rawTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push(t));
 
-  // Angenommene Bewerbungen pro Termin zählen, um "Ausgebucht" pro Termin zu erkennen
+  // Angenommene Bewerbungen pro Termin zählen (Mehrtages-Jobs) bzw. pro Job
+  // (Einzeltag-Jobs), um ausgebuchte Karten zu erkennen.
   let acceptedCountByTermin = {};
   const allTerminIds = (rawTermine || []).map(t => t.id);
   if (allTerminIds.length) {
@@ -861,25 +860,42 @@ async function checkJobsAuth() {
       acceptedCountByTermin[b.termin_id] = (acceptedCountByTermin[b.termin_id] || 0) + 1;
     });
   }
+  // H3: Ausgebuchte Inserate (alle Plätze vergeben) werden in der Jobsuche
+  // NICHT mehr angezeigt (bleiben nur im eigenen Arbeitgeber-Bereich
+  // sichtbar, siehe meine-inserate.html) - hier für Einzeltag-Jobs.
+  let acceptedCountByJob = {};
+  const einzeltagJobIds = (rawJobs || []).filter(j => !(termineByJob[j.id]?.length)).map(j => j.id);
+  if (einzeltagJobIds.length) {
+    const { data: acceptedBewsJob } = await odojSb
+      .from('bewerbungen')
+      .select('job_id')
+      .eq('status', 'angenommen')
+      .is('termin_id', null)
+      .in('job_id', einzeltagJobIds);
+    (acceptedBewsJob || []).forEach(b => {
+      acceptedCountByJob[b.job_id] = (acceptedCountByJob[b.job_id] || 0) + 1;
+    });
+  }
 
-  // Jobs mit Terminen -> eine Karte pro zukünftigem Termin. Jobs ohne
-  // job_termine-Zeilen (heutiger Normalfall) laufen exakt wie bisher.
+  // Jobs mit Terminen -> eine Karte pro zukünftigem, noch nicht ausgebuchtem
+  // Termin. Jobs ohne job_termine-Zeilen (heutiger Normalfall) laufen wie
+  // bisher, außer sie sind bereits vollständig besetzt (H3).
   const allJobs = [];
   (rawJobs || []).forEach(job => {
     const termine = termineByJob[job.id];
     if (termine && termine.length) {
       termine
         .sort((a, b) => a.datum.localeCompare(b.datum))
+        .filter(t => (acceptedCountByTermin[t.id] || 0) < job.plaetze)
         .forEach(t => allJobs.push({
           ...job,
           datum: t.datum,
           uhrzeit_von: (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5) || null,
           uhrzeit_bis: (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5) || null,
           _terminId: t.id,
-          _isMultiTermin: true,
-          _terminAusgebucht: (acceptedCountByTermin[t.id] || 0) >= job.plaetze
+          _isMultiTermin: true
         }));
-    } else if (!job.datum || job.datum >= heuteDatum) {
+    } else if ((!job.datum || job.datum >= heuteDatum) && (acceptedCountByJob[job.id] || 0) < job.plaetze) {
       allJobs.push(job);
     }
   });
