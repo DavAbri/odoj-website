@@ -1831,10 +1831,28 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   if (!agId) agId = _agSession?.user?.id || '';
 
   const now = new Date().toISOString();
-  const { error: bewErr } = await odojSb.from('bewerbungen')
-    .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now, status: 'abgeschlossen' })
-    .eq('id', bewId);
-  if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen'; } return; }
+  const supportAktiv = !!(window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active);
+
+  if (supportAktiv) {
+    // Direkte Schreibzugriffe liefen hier mit der echten Admin-Sitzung, die
+    // bestehenden RLS-Policies (arbeitgeber_id = auth.uid()) matchen dann
+    // keine Zeile - PostgREST meldet trotzdem "Erfolg" (0 Zeilen betroffen),
+    // eine stille No-Op statt eines sichtbaren Fehlers. Läuft deshalb über
+    // die geloggte, service_role-gestützte Edge Function.
+    const { data: aktionResult, error: aktionErr } = await odojSb.functions.invoke('support-bewerbung-aktion', {
+      body: { sessionId: window.ODOJ_SUPPORT.sessionId, bewId, aktion: 'anwesenheit_bestaetigt' }
+    });
+    if (aktionErr || aktionResult?.error) {
+      alert('Fehler: ' + (aktionResult?.error || aktionErr.message));
+      if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen'; }
+      return;
+    }
+  } else {
+    const { error: bewErr } = await odojSb.from('bewerbungen')
+      .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now, status: 'abgeschlossen' })
+      .eq('id', bewId);
+    if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen'; } return; }
+  }
 
   const { data: bewData } = await odojSb.from('bewerbungen').select('job_id').eq('id', bewId).single();
   let jobTitel = 'Tagesjob';
@@ -1855,34 +1873,38 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   const gesamtBetrag = lohnBetrag + vermittlungsgebuehr;
   const rechnungsnummer = '';
 
-  const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
-  const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
-    bewerbung_id:  bewId,
-    sender_id:     agId,
-    empfaenger_id: jobberId,
-    nachricht:     systemMsg,
-    gelesen:       false,
-    erstellt_am:   new Date().toISOString()
-  }).select().single();
-  if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
-  if (presMsg) odojSb.functions.invoke('send-notification-email', { body: { record: presMsg } }).catch(err => console.error('[E-Mail] Einsatz-abgeschlossen-Benachrichtigung fehlgeschlagen:', err));
-
-  // BEW_REQ sofort senden — Jobber kann immer bewerten, unabhängig vom AG-Rating
-  if (jobberId && bewData?.job_id) {
-    const bewReqPayload = JSON.stringify({
-      jobId:      bewData.job_id,
-      bewId:      bewId,
-      agId:       agId,
-      firmenname: _agFirmenname
-    });
-    await odojSb.from('nachrichten').insert({
+  // Im Support-Modus hat support-bewerbung-aktion beide Chat-Nachrichten
+  // (Einsatz-abgeschlossen + BEW_REQ) bereits serverseitig angelegt.
+  if (!supportAktiv) {
+    const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
+    const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
       bewerbung_id:  bewId,
       sender_id:     agId,
       empfaenger_id: jobberId,
-      nachricht:     '[BEW_REQ:' + bewReqPayload + ']',
+      nachricht:     systemMsg,
       gelesen:       false,
       erstellt_am:   new Date().toISOString()
-    });
+    }).select().single();
+    if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
+    if (presMsg) odojSb.functions.invoke('send-notification-email', { body: { record: presMsg } }).catch(err => console.error('[E-Mail] Einsatz-abgeschlossen-Benachrichtigung fehlgeschlagen:', err));
+
+    // BEW_REQ sofort senden — Jobber kann immer bewerten, unabhängig vom AG-Rating
+    if (jobberId && bewData?.job_id) {
+      const bewReqPayload = JSON.stringify({
+        jobId:      bewData.job_id,
+        bewId:      bewId,
+        agId:       agId,
+        firmenname: _agFirmenname
+      });
+      await odojSb.from('nachrichten').insert({
+        bewerbung_id:  bewId,
+        sender_id:     agId,
+        empfaenger_id: jobberId,
+        nachricht:     '[BEW_REQ:' + bewReqPayload + ']',
+        gelesen:       false,
+        erstellt_am:   new Date().toISOString()
+      });
+    }
   }
 
   if (jobberId) {

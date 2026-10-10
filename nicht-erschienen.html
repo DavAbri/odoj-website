@@ -353,11 +353,22 @@ async function submitMeldung(e) {
 
   const grund = `Vorfall: ${beschr}\nJobber vorher kontaktiert: ${kontakt === 'ja' ? 'Ja' : 'Nein'}${wie ? ' (' + wie + ')' : ''}`;
 
-  const { error } = await odojSb.from('bewerbungen').update({
-    nicht_gekommen: true,
-    nicht_gekommen_am: new Date().toISOString(),
-    nicht_gekommen_grund: grund
-  }).eq('id', _neBewId);
+  let error = null;
+  if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) {
+    // Direktes Update liefe hier mit der echten Admin-Sitzung - die
+    // RLS-Policy matcht dann keine Zeile (stille No-Op statt Fehler).
+    const { data: res, error: fnErr } = await odojSb.functions.invoke('support-bewerbung-aktion', {
+      body: { sessionId: window.ODOJ_SUPPORT.sessionId, bewId: _neBewId, aktion: 'nicht_gekommen', grund }
+    });
+    error = fnErr || res?.error ? { message: res?.error || fnErr.message } : null;
+  } else {
+    const res = await odojSb.from('bewerbungen').update({
+      nicht_gekommen: true,
+      nicht_gekommen_am: new Date().toISOString(),
+      nicht_gekommen_grund: grund
+    }).eq('id', _neBewId);
+    error = res.error;
+  }
 
   if (error) {
     errEl.textContent = 'Fehler beim Speichern: ' + error.message;
