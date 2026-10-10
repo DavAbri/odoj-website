@@ -46,10 +46,10 @@ export interface RechnungData {
   odojUstHinweis: string | null;
 }
 
-export async function fetchRechnungData(admin: any, invoiceId: string): Promise<{ data: RechnungData; arbeitgeberId: string } | null> {
+export async function fetchRechnungData(admin: any, invoiceId: string): Promise<{ data: RechnungData; arbeitgeberId: string; pdfPfad: string | null } | null> {
   const { data: invoice } = await admin
     .from("invoices")
-    .select("id, invoice_number, job_id, arbeitgeber_id, amount, issued_at, due_at")
+    .select("id, invoice_number, job_id, arbeitgeber_id, amount, issued_at, due_at, pdf_pfad")
     .eq("id", invoiceId)
     .single();
   if (!invoice) return null;
@@ -80,6 +80,7 @@ export async function fetchRechnungData(admin: any, invoiceId: string): Promise<
 
   return {
     arbeitgeberId: invoice.arbeitgeber_id,
+    pdfPfad: invoice.pdf_pfad || null,
     data: {
       invoiceNumber: invoice.invoice_number,
       issuedAt: invoice.issued_at,
@@ -250,4 +251,28 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
   const bytes = await pdf.save();
   const safeName = d.invoiceNumber.replace(/[^a-zA-Z0-9-]/g, "") || "Rechnung";
   return { bytes, filename: `Rechnung-${safeName}.pdf` };
+}
+
+// Block B3: Rechnungs-PDF einmalig unveränderlich im privaten Storage-
+// Bucket "rechnungen" ablegen (Pfad arbeitgeber_id/invoice_id.pdf) und den
+// Pfad auf der invoices-Zeile vermerken - verhindert, dass sich der Inhalt
+// einer bereits ausgestellten Rechnung nachträglich ändert (z.B. durch eine
+// später geänderte Firmenadresse), und erfüllt die 7-Jahre-Aufbewahrungs-
+// pflicht. upsert:false lässt eine bestehende Datei nie überschreiben.
+export async function persistRechnungPdf(admin: any, invoiceId: string): Promise<string | null> {
+  const result = await fetchRechnungData(admin, invoiceId);
+  if (!result) return null;
+  const { bytes } = await buildRechnungPdf(result.data);
+  const pfad = `${result.arbeitgeberId}/${invoiceId}.pdf`;
+
+  const { error: uploadErr } = await admin.storage
+    .from("rechnungen")
+    .upload(pfad, bytes, { contentType: "application/pdf", upsert: false });
+  if (uploadErr && !String(uploadErr.message || "").includes("already exists")) {
+    console.error("persistRechnungPdf upload error:", uploadErr.message);
+    return null;
+  }
+
+  await admin.from("invoices").update({ pdf_pfad: pfad }).eq("id", invoiceId);
+  return pfad;
 }

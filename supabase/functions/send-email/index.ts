@@ -495,8 +495,17 @@ serve(async (req) => {
       if (!result) return new Response(JSON.stringify({ error: "Rechnung nicht gefunden" }), { status: 404, headers: cors });
       subject = `Deine Rechnung ${result.data.invoiceNumber} von ODOJ`;
       html = rechnungErstelltTemplate(recipientName, result.data.invoiceNumber, result.data.job.titel || "", result.data.amount, result.data.positionen.length);
-      const { bytes, filename } = await buildRechnungPdf(result.data);
-      attachments = [{ filename, content: btoa(String.fromCharCode(...bytes)) }];
+      const safeInvName = result.data.invoiceNumber.replace(/[^a-zA-Z0-9-]/g, "") || "Rechnung";
+      const rechnungFilename = `Rechnung-${safeInvName}.pdf`;
+      // B3: die im Storage abgelegte, unveränderliche Kopie als Anhang
+      // verwenden statt unabhängig neu zu erzeugen (eine Quelle der Wahrheit).
+      let rechnungBytes: Uint8Array | null = null;
+      if (result.pdfPfad) {
+        const { data: stored } = await admin.storage.from("rechnungen").download(result.pdfPfad);
+        if (stored) rechnungBytes = new Uint8Array(await stored.arrayBuffer());
+      }
+      if (!rechnungBytes) rechnungBytes = (await buildRechnungPdf(result.data)).bytes;
+      attachments = [{ filename: rechnungFilename, content: btoa(String.fromCharCode(...rechnungBytes)) }];
       // B3: jede Rechnungsmail geht zusätzlich als BCC an info@odoj.at.
       bcc = ["info@odoj.at"];
     } else if (type === "new_message") {

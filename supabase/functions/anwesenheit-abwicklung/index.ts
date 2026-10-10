@@ -17,6 +17,7 @@
 //    schlimmer als eine verspätete (Nutzerentscheidung, siehe Prompt-Antwort 4).
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { persistRechnungPdf } from "../_shared/rechnung.ts";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -143,6 +144,9 @@ serve(async (req) => {
         try {
           const { data: invoice, error: rpcErr } = await admin.rpc("rechnung_erstellen_fuer_job", { p_job_id: jobId }).single();
           if (rpcErr) throw rpcErr;
+          // B3: PDF einmalig unveränderlich im Storage ablegen, bevor die
+          // Mail (mit demselben PDF als Anhang) verschickt wird.
+          await persistRechnungPdf(admin, (invoice as any).id).catch((e: any) => console.error("persistRechnungPdf fehlgeschlagen:", e?.message || e));
           const { data: settings } = await admin.from("einstellungen").select("schluessel, wert_text").in("schluessel", ["odoj_iban", "odoj_uid_nummer"]);
           const iban = settings?.find((s: any) => s.schluessel === "odoj_iban")?.wert_text || "";
           const uid  = settings?.find((s: any) => s.schluessel === "odoj_uid_nummer")?.wert_text || "";

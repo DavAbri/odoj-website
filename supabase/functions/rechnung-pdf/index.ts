@@ -4,7 +4,7 @@
 // Arbeitgeber, dem die Rechnung gehört (oder ein Admin), darf zugreifen.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { fetchRechnungData, buildRechnungPdf } from "../_shared/rechnung.ts";
+import { fetchRechnungData, buildRechnungPdf, persistRechnungPdf } from "../_shared/rechnung.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -47,7 +47,26 @@ serve(async (req) => {
       return json({ error: "Kein Zugriff auf diese Rechnung." }, 403);
     }
 
-    const { bytes, filename } = await buildRechnungPdf(result.data);
+    // B3: eine einmal ausgestellte Rechnung bleibt unveränderlich - die
+    // gespeicherte Kopie wird bevorzugt statt bei jedem Download neu aus
+    // den AKTUELLEN Daten erzeugt zu werden. Fehlt sie (z.B. bei einer
+    // Rechnung von vor dieser Umstellung), wird sie jetzt nachträglich
+    // einmalig abgelegt (selbstheilend).
+    const safeName = result.data.invoiceNumber.replace(/[^a-zA-Z0-9-]/g, "") || "Rechnung";
+    const filename = `Rechnung-${safeName}.pdf`;
+
+    if (result.pdfPfad) {
+      const { data: stored, error: dlErr } = await admin.storage.from("rechnungen").download(result.pdfPfad);
+      if (stored && !dlErr) {
+        const bytes = new Uint8Array(await stored.arrayBuffer());
+        const pdfBase64 = btoa(String.fromCharCode(...bytes));
+        return json({ pdfBase64, filename }, 200);
+      }
+      console.error("rechnung-pdf: gespeicherte Datei nicht lesbar, erzeuge neu:", dlErr?.message);
+    }
+
+    const { bytes } = await buildRechnungPdf(result.data);
+    await persistRechnungPdf(admin, invoiceId).catch((e: any) => console.error("Nachträgliches Speichern fehlgeschlagen:", e?.message || e));
     const pdfBase64 = btoa(String.fromCharCode(...bytes));
 
     return json({ pdfBase64, filename }, 200);

@@ -10,6 +10,7 @@
 // korrekt greifen.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { persistRechnungPdf } from "../_shared/rechnung.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -59,6 +60,11 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
     // Blockade aufheben, falls dies der manuelle Weg nach B2-Stopp war.
     await admin.from("jobs").update({ rechnung_blockiert: false }).eq("id", jobId);
+
+    // B3: PDF einmalig unveränderlich im Storage ablegen (no-op, falls schon
+    // vorhanden - rechnung_erstellen_fuer_job() ist idempotent und gibt bei
+    // einem erneuten Aufruf dieselbe bestehende Rechnung zurück).
+    await persistRechnungPdf(admin, (invoice as any).id).catch((e: any) => console.error("persistRechnungPdf fehlgeschlagen:", e?.message || e));
 
     const { data: settings } = await admin
       .from("einstellungen")
