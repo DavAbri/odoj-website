@@ -735,7 +735,7 @@ async function loadRechnungen(agId) {
   const bodyEl = document.getElementById('rechnungen-body');
   const { data: rechnungen, error } = await odojSb
     .from('invoices')
-    .select('id, invoice_number, bewerbung_id, amount, issued_at, due_at, payment_status')
+    .select('id, invoice_number, job_id, amount, issued_at, due_at, payment_status')
     .eq('arbeitgeber_id', agId)
     .order('issued_at', { ascending: false });
 
@@ -749,19 +749,13 @@ async function loadRechnungen(agId) {
     return;
   }
 
-  // Jobtitel über bewerbung_id -> bewerbungen.job_id -> jobs auflösen statt
-  // doppelt in invoices zu speichern.
-  const bewIds = [...new Set(rechnungen.map(r => r.bewerbung_id).filter(Boolean))];
+  // Jobtitel über job_id auflösen (eine konsolidierte Rechnung pro Job,
+  // siehe Block B5) statt doppelt in invoices zu speichern.
+  const jobIds = [...new Set(rechnungen.map(r => r.job_id).filter(Boolean))];
   let jobTitelMap = {};
-  if (bewIds.length) {
-    const { data: bews } = await odojSb.from('bewerbungen').select('id, job_id').in('id', bewIds);
-    const jobIds = [...new Set((bews || []).map(b => b.job_id).filter(Boolean))];
-    let jobMap = {};
-    if (jobIds.length) {
-      const { data: jobs } = await odojSb.from('jobs').select('id, titel').in('id', jobIds);
-      jobs?.forEach(j => { jobMap[j.id] = j.titel; });
-    }
-    (bews || []).forEach(b => { jobTitelMap[b.id] = jobMap[b.job_id] || '–'; });
+  if (jobIds.length) {
+    const { data: jobs } = await odojSb.from('jobs').select('id, titel').in('id', jobIds);
+    jobs?.forEach(j => { jobTitelMap[j.id] = j.titel; });
   }
 
   const summeGebuehr = rechnungen.reduce((s, r) => s + Number(r.amount || 0), 0);
@@ -809,7 +803,7 @@ async function loadRechnungen(agId) {
               <td style="font-size:12px;color:var(--text-lt);font-weight:600;">${escH(r.invoice_number)}</td>
               <td>${dat}</td>
               <td>${faellig}</td>
-              <td>${escH(jobTitelMap[r.bewerbung_id] || '–')}</td>
+              <td>${escH(jobTitelMap[r.job_id] || '–')}</td>
               <td class="rechnung-betrag">€ ${betrag}</td>
               <td><span class="rechnung-status" style="${STATUS_STYLE[r.payment_status] || ''}">${STATUS_LABEL[r.payment_status] || r.payment_status}</span></td>
               <td><button class="btn-download" onclick='printRechnung(${JSON.stringify({ id: r.id })})'>⬇ PDF</button></td>
