@@ -190,6 +190,24 @@
   border-bottom: 1px solid var(--gray-lt);
   padding: 14px 24px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.chat-win-header-info { flex: 1; min-width: 0; }
+.chat-hide-btn {
+  flex-shrink: 0;
+  background: transparent; border: 1.5px solid var(--gray-lt);
+  color: var(--text-mid); border-radius: var(--r-sm); padding: 7px 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.chat-hide-btn:hover { border-color: var(--navy); color: var(--navy); }
+.chat-hidden-toggle {
+  display: block; margin-top: 8px; background: none; border: none; padding: 0;
+  font-size: 11px; font-weight: 700; color: var(--sky); cursor: pointer; text-decoration: underline;
 }
 .chat-win-name {
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -681,6 +699,7 @@
     <div class="chat-sidebar-hd">
       <h2>Nachrichten</h2>
       <p id="conv-role-hint">Alle Chats</p>
+      <button type="button" id="conv-hidden-toggle" class="chat-hidden-toggle" onclick="toggleHiddenChats()">Ausgeblendete Chats anzeigen</button>
     </div>
     <div id="conv-list">
       <div style="padding:24px;text-align:center;color:var(--text-lt);font-size:13px">Laden…</div>
@@ -706,6 +725,7 @@
           <div class="chat-win-name" id="chat-win-name">–</div>
           <div class="chat-win-sub"  id="chat-win-sub">–</div>
         </div>
+        <button type="button" id="chat-hide-btn" class="chat-hide-btn" style="display:none" onclick="toggleHideActiveChat()">Chat ausblenden</button>
       </div>
       <div class="messages-area" id="messages-area">
       </div>
@@ -757,12 +777,32 @@
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
 // ── STATE ──
-let _chatSession  = null;
-let _chatRolle    = null;
-let _activeBewId  = null;
-let _activeBew    = null;
-let _pollInterval = null;
-let _allConvs     = [];
+let _chatSession   = null;
+let _chatRolle     = null;
+let _activeChatId  = null;  // G1: Chat = ein Account-Paar (nicht mehr pro Bewerbung)
+let _activeBewId   = null;  // repräsentative (neueste) Bewerbung dieses Paars - Anker für neue Nachrichten/Aktionen
+let _activeBew     = null;
+let _pollInterval  = null;
+let _allConvs      = [];    // jetzt Chats, nicht mehr Bewerbungen
+let _showHiddenChats = false;
+
+// G1: löst eine Bewerbungs-ID (aus ?bew=... Deep-Links aus anderen Seiten)
+// auf die zugehörige chats-Zeile auf, legt sie bei Bedarf an (z.B. wenn
+// noch nie eine Nachricht zwischen diesem Account-Paar geschickt wurde).
+async function resolveChatIdForBew(bewId) {
+  const { data: bew } = await odojSb.from('bewerbungen').select('jobber_id, arbeitgeber_id').eq('id', bewId).maybeSingle();
+  if (!bew?.jobber_id || !bew?.arbeitgeber_id) return null;
+  const { data: existing } = await odojSb.from('chats').select('id')
+    .eq('jobber_id', bew.jobber_id).eq('arbeitgeber_id', bew.arbeitgeber_id).maybeSingle();
+  if (existing) return existing.id;
+  const { data: created } = await odojSb.from('chats')
+    .insert({ jobber_id: bew.jobber_id, arbeitgeber_id: bew.arbeitgeber_id }).select('id').single();
+  if (created) return created.id;
+  // Race: jemand anderes hat die Zeile zwischen SELECT und INSERT schon angelegt.
+  const { data: retry } = await odojSb.from('chats').select('id')
+    .eq('jobber_id', bew.jobber_id).eq('arbeitgeber_id', bew.arbeitgeber_id).maybeSingle();
+  return retry?.id || null;
+}
 
 // ── INIT ──
 async function initChat() {
@@ -779,33 +819,47 @@ async function initChat() {
 
   const urlBewId = new URLSearchParams(location.search).get('bew');
   if (urlBewId) {
-    await openConversation(urlBewId);
+    const chatId = await resolveChatIdForBew(urlBewId);
+    if (chatId) await openConversation(chatId);
   } else if (_allConvs.length > 0) {
     await openConversation(_allConvs[0].id);
   }
 }
 
-// ── KONVERSATIONEN LADEN ──
-async function loadConversations() {
-  const listEl = document.getElementById('conv-list');
+function toggleHiddenChats() {
+  _showHiddenChats = !_showHiddenChats;
+  document.getElementById('conv-hidden-toggle').textContent =
+    _showHiddenChats ? 'Aktive Chats anzeigen' : 'Ausgeblendete Chats anzeigen';
+  loadConversations();
+}
 
-  // Alle Bewerbungen die mich betreffen
-  let bewerbungen = [];
-  if (_chatRolle === 'arbeitgeber') {
-    const { data } = await odojSb.from('bewerbungen').select('*').eq('arbeitgeber_id', _chatSession.user.id).order('erstellt_am', { ascending: false });
-    bewerbungen = data || [];
-  } else {
-    const { data } = await odojSb.from('bewerbungen').select('*').eq('jobber_id', _chatSession.user.id).order('erstellt_am', { ascending: false });
-    bewerbungen = data || [];
-  }
+// ── KONVERSATIONEN LADEN (G1: gruppiert nach Account-Paar) ──
+async function loadConversations() {
+  const listEl   = document.getElementById('conv-list');
+  const myId     = _chatSession.user.id;
+  const otherCol = _chatRolle === 'arbeitgeber' ? 'jobber_id' : 'arbeitgeber_id';
+  const myCol    = _chatRolle === 'arbeitgeber' ? 'arbeitgeber_id' : 'jobber_id';
+  const hiddenCol = _chatRolle === 'arbeitgeber' ? 'versteckt_arbeitgeber' : 'versteckt_jobber';
+
+  // Alle Bewerbungen die mich betreffen (liefern pro Gegenpartei die
+  // neueste als repräsentative Info für Jobtitel/Status in der Liste).
+  const { data: bewerbungenData } = await odojSb.from('bewerbungen').select('*').eq(myCol, myId).order('erstellt_am', { ascending: false });
+  const bewerbungen = bewerbungenData || [];
 
   if (!bewerbungen.length) {
     listEl.innerHTML = '<div style="padding:28px 20px;text-align:center;color:var(--text-lt);font-size:13px;line-height:1.6">Noch keine Chats.<br>Bewerbungen erscheinen hier sobald du Nachrichten sendest.</div>';
     return;
   }
 
+  const bewByOther = {};
+  bewerbungen.forEach(b => { if (!bewByOther[b[otherCol]]) bewByOther[b[otherCol]] = b; }); // bereits nach erstellt_am DESC sortiert
+
+  // Chats (ein Eintrag pro Account-Paar) laden, nach Sichtbarkeit filtern (G4)
+  const { data: chatsRaw } = await odojSb.from('chats').select('*').eq(myCol, myId);
+  const chats = (chatsRaw || []).filter(c => _showHiddenChats ? c[hiddenCol] : !c[hiddenCol]);
+
   // Job-Titel laden
-  const jobIds = [...new Set(bewerbungen.map(b => b.job_id).filter(Boolean))];
+  const jobIds = [...new Set(Object.values(bewByOther).map(b => b.job_id).filter(Boolean))];
   let jobMap = {};
   if (jobIds.length) {
     const { data: jobs } = await odojSb.from('jobs').select('id,titel,firmenname').in('id', jobIds);
@@ -815,20 +869,19 @@ async function loadConversations() {
   // Echte Namen aus Profile laden (beide Rollen)
   let jobberNameMap = {};  // arbeitgeber sieht: jobber_id → "Vorname Nachname"
   let agNameMap     = {};  // jobber sieht:     arbeitgeber_id → Firmenname
+  const otherIds = [...new Set(chats.map(c => c[otherCol]))];
 
   if (_chatRolle === 'arbeitgeber') {
-    const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
-    if (jobberIds.length) {
-      const { data: jProfiles } = await odojSb.from('Profile').select('user_id,vorname,nachname').in('user_id', jobberIds);
+    if (otherIds.length) {
+      const { data: jProfiles } = await odojSb.from('Profile').select('user_id,vorname,nachname').in('user_id', otherIds);
       jProfiles?.forEach(p => {
         const n = [p.vorname, p.nachname].filter(Boolean).join(' ');
         if (n) jobberNameMap[p.user_id] = n;
       });
     }
   } else {
-    const agIds = [...new Set(bewerbungen.map(b => b.arbeitgeber_id).filter(Boolean))];
-    if (agIds.length) {
-      const { data: agProfiles } = await odojSb.from('Profile').select('user_id,firmenname,vorname,nachname').in('user_id', agIds);
+    if (otherIds.length) {
+      const { data: agProfiles } = await odojSb.from('Profile').select('user_id,firmenname,vorname,nachname').in('user_id', otherIds);
       agProfiles?.forEach(p => {
         const n = p.firmenname || [p.vorname, p.nachname].filter(Boolean).join(' ');
         if (n) agNameMap[p.user_id] = n;
@@ -836,30 +889,28 @@ async function loadConversations() {
     }
   }
 
-  // Nachrichten-Info laden (latest + unread)
-  const bewIds = bewerbungen.map(b => b.id);
-  const { data: msgs } = await odojSb
-    .from('nachrichten')
-    .select('bewerbung_id, gelesen, sender_id, nachricht, erstellt_am')
-    .in('bewerbung_id', bewIds)
-    .order('erstellt_am', { ascending: false });
+  // Nachrichten-Info laden (latest + unread) - jetzt pro chat_id
+  const chatIds = chats.map(c => c.id);
+  let msgLatest = {}, msgUnread = {};
+  if (chatIds.length) {
+    const { data: msgs } = await odojSb
+      .from('nachrichten')
+      .select('chat_id, gelesen, sender_id, nachricht, erstellt_am')
+      .in('chat_id', chatIds)
+      .order('erstellt_am', { ascending: false });
+    msgs?.forEach(m => {
+      if (!msgLatest[m.chat_id]) msgLatest[m.chat_id] = m;
+      if (!m.gelesen && m.sender_id !== myId) msgUnread[m.chat_id] = true;
+    });
+  }
 
-  const msgLatest = {};
-  const msgUnread = {};
-  msgs?.forEach(m => {
-    if (!msgLatest[m.bewerbung_id]) msgLatest[m.bewerbung_id] = m;
-    if (!m.gelesen && m.sender_id !== _chatSession.user.id) msgUnread[m.bewerbung_id] = true;
-  });
-
-  // URL-Param hinzufügen auch ohne Nachrichten
-  const urlBewId = new URLSearchParams(location.search).get('bew');
-  const activeBewIds = new Set([
-    ...bewerbungen.filter(b => msgLatest[b.id]).map(b => b.id),
-    ...(urlBewId ? [urlBewId] : [])
+  // Nur Chats mit mind. 1 Nachricht zeigen (+ den gerade aktiven, falls per Deep-Link neu)
+  const activeChatIds = new Set([
+    ...chats.filter(c => msgLatest[c.id]).map(c => c.id),
+    ...(_activeChatId ? [_activeChatId] : [])
   ]);
 
-  _allConvs = bewerbungen.filter(b => activeBewIds.has(b.id));
-  // Nach neuester Nachricht sortieren (neueste zuerst)
+  _allConvs = chats.filter(c => activeChatIds.has(c.id));
   _allConvs.sort((a, b) => {
     const ta = msgLatest[a.id]?.erstellt_am || a.erstellt_am || '';
     const tb = msgLatest[b.id]?.erstellt_am || b.erstellt_am || '';
@@ -867,34 +918,38 @@ async function loadConversations() {
   });
 
   if (!_allConvs.length) {
-    listEl.innerHTML = '<div style="padding:28px 20px;text-align:center;color:var(--text-lt);font-size:13px;line-height:1.6">Noch keine Nachrichten.<br>Starte ein Gespräch über eine Bewerbung.</div>';
+    listEl.innerHTML = _showHiddenChats
+      ? '<div style="padding:28px 20px;text-align:center;color:var(--text-lt);font-size:13px;line-height:1.6">Keine ausgeblendeten Chats.</div>'
+      : '<div style="padding:28px 20px;text-align:center;color:var(--text-lt);font-size:13px;line-height:1.6">Noch keine Nachrichten.<br>Starte ein Gespräch über eine Bewerbung.</div>';
     return;
   }
 
-  listEl.innerHTML = _allConvs.map(b => {
-    const job      = jobMap[b.job_id];
-    const lastMsg  = msgLatest[b.id];
-    const hasUnread = msgUnread[b.id];
+  listEl.innerHTML = _allConvs.map(c => {
+    const otherId  = c[otherCol];
+    const bRep     = bewByOther[otherId]; // repräsentative (neueste) Bewerbung für Jobtitel/Status
+    const job      = jobMap[bRep?.job_id];
+    const lastMsg  = msgLatest[c.id];
+    const hasUnread = msgUnread[c.id];
     let name;
     if (_chatRolle === 'arbeitgeber') {
-      if (jobberNameMap[b.jobber_id]) {
-        name = jobberNameMap[b.jobber_id];
+      if (jobberNameMap[otherId]) {
+        name = jobberNameMap[otherId];
       } else {
-        const raw = b.jobber_name || '';
+        const raw = bRep?.jobber_name || '';
         name = raw.includes('@') ? raw.split('@')[0] : (raw || 'Unbekannt');
       }
     } else {
-      name = agNameMap[b.arbeitgeber_id] || job?.firmenname || 'Unbekannter Betrieb';
+      name = agNameMap[otherId] || job?.firmenname || 'Unbekannter Betrieb';
     }
     const sub      = job?.titel || '–';
     const rawPrev  = lastMsg?.nachricht || '';
     const preview  = rawPrev.startsWith('[BEW_REQ:') ? 'Einsatz bewerten →' : (rawPrev || 'Noch keine Nachrichten');
     const time     = lastMsg ? formatConvTime(lastMsg.erstellt_am) : '';
-    const stCls    = b.status === 'angenommen' ? 'cs-angenommen' : b.status === 'abgelehnt' ? 'cs-abgelehnt' : 'cs-ausstehend';
-    const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? odojStatusLabel(b) : 'Ausstehend';
+    const stCls    = bRep?.status === 'angenommen' ? 'cs-angenommen' : bRep?.status === 'abgelehnt' ? 'cs-abgelehnt' : 'cs-ausstehend';
+    const stLbl    = bRep?.status === 'angenommen' ? 'Angenommen' : bRep?.status === 'abgelehnt' ? odojStatusLabel(bRep) : 'Ausstehend';
 
     return `
-      <div class="conv-item${_activeBewId === b.id ? ' active' : ''}${hasUnread ? ' unread' : ''}" id="conv-${b.id}" onclick="openConversation('${b.id}')">
+      <div class="conv-item${_activeChatId === c.id ? ' active' : ''}${hasUnread ? ' unread' : ''}" id="conv-${c.id}" onclick="openConversation('${c.id}')">
         <div class="conv-item-name">
           ${escHtml(name)}
           ${hasUnread ? '<span class="conv-unread-dot"></span>' : ''}
@@ -908,73 +963,88 @@ async function loadConversations() {
 }
 
 // ── KONVERSATION ÖFFNEN ──
-async function openConversation(bewId) {
-  _activeBewId = bewId;
+async function openConversation(chatId) {
+  _activeChatId = chatId;
 
   // Sidebar highlight
   document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
-  const convEl = document.getElementById('conv-' + bewId);
+  const convEl = document.getElementById('conv-' + chatId);
   if (convEl) convEl.classList.add('active');
 
-  // Bewerbung laden
-  const { data: bew } = await odojSb.from('bewerbungen').select('*').eq('id', bewId).single();
-  _activeBew = bew;
-  if (!bew) return;
+  // Chat-Zeile laden (Account-Paar, G1)
+  const { data: chat } = await odojSb.from('chats').select('*').eq('id', chatId).single();
+  if (!chat) return;
+
+  // Neueste Bewerbung dieses Paars als repräsentative Info (Jobtitel/
+  // Status/Zurückziehen-Button bezieht sich auf diese) - Anker für neue
+  // Nachrichten in sendMessage() etc.
+  const { data: bew } = await odojSb.from('bewerbungen').select('*')
+    .eq('jobber_id', chat.jobber_id).eq('arbeitgeber_id', chat.arbeitgeber_id)
+    .order('erstellt_am', { ascending: false }).limit(1).maybeSingle();
+  _activeBew   = bew;
+  _activeBewId = bew?.id || null;
 
   // Job laden
   let job = null;
-  if (bew.job_id) {
+  if (bew?.job_id) {
     const { data } = await odojSb.from('jobs').select('id,titel,firmenname').eq('id', bew.job_id).single();
     job = data;
   }
 
   // Header setzen – echten Namen aus Profile laden
   let name;
-  if (_chatRolle === 'arbeitgeber' && bew.jobber_id) {
-    const { data: jp } = await odojSb.from('Profile').select('vorname,nachname').eq('user_id', bew.jobber_id).maybeSingle();
+  if (_chatRolle === 'arbeitgeber') {
+    const { data: jp } = await odojSb.from('Profile').select('vorname,nachname').eq('user_id', chat.jobber_id).maybeSingle();
     const realName = [jp?.vorname, jp?.nachname].filter(Boolean).join(' ');
     if (realName) {
       name = realName;
     } else {
-      const raw = bew.jobber_name || '';
+      const raw = bew?.jobber_name || '';
       name = raw.includes('@') ? raw.split('@')[0] : (raw || 'Unbekannt');
     }
-  } else if (bew.arbeitgeber_id) {
-    const { data: ap } = await odojSb.from('Profile').select('firmenname,vorname,nachname').eq('user_id', bew.arbeitgeber_id).maybeSingle();
+  } else {
+    const { data: ap } = await odojSb.from('Profile').select('firmenname,vorname,nachname').eq('user_id', chat.arbeitgeber_id).maybeSingle();
     name = ap?.firmenname
       || [ap?.vorname, ap?.nachname].filter(Boolean).join(' ')
       || job?.firmenname
       || 'Unbekannter Betrieb';
-  } else {
-    name = job?.firmenname || 'Unbekannter Betrieb';
   }
   document.getElementById('chat-win-name').textContent = name;
   document.getElementById('chat-win-sub').textContent  = job?.titel || '–';
 
-  // Status-Badge in Header
-  const stCls  = bew.status === 'angenommen' ? '#1A7A50' : bew.status === 'abgelehnt' ? '#C0392B' : '#A05000';
-  const stLbl  = bew.status === 'angenommen' ? 'Angenommen' : bew.status === 'abgelehnt' ? odojStatusLabel(bew) : 'Ausstehend';
+  // Status-Badge in Header (zeigt den Status der neuesten Bewerbung dieses Paars)
   const existingBadge = document.getElementById('chat-win-badge');
   if (existingBadge) existingBadge.remove();
-  const badge = document.createElement('span');
-  badge.id = 'chat-win-badge';
-  badge.style.cssText = `display:inline-block;font-size:10px;font-weight:700;padding:2px 10px;border-radius:100px;background:${stCls}22;color:${stCls};text-transform:uppercase;letter-spacing:.3px;margin-top:4px`;
-  badge.textContent = stLbl;
-  document.getElementById('chat-win-sub').after(badge);
+  let badgeEl = null;
+  if (bew) {
+    const stCls = bew.status === 'angenommen' ? '#1A7A50' : bew.status === 'abgelehnt' ? '#C0392B' : '#A05000';
+    const stLbl = bew.status === 'angenommen' ? 'Angenommen' : bew.status === 'abgelehnt' ? odojStatusLabel(bew) : 'Ausstehend';
+    badgeEl = document.createElement('span');
+    badgeEl.id = 'chat-win-badge';
+    badgeEl.style.cssText = `display:inline-block;font-size:10px;font-weight:700;padding:2px 10px;border-radius:100px;background:${stCls}22;color:${stCls};text-transform:uppercase;letter-spacing:.3px;margin-top:4px`;
+    badgeEl.textContent = stLbl;
+    document.getElementById('chat-win-sub').after(badgeEl);
+  }
 
-  // E5: Zurückziehen-Link für den Jobber, solange die Bewerbung noch
-  // offen/angenommen ist (nicht mehr möglich nach abgelehnt/abgeschlossen).
+  // E5: Zurückziehen-Link für den Jobber (bezieht sich auf die neueste
+  // Bewerbung dieses Paars), solange sie noch offen/angenommen ist.
   const existingWithdraw = document.getElementById('chat-win-withdraw');
   if (existingWithdraw) existingWithdraw.remove();
-  if (_chatRolle === 'jobber' && (bew.status === 'ausstehend' || bew.status === 'angenommen')) {
+  if (bew && _chatRolle === 'jobber' && (bew.status === 'ausstehend' || bew.status === 'angenommen')) {
     const withdrawBtn = document.createElement('button');
     withdrawBtn.id = 'chat-win-withdraw';
     withdrawBtn.type = 'button';
     withdrawBtn.className = 'chat-withdraw-link';
     withdrawBtn.textContent = 'Bewerbung zurückziehen';
     withdrawBtn.onclick = () => openZurueckziehenModal(bew.id, job?.titel || '', bew.status);
-    badge.after(withdrawBtn);
+    (badgeEl || document.getElementById('chat-win-sub')).after(withdrawBtn);
   }
+
+  // G4: "Chat ausblenden"/"einblenden"-Button im Header
+  const hiddenCol = _chatRolle === 'arbeitgeber' ? 'versteckt_arbeitgeber' : 'versteckt_jobber';
+  const hideBtn = document.getElementById('chat-hide-btn');
+  hideBtn.style.display = 'block';
+  hideBtn.textContent = chat[hiddenCol] ? 'Chat einblenden' : 'Chat ausblenden';
 
   // Fenster einblenden
   document.getElementById('chat-empty').style.display  = 'none';
@@ -990,7 +1060,7 @@ async function openConversation(bewId) {
   // Als gelesen markieren
   await odojSb.from('nachrichten')
     .update({ gelesen: true })
-    .eq('bewerbung_id', bewId)
+    .eq('chat_id', chatId)
     .eq('empfaenger_id', _chatSession.user.id)
     .eq('gelesen', false);
 
@@ -1013,20 +1083,35 @@ async function openConversation(bewId) {
     // Nachrichten als gelesen markieren
     await odojSb.from('nachrichten')
       .update({ gelesen: true })
-      .eq('bewerbung_id', bewId)
+      .eq('chat_id', chatId)
       .eq('empfaenger_id', _chatSession.user.id)
       .eq('gelesen', false);
   }, 5000);
 }
 
+// G4: Chat ausblenden/einblenden - Nachrichten bleiben erhalten, nur die
+// Sichtbarkeit in der eigenen Konversationsliste ändert sich.
+async function toggleHideActiveChat() {
+  if (!_activeChatId) return;
+  const hiddenCol = _chatRolle === 'arbeitgeber' ? 'versteckt_arbeitgeber' : 'versteckt_jobber';
+  const { data: chat } = await odojSb.from('chats').select('*').eq('id', _activeChatId).single();
+  if (!chat) return;
+  const neu = !chat[hiddenCol];
+  const { error } = await odojSb.from('chats').update({ [hiddenCol]: neu }).eq('id', _activeChatId);
+  if (error) { showToast('Fehler: ' + error.message, 'error'); return; }
+  document.getElementById('chat-hide-btn').textContent = neu ? 'Chat einblenden' : 'Chat ausblenden';
+  showToast(neu ? 'Chat ausgeblendet.' : 'Chat wieder eingeblendet.', 'success');
+  await loadConversations();
+}
+
 // ── NACHRICHTEN LADEN ──
 async function loadMessages(silent) {
-  if (!_activeBewId) return;
+  if (!_activeChatId) return;
 
   const { data: msgs } = await odojSb
     .from('nachrichten')
     .select('*')
-    .eq('bewerbung_id', _activeBewId)
+    .eq('chat_id', _activeChatId)
     .order('erstellt_am', { ascending: true });
 
   const area = document.getElementById('messages-area');
@@ -1113,11 +1198,11 @@ async function loadMessages(silent) {
             Vertrag öffnen &amp; prüfen
           </a>
           <div class="msg-vertrag-actions">
-            <button class="btn-vertrag-accept" onclick="acceptVertrag('${vId}','${_activeBewId}')">
+            <button class="btn-vertrag-accept" onclick="acceptVertrag('${vId}','${m.bewerbung_id}')">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Annehmen
             </button>
-            <button class="btn-vertrag-reject" onclick="openRejectVertragModal('${vId}','${_activeBewId}')">
+            <button class="btn-vertrag-reject" onclick="openRejectVertragModal('${vId}','${m.bewerbung_id}')">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               Ablehnen
             </button>
@@ -1285,7 +1370,7 @@ async function sendMessage() {
     const trimmed = text.toLowerCase().trim();
     if (trimmed === 'ja' || trimmed === 'yes' || trimmed === 'nein' || trimmed === 'no') {
       const { data: alleNachrichten } = await odojSb.from('nachrichten')
-        .select('*').eq('bewerbung_id', _activeBewId)
+        .select('*').eq('chat_id', _activeChatId)
         .order('erstellt_am', { ascending: false }).limit(30);
       const letzteAgMsg = (alleNachrichten || []).find(m =>
         m.sender_id !== _chatSession.user.id &&
@@ -1323,7 +1408,7 @@ async function sendMessage() {
   }
 
   // Konversationsliste aktualisieren (Preview)
-  const convEl = document.getElementById('conv-' + _activeBewId);
+  const convEl = document.getElementById('conv-' + _activeChatId);
   if (convEl) {
     const preview = convEl.querySelector('.conv-item-preview');
     if (preview) preview.textContent = text;
@@ -1619,7 +1704,7 @@ async function submitZurueckziehen() {
   if (error) { alert('Fehler: ' + error.message); return; }
 
   closeZurueckziehenModal();
-  await openConversation(_withdrawBewId);
+  await openConversation(_activeChatId);
   await loadConversations();
 }
 
