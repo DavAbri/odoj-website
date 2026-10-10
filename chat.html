@@ -824,7 +824,7 @@ async function loadConversations() {
     const preview  = rawPrev.startsWith('[BEW_REQ:') ? 'Einsatz bewerten →' : (rawPrev || 'Noch keine Nachrichten');
     const time     = lastMsg ? formatConvTime(lastMsg.erstellt_am) : '';
     const stCls    = b.status === 'angenommen' ? 'cs-angenommen' : b.status === 'abgelehnt' ? 'cs-abgelehnt' : 'cs-ausstehend';
-    const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
+    const stLbl    = b.status === 'angenommen' ? 'Angenommen' : b.status === 'abgelehnt' ? odojStatusLabel(b) : 'Ausstehend';
 
     return `
       <div class="conv-item${_activeBewId === b.id ? ' active' : ''}${hasUnread ? ' unread' : ''}" id="conv-${b.id}" onclick="openConversation('${b.id}')">
@@ -886,7 +886,7 @@ async function openConversation(bewId) {
 
   // Status-Badge in Header
   const stCls  = bew.status === 'angenommen' ? '#1A7A50' : bew.status === 'abgelehnt' ? '#C0392B' : '#A05000';
-  const stLbl  = bew.status === 'angenommen' ? 'Angenommen' : bew.status === 'abgelehnt' ? 'Abgelehnt' : 'Ausstehend';
+  const stLbl  = bew.status === 'angenommen' ? 'Angenommen' : bew.status === 'abgelehnt' ? odojStatusLabel(bew) : 'Ausstehend';
   const existingBadge = document.getElementById('chat-win-badge');
   if (existingBadge) existingBadge.remove();
   const badge = document.createElement('span');

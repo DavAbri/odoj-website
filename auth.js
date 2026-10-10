@@ -15,6 +15,29 @@ const ODOJ_SUPABASE_KEY = ODOJ_IS_LIVE
 
 window.odojSb = supabase.createClient(ODOJ_SUPABASE_URL, ODOJ_SUPABASE_KEY);
 
+// ── Block E1: zentrale Anzeige-Texte für bewerbungen.status ──────────────
+// Der gespeicherte DB-Wert bleibt "abgelehnt" (keine Migration nötig, siehe
+// Prompt-Antwort 1) - für Menschen sichtbar heißt es überall "Nicht
+// berücksichtigt" (Plattform, Admin, Mails, Chat). Eine einzige Stelle statt
+// den Text an vielen Dateien einzeln zu pflegen.
+const ODOJ_BEWERBUNG_STATUS_LABEL = {
+  ausstehend:   'Ausstehend',
+  angenommen:   'Angenommen',
+  abgelehnt:    'Nicht berücksichtigt',
+  abgeschlossen:'Abgeschlossen'
+};
+// bew kann der volle Bewerbungs-Datensatz sein (unterscheidet dann bei
+// status='abgelehnt' zwischen "vom Arbeitgeber abgelehnt" und "vom Jobber
+// selbst zurückgezogen", siehe bewerbungen.zurueckgezogen) oder einfach nur
+// der status-String (dann gilt immer "Nicht berücksichtigt" für abgelehnt).
+function odojStatusLabel(bew) {
+  if (bew && typeof bew === 'object') {
+    if (bew.status === 'abgelehnt' && bew.zurueckgezogen) return 'Zurückgezogen';
+    return ODOJ_BEWERBUNG_STATUS_LABEL[bew.status] || bew.status || '';
+  }
+  return ODOJ_BEWERBUNG_STATUS_LABEL[bew] || bew || '';
+}
+
 // ── Vorschau-Modus: zentrale app_settings einmal pro Seitenaufruf laden ──
 // Bei Fehlern wird bewusst in den Vorschau-Modus "fail-closed" gegangen
 // (Jobs lieber einmal fälschlich verstecken als vor dem Launch versehentlich

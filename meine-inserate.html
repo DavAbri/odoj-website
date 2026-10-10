@@ -1634,9 +1634,13 @@ function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invo
 }
 
 // ── Statusbadge-Klasse/Text (wiederverwendet für Header- und Termin-Badges) ──
-function _bewStatusInfo(status) {
+// bew darf der volle Bewerbungs-Datensatz ODER nur der status-String sein
+// (odojStatusLabel in auth.js unterscheidet dann bei Bedarf "Nicht
+// berücksichtigt" vom Arbeitgeber vs. "Zurückgezogen" durch den Jobber).
+function _bewStatusInfo(bew) {
+  const status = (bew && typeof bew === 'object') ? bew.status : bew;
   if (status === 'angenommen') return { cls: 'bew-st-angenommen', label: 'Angenommen' };
-  if (status === 'abgelehnt')  return { cls: 'bew-st-abgelehnt',  label: 'Abgelehnt' };
+  if (status === 'abgelehnt')  return { cls: 'bew-st-abgelehnt',  label: odojStatusLabel(bew) };
   return { cls: 'bew-st-ausstehend', label: 'Ausstehend' };
 }
 
@@ -1765,7 +1769,7 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
       ${profile?.svnummer  ? `<span class="bew-profile-field">SV-Nr.: ${profile.svnummer}</span>` : ''}
     </div>` : '';
 
-  const primarySt = _bewStatusInfo(primary.status);
+  const primarySt = _bewStatusInfo(primary);
   const primaryTerminHtml = primary._effDatum ? `
     <div class="bew-termin-line">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -1773,7 +1777,7 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
     </div>` : '';
 
   const extrasHtml = extras.map(b => {
-    const st = _bewStatusInfo(b.status);
+    const st = _bewStatusInfo(b);
     const terminDatum = b._effDatum
       ? new Date(b._effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
       : '–';
@@ -2000,7 +2004,10 @@ async function bestaetigeAnnehmen() {
 }
 
 async function updateBewStatus(bewId, newStatus) {
-  const { error } = await odojSb.from('bewerbungen').update({ status: newStatus }).eq('id', bewId);
+  // E3: "Neu"-Kennzeichen beim Jobber, bis er die Annahme angesehen hat.
+  const updatePayload = { status: newStatus };
+  if (newStatus === 'angenommen') updatePayload.annahme_gesehen = false;
+  const { error } = await odojSb.from('bewerbungen').update(updatePayload).eq('id', bewId);
   if (error) { alert('Fehler: ' + error.message); return; }
 
   const { data: bew } = await odojSb.from('bewerbungen')

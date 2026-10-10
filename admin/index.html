@@ -804,9 +804,13 @@
 
   function statusBadge(s) {
     const m = { aktiv: 'badge-green', inaktiv: 'badge-gray', erledigt: 'badge-yellow', offen: 'badge-yellow', bezahlt: 'badge-green', storniert: 'badge-gray',
-      ausstehend: 'badge-yellow', angenommen: 'badge-green', abgelehnt: 'badge-gray', abgeschlossen: 'badge-green' };
+      ausstehend: 'badge-yellow', angenommen: 'badge-green', abgelehnt: 'badge-gray', abgeschlossen: 'badge-green', zurueckgezogen: 'badge-gray' };
+    // Block E1: "abgelehnt" heißt für Menschen sichtbar "Nicht berücksichtigt"
+    // (Arbeitgeber hat abgelehnt) bzw. "Zurückgezogen" (Jobber selbst) -
+    // Aufrufer übergeben bei Bewerbungen statt des rohen status-Strings den
+    // Sentinel-Wert 'zurueckgezogen', wenn bewerbungen.zurueckgezogen=true ist.
     const labels = { aktiv: 'Aktiv', inaktiv: 'Inaktiv', erledigt: 'Erledigt', offen: 'Offen', bezahlt: 'Bezahlt', storniert: 'Storniert',
-      ausstehend: 'Ausstehend', angenommen: 'Angenommen', abgelehnt: 'Abgelehnt', abgeschlossen: 'Abgeschlossen' };
+      ausstehend: 'Ausstehend', angenommen: 'Angenommen', abgelehnt: 'Nicht berücksichtigt', abgeschlossen: 'Abgeschlossen', zurueckgezogen: 'Zurückgezogen' };
     return `<span class="badge ${m[s] || 'badge-gray'}">${labels[s] || s || '–'}</span>`;
   }
 
@@ -962,7 +966,7 @@
       html += bews.length
         ? bews.map(b => {
             const job = findJob(b.job_id);
-            return `<div class="nd-list-item"><span>${escHtml(job ? job.titel : '(Inserat gelöscht)')}</span><span style="color:var(--text2)">${fmtDate(b.erstellt_am)}</span>${statusBadge(b.status)}</div>`;
+            return `<div class="nd-list-item"><span>${escHtml(job ? job.titel : '(Inserat gelöscht)')}</span><span style="color:var(--text2)">${fmtDate(b.erstellt_am)}</span>${statusBadge(b.status === 'abgelehnt' && b.zurueckgezogen ? 'zurueckgezogen' : b.status)}</div>`;
           }).join('')
         : '<div class="table-empty">Keine Bewerbungen</div>';
     }

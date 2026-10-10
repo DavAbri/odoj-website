@@ -325,6 +325,8 @@
     </a>
   </div>
 
+  <div id="mj-neu-banner" style="display:none;background:#FFF3E0;border:1px solid #F5C377;color:#8a5a00;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:14px;font-weight:600"></div>
+
   <div id="mj-loading" class="mj-loading">Lade Bewerbungen…</div>
 
   <div class="mj-board" id="mj-board" style="display:none">
@@ -359,7 +361,7 @@
     <div class="mj-col">
       <div class="mj-col-header">
         <span class="mj-col-dot mj-col-dot-abgelehnt"></span>
-        <span class="mj-col-title">Abgelehnte Bewerbungen</span>
+        <span class="mj-col-title">Nicht berücksichtigt</span>
         <span class="mj-col-count" id="cnt-abgelehnt">0</span>
       </div>
       <div class="mj-col-body" id="col-abgelehnt"></div>
@@ -441,10 +443,11 @@ function renderCard(b, job, opts = {}) {
   const firmaAnzeige = job?._agName || job?.firmenname || '–';
 
   return `
-    <div class="mj-card fade-in" onclick="window.location.href='${jobDetailHref}'" style="${opts.muted ? 'opacity:.75' : ''}">
+    <div class="mj-card fade-in" onclick="openBewCard('${b.id}','${jobDetailHref}')" style="${opts.muted ? 'opacity:.75' : ''}">
       ${branche ? `<span class="tag ${branche.cls}" style="font-size:11px;padding:3px 10px;margin-bottom:8px;display:inline-block">${branche.label}</span>` : ''}
-      <div class="mj-card-titel">${escH(job?.titel || 'Unbekannter Job')}</div>
+      <div class="mj-card-titel">${escH(job?.titel || 'Unbekannter Job')}${(b.status === 'angenommen' && !b.annahme_gesehen) ? ` <span style="display:inline-flex;align-items:center;justify-content:center;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:2px 8px;vertical-align:middle">Neu</span>` : ''}</div>
       <div class="mj-card-firma">${escH(firmaAnzeige)}</div>
+      ${b.status === 'abgelehnt' ? `<div style="font-size:11px;font-weight:600;color:${b.zurueckgezogen ? '#888' : '#c0392b'};margin-bottom:4px">${odojStatusLabel(b)}</div>` : ''}
       <div class="mj-card-meta">
         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         ${jobDat}${job?.ort ? ' · ' + escH(job.ort) : ''}
@@ -460,11 +463,21 @@ function renderCard(b, job, opts = {}) {
       </div>` : ''}
       <div class="mj-card-actions">
         ${opts.showChat ? `<a href="${chatHref}" class="mj-card-btn mj-card-btn-chat" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Chat</a>` : ''}
-        <a href="${jobDetailHref}" class="mj-card-btn mj-card-btn-detail" onclick="event.stopPropagation()">Details →</a>
+        <a href="${jobDetailHref}" class="mj-card-btn mj-card-btn-detail" onclick="event.stopPropagation();event.preventDefault();openBewCard('${b.id}','${jobDetailHref}')">Details →</a>
         ${opts.showWithdraw ? `<button class="mj-card-btn mj-card-btn-withdraw" onclick="event.stopPropagation();openZurueckziehenModal('${b.id}','${escH(job?.titel||'')}','${b.status}')">Zurückziehen</button>` : ''}
         ${(b.anwesenheit_bestaetigt && b.zahlung_status !== 'bestaetigt') ? `<button class="mj-card-btn mj-card-btn-lohn" id="lohn-btn-${b.id}" onclick="event.stopPropagation();confirmLohnErhalten('${b.id}')">✓ Lohn erhalten</button>` : ''}
       </div>
     </div>`;
+}
+
+// Kartenklick: "Neu"-Kennzeichen (E3) als gesehen markieren, bevor zu job-detail.html gewechselt wird
+function openBewCard(bewId, href) {
+  const b = _bewMap[bewId];
+  if (b && b.status === 'angenommen' && !b.annahme_gesehen) {
+    b.annahme_gesehen = true;
+    odojSb.from('bewerbungen').update({ annahme_gesehen: true }).eq('id', bewId).then(() => {});
+  }
+  window.location.href = href;
 }
 
 function renderEmpty(icon, text) {
@@ -509,6 +522,18 @@ async function loadMeineBewerbungen() {
   // Globale Map für Modal-Zugriff
   _bewMap = {};
   bewerbungen.forEach(b => { _bewMap[b.id] = b; });
+
+  // E3: Meldung bei neuen, noch nicht angesehenen Zusagen
+  const neuCount = bewerbungen.filter(b => b.status === 'angenommen' && !b.annahme_gesehen).length;
+  const neuBanner = document.getElementById('mj-neu-banner');
+  if (neuCount > 0) {
+    neuBanner.textContent = neuCount === 1
+      ? '🎉 Du hast eine neue Zusage!'
+      : `🎉 Du hast ${neuCount} neue Zusagen!`;
+    neuBanner.style.display = 'block';
+  } else {
+    neuBanner.style.display = 'none';
+  }
 
   // Job-Details laden
   const jobIds = [...new Set(bewerbungen.map(b => b.job_id).filter(Boolean))];
@@ -585,7 +610,7 @@ async function loadMeineBewerbungen() {
 
   fillCol('col-offen',        offen,        '', 'Keine offenen Bewerbungen',         { showWithdraw: true });
   fillCol('col-anstehend',    anstehend,    '', 'Noch keine angenommenen Einsätze',  { showChat: true, showWithdraw: true });
-  fillCol('col-abgelehnt',    abgelehnt,    '', 'Keine abgelehnten Bewerbungen',     { muted: true });
+  fillCol('col-abgelehnt',    abgelehnt,    '', 'Keine nicht berücksichtigten Bewerbungen', { muted: true });
   fillCol('col-abgeschlossen',abgeschlossen,'', 'Noch keine abgeschlossenen Einsätze',{ showChat: true, muted: true });
 
   document.getElementById('mj-board').style.display = 'grid';
@@ -612,7 +637,14 @@ function openZurueckziehenModal(bewId, jobTitle, bewStatus) {
   document.getElementById('withdraw-job-name').textContent = jobTitle || 'diesen Job';
   document.querySelectorAll('input[name="withdraw-reason"]').forEach(r => r.checked = false);
   document.getElementById('withdraw-custom').value = '';
+  document.getElementById('withdraw-custom-wrap').style.display = 'none';
   document.getElementById('withdraw-overlay').style.display = 'flex';
+}
+
+// E6: Freitext nur bei "Sonstige" nötig.
+function onWithdrawReasonChange() {
+  const selected = document.querySelector('input[name="withdraw-reason"]:checked');
+  document.getElementById('withdraw-custom-wrap').style.display = selected?.value === 'sonstiges' ? 'block' : 'none';
 }
 
 function closeZurueckziehenModal() {
@@ -621,9 +653,10 @@ function closeZurueckziehenModal() {
 
 async function submitZurueckziehen() {
   const selected = document.querySelector('input[name="withdraw-reason"]:checked');
-  const custom   = document.getElementById('withdraw-custom').value.trim();
-  const reason   = selected?.value === 'sonstiges' ? (custom || 'Kein Grund angegeben') : selected?.value;
-  if (!reason) { alert('Bitte wähle einen Grund aus.'); return; }
+  if (!selected) { alert('Bitte wähle einen Grund aus.'); return; }
+  const custom = document.getElementById('withdraw-custom').value.trim();
+  if (selected.value === 'sonstiges' && !custom) { alert('Bitte einen Grund eingeben.'); return; }
+  const reason = selected.value === 'sonstiges' ? custom : selected.value;
 
   const btn = document.getElementById('withdraw-confirm-btn');
   btn.disabled = true; btn.textContent = 'Wird zurückgezogen…';
@@ -635,10 +668,12 @@ async function submitZurueckziehen() {
   const job = bew ? _jobMap[bew.job_id] : null;
   const wasAngenommen = _withdrawBewStatus === 'angenommen';
 
-  // 1. Bewerbung auf abgelehnt setzen
+  // 1. Bewerbung auf abgelehnt setzen - zurueckgezogen=true unterscheidet das
+  // von einer Ablehnung durch den Arbeitgeber (gleicher status-Wert,
+  // unterschiedliche Anzeige/Behandlung, siehe odojStatusLabel in auth.js).
   const { error: updErr } = await odojSb
     .from('bewerbungen')
-    .update({ status: 'abgelehnt' })
+    .update({ status: 'abgelehnt', zurueckgezogen: true })
     .eq('id', _withdrawBewId);
 
   if (updErr) { alert('Fehler: ' + updErr.message); btn.disabled = false; btn.textContent = 'Zurückziehen'; return; }
@@ -652,41 +687,22 @@ async function submitZurueckziehen() {
       .neq('status', 'beide_zugestimmt');
   }
 
-  // 3. Nachrichten an Arbeitgeber und Jobber senden
+  // 3. E9: NUR eine Mail an den Arbeitgeber (Name, Inserat, Datum, Grund) -
+  // bewusst KEINE Chat-Nachricht (weder an ihn noch eine Selbstnotiz an den
+  // Jobber selbst).
   const jobTitle = job?.titel || 'dem Job';
   const agId = job?.arbeitgeber_id;
-  const jobberId = session.user.id;
-  const wasAngen = wasAngenommen;
-  const agText = wasAngen
-    ? `❌ Bewerbung storniert\n\nDer Jobber hat die Bewerbung für „${jobTitle}" storniert.\n\nGrund: ${reason}`
-    : `❌ Bewerbung zurückgezogen\n\nDer Jobber hat seine Bewerbung für „${jobTitle}" zurückgezogen.\n\nGrund: ${reason}`;
-  const jobberText = wasAngen
-    ? `❌ Du hast deine Zusage für „${jobTitle}" storniert.\n\nGrund: ${reason}`
-    : `❌ Du hast deine Bewerbung für „${jobTitle}" zurückgezogen.\n\nGrund: ${reason}`;
-
-  const now = new Date().toISOString();
+  const datumStr = job?.datum
+    ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '';
+  const { data: meinProfil } = await odojSb.from('Profile').select('vorname, nachname').eq('user_id', session.user.id).maybeSingle();
+  const jobberName = [meinProfil?.vorname, meinProfil?.nachname].filter(Boolean).join(' ') || 'Ein Jobber';
 
   if (agId) {
-    const { data: agMsg } = await odojSb.from('nachrichten').insert({
-      bewerbung_id:  _withdrawBewId,
-      sender_id:     jobberId,
-      empfaenger_id: agId,
-      nachricht:     agText,
-      gelesen:       false,
-      erstellt_am:   now
-    }).select().single();
-    if (agMsg) odojSb.functions.invoke('send-notification-email', { body: { record: agMsg } }).catch(err => console.error('[E-Mail] Storno-Benachrichtigung an Arbeitgeber fehlgeschlagen:', err));
+    odojSb.functions.invoke('send-email', {
+      body: { type: 'bewerbung_storniert', recipientId: agId, jobberName, jobTitel: jobTitle, datum: datumStr, grund: reason, warAngenommen }
+    }).catch(err => console.error('[E-Mail] Storno-Benachrichtigung an Arbeitgeber fehlgeschlagen:', err));
   }
-
-  const { data: jobberMsg } = await odojSb.from('nachrichten').insert({
-    bewerbung_id:  _withdrawBewId,
-    sender_id:     jobberId,
-    empfaenger_id: jobberId,
-    nachricht:     jobberText,
-    gelesen:       false,
-    erstellt_am:   now
-  }).select().single();
-  if (jobberMsg) odojSb.functions.invoke('send-notification-email', { body: { record: jobberMsg } }).catch(err => console.error('[E-Mail] Storno-Selbstnotiz fehlgeschlagen:', err));
 
   closeZurueckziehenModal();
   loadMeineBewerbungen();
@@ -738,29 +754,21 @@ loadMeineBewerbungen().then(handleZahlungAntwortAusEmail);
     <p>Warum möchtest du dich für „<span id="withdraw-job-name"></span>" zurückziehen?</p>
     <div class="withdraw-options">
       <label class="withdraw-opt">
-        <input type="radio" name="withdraw-reason" value="Ich habe einen anderen Job gefunden.">
-        <span>Ich habe einen anderen Job gefunden.</span>
+        <input type="radio" name="withdraw-reason" value="Persönliche Gründe" onchange="onWithdrawReasonChange()">
+        <span>Persönliche Gründe</span>
       </label>
       <label class="withdraw-opt">
-        <input type="radio" name="withdraw-reason" value="Ich bin krank oder verhindert.">
-        <span>Ich bin krank oder verhindert.</span>
+        <input type="radio" name="withdraw-reason" value="Krank" onchange="onWithdrawReasonChange()">
+        <span>Krank</span>
       </label>
       <label class="withdraw-opt">
-        <input type="radio" name="withdraw-reason" value="Der Job entspricht nicht meinen Erwartungen.">
-        <span>Der Job entspricht nicht meinen Erwartungen.</span>
-      </label>
-      <label class="withdraw-opt">
-        <input type="radio" name="withdraw-reason" value="Persönliche Gründe.">
-        <span>Persönliche Gründe.</span>
-      </label>
-      <label class="withdraw-opt">
-        <input type="radio" name="withdraw-reason" value="sonstiges">
-        <span>Sonstiges (eigener Grund)</span>
+        <input type="radio" name="withdraw-reason" value="sonstiges" onchange="onWithdrawReasonChange()">
+        <span>Sonstige</span>
       </label>
     </div>
-    <div class="withdraw-custom-wrap">
-      <label for="withdraw-custom">Eigener Grund (optional)</label>
-      <textarea id="withdraw-custom" placeholder="Hier eigenen Grund eingeben…"></textarea>
+    <div class="withdraw-custom-wrap" id="withdraw-custom-wrap" style="display:none">
+      <label for="withdraw-custom">Grund *</label>
+      <textarea id="withdraw-custom" placeholder="Hier Grund eingeben…"></textarea>
     </div>
     <div class="withdraw-modal-btns">
       <button class="withdraw-confirm-btn" id="withdraw-confirm-btn" onclick="submitZurueckziehen()">Zurückziehen</button>

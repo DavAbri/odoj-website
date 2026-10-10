@@ -155,6 +155,32 @@ function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: str
   </td></tr>`);
 }
 
+// E9: Stornierung/Zurückziehen durch den Jobber - geht NUR per Mail an den
+// Arbeitgeber (Name, Inserat, Datum, Grund), bewusst NICHT als Chat-
+// Nachricht (der Prompt verlangt explizit, dass im Chat dazu nichts
+// erscheint - weder diese Info noch eine Selbstnotiz an den Jobber).
+function bewerbungStorniertTemplate(recipientName: string, jobberName: string, jobTitel: string, datumStr: string, grund: string, warAngenommen: boolean): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  const aktionWort = warAngenommen ? "seine Zusage storniert" : "seine Bewerbung zurückgezogen";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:.8px">${warAngenommen ? "Stornierung" : "Bewerbung zurückgezogen"}</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      <strong style="color:#0f1f3d">${esc(jobberName)}</strong> hat ${aktionWort} für
+      <strong style="color:#0f1f3d">${esc(jobTitel)}</strong>${datumStr ? ` am <strong style="color:#0f1f3d">${esc(datumStr)}</strong>` : ""}.
+    </p>
+    <div style="background:#FFF0F0;border:1.5px solid #F5C6C0;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a2020;line-height:1.6">
+      <strong>Grund:</strong> ${esc(grund)}
+    </div>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/meine-inserate.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        Bewerbungen ansehen &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
 function einsatzbeginnAnwesenheitTemplate(recipientName: string, jobTitel: string, bewId: string): string {
   const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
   const link = `${SITE_URL}/meine-inserate.html?bew=${bewId}`;
@@ -394,7 +420,7 @@ serve(async (req) => {
     const {
       type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
       datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
-      terminInfo, regType, regName, regEmail, regRefCode, invoiceId
+      terminInfo, regType, regName, regEmail, regRefCode, invoiceId, grund, warAngenommen
     } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
@@ -530,6 +556,11 @@ serve(async (req) => {
     } else if (type === "einsatzbeginn_anwesenheit") {
       subject = `Bitte Anwesenheit bestätigen: ${jobTitel || "Tagesjob"}`;
       html = einsatzbeginnAnwesenheitTemplate(recipientName, jobTitel || "", bewId || "");
+    } else if (type === "bewerbung_storniert") {
+      subject = warAngenommen
+        ? `Stornierung: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`
+        : `Bewerbung zurückgezogen: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`;
+      html = bewerbungStorniertTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", datum || "", grund || "kein Grund angegeben", !!warAngenommen);
     } else if (type === "rechnung_erinnerung") {
       subject = `Erinnerung: Anwesenheit für "${jobTitel || "Tagesjob"}" noch offen`;
       html = rechnungErinnerungTemplate(recipientName, jobTitel || "");
