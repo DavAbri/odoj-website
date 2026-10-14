@@ -2197,21 +2197,22 @@ async function confirmDeleteInserat() {
     const bewIds = (bews || []).map(b => b.id);
 
     if (bewIds.length) {
-      // 2. Benachrichtigung an jeden Bewerber senden (vor dem Löschen)
+      // 2. Benachrichtigung an jeden Bewerber senden (vor dem Löschen) -
+      // ein einziger Insert mit mehreren Zeilen statt einer Abfrage pro
+      // Bewerber (Disk-IO-Optimierung, Punkt 6).
       const nachrichtText = `❌ Inserat gelöscht\n\nDas Inserat „${jobTitel}" wurde vom Arbeitgeber gelöscht. Deine Bewerbung ist damit leider nicht mehr gültig.\n\nGrund: ${grund}`;
       const jetzt = new Date().toISOString();
-      for (const bew of bews) {
-        if (bew.jobber_id) {
-          await odojSb.from('nachrichten').insert({
-            bewerbung_id: bew.id,
-            sender_id: agId,
-            empfaenger_id: bew.jobber_id,
-            nachricht: nachrichtText,
-            gelesen: false,
-            erstellt_am: jetzt
-          });
-        }
-      }
+      const nachrichtenRows = bews
+        .filter(bew => bew.jobber_id)
+        .map(bew => ({
+          bewerbung_id: bew.id,
+          sender_id: agId,
+          empfaenger_id: bew.jobber_id,
+          nachricht: nachrichtText,
+          gelesen: false,
+          erstellt_am: jetzt
+        }));
+      if (nachrichtenRows.length) await odojSb.from('nachrichten').insert(nachrichtenRows);
 
       // 3. Alle Nachrichten zu diesen Bewerbungen löschen
       await odojSb.from('nachrichten').delete().in('bewerbung_id', bewIds);
