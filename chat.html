@@ -776,6 +776,20 @@
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
+// Fehlte bisher auf dieser Seite komplett (showToast(...) wurde an mehreren
+// Stellen aufgerufen - acceptVertrag, submitVertragAbgelehnt - aber nie
+// definiert, wodurch der Aufruf einen ReferenceError warf und JEDER Code
+// danach in derselben Funktion nie ausgeführt wurde, z.B. das abschließende
+// loadMessages(false)). Gleiche Umsetzung wie auf job-detail.html.
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'odoj-toast' + (type ? ' toast-' + type : '');
+  t.innerHTML = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; }, 2800);
+  setTimeout(() => t.remove(), 3300);
+}
+
 // ── STATE ──
 let _chatSession   = null;
 let _chatRolle     = null;
