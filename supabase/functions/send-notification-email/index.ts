@@ -3,7 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "info@odoj.at"
-const FROM_NAME = "ODOJ – One Day One Job"
+// WICHTIG: Resend lehnt nicht-ASCII-Zeichen (z.B. Halbgeviertstrich "–") im
+// "from"-Anzeigenamen mit einem 422-Validierungsfehler ab - nur reines ASCII
+// verwenden. Das war die Ursache dafür, dass JEDE E-Mail über diese Funktion
+// (u.a. "Bewerbung angenommen") fehlschlug, unbemerkt durch die leeren
+// catch-Blöcke im Frontend.
+const FROM_NAME = "ODOJ - One Day One Job"
 const SITE_URL = Deno.env.get("SITE_URL") || "https://odoj.at"
 
 serve(async (req) => {
@@ -64,12 +69,20 @@ serve(async (req) => {
       ? record.nachricht.substring(0, 200) + (record.nachricht.length > 200 ? "..." : "")
       : ""
 
-    // Betreff anhand des Nachrichtentyps wählen (gleiche Erkennung wie im
-    // Chat-Frontend), damit Annahme/Ablehnung/Vertragsbestätigung eine
-    // passende, klare Betreffzeile statt der generischen "Neue Nachricht" bekommen.
+    // Betreff: bevorzugt über den expliziten subjectHint vom Aufrufer (robust
+    // gegen spätere Textänderungen der Chat-Nachricht), sonst Fallback auf
+    // Text-Erkennung (gleiche Erkennung wie im Chat-Frontend, für ältere
+    // Aufrufstellen ohne subjectHint).
     const text = record.nachricht || ""
+    const SUBJECT_HINTS: Record<string, string> = {
+      bewerbung_angenommen: "Deine Bewerbung wurde angenommen! 🎉",
+      bewerbung_nicht_beruecksichtigt: "Update zu deiner Bewerbung",
+      vertrag_bestaetigt: "Der Dienstvertrag wurde akzeptiert",
+    }
     let subject = `Neue Nachricht von ${senderName} auf ODOJ`
-    if (text.startsWith("Herzlichen Glückwunsch! Deine Bewerbung")) {
+    if (body.subjectHint && SUBJECT_HINTS[body.subjectHint]) {
+      subject = SUBJECT_HINTS[body.subjectHint]
+    } else if (text.startsWith("Herzlichen Glückwunsch! Deine Bewerbung")) {
       subject = "Deine Bewerbung wurde angenommen! 🎉"
     } else if (text.startsWith("Vielen Dank für deine Bewerbung")) {
       subject = "Update zu deiner Bewerbung"

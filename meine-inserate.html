@@ -1511,52 +1511,53 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
     return;
   }
 
-  const { data: jobRow } = await odojSb.from('jobs').select('tagesgehalt').eq('id', jobId).single();
+  const { data: jobRow } = await odojSb.from('jobs').select('tagesgehalt, uhrzeit_von').eq('id', jobId).single();
   const tagesgehalt = jobRow?.tagesgehalt || 0;
   const odojConfig = await getOdojBankConfig();
 
   // Termine dieses Jobs laden (nur bei Mehrtages-Jobs vorhanden), damit jede
-  // Bewerbungszeile ihr EIGENES Termin-Datum zeigt statt des einen jobDatum.
-  const { data: termine } = await odojSb.from('job_termine').select('id, datum').eq('job_id', jobId);
+  // Bewerbungszeile ihr EIGENES Termin-Datum (und ggf. eigene Uhrzeit) zeigt
+  // statt des einen jobDatum - nötig für die Einsatzbeginn-Zeitsperre (A1).
+  const { data: termine } = await odojSb.from('job_termine').select('id, datum, uhrzeit_von').eq('job_id', jobId);
   const terminMap = {};
-  (termine || []).forEach(t => { terminMap[t.id] = t.datum; });
+  const terminUhrzeitMap = {};
+  (termine || []).forEach(t => { terminMap[t.id] = t.datum; terminUhrzeitMap[t.id] = t.uhrzeit_von; });
 
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
   const acceptedBewIds = bewerbungen.filter(b => b.status === 'angenommen').map(b => b.id);
+  const bewIdsAll = bewerbungen.map(b => b.id);
   let profileMap = {};
   let bewMap = {};
   let vertragMap = {};
-  const queries = [
+  const [profRes, ratRes, vertragRes, invoiceRes] = await Promise.all([
     odojSb.from('Profile')
       .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum, iban')
       .in('user_id', jobberIds.length ? jobberIds : ['none']),
-    odojSb.from('bewertungen')
-      .select('bewertet_id, sterne')
-      .in('bewertet_id', jobberIds.length ? jobberIds : ['none'])
-      .eq('rolle_bewerter', 'arbeitgeber')
-  ];
-  if (acceptedBewIds.length) {
-    queries.push(odojSb.from('vertraege').select('bewerbung_id, id').in('bewerbung_id', acceptedBewIds));
-  }
-  const [profRes, ratRes, vertragRes] = await Promise.all(queries);
+    // Reputation (Schnitt+Anzahl über ALLE Arbeitgeber) läuft über die
+    // security-definer Funktion statt direkt über die Tabelle - liefert nie
+    // einzelne Bewertungen, bewerter_id oder Kommentar anderer Arbeitgeber.
+    odojSb.rpc('bewertung_reputation', { p_bewertet_ids: jobberIds, p_rolle: 'arbeitgeber' }),
+    odojSb.from('vertraege').select('bewerbung_id, id')
+      .in('bewerbung_id', acceptedBewIds.length ? acceptedBewIds : ['00000000-0000-0000-0000-000000000000']),
+    odojSb.from('invoices').select('bewerbung_id, invoice_number')
+      .in('bewerbung_id', bewIdsAll.length ? bewIdsAll : ['00000000-0000-0000-0000-000000000000'])
+  ]);
+  const invoiceMap = {};
+  invoiceRes.data?.forEach(i => { invoiceMap[i.bewerbung_id] = i.invoice_number; });
   profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
   // Profile-Snapshot für Vertrag-Erstellung cachen (bewerbung_id → profile)
   bewerbungen.forEach(b => {
     if (profileMap[b.jobber_id]) _bewerbungProfileCache[b.id] = profileMap[b.jobber_id];
   });
-  const rawRatings = {};
   ratRes.data?.forEach(r => {
-    if (!rawRatings[r.bewertet_id]) rawRatings[r.bewertet_id] = [];
-    rawRatings[r.bewertet_id].push(r.sterne);
-  });
-  Object.entries(rawRatings).forEach(([uid, sterne]) => {
-    bewMap[uid] = { avg: sterne.reduce((a,b)=>a+b,0)/sterne.length, count: sterne.length };
+    bewMap[r.bewertet_id] = { avg: Number(r.avg_sterne), count: r.anzahl };
   });
   vertragRes?.data?.forEach(v => { vertragMap[v.bewerbung_id] = v.id; });
 
   // Effektives Termin-Datum je Bewerbung auflösen und vorab anhängen
   bewerbungen.forEach(b => {
     b._effDatum = b.termin_id ? (terminMap[b.termin_id] || jobDatum) : jobDatum;
+    b._effUhrzeit = b.termin_id ? (terminUhrzeitMap[b.termin_id] || jobRow?.uhrzeit_von) : jobRow?.uhrzeit_von;
   });
 
   // Nach Person (jobber_id) gruppieren: mehrere Termine derselben Person für
@@ -1580,7 +1581,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   });
 
   bodyEl.innerHTML = groups.map(group =>
-    renderBewGroup(group, profileMap[group[0].jobber_id], bewMap[group[0].jobber_id], vertragMap, tagesgehalt, jobTitel, odojConfig)
+    renderBewGroup(group, profileMap[group[0].jobber_id], bewMap[group[0].jobber_id], vertragMap, tagesgehalt, jobTitel, odojConfig, invoiceMap)
   ).join('');
 }
 
@@ -1600,14 +1601,14 @@ function toggleZahlungDetails(bewId) {
   document.getElementById('bew-zahlung-' + bewId)?.classList.toggle('open');
 }
 
-function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) {
+function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invoiceNumber) {
   const bezahlt = b.zahlung_status === 'bestaetigt';
   const fmt = n => Number(n || 0).toLocaleString('de-AT', { minimumFractionDigits: 2 });
   const dat = b.bestaetigt_am
     ? new Date(b.bestaetigt_am).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '';
   const verwendungszweckLohn    = `ODOJ – ${jobTitel} – ${dat}`;
-  const verwendungszweckGebuehr = `ODOJ – Vermittlungsgebühr`;
+  const verwendungszweckGebuehr = invoiceNumber || 'ODOJ – Vermittlungsgebühr';
   return `
     <div class="bew-zahlung-box" id="bew-zahlung-${b.id}">
       <div class="bew-zahlung-head" onclick="toggleZahlungDetails('${b.id}')">
@@ -1633,27 +1634,52 @@ function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) {
 }
 
 // ── Statusbadge-Klasse/Text (wiederverwendet für Header- und Termin-Badges) ──
-function _bewStatusInfo(status) {
+// bew darf der volle Bewerbungs-Datensatz ODER nur der status-String sein
+// (odojStatusLabel in auth.js unterscheidet dann bei Bedarf "Nicht
+// berücksichtigt" vom Arbeitgeber vs. "Zurückgezogen" durch den Jobber).
+function _bewStatusInfo(bew) {
+  const status = (bew && typeof bew === 'object') ? bew.status : bew;
   if (status === 'angenommen') return { cls: 'bew-st-angenommen', label: 'Angenommen' };
-  if (status === 'abgelehnt')  return { cls: 'bew-st-abgelehnt',  label: 'Abgelehnt' };
+  if (status === 'abgelehnt')  return { cls: 'bew-st-abgelehnt',  label: odojStatusLabel(bew) };
   return { cls: 'bew-st-ausstehend', label: 'Ausstehend' };
+}
+
+// Einsatzbeginn (Datum + Uhrzeit) als Date-Objekt - Anwesenheit darf serverseitig
+// (Trigger) und hier im Frontend erst danach bestätigt werden, nicht nur ab
+// Mitternacht des Einsatztags.
+function _einsatzStart(datum, uhrzeitVon) {
+  if (!datum) return null;
+  return new Date(datum + 'T' + (uhrzeitVon ? uhrzeitVon.slice(0, 5) : '00:00') + ':00');
+}
+function _istEinsatzbeginnErreicht(datum, uhrzeitVon) {
+  const start = _einsatzStart(datum, uhrzeitVon);
+  return !start || start <= new Date();
+}
+function _fmtEinsatzStart(datum, uhrzeitVon) {
+  const start = _einsatzStart(datum, uhrzeitVon);
+  if (!start) return '';
+  const d = start.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit' });
+  const t = start.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+  return uhrzeitVon ? `${d}, ${t} Uhr` : d;
 }
 
 // ── Aktions-Buttons für EINEN Termin (Annehmen/Ablehnen/Nachricht/Vertrag/Anwesenheit) ──
 function renderBewActions(b, realName, vertragId, effDatum) {
   const acceptBtn = b.status !== 'angenommen'
-    ? `<button class="bew-btn bew-btn-accept" onclick="updateBewStatus('${b.id}','angenommen')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
+    ? `<button class="bew-btn bew-btn-accept" onclick="confirmAnnehmen('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
   const rejectBtn = b.status !== 'abgelehnt'
     ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '';
 
-  const heute = new Date().toISOString().split('T')[0];
-  const jobDatumErreicht = !effDatum || effDatum <= heute;
+  const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, b._effUhrzeit);
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
-        ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigt</button>`
-        : jobDatumErreicht
-          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">Erst ab ${new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' })} verfügbar</button>`)
+        ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigt</button>`
+        : b.nicht_gekommen
+          ? `<button class="bew-btn" style="background:#FDE8E8;color:#c0392b;border:1px solid #f3b8b8" disabled>Nicht gekommen gemeldet</button>`
+          : jobDatumErreicht
+            ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${b.id}" onclick="confirmPresence('${b.id}', '${b.jobber_id || ''}', '${b.arbeitgeber_id || ''}', '${realName.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigen</button>`
+            + `<a class="bew-btn" style="background:#FFF0F0;color:#c0392b;border:1px solid #f3b8b8;text-decoration:none;display:inline-flex;align-items:center" href="nicht-erschienen.html?bew=${b.id}">Nicht gekommen</a>`
+            : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzbeginn verfügbar">Erst ab ${_fmtEinsatzStart(effDatum, b._effUhrzeit)} verfügbar</button>`)
     : '';
 
   const datenblattBtn = b.status === 'angenommen'
@@ -1661,7 +1687,7 @@ function renderBewActions(b, realName, vertragId, effDatum) {
     : '';
 
   return `${acceptBtn}${rejectBtn}
-    <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>
+    <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In Kontakt treten</button>
     ${b.status === 'angenommen' ? (vertragId
       ? `<a href="vertrag-ansehen.html?id=${vertragId}" class="bew-btn" style="background:#E6F5EE;color:#1A7A50;border:1px solid #B3E0CA;text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>`
       : `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>`)
@@ -1704,7 +1730,7 @@ async function downloadDatenblatt(bewId) {
 // Person werden alle Termine dieser Person in EINER Karte zusammengefasst
 // (Name/Bewertung/"Beworben am"/persönliche Daten nur einmal oben), statt als
 // mehrere komplett separate, sich wiederholende Karten.
-function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, odojConfig) {
+function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, odojConfig, invoiceMap) {
   const primary = group[0];
   const extras  = group.slice(1);
 
@@ -1743,7 +1769,7 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
       ${profile?.svnummer  ? `<span class="bew-profile-field">SV-Nr.: ${profile.svnummer}</span>` : ''}
     </div>` : '';
 
-  const primarySt = _bewStatusInfo(primary.status);
+  const primarySt = _bewStatusInfo(primary);
   const primaryTerminHtml = primary._effDatum ? `
     <div class="bew-termin-line">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -1751,7 +1777,7 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
     </div>` : '';
 
   const extrasHtml = extras.map(b => {
-    const st = _bewStatusInfo(b.status);
+    const st = _bewStatusInfo(b);
     const terminDatum = b._effDatum
       ? new Date(b._effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' })
       : '–';
@@ -1762,7 +1788,7 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
         Termin: ${terminDatum}
         <span class="bew-st-badge ${st.cls}" id="bew-badge-${b.id}">${st.label}</span>
       </div>
-      ${b.anwesenheit_bestaetigt ? renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig) : ''}
+      ${b.anwesenheit_bestaetigt ? renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invoiceMap?.[b.id]) : ''}
       <div class="bew-item-actions" id="bew-actions-${b.id}">
         ${renderBewActions(b, realName, vertragMap[b.id], b._effDatum)}
       </div>
@@ -1781,12 +1807,15 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
             <div class="bew-item-date">Beworben am ${dateStr}</div>
           </div>
         </div>
-        <span class="bew-st-badge ${primarySt.cls}" id="bew-badge-${primary.id}">${primarySt.label}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="bew-btn" style="background:transparent;border:1px solid var(--gray-lt);color:var(--text-mid);padding:5px 12px;font-size:12px" onclick="showJobberProfile('${primary.jobber_id || ''}', '${nameEsc}')">Details anzeigen</button>
+          <span class="bew-st-badge ${primarySt.cls}" id="bew-badge-${primary.id}">${primarySt.label}</span>
+        </div>
       </div>
       ${profileDetails}
       <div class="bew-termin-block" id="bew-item-${primary.id}">
         ${primaryTerminHtml}
-        ${primary.anwesenheit_bestaetigt ? renderZahlungsBlock(primary, profile, tagesgehalt, jobTitel, odojConfig) : ''}
+        ${primary.anwesenheit_bestaetigt ? renderZahlungsBlock(primary, profile, tagesgehalt, jobTitel, odojConfig, invoiceMap?.[primary.id]) : ''}
         <div class="bew-item-actions" id="bew-actions-${primary.id}">
           ${renderBewActions(primary, realName, vertragMap[primary.id], primary._effDatum)}
         </div>
@@ -1809,10 +1838,28 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   if (!agId) agId = _agSession?.user?.id || '';
 
   const now = new Date().toISOString();
-  const { error: bewErr } = await odojSb.from('bewerbungen')
-    .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now, status: 'abgeschlossen' })
-    .eq('id', bewId);
-  if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen'; } return; }
+  const supportAktiv = !!(window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active);
+
+  if (supportAktiv) {
+    // Direkte Schreibzugriffe liefen hier mit der echten Admin-Sitzung, die
+    // bestehenden RLS-Policies (arbeitgeber_id = auth.uid()) matchen dann
+    // keine Zeile - PostgREST meldet trotzdem "Erfolg" (0 Zeilen betroffen),
+    // eine stille No-Op statt eines sichtbaren Fehlers. Läuft deshalb über
+    // die geloggte, service_role-gestützte Edge Function.
+    const { data: aktionResult, error: aktionErr } = await odojSb.functions.invoke('support-bewerbung-aktion', {
+      body: { sessionId: window.ODOJ_SUPPORT.sessionId, bewId, aktion: 'anwesenheit_bestaetigt' }
+    });
+    if (aktionErr || aktionResult?.error) {
+      alert('Fehler: ' + (aktionResult?.error || aktionErr.message));
+      if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen'; }
+      return;
+    }
+  } else {
+    const { error: bewErr } = await odojSb.from('bewerbungen')
+      .update({ anwesenheit_bestaetigt: true, bestaetigt_am: now, status: 'abgeschlossen' })
+      .eq('id', bewId);
+    if (bewErr) { alert('Fehler: ' + bewErr.message); if (btn) { btn.disabled = false; btn.textContent = 'Anwesenheit bestätigen'; } return; }
+  }
 
   const { data: bewData } = await odojSb.from('bewerbungen').select('job_id').eq('id', bewId).single();
   let jobTitel = 'Tagesjob';
@@ -1823,59 +1870,48 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     if (jobData?.tagesgehalt) lohnBetrag = Number(jobData.tagesgehalt) || 0;
   }
 
-  // Rechnungsnummer generieren: ODOJ-YYYY-NNN
-  const year = new Date().getFullYear();
-  const { count: rCount } = await odojSb.from('rechnungen').select('*', { count: 'exact', head: true });
-  const laufNr = String((rCount || 0) + 1).padStart(3, '0');
-  const rechnungsnummer = `ODOJ-${year}-${laufNr}`;
-
+  // Unsere Vermittlungsgebühr wird NICHT mehr hier pro Bestätigung einzeln
+  // in Rechnung gestellt - die geplante Funktion "anwesenheit-abwicklung"
+  // legt eine konsolidierte Rechnung je Job an, sobald für alle Bewerbungen
+  // dieses Jobs eine Entscheidung vorliegt und der letzte Einsatztag vorbei
+  // ist (siehe Block B1/B2/B5 - Rechnung als eigener, zeitlich entkoppelter
+  // Schritt statt an diesen Klick gebunden).
   const vermittlungsgebuehr = 15;
   const gesamtBetrag = lohnBetrag + vermittlungsgebuehr;
+  const rechnungsnummer = '';
 
-  const today = new Date().toISOString().split('T')[0];
-  const { error: rechErr } = await odojSb.from('rechnungen').insert({
-    arbeitgeber_id:     agId,
-    jobber_id:          jobberId,
-    bewerbung_id:       bewId,
-    job_titel:          jobTitel,
-    jobber_name:        jobberName,
-    betrag:             vermittlungsgebuehr,
-    lohn_betrag:        lohnBetrag,
-    vermittlungsgebuehr: vermittlungsgebuehr,
-    gesamt_betrag:      gesamtBetrag,
-    rechnungsnummer:    rechnungsnummer,
-    datum:              today
-  });
-  if (rechErr) console.warn('Rechnung konnte nicht gespeichert werden:', rechErr.message);
-
-  const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
-  const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
-    bewerbung_id:  bewId,
-    sender_id:     agId,
-    empfaenger_id: jobberId,
-    nachricht:     systemMsg,
-    gelesen:       false,
-    erstellt_am:   new Date().toISOString()
-  }).select().single();
-  if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
-  if (presMsg) odojSb.functions.invoke('send-notification-email', { body: { record: presMsg } }).catch(() => {});
-
-  // BEW_REQ sofort senden — Jobber kann immer bewerten, unabhängig vom AG-Rating
-  if (jobberId && bewData?.job_id) {
-    const bewReqPayload = JSON.stringify({
-      jobId:      bewData.job_id,
-      bewId:      bewId,
-      agId:       agId,
-      firmenname: _agFirmenname
-    });
-    await odojSb.from('nachrichten').insert({
+  // Im Support-Modus hat support-bewerbung-aktion beide Chat-Nachrichten
+  // (Einsatz-abgeschlossen + BEW_REQ) bereits serverseitig angelegt.
+  if (!supportAktiv) {
+    const systemMsg = `Einsatz erfolgreich abgeschlossen!\n\nVielen Dank für deinen Einsatz heute – du hast großartige Arbeit geleistet! Deine Anwesenheit wurde von uns offiziell bestätigt.\n\nWir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!\n\n– Team ODOJ`;
+    const { data: presMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
       bewerbung_id:  bewId,
       sender_id:     agId,
       empfaenger_id: jobberId,
-      nachricht:     '[BEW_REQ:' + bewReqPayload + ']',
+      nachricht:     systemMsg,
       gelesen:       false,
       erstellt_am:   new Date().toISOString()
-    });
+    }).select().single();
+    if (msgErr) console.warn('Chat-Nachricht konnte nicht gesendet werden:', msgErr.message);
+    if (presMsg) odojSb.functions.invoke('send-notification-email', { body: { record: presMsg } }).catch(err => console.error('[E-Mail] Einsatz-abgeschlossen-Benachrichtigung fehlgeschlagen:', err));
+
+    // BEW_REQ sofort senden — Jobber kann immer bewerten, unabhängig vom AG-Rating
+    if (jobberId && bewData?.job_id) {
+      const bewReqPayload = JSON.stringify({
+        jobId:      bewData.job_id,
+        bewId:      bewId,
+        agId:       agId,
+        firmenname: _agFirmenname
+      });
+      await odojSb.from('nachrichten').insert({
+        bewerbung_id:  bewId,
+        sender_id:     agId,
+        empfaenger_id: jobberId,
+        nachricht:     '[BEW_REQ:' + bewReqPayload + ']',
+        gelesen:       false,
+        erstellt_am:   new Date().toISOString()
+      });
+    }
   }
 
   if (jobberId) {
@@ -1911,7 +1947,7 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
     const actionsEl = document.getElementById('bew-actions-' + bewId);
     if (itemEl && actionsEl && !document.getElementById('bew-zahlung-' + bewId)) {
       const fakeBew = { id: bewId, zahlung_status: 'ausstehend', zahlung_ueberfaellig: false, bestaetigt_am: now };
-      actionsEl.insertAdjacentHTML('beforebegin', renderZahlungsBlock(fakeBew, jobberProfil, lohnBetrag, jobTitel, { iban: odojIban, kontoinhaber: odojKontoinhaber }));
+      actionsEl.insertAdjacentHTML('beforebegin', renderZahlungsBlock(fakeBew, jobberProfil, lohnBetrag, jobTitel, { iban: odojIban, kontoinhaber: odojKontoinhaber }, rechnungsnummer));
     }
 
     odojSb.functions.invoke('send-email', {
@@ -1951,8 +1987,27 @@ async function confirmPresence(bewId, jobberId, agId, jobberName) {
   }
 }
 
+// D3: Annehmen erst nach explizitem Bestätigungsschritt.
+let _annahmeBewId = null;
+function confirmAnnehmen(bewId) {
+  _annahmeBewId = bewId;
+  document.getElementById('annahme-confirm-overlay').style.display = 'flex';
+}
+function closeAnnahmeConfirm() {
+  document.getElementById('annahme-confirm-overlay').style.display = 'none';
+  _annahmeBewId = null;
+}
+async function bestaetigeAnnehmen() {
+  const bewId = _annahmeBewId;
+  closeAnnahmeConfirm();
+  if (bewId) await updateBewStatus(bewId, 'angenommen');
+}
+
 async function updateBewStatus(bewId, newStatus) {
-  const { error } = await odojSb.from('bewerbungen').update({ status: newStatus }).eq('id', bewId);
+  // E3: "Neu"-Kennzeichen beim Jobber, bis er die Annahme angesehen hat.
+  const updatePayload = { status: newStatus };
+  if (newStatus === 'angenommen') updatePayload.annahme_gesehen = false;
+  const { error } = await odojSb.from('bewerbungen').update(updatePayload).eq('id', bewId);
   if (error) { alert('Fehler: ' + error.message); return; }
 
   const { data: bew } = await odojSb.from('bewerbungen')
@@ -1997,7 +2052,9 @@ async function updateBewStatus(bewId, newStatus) {
         erstellt_am:   new Date().toISOString()
       }).select().single();
       if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
-      if (insertedMsg) odojSb.functions.invoke('send-notification-email', { body: { record: insertedMsg } }).catch(() => {});
+      if (insertedMsg) odojSb.functions.invoke('send-notification-email', {
+        body: { record: insertedMsg, subjectHint: newStatus === 'angenommen' ? 'bewerbung_angenommen' : 'bewerbung_nicht_beruecksichtigt' }
+      }).catch(err => console.error('[E-Mail] Annahme/Absage-Benachrichtigung fehlgeschlagen:', err));
     }
   }
 
@@ -2051,31 +2108,32 @@ async function updateBewStatus(bewId, newStatus) {
           .select('vorname, nachname').eq('user_id', jobberId).maybeSingle();
         jobberName = [prof?.vorname, prof?.nachname].filter(Boolean).join(' ') || 'Jobber';
       }
-      // Termin-Datum laden für Datumssperre (bei Mehrtermine-Bewerbungen das
-      // spezifische Termin-Datum, sonst das jobs.datum wie bei Einzeltag-Jobs)
-      let jobDatumErreicht = true;
+      // Termin-Datum+Uhrzeit laden für die Einsatzbeginn-Sperre (A1) - bei
+      // Mehrtermine-Bewerbungen das spezifische Termin-Datum/-Uhrzeit, sonst
+      // jobs.datum/uhrzeit_von wie bei Einzeltag-Jobs.
       let effDatum = null;
+      let effUhrzeit = null;
       if (bew?.termin_id) {
-        const { data: terminD } = await odojSb.from('job_termine').select('datum').eq('id', bew.termin_id).maybeSingle();
+        const { data: terminD } = await odojSb.from('job_termine').select('datum, uhrzeit_von').eq('id', bew.termin_id).maybeSingle();
         effDatum = terminD?.datum || null;
+        effUhrzeit = terminD?.uhrzeit_von || null;
       }
-      if (!effDatum && bew?.job_id) {
-        const { data: jobD } = await odojSb.from('jobs').select('datum').eq('id', bew.job_id).maybeSingle();
-        effDatum = jobD?.datum || null;
+      if (bew?.job_id && (!effDatum || !effUhrzeit)) {
+        const { data: jobD } = await odojSb.from('jobs').select('datum, uhrzeit_von').eq('id', bew.job_id).maybeSingle();
+        if (!effDatum) effDatum = jobD?.datum || null;
+        if (!effUhrzeit) effUhrzeit = jobD?.uhrzeit_von || null;
       }
-      if (effDatum) {
-        const heute = new Date().toISOString().split('T')[0];
-        if (effDatum > heute) jobDatumErreicht = false;
-      }
+      const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, effUhrzeit);
       const nameEsc = jobberName.replace(/'/g, "\\'");
       actEl.innerHTML =
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
         `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>` +
-        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Nachricht senden</button>` +
+        `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In Kontakt treten</button>` +
         `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>` +
         (jobDatumErreicht
-          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit & Bezahlung bestätigen</button>`
-          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzdatum verfügbar">${effDatum ? 'Erst ab ' + new Date(effDatum + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit' }) + ' verfügbar' : 'Erst ab Einsatzdatum verfügbar'}</button>`);
+          ? `<button class="bew-btn bew-btn-presence" id="pres-btn-${bewId}" onclick="confirmPresence('${bewId}', '${jobberId}', '${agId}', '${nameEsc}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigen</button>`
+            + `<a class="bew-btn" style="background:#FFF0F0;color:#c0392b;border:1px solid #f3b8b8;text-decoration:none;display:inline-flex;align-items:center" href="nicht-erschienen.html?bew=${bewId}">Nicht gekommen</a>`
+          : `<button class="bew-btn bew-btn-presence-done" disabled title="Erst ab Einsatzbeginn verfügbar">${effDatum ? 'Erst ab ' + _fmtEinsatzStart(effDatum, effUhrzeit) + ' verfügbar' : 'Erst ab Einsatzbeginn verfügbar'}</button>`);
     }
   }
   loadInserate();
@@ -2102,12 +2160,22 @@ function deleteInserat(id, titel) {
 
 function closeDeleteModal() {
   document.getElementById('delete-overlay').style.display = 'none';
+  document.getElementById('delete-grund-input').value = '';
+  document.getElementById('delete-grund-error').style.display = 'none';
   _deleteInseratId = null;
   _deleteInseratTitel = null;
 }
 
 async function confirmDeleteInserat() {
   if (!_deleteInseratId) return;
+  const grund = document.getElementById('delete-grund-input').value.trim();
+  if (!grund) {
+    document.getElementById('delete-grund-error').style.display = 'block';
+    document.getElementById('delete-grund-input').focus();
+    return;
+  }
+  document.getElementById('delete-grund-error').style.display = 'none';
+
   const btn = document.getElementById('delete-confirm-btn');
   btn.disabled = true; btn.textContent = 'Wird gelöscht…';
 
@@ -2115,7 +2183,13 @@ async function confirmDeleteInserat() {
     const jobId = _deleteInseratId;
     const jobTitel = _deleteInseratTitel;
     const session = (await odojSb.auth.getSession()).data.session;
-    const agId = session?.user?.id;
+    const agId = (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) ? window.ODOJ_SUPPORT.targetUserId : session?.user?.id;
+
+    // Löschgrund protokollieren, BEVOR der Job gelöscht wird (danach gäbe es
+    // keine job_id-Referenz mehr, auf die man sich sinnvoll beziehen könnte).
+    await odojSb.from('job_loeschungen').insert({
+      job_id: jobId, arbeitgeber_id: agId, titel: jobTitel, grund
+    });
 
     // 1. Bewerbungen laden (inkl. jobber_id für Benachrichtigung)
     const { data: bews } = await odojSb
@@ -2124,7 +2198,7 @@ async function confirmDeleteInserat() {
 
     if (bewIds.length) {
       // 2. Benachrichtigung an jeden Bewerber senden (vor dem Löschen)
-      const nachrichtText = `❌ Inserat gelöscht\n\nDas Inserat „${jobTitel}" wurde vom Arbeitgeber gelöscht. Deine Bewerbung ist damit leider nicht mehr gültig.`;
+      const nachrichtText = `❌ Inserat gelöscht\n\nDas Inserat „${jobTitel}" wurde vom Arbeitgeber gelöscht. Deine Bewerbung ist damit leider nicht mehr gültig.\n\nGrund: ${grund}`;
       const jetzt = new Date().toISOString();
       for (const bew of bews) {
         if (bew.jobber_id) {
@@ -2787,12 +2861,17 @@ function stammkraefteAlleAuswaehlen(checked) {
 }
 
 async function ladeStammkraefte() {
-  const { data: { user } } = await odojSb.auth.getUser();
-  if (!user) return [];
+  // Immer den gerade aktiven Arbeitgeber verwenden (_agSession) statt der
+  // echten Supabase-Sitzung - im Support-Modus ist das der vertretene
+  // Arbeitgeber, nicht der Admin selbst (odojSb.auth.getUser() lieferte
+  // vorher fälschlich die Admin-eigene Sitzung und damit dessen eigene
+  // Bewertungen statt der des vertretenen Arbeitgebers).
+  if (!_agSession?.user?.id) return [];
+  const agId = _agSession.user.id;
 
   // 1. Alle Jobs dieses Arbeitgebers
   const { data: agJobs } = await odojSb
-    .from('jobs').select('id').eq('arbeitgeber_id', user.id);
+    .from('jobs').select('id').eq('arbeitgeber_id', agId);
   const agJobIds = (agJobs || []).map(j => j.id);
   if (!agJobIds.length) return [];
 
@@ -2805,17 +2884,27 @@ async function ladeStammkraefte() {
   const jobberIds = [...new Set((bews || []).map(b => b.jobber_id))];
   if (!jobberIds.length) return [];
 
-  // 3. Bewertungen >= 3 aus bewertungen Tabelle laden
+  // 3. Alle Bewertungen dieses Arbeitgebers für diese Jobber laden (kein
+  // sterne-Filter hier - bei Mehrfachbewertungen zählt die zeitlich LETZTE
+  // Bewertung, die könnte auch unter 3 Sterne liegen und muss dann die
+  // Stammkraft-Eigenschaft aufheben, selbst wenn eine frühere Bewertung
+  // besser war).
   const { data: bewertungen } = await odojSb
-    .from('bewertungen').select('bewertet_id, sterne')
-    .eq('bewerter_id', user.id).eq('rolle_bewerter', 'arbeitgeber')
-    .in('bewertet_id', jobberIds).gte('sterne', 3);
+    .from('bewertungen').select('bewertet_id, sterne, created_at')
+    .eq('bewerter_id', agId).eq('rolle_bewerter', 'arbeitgeber')
+    .in('bewertet_id', jobberIds);
   if (!bewertungen?.length) return [];
 
-  const bewMap = {};
+  // Pro Jobber nur die zeitlich letzte Bewertung dieses Arbeitgebers behalten.
+  const letzteMap = {};
   bewertungen.forEach(b => {
-    if (!bewMap[b.bewertet_id] || b.sterne > bewMap[b.bewertet_id]) bewMap[b.bewertet_id] = b.sterne;
+    const bisherige = letzteMap[b.bewertet_id];
+    if (!bisherige || new Date(b.created_at) > new Date(bisherige.created_at)) letzteMap[b.bewertet_id] = b;
   });
+
+  const bewMap = {};
+  Object.values(letzteMap).forEach(b => { if (b.sterne >= 3) bewMap[b.bewertet_id] = b.sterne; });
+  if (!Object.keys(bewMap).length) return [];
 
   // 4. Profile laden
   const { data: profiles } = await odojSb
@@ -3181,13 +3270,30 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
 </div>
 
 <!-- LÖSCHEN BESTÄTIGEN MODAL -->
+<!-- D3: Bestätigungsschritt "Bewerbung annehmen" -->
+<div id="annahme-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeAnnahmeConfirm()">
+  <div style="background:var(--white);border-radius:20px;max-width:380px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:32px 28px;text-align:center">
+    <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">Bewerbung wirklich annehmen?</h3>
+    <p style="font-size:13px;color:var(--text-lt);line-height:1.6;margin-bottom:24px">Der Bewerber wird benachrichtigt und der Platz gilt als vergeben.</p>
+    <div style="display:flex;gap:10px">
+      <button onclick="bestaetigeAnnehmen()" style="flex:1;background:var(--accent);color:var(--navy);border:none;border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Eingabe bestätigen</button>
+      <button onclick="closeAnnahmeConfirm()" style="flex:1;background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeDeleteModal()">
   <div style="background:var(--white);border-radius:20px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:36px 32px;text-align:center">
     <div style="width:56px;height:56px;background:#fff0f0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     </div>
     <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:var(--navy);margin-bottom:10px">Inserat löschen?</h3>
-    <p style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:28px">Das Inserat und alle zugehörigen Bewerbungen werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <p style="font-size:14px;color:var(--text-lt);line-height:1.6;margin-bottom:16px">Das Inserat und alle zugehörigen Bewerbungen werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <div style="text-align:left;margin-bottom:20px">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-lt);margin-bottom:6px">Grund für das Löschen *</label>
+      <textarea id="delete-grund-input" placeholder="z.B. Stelle wurde anderweitig besetzt…" style="width:100%;min-height:70px;background:var(--off);border:1.5px solid var(--gray-lt);border-radius:var(--r-sm);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+      <div id="delete-grund-error" style="display:none;color:#c0392b;font-size:12px;margin-top:4px">Bitte einen Grund angeben.</div>
+    </div>
     <div style="display:flex;gap:10px">
       <button id="delete-confirm-btn" onclick="confirmDeleteInserat()" style="flex:1;background:#c0392b;color:#fff;border:none;border-radius:var(--r-sm);padding:14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s" onmouseover="this.style.background='#a93226'" onmouseout="this.style.background='#c0392b'">Löschen</button>
       <button onclick="closeDeleteModal()" style="flex:1;background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);border-radius:var(--r-sm);padding:14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--navy)';this.style.color='var(--navy)'" onmouseout="this.style.borderColor='var(--gray-lt)';this.style.color='var(--text-mid)'">Abbrechen</button>
@@ -3219,13 +3325,10 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
       <div style="display:flex;flex-direction:column;gap:10px">
         <a id="vertrag-modal-link" href="#" class="btn btn-accent" style="text-align:center;justify-content:center;text-decoration:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Jetzt Vertrag ausfüllen
+          Vorlage verwenden
         </a>
-        <button onclick="closeVertragModal()" style="background:transparent;border:2px solid var(--gray-lt);color:var(--text-mid);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;padding:12px;border-radius:var(--r-sm);cursor:pointer;transition:all .2s">
-          Später
-        </button>
-        <button onclick="vertragSelbstErstellen()" style="background:transparent;border:none;color:var(--text-lt);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:500;padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">
-          Ich erstelle den Dienstvertrag selbst
+        <button onclick="vertragSelbstErstellen()" style="background:transparent;border:2px solid var(--gray-lt);color:var(--text-mid);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;padding:12px;border-radius:var(--r-sm);cursor:pointer;transition:all .2s">
+          Nicht benötigt
         </button>
       </div>
     </div>
@@ -3261,12 +3364,12 @@ async function vertragSelbstErstellen() {
     bewerbung_id:  _currentVertragBewId,
     sender_id:     _agSession.user.id,
     empfaenger_id: bew.jobber_id,
-    nachricht:     'ℹ️ Dienstvertrag\n\nDer Arbeitgeber wird den Dienstvertrag selbst erstellen und dir direkt zukommen lassen.',
+    nachricht:     'ℹ️ Dienstvertrag\n\nFür diesen Einsatz wird kein Dienstvertrag über die Plattform benötigt.',
     gelesen:       false,
     erstellt_am:   new Date().toISOString()
   };
   const { data: ins } = await odojSb.from('nachrichten').insert(msgPayload).select().single();
-  if (ins) odojSb.functions.invoke('send-notification-email', { body: { record: ins } }).catch(() => {});
+  if (ins) odojSb.functions.invoke('send-notification-email', { body: { record: ins } }).catch(err => console.error('[E-Mail] "Vertrag selbst erstellen"-Benachrichtigung fehlgeschlagen:', err));
 }
 </script>
 </body>

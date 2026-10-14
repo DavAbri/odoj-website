@@ -376,6 +376,10 @@
 
     <!-- 4. RECHNUNGEN PRO ARBEITGEBER -->
     <div id="section-rechnungen" class="admin-section">
+      <div id="rech-platzhalter-banner" style="display:none;align-items:flex-start;gap:12px;background:#FFF0F0;border:1.5px solid #F5A0A0;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#8a1f1f;line-height:1.5">
+        <span style="font-size:18px">⚠️</span>
+        <span><strong>Achtung:</strong> UID-Nummer und/oder IBAN von ODOJ sind noch nicht hinterlegt (Platzhalter). Rechnungen werden intern angelegt und gespeichert, aber <strong>nicht</strong> automatisch per E-Mail an Arbeitgeber versendet, solange das so ist. Bitte unter „einstellungen" (odoj_iban, odoj_uid_nummer) die echten Werte eintragen.</span>
+      </div>
       <div class="section-note">Klick auf einen Arbeitgeber öffnet die einzelnen Rechnungen mit der Möglichkeit, den Bezahlt-Status manuell zu setzen.</div>
       <div class="table-controls">
         <input type="text" class="search-input" id="rech-ag-search" placeholder="Arbeitgeber suchen…" oninput="renderRechnungenAgTable()">
@@ -501,7 +505,7 @@
   // Neues Team-Mitglied hinzufügen: hier ergänzen (Absprache mit Entwickler).
   const ADMIN_EMAILS = ['mail4david85@gmail.com', 'admin@odoj.at'];
 
-  let allNutzer = [], allJobs = [], allBewerbungen = [], allRechnungen = [], allWaitlist = [], allBewertungen = [];
+  let allNutzer = [], allJobs = [], allBewerbungen = [], allRechnungen = [], allWaitlist = [], allEinstellungen = [], allBewertungen = [];
   let appSettings = { jobs_sichtbar: false, launch_kw: null };
 
   // ── Auth Check ──
@@ -549,13 +553,14 @@
 
   // ── Data Loading ──
   async function loadAllData() {
-    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadAppSettings(), loadBewertungen()]);
+    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadEinstellungen(), loadAppSettings(), loadBewertungen()]);
     renderNutzerStats();
     populateNutzerQuelleFilter();
     filterNutzerQuelle();
     renderNewsletterStats();
     filterInserate();
     renderRechnungenAgTable();
+    renderRechnungenBanner();
     renderLaunchSection();
     initSupportSection();
   }
@@ -767,7 +772,7 @@
 
   async function loadRechnungen() {
     try {
-      const { data } = await odojSb.from('rechnungen').select('*').order('erstellt_am', { ascending: false });
+      const { data } = await odojSb.from('invoices').select('*').order('created_at', { ascending: false });
       allRechnungen = data || [];
     } catch (_) { allRechnungen = []; }
   }
@@ -798,10 +803,14 @@
   function fmtEuro(v)     { if (v == null || v === '') return '–'; return '€ ' + parseFloat(v).toFixed(2).replace('.', ','); }
 
   function statusBadge(s) {
-    const m = { aktiv: 'badge-green', inaktiv: 'badge-gray', erledigt: 'badge-yellow', offen: 'badge-yellow', bezahlt: 'badge-green',
-      ausstehend: 'badge-yellow', angenommen: 'badge-green', abgelehnt: 'badge-gray', abgeschlossen: 'badge-green' };
-    const labels = { aktiv: 'Aktiv', inaktiv: 'Inaktiv', erledigt: 'Erledigt', offen: 'Offen', bezahlt: 'Bezahlt',
-      ausstehend: 'Ausstehend', angenommen: 'Angenommen', abgelehnt: 'Abgelehnt', abgeschlossen: 'Abgeschlossen' };
+    const m = { aktiv: 'badge-green', inaktiv: 'badge-gray', erledigt: 'badge-yellow', offen: 'badge-yellow', bezahlt: 'badge-green', storniert: 'badge-gray',
+      ausstehend: 'badge-yellow', angenommen: 'badge-green', abgelehnt: 'badge-gray', abgeschlossen: 'badge-green', zurueckgezogen: 'badge-gray' };
+    // Block E1: "abgelehnt" heißt für Menschen sichtbar "Nicht berücksichtigt"
+    // (Arbeitgeber hat abgelehnt) bzw. "Zurückgezogen" (Jobber selbst) -
+    // Aufrufer übergeben bei Bewerbungen statt des rohen status-Strings den
+    // Sentinel-Wert 'zurueckgezogen', wenn bewerbungen.zurueckgezogen=true ist.
+    const labels = { aktiv: 'Aktiv', inaktiv: 'Inaktiv', erledigt: 'Erledigt', offen: 'Offen', bezahlt: 'Bezahlt', storniert: 'Storniert',
+      ausstehend: 'Ausstehend', angenommen: 'Angenommen', abgelehnt: 'Nicht berücksichtigt', abgeschlossen: 'Abgeschlossen', zurueckgezogen: 'Zurückgezogen' };
     return `<span class="badge ${m[s] || 'badge-gray'}">${labels[s] || s || '–'}</span>`;
   }
 
@@ -957,7 +966,7 @@
       html += bews.length
         ? bews.map(b => {
             const job = findJob(b.job_id);
-            return `<div class="nd-list-item"><span>${escHtml(job ? job.titel : '(Inserat gelöscht)')}</span><span style="color:var(--text2)">${fmtDate(b.erstellt_am)}</span>${statusBadge(b.status)}</div>`;
+            return `<div class="nd-list-item"><span>${escHtml(job ? job.titel : '(Inserat gelöscht)')}</span><span style="color:var(--text2)">${fmtDate(b.erstellt_am)}</span>${statusBadge(b.status === 'abgelehnt' && b.zurueckgezogen ? 'zurueckgezogen' : b.status)}</div>`;
           }).join('')
         : '<div class="table-empty">Keine Bewerbungen</div>';
     }
@@ -1037,22 +1046,19 @@
   }
 
   // ── 4. Rechnungen pro Arbeitgeber ──
-  function findBewerbung(id) { return allBewerbungen.find(b => b.id === id) || null; }
 
   // Name des Arbeitgebers ermitteln: zuerst über sein Profil, sonst über den
-  // Firmennamen, der bei irgendeinem seiner Jobs hinterlegt ist. rechnungen
-  // speichert selbst weder Firmenname noch job_id - der Weg dorthin führt
-  // über bewerbung_id -> bewerbungen.job_id -> jobs.firmenname. Da nicht
-  // jede einzelne Rechnung diesen Weg noch auflösen kann (z.B. wenn der Job
-  // inzwischen gelöscht wurde), wird über ALLE Rechnungen dieses Arbeitgebers
-  // gesucht, bis ein Name gefunden wird.
+  // Firmennamen des Jobs (invoices.job_id, eine Rechnung pro Job seit der
+  // Umstellung auf konsolidierte, itemisierte Rechnungen). Da nicht jede
+  // einzelne Rechnung den Job noch auflösen kann (z.B. wenn er inzwischen
+  // gelöscht wurde), wird über ALLE Rechnungen dieses Arbeitgebers gesucht,
+  // bis ein Name gefunden wird.
   function bestAgName(agId) {
     const ag = findNutzer(agId);
     if (ag) return nutzerName(ag);
     for (const r of allRechnungen) {
       if (r.arbeitgeber_id !== agId) continue;
-      const bew = findBewerbung(r.bewerbung_id);
-      const job = bew ? findJob(bew.job_id) : null;
+      const job = findJob(r.job_id);
       if (job?.firmenname) return job.firmenname;
     }
     return 'Unbekannt';
@@ -1066,7 +1072,8 @@
       if (!groups[key]) groups[key] = { arbeitgeber_id: r.arbeitgeber_id, name: bestAgName(r.arbeitgeber_id), total: 0, bezahlt: 0, offen: 0 };
       const g = groups[key];
       g.total++;
-      if (r.status === 'bezahlt') g.bezahlt++; else g.offen++;
+      if (r.payment_status === 'bezahlt') g.bezahlt++;
+      else if (r.payment_status === 'offen') g.offen++;
     });
     let list = Object.values(groups);
     if (q) list = list.filter(g => (g.name || '').toLowerCase().includes(q));
@@ -1093,18 +1100,23 @@
     const agName = bestAgName(agId);
     const list = allRechnungen.filter(r => r.arbeitgeber_id === agId);
     const rows = list.map(r => {
-      const jobTitel = r.job_titel || 'Unbekannter Job';
+      const job = findJob(r.job_id);
+      const jobTitel = job?.titel || 'Unbekannter Job';
       const id  = String(r.id).replace(/'/g, "\\'");
-      return `<div class="detail-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px">
-        <div style="min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--navy)">${agName}</div>
-          <div style="font-size:12px;color:var(--text2)">${jobTitel} · ${fmtDate(r.datum || r.erstellt_am)} · ${fmtEuro(r.betrag)}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-          ${statusBadge(r.status || 'offen')}
-          ${r.status !== 'bezahlt'
+      const aktionen = r.payment_status === 'storniert'
+        ? `<button class="btn-sm btn-secondary" onclick="setRechnungStatus('${id}','${agId}','offen')">Stornierung aufheben</button>`
+        : `${r.payment_status !== 'bezahlt'
             ? `<button class="btn-sm btn-success" onclick="setRechnungStatus('${id}','${agId}','bezahlt')">Als bezahlt</button>`
             : `<button class="btn-sm btn-secondary" onclick="setRechnungStatus('${id}','${agId}','offen')">Auf offen setzen</button>`}
+           <button class="btn-sm btn-secondary" onclick="setRechnungStatus('${id}','${agId}','storniert')">Stornieren</button>`;
+      return `<div class="detail-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px">
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--navy)">${agName} · ${r.invoice_number || ''}</div>
+          <div style="font-size:12px;color:var(--text2)">${jobTitel} · ${fmtDate(r.issued_at || r.created_at)} · ${fmtEuro(r.amount)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          ${statusBadge(r.payment_status || 'offen')}
+          ${aktionen}
         </div>
       </div>`;
     }).join('');
@@ -1113,12 +1125,15 @@
 
   async function setRechnungStatus(id, agId, status) {
     try {
-      await odojSb.from('rechnungen').update({ status }).eq('id', id);
+      const payload = { payment_status: status };
+      payload.payment_received_at = status === 'bezahlt' ? new Date().toISOString() : null;
+      await odojSb.from('invoices').update(payload).eq('id', id);
       const idx = allRechnungen.findIndex(r => r.id == id);
-      if (idx !== -1) allRechnungen[idx].status = status;
+      if (idx !== -1) { allRechnungen[idx].payment_status = status; allRechnungen[idx].payment_received_at = payload.payment_received_at; }
       renderAgRechnungenList(agId);
       renderRechnungenAgTable();
-      showToast(status === 'bezahlt' ? 'Als bezahlt markiert' : 'Auf offen zurückgesetzt', 'success');
+      const labels = { bezahlt: 'Als bezahlt markiert', offen: 'Auf offen gesetzt', storniert: 'Storniert' };
+      showToast(labels[status] || 'Aktualisiert', 'success');
     } catch (_) { showToast('Fehler', 'error'); }
   }
 

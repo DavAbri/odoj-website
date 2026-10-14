@@ -15,6 +15,71 @@ const ODOJ_SUPABASE_KEY = ODOJ_IS_LIVE
 
 window.odojSb = supabase.createClient(ODOJ_SUPABASE_URL, ODOJ_SUPABASE_KEY);
 
+// ── Block E1: zentrale Anzeige-Texte für bewerbungen.status ──────────────
+// Der gespeicherte DB-Wert bleibt "abgelehnt" (keine Migration nötig, siehe
+// Prompt-Antwort 1) - für Menschen sichtbar heißt es überall "Nicht
+// berücksichtigt" (Plattform, Admin, Mails, Chat). Eine einzige Stelle statt
+// den Text an vielen Dateien einzeln zu pflegen.
+const ODOJ_BEWERBUNG_STATUS_LABEL = {
+  ausstehend:   'Ausstehend',
+  angenommen:   'Angenommen',
+  abgelehnt:    'Nicht berücksichtigt',
+  abgeschlossen:'Abgeschlossen'
+};
+// bew kann der volle Bewerbungs-Datensatz sein (unterscheidet dann bei
+// status='abgelehnt' zwischen "vom Arbeitgeber abgelehnt" und "vom Jobber
+// selbst zurückgezogen", siehe bewerbungen.zurueckgezogen) oder einfach nur
+// der status-String (dann gilt immer "Nicht berücksichtigt" für abgelehnt).
+function odojStatusLabel(bew) {
+  if (bew && typeof bew === 'object') {
+    if (bew.status === 'abgelehnt' && bew.zurueckgezogen) return 'Zurückgezogen';
+    return ODOJ_BEWERBUNG_STATUS_LABEL[bew.status] || bew.status || '';
+  }
+  return ODOJ_BEWERBUNG_STATUS_LABEL[bew] || bew || '';
+}
+
+// ── Block E9: zentrale Zurückziehen/Stornieren-Logik ─────────────────────
+// Wiederverwendet von meine-bewerbungen.html, job-detail.html und chat.html,
+// damit das Verhalten (insbesondere: KEINE Chat-Nachricht, nur eine direkte
+// Mail an den Arbeitgeber) an genau einer Stelle gepflegt wird.
+async function odojZurueckziehenBewerbung({ bewId, wasAngenommen, jobTitel, jobDatum, agId, reason }) {
+  // 1. Bewerbung auf abgelehnt setzen - zurueckgezogen=true unterscheidet das
+  // von einer Ablehnung durch den Arbeitgeber (gleicher status-Wert,
+  // unterschiedliche Anzeige/Behandlung, siehe odojStatusLabel oben).
+  const { error: updErr } = await odojSb
+    .from('bewerbungen')
+    .update({ status: 'abgelehnt', zurueckgezogen: true })
+    .eq('id', bewId);
+  if (updErr) return { error: updErr };
+
+  // 2. Wenn 'angenommen' war → Jobvertrag ggf. auch auf abgelehnt setzen
+  if (wasAngenommen) {
+    await odojSb
+      .from('vertraege')
+      .update({ status: 'abgelehnt_jobber' })
+      .eq('bewerbung_id', bewId)
+      .neq('status', 'beide_zugestimmt');
+  }
+
+  // 3. NUR eine Mail an den Arbeitgeber - bewusst KEINE Chat-Nachricht.
+  const datumStr = jobDatum
+    ? new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '';
+  const session = await odojGetSession();
+  const { data: meinProfil } = session
+    ? await odojSb.from('Profile').select('vorname, nachname').eq('user_id', session.user.id).maybeSingle()
+    : { data: null };
+  const jobberName = [meinProfil?.vorname, meinProfil?.nachname].filter(Boolean).join(' ') || 'Ein Jobber';
+
+  if (agId) {
+    odojSb.functions.invoke('send-email', {
+      body: { type: 'bewerbung_storniert', recipientId: agId, jobberName, jobTitel: jobTitel || 'dem Job', datum: datumStr, grund: reason, warAngenommen }
+    }).catch(err => console.error('[E-Mail] Storno-Benachrichtigung an Arbeitgeber fehlgeschlagen:', err));
+  }
+
+  return { error: null };
+}
+
 // ── Vorschau-Modus: zentrale app_settings einmal pro Seitenaufruf laden ──
 // Bei Fehlern wird bewusst in den Vorschau-Modus "fail-closed" gegangen
 // (Jobs lieber einmal fälschlich verstecken als vor dem Launch versehentlich

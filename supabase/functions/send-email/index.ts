@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchDatenblattData, buildDatenblattPdf } from "../_shared/datenblatt.ts";
+import { fetchRechnungData, buildRechnungPdf } from "../_shared/rechnung.ts";
 
 const RESEND_API_KEY      = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
@@ -73,17 +74,8 @@ function newMessageTemplate(recipientName: string, senderName: string, jobTitel:
 }
 
 function workConfirmedTemplate(recipientName: string, firmenname: string, jobTitel: string, bewId: string): string {
-  const bewertungBase = `${SITE_URL}/bewertung.html?bew=${bewId}&sterne=`;
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
-
-  const stars = [1, 2, 3, 4, 5].map(n => {
-    const filled  = "⭐".repeat(n);
-    const label   = ["Schlecht", "Nicht so gut", "Ok", "Gut", "Sehr gut"][n - 1];
-    return `<td style="padding:4px 6px;text-align:center">
-      <a href="${bewertungBase}${n}" style="display:block;font-size:22px;line-height:1;text-decoration:none" title="${label}">${filled}</a>
-      <span style="font-size:10px;color:#999;display:block;margin-top:4px">${label}</span>
-    </td>`;
-  }).join("");
+  const firmaLabel = firmenname || "dem Betrieb";
 
   return baseTemplate(`
   <tr><td style="padding:36px 32px 28px">
@@ -94,21 +86,18 @@ function workConfirmedTemplate(recipientName: string, firmenname: string, jobTit
       als <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> wurde offiziell bestätigt. Großartige Arbeit!
     </p>
     <div style="background:#e6f5ee;border:1.5px solid #a8d9be;border-radius:10px;padding:16px 20px;margin:20px 0;font-size:14px;color:#1a5c3a;line-height:1.6">
-      ✅ Deine Anwesenheit & Bezahlung wurde bestätigt.
+      ✅ Deine Anwesenheit wurde bestätigt.
     </div>
 
-    <!-- BEWERTUNG -->
-    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:22px 24px;margin-top:8px">
-      <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#0f1f3d">Wie war deine Erfahrung mit ODOJ?</p>
+    <!-- BEWERTUNG: nur ein Link/Button, Sterne gibt es ausschließlich auf der Webseite -->
+    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:22px 24px;margin-top:8px;text-align:center">
+      <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#0f1f3d">Wie war es mit ${esc(firmaLabel)}?</p>
       <p style="margin:0 0 18px;font-size:13px;color:#888;line-height:1.6">Wir würden uns sehr über dein Feedback freuen – es hilft uns, unseren Service zu verbessern.</p>
-      <table cellpadding="0" cellspacing="0" style="margin:0 auto 16px">
-        <tr>${stars}</tr>
-      </table>
-      <p style="margin:0;text-align:center">
-        <a href="${SITE_URL}/bewertung.html?bew=${bewId}" style="font-size:12px;color:#E8A020;text-decoration:none;font-weight:600">
-          Oder direkt zur Bewertungsseite &rarr;
+      <table cellpadding="0" cellspacing="0" style="margin:0 auto"><tr><td style="background:#0f1f3d;border-radius:8px">
+        <a href="${SITE_URL}/bewertung.html?bew=${bewId}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+          Jetzt bewerten &rarr;
         </a>
-      </p>
+      </td></tr></table>
     </div>
 
     <p style="margin:24px 0 0;font-size:13px;color:#aaa">Wir freuen uns, dich bald wieder bei einem Einsatz dabei zu haben!</p>
@@ -163,6 +152,87 @@ function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: str
       </a>
     </td></tr></table>
     <p style="margin:24px 0 0;font-size:13px;color:#aaa">Du erhältst diese E-Mail, weil du auf ODOJ ein Inserat veröffentlicht hast.</p>
+  </td></tr>`);
+}
+
+// E9: Stornierung/Zurückziehen durch den Jobber - geht NUR per Mail an den
+// Arbeitgeber (Name, Inserat, Datum, Grund), bewusst NICHT als Chat-
+// Nachricht (der Prompt verlangt explizit, dass im Chat dazu nichts
+// erscheint - weder diese Info noch eine Selbstnotiz an den Jobber).
+function bewerbungStorniertTemplate(recipientName: string, jobberName: string, jobTitel: string, datumStr: string, grund: string, warAngenommen: boolean): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  const aktionWort = warAngenommen ? "seine Zusage storniert" : "seine Bewerbung zurückgezogen";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:.8px">${warAngenommen ? "Stornierung" : "Bewerbung zurückgezogen"}</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      <strong style="color:#0f1f3d">${esc(jobberName)}</strong> hat ${aktionWort} für
+      <strong style="color:#0f1f3d">${esc(jobTitel)}</strong>${datumStr ? ` am <strong style="color:#0f1f3d">${esc(datumStr)}</strong>` : ""}.
+    </p>
+    <div style="background:#FFF0F0;border:1.5px solid #F5C6C0;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a2020;line-height:1.6">
+      <strong>Grund:</strong> ${esc(grund)}
+    </div>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/meine-inserate.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        Bewerbungen ansehen &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
+function einsatzbeginnAnwesenheitTemplate(recipientName: string, jobTitel: string, bewId: string): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  const link = `${SITE_URL}/meine-inserate.html?bew=${bewId}`;
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Einsatzbeginn erreicht</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.7">
+      der Einsatz <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> hat begonnen. Bitte bestätige, sobald feststeht,
+      ob der Jobber angetreten ist.
+    </p>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${link}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">
+        Anwesenheit bestätigen &rarr;
+      </a>
+    </td></tr></table>
+    <p style="margin:18px 0 0;font-size:13px;color:#888;line-height:1.6">
+      Falls der Jobber nicht erschienen ist, kannst du das über denselben Link melden ("Nicht gekommen").
+    </p>
+  </td></tr>`);
+}
+
+function rechnungErinnerungTemplate(recipientName: string, jobTitel: string): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Erinnerung</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.7">
+      für den Einsatz <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> fehlt noch eine Entscheidung
+      ("Anwesenheit bestätigt" oder "nicht gekommen") für mindestens einen Tag. Bitte hole das zeitnah nach,
+      damit wir die Vermittlungsgebühr korrekt abrechnen können.
+    </p>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/meine-inserate.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">
+        Jetzt nachholen &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
+function rechnungBlockiertInternTemplate(jobTitel: string, arbeitgeberId: string): string {
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:.8px">Rechnung blockiert</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">Manuelle Prüfung nötig</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#444;line-height:1.7">
+      Für den Job <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> fehlt seit mindestens 3 Tagen nach dem letzten
+      Arbeitstag noch eine Entscheidung für mindestens eine Bewerbung. Es wurde automatisch <strong>keine</strong>
+      Rechnung erstellt - bitte im Admin-Bereich prüfen und notfalls manuell entscheiden.
+    </p>
+    <p style="margin:0;font-size:12px;color:#888">Arbeitgeber-ID: ${esc(arbeitgeberId)}</p>
   </td></tr>`);
 }
 
@@ -249,6 +319,29 @@ function paymentReminderJobberTemplate(recipientName: string, jobTitel: string, 
   </td></tr>`);
 }
 
+function rechnungErstelltTemplate(recipientName: string, invoiceNumber: string, jobTitel: string, amount: number, anzahl: number): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const leistungText = anzahl > 1 ? `${anzahl} durchgeführte Vermittlungen` : "die Vermittlung des Einsatzes";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Neue Rechnung</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#444;line-height:1.7">
+      anbei die Rechnung <strong style="color:#0f1f3d">${esc(invoiceNumber)}</strong> für ${leistungText}
+      <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> über <strong style="color:#0f1f3d">€ ${fmt(amount)}</strong>.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;color:#7a5500;background:#fff8e8;border-radius:8px;padding:12px 16px;line-height:1.6">
+      Bitte gib bei der Überweisung als Verwendungszweck die Rechnungsnummer <strong>${esc(invoiceNumber)}</strong> an.
+    </p>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/profil.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">
+        Rechnung ansehen &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
 function paymentReminderAgTemplate(recipientName: string, jobTitel: string, jobberName: string, betrag: number): string {
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
   const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -327,7 +420,7 @@ serve(async (req) => {
     const {
       type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
       datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
-      terminInfo, regType, regName, regEmail, regRefCode
+      terminInfo, regType, regName, regEmail, regRefCode, invoiceId, grund, warAngenommen
     } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
@@ -372,6 +465,27 @@ serve(async (req) => {
       });
     }
 
+    // Interne Benachrichtigung bei automatisch gestoppter Rechnung (B2):
+    // fixe Zieladresse, recipientId wird nur zur Anzeige der Arbeitgeber-ID
+    // mitgeschickt, nicht als E-Mail-Ziel verwendet.
+    if (type === 'rechnung_blockiert_intern') {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: FROM,
+          to: "info@odoj.at",
+          subject: withTestPrefix(`Rechnung blockiert – manuelle Prüfung nötig: ${jobTitel || "Tagesjob"}`),
+          html: rechnungBlockiertInternTemplate(jobTitel || "Tagesjob", recipientId || ""),
+        }),
+      });
+      const resBody = await res.json();
+      if (!res.ok) throw new Error(resBody?.message || "Resend-Fehler");
+      return new Response(JSON.stringify({ ok: true, id: resBody.id }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
     if (!recipientId) return new Response(JSON.stringify({ error: "recipientId fehlt" }), { status: 400, headers: cors });
 
     // Empfänger-E-Mail über Admin-API holen (sicher serverseitig)
@@ -386,6 +500,7 @@ serve(async (req) => {
     let subject = "";
     let html = "";
     let attachments: Array<{ filename: string; content: string }> | undefined;
+    let bcc: string[] | undefined;
 
     if (type === "bewerbung_angenommen_datenblatt") {
       if (!bewId) return new Response(JSON.stringify({ error: "bewId fehlt" }), { status: 400, headers: cors });
@@ -400,11 +515,30 @@ serve(async (req) => {
       html = bewerbungAngenommenDatenblattTemplate(recipientName, jobberName, jobTitelStr, datumStr);
       const { bytes, filename } = await buildDatenblattPdf(result.data);
       attachments = [{ filename, content: btoa(String.fromCharCode(...bytes)) }];
+    } else if (type === "rechnung_erstellt") {
+      if (!invoiceId) return new Response(JSON.stringify({ error: "invoiceId fehlt" }), { status: 400, headers: cors });
+      const result = await fetchRechnungData(admin, invoiceId);
+      if (!result) return new Response(JSON.stringify({ error: "Rechnung nicht gefunden" }), { status: 404, headers: cors });
+      subject = `Deine Rechnung ${result.data.invoiceNumber} von ODOJ`;
+      html = rechnungErstelltTemplate(recipientName, result.data.invoiceNumber, result.data.job.titel || "", result.data.amount, result.data.positionen.length);
+      const safeInvName = result.data.invoiceNumber.replace(/[^a-zA-Z0-9-]/g, "") || "Rechnung";
+      const rechnungFilename = `Rechnung-${safeInvName}.pdf`;
+      // B3: die im Storage abgelegte, unveränderliche Kopie als Anhang
+      // verwenden statt unabhängig neu zu erzeugen (eine Quelle der Wahrheit).
+      let rechnungBytes: Uint8Array | null = null;
+      if (result.pdfPfad) {
+        const { data: stored } = await admin.storage.from("rechnungen").download(result.pdfPfad);
+        if (stored) rechnungBytes = new Uint8Array(await stored.arrayBuffer());
+      }
+      if (!rechnungBytes) rechnungBytes = (await buildRechnungPdf(result.data)).bytes;
+      attachments = [{ filename: rechnungFilename, content: btoa(String.fromCharCode(...rechnungBytes)) }];
+      // B3: jede Rechnungsmail geht zusätzlich als BCC an info@odoj.at.
+      bcc = ["info@odoj.at"];
     } else if (type === "new_message") {
       subject = `💬 Neue Nachricht von ${senderName} – ODOJ`;
       html = newMessageTemplate(recipientName, senderName || "", jobTitel || "", bewId || "");
     } else if (type === "work_confirmed") {
-      subject = `✅ Einsatz abgeschlossen – Wie war deine Erfahrung?`;
+      subject = `✅ Einsatz abgeschlossen – Wie war es mit ${firmenname || "deinem Einsatz"}?`;
       html = workConfirmedTemplate(recipientName, firmenname || "", jobTitel || "", bewId || "");
     } else if (type === "bewerbung_bestaetigt") {
       subject = `Deine Bewerbung wurde erfolgreich übermittelt ✓`;
@@ -419,6 +553,17 @@ serve(async (req) => {
         Number(lohnBetrag) || 0, jobberIban || "", jobberName || "",
         Number(gebuehr) || 15, odojIban || "", odojKontoinhaber || "ODOJ", rechnungsnummer || ""
       );
+    } else if (type === "einsatzbeginn_anwesenheit") {
+      subject = `Bitte Anwesenheit bestätigen: ${jobTitel || "Tagesjob"}`;
+      html = einsatzbeginnAnwesenheitTemplate(recipientName, jobTitel || "", bewId || "");
+    } else if (type === "bewerbung_storniert") {
+      subject = warAngenommen
+        ? `Stornierung: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`
+        : `Bewerbung zurückgezogen: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`;
+      html = bewerbungStorniertTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", datum || "", grund || "kein Grund angegeben", !!warAngenommen);
+    } else if (type === "rechnung_erinnerung") {
+      subject = `Erinnerung: Anwesenheit für "${jobTitel || "Tagesjob"}" noch offen`;
+      html = rechnungErinnerungTemplate(recipientName, jobTitel || "");
     } else if (type === "payment_reminder_jobber") {
       subject = `Hast du deinen Lohn für ${jobTitel || "deinen Einsatz"} bereits erhalten?`;
       html = paymentReminderJobberTemplate(recipientName, jobTitel || "", bewId || "");
@@ -432,7 +577,7 @@ serve(async (req) => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: user.email, subject: withTestPrefix(subject), html, ...(attachments ? { attachments } : {}) }),
+      body: JSON.stringify({ from: FROM, to: user.email, subject: withTestPrefix(subject), html, ...(attachments ? { attachments } : {}), ...(bcc ? { bcc } : {}) }),
     });
 
     const resBody = await res.json();
