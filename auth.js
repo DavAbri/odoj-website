@@ -418,8 +418,13 @@ async function odojInitNav() {
     // Nachrichten-Badges setzen (Nachrichten-Link + Profil-Zugang, Desktop & Mobile)
     odojUpdateUnreadDot(unreadCount);
 
-    // Alle 30s Badges aktualisieren
-    setInterval(async () => {
+    // Badges aktualisieren - alle 3 Minuten UND sofort wenn der Tab wieder
+    // sichtbar wird, aber NIE während der Tab im Hintergrund ist. War
+    // vorher alle 30s ohne Rücksicht auf Sichtbarkeit und lief auf JEDER
+    // Seite für JEDEN eingeloggten Nutzer dauerhaft weiter - das war laut
+    // Supabase-Abfrage-Auswertung mit ~300.000 Aufrufen die Hauptursache
+    // der Disk-IO-Warnung (Server: kleinste Instanzgröße, t4g.nano).
+    const _refreshNavBadges = async () => {
       const cnt = await odojCountUnread(session.user.id);
       odojUpdateUnreadDot(cnt);
       if (rolle === 'arbeitgeber') {
@@ -427,7 +432,13 @@ async function odojInitNav() {
         _setNavBadge('nav-dd-role', pc);
         _setMobileNavBadge('nav-mobile-meine-inserate', pc);
       }
-    }, 30000);
+    };
+    setInterval(() => {
+      if (document.visibilityState === 'visible') _refreshNavBadges();
+    }, 180000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') _refreshNavBadges();
+    });
 
   } else {
     if (authEl) authEl.innerHTML = '<a href="login.html" class="nav-cta">Anmelden</a>';

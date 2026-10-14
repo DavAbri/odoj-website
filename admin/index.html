@@ -749,44 +749,52 @@
     showToast('Daten aktualisiert', 'success');
   }
 
+  // Disk-IO-Analyse: diese 6 Ladefunktionen holten bisher JEDE Zeile jeder
+  // Tabelle, bei jedem Öffnen der Admin-Seite. Aktuell noch unkritisch
+  // (Plattform ist vor dem offiziellen Start, Tabellen sind klein), aber
+  // ohne Obergrenze würde das mit wachsenden Nutzerzahlen von selbst immer
+  // teurer. ADMIN_LOAD_LIMIT als Sicherheitsnetz für die Zukunft - bei den
+  // aktuellen Datenmengen ändert sich dadurch nichts an der Anzeige.
+  const ADMIN_LOAD_LIMIT = 2000;
+
   async function loadNutzer() {
     try {
-      const { data } = await odojSb.from('Profile').select('*').order('erstellt_am', { ascending: false });
+      const { data } = await odojSb.from('Profile').select('*').order('erstellt_am', { ascending: false }).limit(ADMIN_LOAD_LIMIT);
       allNutzer = data || [];
     } catch (_) { allNutzer = []; }
   }
 
   async function loadJobs() {
     try {
-      const { data } = await odojSb.from('jobs').select('*').order('erstellt_am', { ascending: false });
+      const { data } = await odojSb.from('jobs').select('*').order('erstellt_am', { ascending: false }).limit(ADMIN_LOAD_LIMIT);
       allJobs = data || [];
     } catch (_) { allJobs = []; }
   }
 
   async function loadBewerbungen() {
     try {
-      const { data } = await odojSb.from('bewerbungen').select('*');
+      const { data } = await odojSb.from('bewerbungen').select('*').order('erstellt_am', { ascending: false }).limit(ADMIN_LOAD_LIMIT);
       allBewerbungen = data || [];
     } catch (_) { allBewerbungen = []; }
   }
 
   async function loadRechnungen() {
     try {
-      const { data } = await odojSb.from('invoices').select('*').order('created_at', { ascending: false });
+      const { data } = await odojSb.from('invoices').select('*').order('created_at', { ascending: false }).limit(ADMIN_LOAD_LIMIT);
       allRechnungen = data || [];
     } catch (_) { allRechnungen = []; }
   }
 
   async function loadWaitlist() {
     try {
-      const { data } = await odojSb.from('waitlist').select('*').order('created_at', { ascending: false });
+      const { data } = await odojSb.from('waitlist').select('*').order('created_at', { ascending: false }).limit(ADMIN_LOAD_LIMIT);
       allWaitlist = data || [];
     } catch (_) { allWaitlist = []; }
   }
 
   async function loadBewertungen() {
     try {
-      const { data } = await odojSb.from('bewertungen').select('*');
+      const { data } = await odojSb.from('bewertungen').select('*').order('created_at', { ascending: false }).limit(ADMIN_LOAD_LIMIT);
       allBewertungen = data || [];
     } catch (_) { allBewertungen = []; }
   }

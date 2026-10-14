@@ -1090,9 +1090,12 @@ async function openConversation(chatId) {
     convEl.classList.remove('unread');
   }
 
-  // Polling starten
+  // Polling starten - alle 15s statt 5s, und nur während der Tab sichtbar
+  // ist (Disk-IO-Analyse: Chat-Polling war einer der Haupttreiber neben
+  // den Navigations-Zählern).
   if (_pollInterval) clearInterval(_pollInterval);
   _pollInterval = setInterval(async () => {
+    if (document.visibilityState !== 'visible') return;
     await loadMessages(true);
     // Nachrichten als gelesen markieren
     await odojSb.from('nachrichten')
@@ -1100,7 +1103,7 @@ async function openConversation(chatId) {
       .eq('chat_id', chatId)
       .eq('empfaenger_id', _chatSession.user.id)
       .eq('gelesen', false);
-  }, 5000);
+  }, 15000);
 }
 
 // G4: Chat ausblenden/einblenden - Nachrichten bleiben erhalten, nur die
