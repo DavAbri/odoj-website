@@ -1128,6 +1128,7 @@ async function doApply(terminIds) {
         recipientId: _jdJob.arbeitgeber_id,
         jobTitel:    _jdJob.titel || '',
         jobberName:  jobberName,
+        jobberId:    _jdSession.user.id,
         terminInfo:  terminInfoForEmail
       }
     }).catch(err => console.error('[E-Mail] Arbeitgeber-Benachrichtigung fehlgeschlagen:', err));

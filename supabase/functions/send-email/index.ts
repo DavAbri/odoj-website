@@ -131,9 +131,35 @@ function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string, te
   </td></tr>`);
 }
 
-function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: string, jobTitel: string, terminInfo?: string): string {
+function neueBewerbungArbeitgeberTemplate(
+  recipientName: string, jobberName: string, jobTitel: string, terminInfo?: string,
+  uebersicht?: { alter: number | null; sterneAvg: number | null; sterneAnzahl: number; branchenMap: Record<string, number> } | null
+): string {
   const inserateUrl = `${SITE_URL}/meine-inserate.html`;
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
+
+  let uebersichtHtml = "";
+  if (uebersicht) {
+    const zeilen: string[] = [];
+    if (uebersicht.alter !== null) zeilen.push(`<span style="display:inline-block;background:#eef1f7;border-radius:6px;padding:4px 10px;margin:0 6px 6px 0;font-size:13px;color:#0f1f3d">${uebersicht.alter} Jahre</span>`);
+    if (uebersicht.sterneAnzahl > 0 && uebersicht.sterneAvg !== null) {
+      const sterneGerundet = Math.round(uebersicht.sterneAvg);
+      const sterneHtml = "★".repeat(sterneGerundet) + "☆".repeat(5 - sterneGerundet);
+      zeilen.push(`<span style="display:inline-block;background:#eef1f7;border-radius:6px;padding:4px 10px;margin:0 6px 6px 0;font-size:13px;color:#0f1f3d">${sterneHtml} ${uebersicht.sterneAvg.toFixed(1)} (${uebersicht.sterneAnzahl} Bewertung${uebersicht.sterneAnzahl !== 1 ? "en" : ""})</span>`);
+    }
+    const branchenEintraege = Object.entries(uebersicht.branchenMap);
+    branchenEintraege.forEach(([k, v]) => {
+      zeilen.push(`<span style="display:inline-block;background:#eef1f7;border-radius:6px;padding:4px 10px;margin:0 6px 6px 0;font-size:13px;color:#0f1f3d">${esc(BRANCHEN_LABEL[k] || k)}: ${v} Einsatz${v !== 1 ? "e" : ""}</span>`);
+    });
+    if (zeilen.length) {
+      uebersichtHtml = `
+    <div style="margin:0 0 20px">
+      <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px">Übersicht zum Bewerber</p>
+      <div>${zeilen.join("")}</div>
+    </div>`;
+    }
+  }
+
   return baseTemplate(`
   <tr><td style="padding:36px 32px 28px">
     <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Neue Bewerbung</p>
@@ -143,6 +169,7 @@ function neueBewerbungArbeitgeberTemplate(recipientName: string, jobberName: str
       <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> beworben.
     </p>
     ${terminInfo ? `<p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">Termine: <strong style="color:#0f1f3d">${esc(terminInfo)}</strong></p>` : ""}
+    ${uebersichtHtml}
     <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a5500;line-height:1.6">
       📋 Melde dich in deinem ODOJ-Konto an, um die Bewerbung zu prüfen und zu antworten.
     </div>
@@ -437,6 +464,41 @@ function esc(s: string): string {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
+const BRANCHEN_LABEL: Record<string, string> = { gastro: "Gastronomie", events: "Veranstaltungen & Events", hotel: "Hotellerie", einzelhandel: "Einzelhandel", sonstige: "Sonstige" };
+
+function berechneAlter(geburtsdatum: string): number | null {
+  if (!geburtsdatum) return null;
+  const geb = new Date(geburtsdatum);
+  if (isNaN(geb.getTime())) return null;
+  const heute = new Date();
+  let alter = heute.getFullYear() - geb.getFullYear();
+  const nochNichtGehabt = heute.getMonth() < geb.getMonth() || (heute.getMonth() === geb.getMonth() && heute.getDate() < geb.getDate());
+  if (nochNichtGehabt) alter--;
+  return alter;
+}
+
+// Bewertungs-/Erfahrungs-Übersicht eines Jobbers für Arbeitgeber - bewusst
+// OHNE sensible Felder (SV-Nummer, IBAN, Adresse): nur Alter + aggregierte
+// Bewertungsdaten, die der Arbeitgeber auch sonst auf der Plattform sieht.
+async function fetchJobberUebersicht(admin: ReturnType<typeof createClient>, jobberId: string) {
+  const { data: profile } = await admin.from("Profile").select("geburtsdatum").eq("user_id", jobberId).maybeSingle();
+  const alter = profile?.geburtsdatum ? berechneAlter(profile.geburtsdatum) : null;
+
+  const { data: bews } = await admin.from("bewertungen").select("sterne").eq("bewertet_id", jobberId).eq("rolle_bewerter", "arbeitgeber");
+  const sterneAnzahl = bews?.length || 0;
+  const sterneAvg = sterneAnzahl ? (bews!.reduce((s, b) => s + (b.sterne || 0), 0) / sterneAnzahl) : null;
+
+  const { data: erledigt } = await admin.from("bewerbungen").select("job_id").eq("jobber_id", jobberId).eq("anwesenheit_bestaetigt", true);
+  const branchenMap: Record<string, number> = {};
+  const jobIds = [...new Set((erledigt || []).map(b => b.job_id).filter(Boolean))];
+  if (jobIds.length) {
+    const { data: jobData } = await admin.from("jobs").select("branche").in("id", jobIds);
+    jobData?.forEach(j => { if (j.branche) branchenMap[j.branche] = (branchenMap[j.branche] || 0) + 1; });
+  }
+
+  return { alter, sterneAvg, sterneAnzahl, branchenMap };
+}
+
 // ── MAIN ─────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -446,7 +508,7 @@ serve(async (req) => {
     const {
       type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
       datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
-      terminInfo, regType, regName, regEmail, regRefCode, invoiceId, grund, warAngenommen
+      terminInfo, regType, regName, regEmail, regRefCode, invoiceId, grund, warAngenommen, jobberId
     } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
@@ -571,7 +633,8 @@ serve(async (req) => {
       html = bewerbungBestaetigtTemplate(recipientName, jobTitel || "", terminInfo || "");
     } else if (type === "neue_bewerbung_arbeitgeber") {
       subject = `Neue Bewerbung für deinen Job: ${jobTitel || ""}`;
-      html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", terminInfo || "");
+      const uebersicht = jobberId ? await fetchJobberUebersicht(admin, jobberId) : null;
+      html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", terminInfo || "", uebersicht);
     } else if (type === "payment_request") {
       subject = `Zahlungsaufforderung – ${jobTitel || "Einsatz"} (${jobberName || ""})`;
       html = paymentRequestTemplate(

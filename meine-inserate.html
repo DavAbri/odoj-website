@@ -677,6 +677,8 @@
 .jp-field-value { font-size: 14px; color: var(--text); font-weight: 500; }
 .jp-field-sub { font-size: 12px; color: var(--text-lt); margin-top: 2px; font-weight: 300; }
 .jp-loading { text-align: center; padding: 40px; font-size: 14px; color: var(--text-lt); }
+.jp-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.jp-pill { display: inline-block; background: var(--off); border: 1.5px solid var(--gray-lt); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--navy); font-weight: 600; }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
@@ -2791,6 +2793,44 @@ async function showJobberProfile(jobberId, jobberName) {
     .eq('user_id', jobberId)
     .single();
 
+  // Bewertungs-/Erfahrungs-Übersicht (gleiche Daten wie im Jobber-eigenen
+  // Profil: Sterne-Durchschnitt + Branchen, in denen bereits Einsätze mit
+  // bestätigter Anwesenheit absolviert wurden).
+  const { data: bews } = await odojSb
+    .from('bewertungen')
+    .select('sterne')
+    .eq('bewertet_id', jobberId)
+    .eq('rolle_bewerter', 'arbeitgeber');
+  const { data: erledigt } = await odojSb
+    .from('bewerbungen')
+    .select('job_id')
+    .eq('jobber_id', jobberId)
+    .eq('anwesenheit_bestaetigt', true);
+
+  const BRANCHEN_LABEL_JP = { gastro: 'Gastronomie', events: 'Veranstaltungen & Events', hotel: 'Hotellerie', einzelhandel: 'Einzelhandel', sonstige: 'Sonstige' };
+  let branchenMapJp = {};
+  const jobIdsJp = [...new Set((erledigt || []).map(b => b.job_id).filter(Boolean))];
+  if (jobIdsJp.length) {
+    const { data: jobDataJp } = await odojSb.from('jobs').select('branche').in('id', jobIdsJp);
+    jobDataJp?.forEach(j => { if (j.branche) branchenMapJp[j.branche] = (branchenMapJp[j.branche] || 0) + 1; });
+  }
+
+  let uebersichtHtml = '';
+  if (bews?.length || Object.keys(branchenMapJp).length) {
+    const sterneAvg = bews?.length ? (bews.reduce((s, b) => s + (b.sterne || 0), 0) / bews.length) : null;
+    const pills = [];
+    if (sterneAvg !== null) {
+      const gerundet = Math.round(sterneAvg);
+      pills.push(`<span class="jp-pill">${'★'.repeat(gerundet)}${'☆'.repeat(5 - gerundet)} ${sterneAvg.toFixed(1)} (${bews.length} Bewertung${bews.length !== 1 ? 'en' : ''})</span>`);
+    }
+    Object.entries(branchenMapJp).forEach(([k, v]) => {
+      pills.push(`<span class="jp-pill">${BRANCHEN_LABEL_JP[k] || k}: ${v} Einsatz${v !== 1 ? 'e' : ''}</span>`);
+    });
+    uebersichtHtml = `
+    <p class="jp-section-title">Bewertungen &amp; Erfahrung</p>
+    <div class="jp-pills" style="margin-bottom:20px">${pills.join('')}</div>`;
+  }
+
   const fields = [];
 
   if (profile?.geburtsdatum) {
@@ -2810,13 +2850,14 @@ async function showJobberProfile(jobberId, jobberName) {
     sub: profile.lebenslauf_dateiname ? escJ(profile.lebenslauf_dateiname) : ''
   });
 
-  if (fields.length === 0) {
+  if (fields.length === 0 && !uebersichtHtml) {
     body.innerHTML = `<p style="text-align:center;color:var(--text-lt);font-size:14px;padding:20px 0">Dieser Bewerber hat noch keine weiteren Profildaten hinterlegt.</p>`;
     return;
   }
 
   body.innerHTML = `
-    <p class="jp-section-title">Profildaten</p>
+    ${uebersichtHtml}
+    ${fields.length ? `<p class="jp-section-title">Profildaten</p>
     <div class="jp-fields">
       ${fields.map(f => `
         <div class="jp-field">
@@ -2827,7 +2868,7 @@ async function showJobberProfile(jobberId, jobberName) {
             ${f.sub ? `<div class="jp-field-sub">${f.sub}</div>` : ''}
           </div>
         </div>`).join('')}
-    </div>`;
+    </div>` : ''}`;
 }
 
 function closeJobberProfile(e) {
