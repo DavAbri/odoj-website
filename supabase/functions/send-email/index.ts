@@ -133,7 +133,7 @@ function bewerbungBestaetigtTemplate(recipientName: string, jobTitel: string, te
 
 function neueBewerbungArbeitgeberTemplate(
   recipientName: string, jobberName: string, jobTitel: string, terminInfo?: string,
-  uebersicht?: { alter: number | null; sterneAvg: number | null; sterneAnzahl: number; branchenMap: Record<string, number> } | null
+  uebersicht?: { alter: number | null; sterneAvg: number | null; sterneAnzahl: number; branchenMap: Record<string, number>; lebenslaufPfad: string | null; lebenslaufDateiname: string | null } | null
 ): string {
   const inserateUrl = `${SITE_URL}/meine-inserate.html`;
   const greeting = recipientName ? `Hallo ${recipientName},` : "Hallo,";
@@ -170,6 +170,7 @@ function neueBewerbungArbeitgeberTemplate(
     </p>
     ${terminInfo ? `<p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">Termine: <strong style="color:#0f1f3d">${esc(terminInfo)}</strong></p>` : ""}
     ${uebersichtHtml}
+    ${uebersicht?.lebenslaufPfad ? `<p style="margin:0 0 16px;font-size:14px;color:#444;line-height:1.7">📎 Der Lebenslauf von ${esc(jobberName)} ist dieser E-Mail angehängt.</p>` : ""}
     <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a5500;line-height:1.6">
       📋 Melde dich in deinem ODOJ-Konto an, um die Bewerbung zu prüfen und zu antworten.
     </div>
@@ -481,7 +482,7 @@ function berechneAlter(geburtsdatum: string): number | null {
 // OHNE sensible Felder (SV-Nummer, IBAN, Adresse): nur Alter + aggregierte
 // Bewertungsdaten, die der Arbeitgeber auch sonst auf der Plattform sieht.
 async function fetchJobberUebersicht(admin: ReturnType<typeof createClient>, jobberId: string) {
-  const { data: profile } = await admin.from("Profile").select("geburtsdatum").eq("user_id", jobberId).maybeSingle();
+  const { data: profile } = await admin.from("Profile").select("geburtsdatum, lebenslauf_pfad, lebenslauf_dateiname").eq("user_id", jobberId).maybeSingle();
   const alter = profile?.geburtsdatum ? berechneAlter(profile.geburtsdatum) : null;
 
   const { data: bews } = await admin.from("bewertungen").select("sterne").eq("bewertet_id", jobberId).eq("rolle_bewerter", "arbeitgeber");
@@ -496,7 +497,25 @@ async function fetchJobberUebersicht(admin: ReturnType<typeof createClient>, job
     jobData?.forEach(j => { if (j.branche) branchenMap[j.branche] = (branchenMap[j.branche] || 0) + 1; });
   }
 
-  return { alter, sterneAvg, sterneAnzahl, branchenMap };
+  return {
+    alter, sterneAvg, sterneAnzahl, branchenMap,
+    lebenslaufPfad: profile?.lebenslauf_pfad || null,
+    lebenslaufDateiname: profile?.lebenslauf_dateiname || null,
+  };
+}
+
+// Lädt den im Storage abgelegten Lebenslauf (falls vorhanden) und gibt ihn
+// als E-Mail-Anhang zurück - damit der Arbeitgeber ihn direkt in der
+// Bewerbungs-Mail sieht, ohne sich extra einloggen zu müssen.
+async function fetchLebenslaufAttachment(
+  admin: ReturnType<typeof createClient>, pfad: string | null, dateiname: string | null
+): Promise<{ filename: string; content: string } | null> {
+  if (!pfad) return null;
+  const { data, error } = await admin.storage.from("lebenslaeufe").download(pfad);
+  if (error || !data) return null;
+  const bytes = new Uint8Array(await data.arrayBuffer());
+  const filename = dateiname || pfad.split("/").pop() || "Lebenslauf";
+  return { filename, content: btoa(String.fromCharCode(...bytes)) };
 }
 
 // ── MAIN ─────────────────────────────────────────────────────────
@@ -635,6 +654,10 @@ serve(async (req) => {
       subject = `Neue Bewerbung für deinen Job: ${jobTitel || ""}`;
       const uebersicht = jobberId ? await fetchJobberUebersicht(admin, jobberId) : null;
       html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", terminInfo || "", uebersicht);
+      if (uebersicht?.lebenslaufPfad) {
+        const lebenslaufAnhang = await fetchLebenslaufAttachment(admin, uebersicht.lebenslaufPfad, uebersicht.lebenslaufDateiname);
+        if (lebenslaufAnhang) attachments = [lebenslaufAnhang];
+      }
     } else if (type === "payment_request") {
       subject = `Zahlungsaufforderung – ${jobTitel || "Einsatz"} (${jobberName || ""})`;
       html = paymentRequestTemplate(
