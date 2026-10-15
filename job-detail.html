@@ -492,7 +492,13 @@ function showPreviewPlaceholder() {
 
 async function initJobDetail() {
   const appSettings = await odojGetAppSettings();
-  if (!appSettings.jobs_sichtbar) { showPreviewPlaceholder(); return; }
+  if (!appSettings.jobs_sichtbar) {
+    // Einzelne freigeschaltete Konten (Profile.vorschau_zugriff) dürfen
+    // Job-Details schon vor dem offiziellen Start sehen.
+    const previewSession = await odojGetSession();
+    const hatVorschauZugriff = previewSession ? await odojHatVorschauZugriff(previewSession.user.id) : false;
+    if (!hatVorschauZugriff) { showPreviewPlaceholder(); return; }
+  }
 
   const params = new URLSearchParams(location.search);
   const jobId = params.get('id');

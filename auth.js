@@ -189,6 +189,19 @@ async function odojCountUnread(userId) {
   } catch (_) { return 0; }
 }
 
+// Prüft, ob ein eingeloggter Nutzer die Vorschau-Ausnahme hat (einzelne
+// freigeschaltete Konten dürfen Jobs schon vor dem offiziellen Start sehen,
+// Profile.vorschau_zugriff). Eigene, von odojGetProfile() getrennte
+// Abfrage, damit eine Umgebung ohne diese Spalte (Migration noch nicht
+// gelaufen) nicht die normale Profil-Abfrage für die ganze Seite mitreißt.
+async function odojHatVorschauZugriff(userId) {
+  if (!userId) return false;
+  try {
+    const { data } = await odojSb.from('Profile').select('vorschau_zugriff').eq('user_id', userId).maybeSingle();
+    return !!data?.vorschau_zugriff;
+  } catch (_) { return false; }
+}
+
 // Ausstehende Bewerbungen für Arbeitgeber zählen
 async function odojCountPendingBewerbungen(userId) {
   try {

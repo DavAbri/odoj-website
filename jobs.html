@@ -828,8 +828,14 @@ async function renderJobsPreviewPlaceholder() {
 async function checkJobsAuth() {
   const appSettings = await odojGetAppSettings();
   if (!appSettings.jobs_sichtbar) {
-    await renderJobsPreviewPlaceholder();
-    return;
+    // Einzelne freigeschaltete Konten (Profile.vorschau_zugriff) dürfen die
+    // Jobliste schon vor dem offiziellen Start sehen.
+    const session = await odojGetSession();
+    const hatVorschauZugriff = session ? await odojHatVorschauZugriff(session.user.id) : false;
+    if (!hatVorschauZugriff) {
+      await renderJobsPreviewPlaceholder();
+      return;
+    }
   }
 
   const heuteDatum = new Date().toISOString().split('T')[0];
