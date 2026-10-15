@@ -181,6 +181,32 @@ function bewerbungStorniertTemplate(recipientName: string, jobberName: string, j
   </td></tr>`);
 }
 
+// Disk-IO-Aufräumung: beim Löschen eines Inserats wurde die Benachrichtigung
+// an die Bewerber bisher per nachrichten-Insert geschickt und Sekunden
+// später durch denselben Lösch-Ablauf wieder entfernt, bevor sie je
+// sichtbar wurde - Bewerber erfuhren dadurch faktisch nie vom Löschen.
+// Jetzt wie bei E9 (Storno): direkte Mail statt Chat-Nachricht.
+function jobGeloeschtTemplate(recipientName: string, jobTitel: string, datumStr: string, grund: string): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:.8px">Inserat gelöscht</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      Das Inserat <strong style="color:#0f1f3d">${esc(jobTitel)}</strong>${datumStr ? ` am <strong style="color:#0f1f3d">${esc(datumStr)}</strong>` : ""}
+      wurde vom Arbeitgeber gelöscht. Deine Bewerbung ist damit leider nicht mehr gültig.
+    </p>
+    <div style="background:#FFF0F0;border:1.5px solid #F5C6C0;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a2020;line-height:1.6">
+      <strong>Grund:</strong> ${esc(grund)}
+    </div>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/jobs.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        Weitere Jobs finden &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
 function einsatzbeginnAnwesenheitTemplate(recipientName: string, jobTitel: string, bewId: string): string {
   const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
   const link = `${SITE_URL}/meine-inserate.html?bew=${bewId}`;
@@ -561,6 +587,9 @@ serve(async (req) => {
         ? `Stornierung: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`
         : `Bewerbung zurückgezogen: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`;
       html = bewerbungStorniertTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", datum || "", grund || "kein Grund angegeben", !!warAngenommen);
+    } else if (type === "job_geloescht") {
+      subject = `Inserat gelöscht: ${jobTitel || "Tagesjob"}`;
+      html = jobGeloeschtTemplate(recipientName, jobTitel || "", datum || "", grund || "kein Grund angegeben");
     } else if (type === "rechnung_erinnerung") {
       subject = `Erinnerung: Anwesenheit für "${jobTitel || "Tagesjob"}" noch offen`;
       html = rechnungErinnerungTemplate(recipientName, jobTitel || "");
