@@ -1029,6 +1029,14 @@ async function initVorschauModusUi() {
   _odojLaunchMinDatum = (_odojVorschauModus && settings.launch_kw) ? _isoWeekMontag(settings.launch_kw) : null;
   if (!_odojVorschauModus) return;
 
+  // Einzelne freigeschaltete Konten (Profile.vorschau_zugriff) dürfen
+  // Termine auch vor der Launch-KW anlegen, z.B. um den Anwesenheits-/
+  // Rechnungs-Ablauf schon vor dem offiziellen Start zu testen.
+  if (_agSession && await odojHatVorschauZugriff(_agSession.user.id)) {
+    _odojLaunchMinDatum = null;
+    return;
+  }
+
   const bannerHtml = `<div class="ins-vorschau-banner">⏳ Ihre Inserate sind gespeichert, aber noch nicht für Jobber sichtbar. Bis zum Launch in KW ${_odojLaunchKw} sind alle Jobs gesperrt.</div>`;
   const formBanner = document.getElementById('ins-vorschau-banner-form');
   if (formBanner) formBanner.outerHTML = bannerHtml.replace('class="ins-vorschau-banner"', 'class="ins-vorschau-banner" id="ins-vorschau-banner-form"');
