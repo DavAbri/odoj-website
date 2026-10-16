@@ -201,6 +201,7 @@ function bewerbungStorniertTemplate(recipientName: string, jobberName: string, j
     <div style="background:#FFF0F0;border:1.5px solid #F5C6C0;border-radius:10px;padding:16px 20px;margin:0 0 24px;font-size:14px;color:#7a2020;line-height:1.6">
       <strong>Grund:</strong> ${esc(grund)}
     </div>
+    ${warAngenommen ? `<p style="margin:0 0 24px;font-size:14px;color:#444;line-height:1.7">Ihr Inserat ist dadurch automatisch wieder für andere Jobber verfügbar, falls noch ein Platz frei ist.</p>` : ""}
     <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
       <a href="${SITE_URL}/meine-inserate.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
         Bewerbungen ansehen &rarr;
