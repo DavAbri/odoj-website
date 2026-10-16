@@ -2,13 +2,16 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "info@odoj.at"
-// WICHTIG: Resend lehnt nicht-ASCII-Zeichen (z.B. Halbgeviertstrich "–") im
-// "from"-Anzeigenamen mit einem 422-Validierungsfehler ab - nur reines ASCII
-// verwenden. Das war die Ursache dafür, dass JEDE E-Mail über diese Funktion
-// (u.a. "Bewerbung angenommen") fehlschlug, unbemerkt durch die leeren
-// catch-Blöcke im Frontend.
-const FROM_NAME = "ODOJ - One Day One Job"
+// Korrektur 3: Das Secret FROM_EMAIL enthält bereits die komplette
+// "Name <adresse>"-Form (so verwenden es send-email/check-geringfuegigkeit
+// auch direkt als "from"). Diese Funktion hat zusätzlich noch einen eigenen
+// Anzeigenamen davor gesetzt ("${FROM_NAME} <${FROM_EMAIL}>") - dadurch wurde
+// die Adresse doppelt verschachtelt und von Resend mit "non-ASCII characters"
+// abgelehnt (der verschachtelte Halbgeviertstrich landete im Adress-Teil).
+// Das war die Ursache dafür, dass JEDE E-Mail über diese Funktion (u.a.
+// "Bewerbung angenommen") fehlschlug, unbemerkt durch die leeren catch-
+// Blöcke im Frontend. Fix: FROM_EMAIL direkt verwenden, nicht erneut wrappen.
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "ODOJ - One Day One Job <info@odoj.at>"
 const SITE_URL = Deno.env.get("SITE_URL") || "https://odoj.at"
 
 serve(async (req) => {
@@ -178,7 +181,7 @@ serve(async (req) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
+        from: FROM_EMAIL,
         to: [empfaengerEmail],
         subject,
         html: htmlContent

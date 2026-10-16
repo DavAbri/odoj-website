@@ -1632,10 +1632,6 @@ function toggleZahlungDetails(bewId) {
 function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invoiceNumber) {
   const bezahlt = b.zahlung_status === 'bestaetigt';
   const fmt = n => Number(n || 0).toLocaleString('de-AT', { minimumFractionDigits: 2 });
-  const dat = b.bestaetigt_am
-    ? new Date(b.bestaetigt_am).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : '';
-  const verwendungszweckLohn    = `ODOJ – ${jobTitel} – ${dat}`;
   const verwendungszweckGebuehr = invoiceNumber || 'ODOJ – Vermittlungsgebühr';
   return `
     <div class="bew-zahlung-box" id="bew-zahlung-${b.id}">
@@ -1649,7 +1645,6 @@ function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invo
       <div class="bew-zahlung-details">
         <div class="bew-zahlung-row"><span>Lohn an Jobber</span><strong>€ ${fmt(tagesgehalt)}</strong></div>
         <div class="bew-zahlung-row"><span>IBAN Jobber</span><strong>${escJ(profile?.iban || 'noch nicht hinterlegt')}</strong></div>
-        <div class="bew-zahlung-row"><span>Verwendungszweck</span><strong>${escJ(verwendungszweckLohn)}</strong></div>
         <div class="bew-zahlung-fee">
           <div class="bew-zahlung-row"><span>Vermittlungsgebühr (separat)</span><strong>€ 15,00</strong></div>
           <div class="bew-zahlung-row"><span>IBAN ODOJ</span><strong>${escJ(odojConfig?.iban || '–')}</strong></div>
@@ -1871,61 +1866,77 @@ async function bestaetigeAnnehmen() {
 }
 
 async function updateBewStatus(bewId, newStatus) {
-  // E3: "Neu"-Kennzeichen beim Jobber, bis er die Annahme angesehen hat.
-  const updatePayload = { status: newStatus };
-  if (newStatus === 'angenommen') updatePayload.annahme_gesehen = false;
-  const { error } = await odojSb.from('bewerbungen').update(updatePayload).eq('id', bewId);
-  if (error) { alert('Fehler: ' + error.message); return; }
+  const supportAktiv = !!(window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active);
 
-  const { data: bew } = await odojSb.from('bewerbungen')
-    .select('jobber_id, job_id, termin_id')
-    .eq('id', bewId).single();
+  if (supportAktiv) {
+    // Direkte Schreibzugriffe liefen hier mit der echten Admin-Sitzung, die
+    // bestehenden RLS-Policies (arbeitgeber_id = auth.uid()) matchen dann
+    // keine Zeile - eine stille No-Op statt eines sichtbaren Fehlers. Läuft
+    // deshalb über die geloggte, service_role-gestützte Edge Function
+    // (gleiches Muster wie bei "Anwesenheit bestätigen"/"Nicht gekommen").
+    const { data: aktionResult, error: aktionErr } = await odojSb.functions.invoke('support-bewerbung-aktion', {
+      body: { sessionId: window.ODOJ_SUPPORT.sessionId, bewId, aktion: newStatus === 'angenommen' ? 'annehmen' : 'ablehnen' }
+    });
+    if (aktionErr || aktionResult?.error) { alert('Fehler: ' + (aktionResult?.error || aktionErr.message)); return; }
+  } else {
+    // E3: "Neu"-Kennzeichen beim Jobber, bis er die Annahme angesehen hat.
+    const updatePayload = { status: newStatus };
+    if (newStatus === 'angenommen') updatePayload.annahme_gesehen = false;
+    const { error } = await odojSb.from('bewerbungen').update(updatePayload).eq('id', bewId);
+    if (error) { alert('Fehler: ' + error.message); return; }
 
-  // Automatische Job-Deaktivierung bei voller Belegung: nur für Einzeltag-
-  // Bewerbungen (termin_id = null). Bei Mehrtages-Jobs würde das sonst ALLE
-  // noch unbesetzten Zukunftstermine aus der Übersicht verschwinden lassen,
-  // sobald irgendein einzelner Termin voll ist - das übernimmt stattdessen
-  // die Pro-Termin-"Ausgebucht"-Anzeige auf jobs.html/job-detail.html.
-  if (newStatus === 'angenommen' && bew?.job_id && !bew.termin_id) {
-    const { data: job } = await odojSb.from('jobs').select('id, plaetze, status').eq('id', bew.job_id).single();
-    if (job && job.status === 'aktiv') {
-      const { count } = await odojSb.from('bewerbungen')
-        .select('id', { count: 'exact', head: true })
-        .eq('job_id', bew.job_id)
-        .eq('status', 'angenommen');
-      if (count >= job.plaetze) {
-        await odojSb.from('jobs').update({ status: 'inaktiv' }).eq('id', bew.job_id);
+    const { data: bew } = await odojSb.from('bewerbungen')
+      .select('jobber_id, job_id, termin_id')
+      .eq('id', bewId).single();
+
+    // Automatische Job-Deaktivierung bei voller Belegung: nur für Einzeltag-
+    // Bewerbungen (termin_id = null). Bei Mehrtages-Jobs würde das sonst ALLE
+    // noch unbesetzten Zukunftstermine aus der Übersicht verschwinden lassen,
+    // sobald irgendein einzelner Termin voll ist - das übernimmt stattdessen
+    // die Pro-Termin-"Ausgebucht"-Anzeige auf jobs.html/job-detail.html.
+    if (newStatus === 'angenommen' && bew?.job_id && !bew.termin_id) {
+      const { data: job } = await odojSb.from('jobs').select('id, plaetze, status').eq('id', bew.job_id).single();
+      if (job && job.status === 'aktiv') {
+        const { count } = await odojSb.from('bewerbungen')
+          .select('id', { count: 'exact', head: true })
+          .eq('job_id', bew.job_id)
+          .eq('status', 'angenommen');
+        if (count >= job.plaetze) {
+          await odojSb.from('jobs').update({ status: 'inaktiv' }).eq('id', bew.job_id);
+        }
+      }
+    }
+
+    if (bew?.jobber_id && bew?.job_id) {
+      const { data: job } = await odojSb.from('jobs').select('titel').eq('id', bew.job_id).single();
+      const jobTitel = job?.titel || 'den Job';
+      const firma    = _agFirmenname || 'uns';
+      const agId     = _agSession?.user?.id;
+
+      const nachricht = newStatus === 'angenommen'
+        ? `Herzlichen Glückwunsch! Deine Bewerbung für ${jobTitel} bei ${firma} wurde angenommen! Wir freuen uns auf deinen Einsatz. Bei Fragen kannst du uns hier direkt schreiben. Bis bald!`
+        : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche!`;
+
+      if (agId) {
+        const { data: insertedMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
+          bewerbung_id:  bewId,
+          sender_id:     agId,
+          empfaenger_id: bew.jobber_id,
+          nachricht,
+          gelesen:       false,
+          erstellt_am:   new Date().toISOString()
+        }).select().single();
+        if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
+        if (insertedMsg) odojSb.functions.invoke('send-notification-email', {
+          body: { record: insertedMsg, subjectHint: newStatus === 'angenommen' ? 'bewerbung_angenommen' : 'bewerbung_nicht_beruecksichtigt' }
+        }).catch(err => console.error('[E-Mail] Annahme/Absage-Benachrichtigung fehlgeschlagen:', err));
       }
     }
   }
 
-  if (bew?.jobber_id && bew?.job_id) {
-    const { data: job } = await odojSb.from('jobs').select('titel').eq('id', bew.job_id).single();
-    const jobTitel = job?.titel || 'den Job';
-    const firma    = _agFirmenname || 'uns';
-    const agId     = _agSession?.user?.id;
-
-    const nachricht = newStatus === 'angenommen'
-      ? `Herzlichen Glückwunsch! Deine Bewerbung für ${jobTitel} bei ${firma} wurde angenommen! Wir freuen uns auf deinen Einsatz. Bei Fragen kannst du uns hier direkt schreiben. Bis bald!`
-      : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche!`;
-
-    if (agId) {
-      const { data: insertedMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
-        bewerbung_id:  bewId,
-        sender_id:     agId,
-        empfaenger_id: bew.jobber_id,
-        nachricht,
-        gelesen:       false,
-        erstellt_am:   new Date().toISOString()
-      }).select().single();
-      if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
-      if (insertedMsg) odojSb.functions.invoke('send-notification-email', {
-        body: { record: insertedMsg, subjectHint: newStatus === 'angenommen' ? 'bewerbung_angenommen' : 'bewerbung_nicht_beruecksichtigt' }
-      }).catch(err => console.error('[E-Mail] Annahme/Absage-Benachrichtigung fehlgeschlagen:', err));
-    }
-  }
-
   // Wenn angenommen: Vertrags-Modal öffnen + Datenblatt-PDF per E-Mail auslösen
+  // (läuft in beiden Modi - recipientId ist im Support-Modus bereits die
+  // echte Arbeitgeber-ID aus der synthetischen _agSession, siehe oben).
   if (newStatus === 'angenommen') {
     openVertragModal(bewId);
     odojSb.functions.invoke('send-email', {
@@ -3246,21 +3257,11 @@ function closeVertragModal() {
   document.getElementById('vertrag-modal').style.display = 'none';
   document.body.style.overflow = '';
 }
-async function vertragSelbstErstellen() {
+function vertragSelbstErstellen() {
+  // Korrektur 1: keine Chat-Nachricht mehr bei "Vertrag selbst erstellen" -
+  // ein Vertrags-Hinweis im Chat soll nur erscheinen, wenn über "Vorlage
+  // verwenden" tatsächlich ein Plattform-Vertrag angelegt wurde.
   closeVertragModal();
-  if (!_currentVertragBewId || !_agSession) return;
-  const { data: bew } = await odojSb.from('bewerbungen').select('jobber_id').eq('id', _currentVertragBewId).single();
-  if (!bew?.jobber_id) return;
-  const msgPayload = {
-    bewerbung_id:  _currentVertragBewId,
-    sender_id:     _agSession.user.id,
-    empfaenger_id: bew.jobber_id,
-    nachricht:     'ℹ️ Dienstvertrag\n\nFür diesen Einsatz wird kein Dienstvertrag über die Plattform benötigt.',
-    gelesen:       false,
-    erstellt_am:   new Date().toISOString()
-  };
-  const { data: ins } = await odojSb.from('nachrichten').insert(msgPayload).select().single();
-  if (ins) odojSb.functions.invoke('send-notification-email', { body: { record: ins } }).catch(err => console.error('[E-Mail] "Vertrag selbst erstellen"-Benachrichtigung fehlgeschlagen:', err));
 }
 </script>
 </body>

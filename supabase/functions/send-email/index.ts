@@ -259,7 +259,6 @@ function paymentRequestTemplate(
 ): string {
   const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
   const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const verwendungszweckLohn = `ODOJ – ${jobTitel} – ${datum}`;
   const verwendungszweckGebuehr = `ODOJ – Vermittlungsgebühr – ${rechnungsnummer}`;
   const nichtErschienenUrl = `${SITE_URL}/nicht-erschienen.html?bew=${bewId}`;
 
@@ -283,8 +282,7 @@ function paymentRequestTemplate(
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#7a8fa8;text-transform:uppercase;letter-spacing:.5px">Lohn an den Jobber</p>
       <p style="margin:0 0 10px;font-size:24px;font-weight:800;color:#0f1f3d">€ ${fmt(lohnBetrag)}</p>
       <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>IBAN:</strong> ${esc(jobberIban || "– noch nicht hinterlegt, bitte Jobber kontaktieren –")}</p>
-      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(jobberName)}</p>
-      <p style="margin:0;font-size:14px;color:#444"><strong>Verwendungszweck:</strong> ${esc(verwendungszweckLohn)}</p>
+      <p style="margin:0;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(jobberName)}</p>
     </div>
     ${gebuehrBoxHtml}
     <p style="margin:0 0 24px;font-size:14px;color:#7a5500;background:#fff8e8;border-radius:8px;padding:12px 16px;line-height:1.6">
@@ -299,6 +297,32 @@ function paymentRequestTemplate(
       Falls der Jobber nicht erschienen ist, ist diese Rechnung hinfällig.
       <a href="${nichtErschienenUrl}" style="color:#C0392B;text-decoration:underline">Nichterscheinen melden</a>
     </p>
+  </td></tr>`);
+}
+
+// Korrektur 4: fehlte bisher komplett im Dispatch - der Client rief diesen
+// Typ zwar schon auf, die Funktion kannte ihn aber nicht (400 "Unbekannter
+// type", nur durch den leeren catch() im Frontend unbemerkt).
+function stammkraftBenachrichtigungTemplate(recipientName: string, firmenname: string, jobTitel: string): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Stammkraft</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      <strong style="color:#0f1f3d">${esc(firmenname)}</strong> hat dich als Stammkraft ausgewählt und möchte dich
+      bei neuen Inseraten direkt informieren, bevor sie für alle sichtbar sind.
+    </p>
+    <p style="margin:0 0 20px;font-size:15px;color:#444;line-height:1.7">
+      Das bedeutet: Du bekommst von ${esc(firmenname)} eine Nachricht auf ODOJ, sobald ein neuer Job verfügbar ist,
+      und kannst dich dann als einer der ersten darauf bewerben. Du bist dadurch zu nichts verpflichtet.
+    </p>
+    ${jobTitel ? `<p style="margin:0 0 20px;font-size:15px;color:#444;line-height:1.7">Aktuell gibt es schon ein neues Inserat: <strong style="color:#0f1f3d">${esc(jobTitel)}</strong>.</p>` : ""}
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/chat.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        Zur Plattform &rarr;
+      </a>
+    </td></tr></table>
   </td></tr>`);
 }
 
@@ -647,6 +671,9 @@ serve(async (req) => {
     } else if (type === "job_geloescht") {
       subject = `Inserat gelöscht: ${jobTitel || "Tagesjob"}`;
       html = jobGeloeschtTemplate(recipientName, jobTitel || "", datum || "", grund || "kein Grund angegeben");
+    } else if (type === "stammkraft_benachrichtigung") {
+      subject = `${firmenname || "Ein Arbeitgeber"} hat dich als Stammkraft ausgewählt ⭐`;
+      html = stammkraftBenachrichtigungTemplate(recipientName, firmenname || "Ein Arbeitgeber", jobTitel || "");
     } else {
       return new Response(JSON.stringify({ error: "Unbekannter type" }), { status: 400, headers: cors });
     }
