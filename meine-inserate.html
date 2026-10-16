@@ -1918,18 +1918,20 @@ async function updateBewStatus(bewId, newStatus) {
         : `Vielen Dank für deine Bewerbung für ${jobTitel}. Leider müssen wir dir mitteilen, dass wir deine Bewerbung diesmal nicht berücksichtigen können. Wir wünschen dir viel Erfolg bei deiner weiteren Jobsuche!`;
 
       if (agId) {
-        const { data: insertedMsg, error: msgErr } = await odojSb.from('nachrichten').insert({
+        // Korrektur 5: KEIN expliziter send-notification-email-Aufruf mehr
+        // hier - der Datenbank-Trigger (webhook_trigger.sql) löst für jede
+        // neue Chat-Nachricht ohnehin automatisch dieselbe Mail aus (inkl.
+        // derselben Betreff-Erkennung anhand des Texts), der Aufruf hier
+        // führte nur zu einer doppelt verschickten Mail.
+        const { error: msgErr } = await odojSb.from('nachrichten').insert({
           bewerbung_id:  bewId,
           sender_id:     agId,
           empfaenger_id: bew.jobber_id,
           nachricht,
           gelesen:       false,
           erstellt_am:   new Date().toISOString()
-        }).select().single();
+        });
         if (msgErr) console.warn('Auto-Nachricht Fehler:', msgErr.message);
-        if (insertedMsg) odojSb.functions.invoke('send-notification-email', {
-          body: { record: insertedMsg, subjectHint: newStatus === 'angenommen' ? 'bewerbung_angenommen' : 'bewerbung_nicht_beruecksichtigt' }
-        }).catch(err => console.error('[E-Mail] Annahme/Absage-Benachrichtigung fehlgeschlagen:', err));
       }
     }
   }

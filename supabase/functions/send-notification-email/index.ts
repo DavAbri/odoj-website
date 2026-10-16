@@ -35,6 +35,21 @@ serve(async (req) => {
       })
     }
 
+    // Korrektur 5: Diese Funktion wird PRO Chat-Nachricht automatisch per
+    // Datenbank-Trigger aufgerufen (webhook_trigger.sql, notify_new_nachricht)
+    // und sendet eine generische "Du hast eine neue Nachricht!"-Mail - auch
+    // für Systemnachrichten, für die es bereits eine eigene, hübschere Mail
+    // gibt (z.B. "Neue Bewerbung" via send-email, oder die Bewertungs-
+    // Aufforderung). Für genau diese Fälle bewusst KEINE zweite Mail senden.
+    const text = record.nachricht || ""
+    const SKIP_PREFIXES = ["📋 Neue Bewerbung", "Einsatz erfolgreich abgeschlossen!", "[BEW_REQ:"]
+    if (SKIP_PREFIXES.some((p) => text.startsWith(p))) {
+      return new Response(JSON.stringify({ skipped: true, reason: "Bereits per eigener Mail abgedeckt." }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      })
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -76,7 +91,6 @@ serve(async (req) => {
     // gegen spätere Textänderungen der Chat-Nachricht), sonst Fallback auf
     // Text-Erkennung (gleiche Erkennung wie im Chat-Frontend, für ältere
     // Aufrufstellen ohne subjectHint).
-    const text = record.nachricht || ""
     const SUBJECT_HINTS: Record<string, string> = {
       bewerbung_angenommen: "Deine Bewerbung wurde angenommen! 🎉",
       bewerbung_nicht_beruecksichtigt: "Update zu deiner Bewerbung",
