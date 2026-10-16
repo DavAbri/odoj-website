@@ -2079,7 +2079,7 @@ async function confirmDeleteInserat() {
 
     // 1. Bewerbungen laden (inkl. jobber_id für Benachrichtigung)
     const { data: bews } = await odojSb
-      .from('bewerbungen').select('id, jobber_id').eq('job_id', jobId);
+      .from('bewerbungen').select('id, jobber_id, zurueckgezogen').eq('job_id', jobId);
     const bewIds = (bews || []).map(b => b.id);
 
     if (bewIds.length) {
@@ -2089,7 +2089,9 @@ async function confirmDeleteInserat() {
       // gelöscht wurde, bevor sie je sichtbar war. Bewerber erfuhren dadurch
       // faktisch nie vom Löschen. Gleiches Muster wie E9 (Storno): direkte
       // Mail statt Chat-Nachricht, die ohnehin gleich gelöscht würde.
-      bews.filter(bew => bew.jobber_id).forEach(bew => {
+      // Wer seine Bewerbung schon selbst zurückgezogen hat, ist nicht mehr
+      // beteiligt und bekommt daher keine Mail mehr.
+      bews.filter(bew => bew.jobber_id && !bew.zurueckgezogen).forEach(bew => {
         odojSb.functions.invoke('send-email', {
           body: { type: 'job_geloescht', recipientId: bew.jobber_id, jobTitel, grund }
         }).catch(err => console.error('[E-Mail] Inserat-gelöscht-Benachrichtigung fehlgeschlagen:', err));
