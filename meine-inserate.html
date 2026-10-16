@@ -1990,18 +1990,24 @@ async function updateBewStatus(bewId, newStatus) {
     }
     const actEl = document.getElementById('bew-actions-' + bewId);
     if (actEl) {
+      // Bugfix: "bew" aus dem Nicht-Support-Zweig oben ist hier außerhalb
+      // seines Gültigkeitsbereichs (gilt für BEIDE Modi) - frisch nachladen,
+      // sonst bricht die Aktualisierung mit einem stillen Fehler ab und die
+      // Buttons bleiben auf "Annehmen/Ablehnen" stehen.
+      const { data: bewFresh } = await odojSb.from('bewerbungen').select('termin_id, job_id').eq('id', bewId).maybeSingle();
+
       // Termin-Datum+Uhrzeit laden für die Einsatzbeginn-Sperre (A1) - bei
       // Mehrtermine-Bewerbungen das spezifische Termin-Datum/-Uhrzeit, sonst
       // jobs.datum/uhrzeit_von wie bei Einzeltag-Jobs.
       let effDatum = null;
       let effUhrzeit = null;
-      if (bew?.termin_id) {
-        const { data: terminD } = await odojSb.from('job_termine').select('datum, uhrzeit_von').eq('id', bew.termin_id).maybeSingle();
+      if (bewFresh?.termin_id) {
+        const { data: terminD } = await odojSb.from('job_termine').select('datum, uhrzeit_von').eq('id', bewFresh.termin_id).maybeSingle();
         effDatum = terminD?.datum || null;
         effUhrzeit = terminD?.uhrzeit_von || null;
       }
-      if (bew?.job_id && (!effDatum || !effUhrzeit)) {
-        const { data: jobD } = await odojSb.from('jobs').select('datum, uhrzeit_von').eq('id', bew.job_id).maybeSingle();
+      if (bewFresh?.job_id && (!effDatum || !effUhrzeit)) {
+        const { data: jobD } = await odojSb.from('jobs').select('datum, uhrzeit_von').eq('id', bewFresh.job_id).maybeSingle();
         if (!effDatum) effDatum = jobD?.datum || null;
         if (!effUhrzeit) effUhrzeit = jobD?.uhrzeit_von || null;
       }
