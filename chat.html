@@ -254,6 +254,11 @@
   text-align: right;
 }
 .msg-theirs .msg-time { text-align: left; }
+.msg-inline-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 8px; font-size: 13px; font-weight: 700;
+  color: inherit; text-decoration: underline; text-underline-offset: 2px;
+}
 .msg-system {
   align-self: stretch;
   background: #E6F5EE;
@@ -1296,18 +1301,16 @@ async function loadMessages(silent) {
         <div class="msg-time">${time}</div>
       </div>`;
     } else if (isNeueBewMsg) {
+      // Korrektur "Bewerbungsnachricht": soll wie eine normale Nachricht des
+      // Arbeitnehmers aussehen (gleiche Blase/Farbe/Seite wie seine anderen
+      // Nachrichten), nicht wie eine graue Systemnachricht. sender_id ist
+      // ohnehin schon der Arbeitnehmer - nur die Darstellung war speziell.
       const linkMatch = m.nachricht.match(/meine-inserate\.html\?job=([a-f0-9-]{36})&bew=([a-f0-9-]{36})/i);
       const bodyLine   = (m.nachricht || '').split('\n')[2] || '';
-      html += `<div class="msg-bubble msg-vertrag">
-        <div class="msg-vertrag-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Neue Bewerbung
-        </div>
-        <div class="msg-vertrag-body">${escHtml(bodyLine)}</div>
-        ${linkMatch ? `<a href="meine-inserate.html?job=${linkMatch[1]}&bew=${linkMatch[2]}" class="btn-vertrag-open">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-          Bewerbung ansehen
-        </a>` : ''}
+      const cls = isMine ? 'msg-mine' : 'msg-theirs';
+      html += `<div class="msg-bubble ${cls}">
+        ${escHtml(bodyLine)}
+        ${linkMatch ? `<br><a href="meine-inserate.html?job=${linkMatch[1]}&bew=${linkMatch[2]}" class="msg-inline-link">Bewerbung ansehen &rarr;</a>` : ''}
         <div class="msg-time">${time}</div>
       </div>`;
     } else if (isSysInfo) {
