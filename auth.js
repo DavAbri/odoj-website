@@ -43,6 +43,10 @@ function odojStatusLabel(bew) {
 // damit das Verhalten (insbesondere: KEINE Chat-Nachricht, nur eine direkte
 // Mail an den Arbeitgeber) an genau einer Stelle gepflegt wird.
 async function odojZurueckziehenBewerbung({ bewId, wasAngenommen, jobTitel, jobDatum, agId, reason }) {
+  // Vorab job_id/termin_id laden - für die Platz-Freigabe unten gebraucht,
+  // unabhängig davon, was der Aufrufer sonst noch an Infos übergibt.
+  const { data: bewRow } = await odojSb.from('bewerbungen').select('job_id, termin_id').eq('id', bewId).maybeSingle();
+
   // 1. Bewerbung auf abgelehnt setzen - zurueckgezogen=true unterscheidet das
   // von einer Ablehnung durch den Arbeitgeber (gleicher status-Wert,
   // unterschiedliche Anzeige/Behandlung, siehe odojStatusLabel oben).
@@ -52,16 +56,33 @@ async function odojZurueckziehenBewerbung({ bewId, wasAngenommen, jobTitel, jobD
     .eq('id', bewId);
   if (updErr) return { error: updErr };
 
-  // 2. Wenn 'angenommen' war → Jobvertrag ggf. auch auf abgelehnt setzen
+  // 2. Wenn 'angenommen' war → Jobvertrag ggf. auch auf abgelehnt setzen,
+  // und den Platz für andere Jobber wieder freigeben (nur Einzeltag-Jobs:
+  // bei Mehrtages-Jobs wird "ausgebucht" immer live pro Termin berechnet,
+  // braucht also keine Reaktivierung hier).
   if (wasAngenommen) {
     await odojSb
       .from('vertraege')
       .update({ status: 'abgelehnt_jobber' })
       .eq('bewerbung_id', bewId)
       .neq('status', 'beide_zugestimmt');
+
+    if (bewRow?.job_id && !bewRow.termin_id) {
+      const { data: job } = await odojSb.from('jobs').select('plaetze, status').eq('id', bewRow.job_id).maybeSingle();
+      if (job?.status === 'inaktiv') {
+        const { count } = await odojSb.from('bewerbungen')
+          .select('id', { count: 'exact', head: true })
+          .eq('job_id', bewRow.job_id).eq('status', 'angenommen');
+        if ((count || 0) < (job.plaetze || 0)) {
+          await odojSb.from('jobs').update({ status: 'aktiv' }).eq('id', bewRow.job_id);
+        }
+      }
+    }
   }
 
-  // 3. NUR eine Mail an den Arbeitgeber - bewusst KEINE Chat-Nachricht.
+  // 3. Mail an den Arbeitgeber - bewusst KEINE Chat-Nachricht - NUR wenn er
+  // die Bewerbung schon angenommen hatte (sonst verliert er ja nichts, was
+  // er extra wissen müsste).
   const datumStr = jobDatum
     ? new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '';
@@ -71,10 +92,17 @@ async function odojZurueckziehenBewerbung({ bewId, wasAngenommen, jobTitel, jobD
     : { data: null };
   const jobberName = [meinProfil?.vorname, meinProfil?.nachname].filter(Boolean).join(' ') || 'Ein Jobber';
 
-  if (agId) {
+  if (agId && wasAngenommen) {
     odojSb.functions.invoke('send-email', {
-      body: { type: 'bewerbung_storniert', recipientId: agId, jobberName, jobTitel: jobTitel || 'dem Job', datum: datumStr, grund: reason, warAngenommen }
+      body: { type: 'bewerbung_storniert', recipientId: agId, jobberName, jobTitel: jobTitel || 'dem Job', datum: datumStr, grund: reason, warAngenommen: wasAngenommen }
     }).catch(err => console.error('[E-Mail] Storno-Benachrichtigung an Arbeitgeber fehlgeschlagen:', err));
+  }
+
+  // 4. Bestätigungs-Mail an den Jobber selbst ("Zurückziehen war erfolgreich").
+  if (session) {
+    odojSb.functions.invoke('send-email', {
+      body: { type: 'bewerbung_zurueckgezogen_bestaetigung', recipientId: session.user.id, jobTitel: jobTitel || 'dem Job', datum: datumStr }
+    }).catch(err => console.error('[E-Mail] Zurückziehen-Bestätigung fehlgeschlagen:', err));
   }
 
   return { error: null };

@@ -209,6 +209,25 @@ function bewerbungStorniertTemplate(recipientName: string, jobberName: string, j
   </td></tr>`);
 }
 
+// Bestätigung an den Jobber selbst, dass sein Zurückziehen erfolgreich war.
+function bewerbungZurueckgezogenBestaetigungTemplate(recipientName: string, jobTitel: string, datumStr: string): string {
+  const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
+  return baseTemplate(`
+  <tr><td style="padding:36px 32px 28px">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1a7a50;text-transform:uppercase;letter-spacing:.8px">Zurückziehen erfolgreich</p>
+    <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+      deine Bewerbung für <strong style="color:#0f1f3d">${esc(jobTitel)}</strong>${datumStr ? ` am <strong style="color:#0f1f3d">${esc(datumStr)}</strong>` : ""}
+      wurde erfolgreich zurückgezogen.
+    </p>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
+      <a href="${SITE_URL}/jobs.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        Weitere Jobs finden &rarr;
+      </a>
+    </td></tr></table>
+  </td></tr>`);
+}
+
 // Disk-IO-Aufräumung: beim Löschen eines Inserats wurde die Benachrichtigung
 // an die Bewerber bisher per nachrichten-Insert geschickt und Sekunden
 // später durch denselben Lösch-Ablauf wieder entfernt, bevor sie je
@@ -648,6 +667,9 @@ serve(async (req) => {
         ? `Stornierung: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`
         : `Bewerbung zurückgezogen: ${jobberName || "Ein Jobber"} – ${jobTitel || ""}`;
       html = bewerbungStorniertTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", datum || "", grund || "kein Grund angegeben", !!warAngenommen);
+    } else if (type === "bewerbung_zurueckgezogen_bestaetigung") {
+      subject = `Zurückziehen erfolgreich: ${jobTitel || ""}`;
+      html = bewerbungZurueckgezogenBestaetigungTemplate(recipientName, jobTitel || "", datum || "");
     } else if (type === "job_geloescht") {
       subject = `Inserat gelöscht: ${jobTitel || "Tagesjob"}`;
       html = jobGeloeschtTemplate(recipientName, jobTitel || "", datum || "", grund || "kein Grund angegeben");
