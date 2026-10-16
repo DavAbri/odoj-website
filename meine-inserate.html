@@ -555,6 +555,7 @@
 .bew-st-ausstehend { background: #FFF8E8; color: #A05000; }
 .bew-st-angenommen { background: #E6F5EE; color: #1A7A50; }
 .bew-st-abgelehnt  { background: #FFF0F0; color: #C0392B; }
+.bew-st-abgelaufen { background: #F0F1F3; color: #6B7280; }
 .bew-item-profile {
   display: flex; flex-wrap: wrap; gap: 8px 16px;
   background: var(--off); border-radius: var(--r-sm);
@@ -1664,6 +1665,12 @@ function _bewStatusInfo(bew) {
   const status = (bew && typeof bew === 'object') ? bew.status : bew;
   if (status === 'angenommen') return { cls: 'bew-st-angenommen', label: 'Angenommen' };
   if (status === 'abgelehnt')  return { cls: 'bew-st-abgelehnt',  label: odojStatusLabel(bew) };
+  // Block "Rechnung getrennt": nach Terminbeginn kann niemand mehr
+  // angenommen werden - eine noch offene Bewerbung zeigt das statt
+  // "Ausstehend" an, statt einfach zu verschwinden.
+  if (bew && typeof bew === 'object' && bew._effDatum && _istEinsatzbeginnErreicht(bew._effDatum, bew._effUhrzeit)) {
+    return { cls: 'bew-st-abgelaufen', label: 'Abgelaufen' };
+  }
   return { cls: 'bew-st-ausstehend', label: 'Ausstehend' };
 }
 
@@ -1688,7 +1695,12 @@ function _fmtEinsatzStart(datum, uhrzeitVon) {
 
 // ── Aktions-Buttons für EINEN Termin (Annehmen/Ablehnen/Nachricht/Vertrag/Anwesenheit) ──
 function renderBewActions(b, realName, vertragId, effDatum) {
-  const acceptBtn = b.status !== 'angenommen'
+  // Block "Rechnung getrennt": nach Terminbeginn kann niemand mehr
+  // angenommen werden (serverseitig per Trigger ohnehin erzwungen) - der
+  // Button verschwindet dafür schon vorher.
+  const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, b._effUhrzeit);
+
+  const acceptBtn = (b.status !== 'angenommen' && !jobDatumErreicht)
     ? `<button class="bew-btn bew-btn-accept" onclick="confirmAnnehmen('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
   const rejectBtn = b.status !== 'abgelehnt'
     ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '';
@@ -1696,7 +1708,6 @@ function renderBewActions(b, realName, vertragId, effDatum) {
   // Block "automatische Mails zu Arbeitsbeginn/-ende": Anwesenheit wird jetzt
   // automatisch beim Einsatzende bestätigt, kein manueller Klick mehr nötig.
   // Melden bleibt weiterhin manuell möglich (auch per Link in der Zahlungshinweis-Mail).
-  const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, b._effUhrzeit);
   const presenceBtn = b.status === 'angenommen'
     ? (b.anwesenheit_bestaetigt
         ? `<button class="bew-btn bew-btn-presence-done" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anwesenheit bestätigt</button>`

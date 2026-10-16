@@ -841,6 +841,14 @@ async function checkJobsAuth() {
   const heuteDatum = new Date().toISOString().split('T')[0];
   console.log('[ODOJ] Datum-Filter aktiv ab:', heuteDatum);
 
+  // Block "Rechnung getrennt": ein Termin, der schon begonnen hat
+  // (exakte Uhrzeit, nicht nur das Datum), verschwindet aus der Jobsuche.
+  function _jobsIstBegonnen(datum, uhrzeitVon) {
+    if (!datum) return false;
+    const start = new Date(`${datum}T${(uhrzeitVon || '00:00').slice(0, 5)}:00`);
+    return start <= new Date();
+  }
+
   // Kein serverseitiger Datumsfilter mehr auf "jobs" selbst: bei Mehrtages-Jobs
   // ist jobs.datum nur der früheste Termin - ein Job mit vergangenem
   // Erst-Termin aber zukünftigen Terminen soll trotzdem erscheinen.
@@ -892,7 +900,7 @@ async function checkJobsAuth() {
     if (termine && termine.length) {
       termine
         .sort((a, b) => a.datum.localeCompare(b.datum))
-        .filter(t => (acceptedCountByTermin[t.id] || 0) < job.plaetze)
+        .filter(t => (acceptedCountByTermin[t.id] || 0) < job.plaetze && !_jobsIstBegonnen(t.datum, t.uhrzeit_von || job.uhrzeit_von))
         .forEach(t => allJobs.push({
           ...job,
           datum: t.datum,
@@ -901,7 +909,7 @@ async function checkJobsAuth() {
           _terminId: t.id,
           _isMultiTermin: true
         }));
-    } else if ((!job.datum || job.datum >= heuteDatum) && (acceptedCountByJob[job.id] || 0) < job.plaetze) {
+    } else if ((!job.datum || !_jobsIstBegonnen(job.datum, job.uhrzeit_von)) && (acceptedCountByJob[job.id] || 0) < job.plaetze) {
       allJobs.push(job);
     }
   });

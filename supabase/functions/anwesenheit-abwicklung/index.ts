@@ -1,20 +1,24 @@
-// Vollautomatische Abwicklung des Arbeitstags (ersetzt den früheren Klick
-// "Anwesenheit bestätigen", der die Rechnung ausgelöst hat - siehe Prompt
-// "automatische Mails zu Arbeitsbeginn/-ende"):
+// Vollautomatische Abwicklung des Arbeitstags (siehe Prompts "automatische
+// Mails zu Arbeitsbeginn/-ende" und "Rechnung getrennt"):
 //
-// 1) Bei TERMIN-BEGINN: Arbeitgeber bekommt die Zahlungshinweis-Mail (was er
-//    dem Jobber schuldet). Ist es der letzte Termin des Inserats, wird
-//    zusätzlich die konsolidierte ODOJ-Rechnung (alle Termine des Inserats)
-//    erstellt und als PDF an dieselbe Mail angehängt.
+// 1) Bei TERMIN-BEGINN: Arbeitgeber bekommt EINE Zahlungshinweis-Mail pro
+//    Termin (nicht pro Bewerbung!) mit allen angenommenen Jobbern dieses
+//    Termins. Reiner Lohn-Teil, OHNE ODOJ-Rechnung.
 // 2) Bei TERMIN-ENDE: Status wird automatisch auf "abgeschlossen" gesetzt
 //    (sofern nicht als "nicht gekommen" gemeldet), Jobber bekommt "Job
 //    erledigt, bitte bewerten", Arbeitgeber bekommt "Einsatz beendet, bitte
 //    bewerten" - beide nutzen die bereits vorhandene Bewertungsfunktion.
+// 3) Ist für ein Inserat der LETZTE Termin zu Ende und wurde noch keine
+//    Rechnung erstellt, wird jetzt (unabhängig/entkoppelt von Schritt 1+2)
+//    die konsolidierte ODOJ-Rechnung (alle Termine dieses Inserats) als
+//    eigene, separate Mail erstellt und verschickt.
 //
 // Kein manueller Klick mehr nötig. Meldet jemand über "Nichterscheinen
 // melden" (nicht-erschienen.html) nachträglich ein No-Show, ist das laut
 // Absprache ein rein manueller Korrekturfall (keine automatische Rechnungs-
-// Rückbuchung).
+// Rückbuchung). Nach Terminbeginn kann ohnehin niemand mehr angenommen
+// werden (siehe DB-Trigger pruefe_termin_nicht_begonnen), die Jobber-Liste
+// eines Termins steht beim Versand der Zahlungshinweis-Mail also fest.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { persistRechnungPdf } from "../_shared/rechnung.ts";
@@ -73,35 +77,27 @@ serve(async (req) => {
       else result.auto_abgelehnt = autoRejectIds.length;
     }
 
-    // ── 1) Termin-Beginn erreicht: Zahlungshinweis (+ ggf. Rechnung) ──
+    // ── 1) Termin-Beginn erreicht: EIN Zahlungshinweis pro Termin ──
+    // (alle angenommenen Jobber dieses Termins zusammen in einer Mail,
+    // kein ODOJ-Rechnungsteil mehr - die Rechnung läuft jetzt entkoppelt
+    // als Schritt 3 unten).
     const { data: startFaellig, error: startErr } = await admin.rpc("faellige_termin_start_bewerbungen");
     if (startErr) result.fehler.push("faellige-termin-start: " + startErr.message);
 
+    const terminGruppen = new Map<string, { arbeitgeberId: string; bewIds: string[] }>();
     for (const b of (startFaellig as any[]) || []) {
-      let invoiceId: string | null = null;
-      if (b.ist_letzter_termin) {
-        try {
-          const { data: invoice, error: rpcErr } = await admin.rpc("rechnung_erstellen_fuer_job", { p_job_id: b.job_id }).single();
-          if (rpcErr) throw rpcErr;
-          await persistRechnungPdf(admin, (invoice as any).id).catch((e: any) => console.error("persistRechnungPdf fehlgeschlagen:", e?.message || e));
-          invoiceId = (invoice as any).id;
-          result.rechnungen_erstellt++;
-        } catch (e: any) {
-          // "Keine abrechenbare Bewerbung" ist kein Fehler, sondern der
-          // Normalfall, wenn für diesen Job (noch) niemand angenommen wurde.
-          if (!String(e?.message || "").includes("Keine abrechenbare Bewerbung")) {
-            result.fehler.push(`rechnung job ${b.job_id}: ${e?.message || e}`);
-          }
-        }
-      }
+      const key = `${b.job_id}|${b.termin_id || "single"}`;
+      if (!terminGruppen.has(key)) terminGruppen.set(key, { arbeitgeberId: b.arbeitgeber_id, bewIds: [] });
+      terminGruppen.get(key)!.bewIds.push(b.bewerbung_id);
+    }
 
+    for (const { arbeitgeberId, bewIds } of terminGruppen.values()) {
       await sendEmail(admin, {
         type: "payment_request",
-        recipientId: b.arbeitgeber_id,
-        bewId: b.bewerbung_id,
-        invoiceId,
+        recipientId: arbeitgeberId,
+        bewIds,
       });
-      await admin.from("bewerbungen").update({ zahlungshinweis_gesendet_am: new Date().toISOString() }).eq("id", b.bewerbung_id);
+      await admin.from("bewerbungen").update({ zahlungshinweis_gesendet_am: new Date().toISOString() }).in("id", bewIds);
       result.zahlungshinweis_mails++;
     }
 
@@ -140,6 +136,27 @@ serve(async (req) => {
       await sendEmail(admin, { type: "work_confirmed", recipientId: b.jobber_id, firmenname, jobTitel, bewId: b.bewerbung_id });
       await sendEmail(admin, { type: "einsatz_erledigt_arbeitgeber", recipientId: b.arbeitgeber_id, jobTitel, bewId: b.bewerbung_id, jobId: b.job_id, jobberId: b.jobber_id });
       result.ende_mails++;
+    }
+
+    // ── 3) Letzter Termin eines Inserats zu Ende: ODOJ-Rechnung (eigene Mail) ──
+    const { data: rechnungFaellig, error: rechErr } = await admin.rpc("faellige_rechnung_jobs");
+    if (rechErr) result.fehler.push("faellige-rechnung-jobs: " + rechErr.message);
+
+    for (const j of (rechnungFaellig as any[]) || []) {
+      try {
+        const { data: invoice, error: rpcErr } = await admin.rpc("rechnung_erstellen_fuer_job", { p_job_id: j.job_id }).single();
+        if (rpcErr) throw rpcErr;
+        await persistRechnungPdf(admin, (invoice as any).id).catch((e: any) => console.error("persistRechnungPdf fehlgeschlagen:", e?.message || e));
+        await sendEmail(admin, { type: "rechnung_erstellt", recipientId: j.arbeitgeber_id, invoiceId: (invoice as any).id });
+        result.rechnungen_erstellt++;
+      } catch (e: any) {
+        // "Keine abrechenbare Bewerbung" kommt hier praktisch nie vor (die
+        // RPC filtert das schon), aber sicherheitshalber gleich behandelt
+        // wie zuvor - kein Fehler, nur kein Rechnungs-Versand.
+        if (!String(e?.message || "").includes("Keine abrechenbare Bewerbung")) {
+          result.fehler.push(`rechnung job ${j.job_id}: ${e?.message || e}`);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, ...result }), { headers: { ...cors, "Content-Type": "application/json" } });

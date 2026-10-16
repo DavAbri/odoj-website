@@ -252,39 +252,44 @@ function waitlistTemplate(email: string): string {
   </td></tr>`);
 }
 
+interface ZahlungshinweisJobber {
+  name: string;
+  betrag: number;
+  iban: string;
+  bewId: string;
+}
+
+// Korrektur "Rechnung getrennt": EIN Zahlungshinweis pro Termin, mit allen
+// angenommenen Jobbern dieses Termins untereinander - bewusst OHNE
+// ODOJ-Rechnungsteil (die Rechnung ist jetzt eine eigene, spätere Mail).
 function paymentRequestTemplate(
-  recipientName: string, jobTitel: string, datum: string,
-  lohnBetrag: number, jobberIban: string, jobberName: string,
-  gebuehr: number, odojIban: string, odojKontoinhaber: string, rechnungsnummer: string, bewId: string
+  recipientName: string, jobTitel: string, datum: string, jobber: ZahlungshinweisJobber[]
 ): string {
   const greeting = recipientName ? `Hallo ${esc(recipientName)},` : "Hallo,";
   const fmt = (n: number) => n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const verwendungszweckGebuehr = `ODOJ – Vermittlungsgebühr – ${rechnungsnummer}`;
-  const nichtErschienenUrl = `${SITE_URL}/nicht-erschienen.html?bew=${bewId}`;
+  const mehrere = jobber.length > 1;
 
-  const gebuehrBoxHtml = rechnungsnummer ? `
-    <div style="background:#fffbf0;border:1.5px solid #f5be5a;border-radius:10px;padding:20px 22px;margin:0 0 24px">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#a05000;text-transform:uppercase;letter-spacing:.5px">Separat: Vermittlungsgebühr an ODOJ (Rechnung im Anhang)</p>
-      <p style="margin:0 0 10px;font-size:20px;font-weight:800;color:#0f1f3d">€ ${fmt(gebuehr)}</p>
-      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>IBAN:</strong> ${esc(odojIban)}</p>
-      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(odojKontoinhaber)}</p>
-      <p style="margin:0;font-size:14px;color:#444"><strong>Verwendungszweck:</strong> ${esc(verwendungszweckGebuehr)}</p>
-    </div>` : "";
+  const jobberBoxen = jobber.map((j) => `
+    <div style="background:#f4f7fb;border-radius:10px;padding:20px 22px;margin:0 0 16px">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#7a8fa8;text-transform:uppercase;letter-spacing:.5px">Lohn an ${esc(j.name)}</p>
+      <p style="margin:0 0 10px;font-size:24px;font-weight:800;color:#0f1f3d">€ ${fmt(j.betrag)}</p>
+      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>IBAN:</strong> ${esc(j.iban || "– noch nicht hinterlegt, bitte Jobber kontaktieren –")}</p>
+      <p style="margin:0 0 10px;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(j.name)}</p>
+      <p style="margin:0;font-size:12px;color:#C0392B;line-height:1.6">
+        Falls diese Person nicht erschienen ist, ist dieser Lohn hinfällig.
+        <a href="${SITE_URL}/nicht-erschienen.html?bew=${j.bewId}" style="color:#C0392B;text-decoration:underline">Nichterscheinen melden</a>
+      </p>
+    </div>`).join("");
 
   return baseTemplate(`
   <tr><td style="padding:36px 32px 28px">
     <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E8A020;text-transform:uppercase;letter-spacing:.8px">Zahlungshinweis</p>
     <h2 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#0f1f3d;line-height:1.3">${greeting}</h2>
     <p style="margin:0 0 20px;font-size:15px;color:#444;line-height:1.7">
-      der Einsatz von <strong style="color:#0f1f3d">${esc(jobberName)}</strong> als <strong style="color:#0f1f3d">${esc(jobTitel)}</strong> hat begonnen. Bitte überweisen Sie den Lohn direkt an den Jobber.
+      der Einsatz <strong style="color:#0f1f3d">${esc(jobTitel)}</strong>${datum ? ` am <strong style="color:#0f1f3d">${esc(datum)}</strong>` : ""} hat begonnen.
+      Bitte überweisen Sie ${mehrere ? "den jeweiligen Lohn direkt an die Jobber" : "den Lohn direkt an den Jobber"}.
     </p>
-    <div style="background:#f4f7fb;border-radius:10px;padding:20px 22px;margin:0 0 20px">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#7a8fa8;text-transform:uppercase;letter-spacing:.5px">Lohn an den Jobber</p>
-      <p style="margin:0 0 10px;font-size:24px;font-weight:800;color:#0f1f3d">€ ${fmt(lohnBetrag)}</p>
-      <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>IBAN:</strong> ${esc(jobberIban || "– noch nicht hinterlegt, bitte Jobber kontaktieren –")}</p>
-      <p style="margin:0;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(jobberName)}</p>
-    </div>
-    ${gebuehrBoxHtml}
+    ${jobberBoxen}
     <p style="margin:0 0 24px;font-size:14px;color:#7a5500;background:#fff8e8;border-radius:8px;padding:12px 16px;line-height:1.6">
       ⏱ Bitte überweisen Sie den Lohn zeitnah, idealerweise innerhalb von 3 Werktagen nach dem Einsatz.
     </p>
@@ -293,10 +298,6 @@ function paymentRequestTemplate(
         Zur Übersicht meiner Inserate &rarr;
       </a>
     </td></tr></table>
-    <p style="margin:20px 0 0;font-size:12px;color:#C0392B;line-height:1.6">
-      Falls der Jobber nicht erschienen ist, ist diese Rechnung hinfällig.
-      <a href="${nichtErschienenUrl}" style="color:#C0392B;text-decoration:underline">Nichterscheinen melden</a>
-    </p>
   </td></tr>`);
 }
 
@@ -481,15 +482,12 @@ async function fetchZahlungshinweisData(admin: any, bewId: string) {
   const { data: bew } = await admin.from("bewerbungen").select("job_id, jobber_id, termin_id").eq("id", bewId).maybeSingle();
   if (!bew) return null;
 
-  const [{ data: job }, { data: termin }, { data: jobberProfil }, { data: settings }] = await Promise.all([
+  const [{ data: job }, { data: termin }, { data: jobberProfil }] = await Promise.all([
     admin.from("jobs").select("titel, tagesgehalt, datum").eq("id", bew.job_id).maybeSingle(),
     bew.termin_id ? admin.from("job_termine").select("datum").eq("id", bew.termin_id).maybeSingle() : Promise.resolve({ data: null }),
     admin.from("Profile").select("vorname, nachname, iban").eq("user_id", bew.jobber_id).maybeSingle(),
-    admin.from("einstellungen").select("schluessel, wert_text").in("schluessel", ["odoj_iban", "odoj_kontoinhaber"]),
   ]);
 
-  const settingsMap: Record<string, string> = {};
-  (settings || []).forEach((s: any) => { settingsMap[s.schluessel] = s.wert_text; });
   const effDatum = (termin as any)?.datum || (job as any)?.datum || "";
 
   return {
@@ -498,8 +496,6 @@ async function fetchZahlungshinweisData(admin: any, bewId: string) {
     lohnBetrag: Number((job as any)?.tagesgehalt || 0),
     jobberIban: (jobberProfil as any)?.iban || "",
     jobberName: `${(jobberProfil as any)?.vorname || ""} ${(jobberProfil as any)?.nachname || ""}`.trim() || "der Jobber",
-    odojIban: settingsMap["odoj_iban"] || "",
-    odojKontoinhaber: settingsMap["odoj_kontoinhaber"] || "ODOJ",
   };
 }
 
@@ -512,7 +508,7 @@ serve(async (req) => {
     const {
       type, recipientId, senderName, jobTitel, bewId, firmenname, jobberName, email,
       datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
-      terminInfo, regType, regName, regEmail, regRefCode, invoiceId, grund, warAngenommen, jobberId, jobId
+      terminInfo, regType, regName, regEmail, regRefCode, invoiceId, grund, warAngenommen, jobberId, jobId, bewIds
     } = await req.json();
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
@@ -623,37 +619,21 @@ serve(async (req) => {
         if (lebenslaufAnhang) attachments = [lebenslaufAnhang];
       }
     } else if (type === "payment_request") {
-      if (!bewId) return new Response(JSON.stringify({ error: "bewId fehlt" }), { status: 400, headers: cors });
-      const pdata = await fetchZahlungshinweisData(admin, bewId);
-      if (!pdata) return new Response(JSON.stringify({ error: "Bewerbung nicht gefunden" }), { status: 404, headers: cors });
+      // Korrektur "Rechnung getrennt": EIN Zahlungshinweis pro Termin, mit
+      // allen angenommenen Jobbern dieses Termins - keine Rechnung mehr in
+      // dieser Mail (läuft jetzt als eigene "rechnung_erstellt"-Mail).
+      const idList: string[] = Array.isArray(bewIds) && bewIds.length ? bewIds : (bewId ? [bewId] : []);
+      if (!idList.length) return new Response(JSON.stringify({ error: "bewIds fehlt" }), { status: 400, headers: cors });
 
-      let rechnungBetrag = 0;
-      let rechnungsnummerAuto = "";
-      if (invoiceId) {
-        const result = await fetchRechnungData(admin, invoiceId);
-        if (result) {
-          rechnungBetrag = result.data.amount;
-          rechnungsnummerAuto = result.data.invoiceNumber;
-          let rechnungBytes: Uint8Array | null = null;
-          if (result.pdfPfad) {
-            const { data: stored } = await admin.storage.from("rechnungen").download(result.pdfPfad);
-            if (stored) rechnungBytes = new Uint8Array(await stored.arrayBuffer());
-          }
-          if (!rechnungBytes) rechnungBytes = (await buildRechnungPdf(result.data)).bytes;
-          const safeInvName = result.data.invoiceNumber.replace(/[^a-zA-Z0-9-]/g, "") || "Rechnung";
-          attachments = [{ filename: `Rechnung-${safeInvName}.pdf`, content: btoa(String.fromCharCode(...rechnungBytes)) }];
-          bcc = ["info@odoj.at"];
-        }
-      }
+      const alleDaten = await Promise.all(idList.map((id: string) => fetchZahlungshinweisData(admin, id)));
+      const jobberListe = idList
+        .map((id: string, i: number) => alleDaten[i] ? { name: alleDaten[i]!.jobberName, betrag: alleDaten[i]!.lohnBetrag, iban: alleDaten[i]!.jobberIban, bewId: id } : null)
+        .filter((j): j is ZahlungshinweisJobber => j !== null);
+      if (!jobberListe.length) return new Response(JSON.stringify({ error: "Keine Bewerbung gefunden" }), { status: 404, headers: cors });
 
-      subject = rechnungsnummerAuto
-        ? `Zahlungshinweis + ODOJ-Rechnung – ${pdata.jobTitel}`
-        : `Zahlungshinweis – ${pdata.jobTitel}`;
-      html = paymentRequestTemplate(
-        recipientName, pdata.jobTitel, pdata.datum,
-        pdata.lohnBetrag, pdata.jobberIban, pdata.jobberName,
-        rechnungBetrag, pdata.odojIban, pdata.odojKontoinhaber, rechnungsnummerAuto, bewId
-      );
+      const erste = alleDaten.find((d) => d !== null)!;
+      subject = `Zahlungshinweis – ${erste.jobTitel}`;
+      html = paymentRequestTemplate(recipientName, erste.jobTitel, erste.datum, jobberListe);
     } else if (type === "einsatz_erledigt_arbeitgeber") {
       let jobberNameAuto = "den Jobber";
       if (jobberId) {

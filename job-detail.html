@@ -452,6 +452,16 @@ let _jdJobVoll = false; // H3/H5: Einzeltag-Job bereits vollständig besetzt (nu
 let _jdClickedTerminId  = null;      // Termin, über dessen Karte der Jobber kam (?termin=)
 let _jdZuJung          = false;      // Einzeltermin-Job: Jobber am Einsatzdatum zu jung
 let _jdKeinGeburtsdatum = false;     // Job hat Mindestalter, Jobber hat kein Geburtsdatum hinterlegt
+let _jdBegonnen         = false;     // Block "Rechnung getrennt": Einzeltermin-Job hat schon begonnen
+
+// Block "Rechnung getrennt": Terminbeginn (Datum+Uhrzeit, Europe/Vienna) schon
+// erreicht? Clientseitig nur für die Anzeige - die eigentliche Absicherung
+// läuft über einen DB-Trigger auf bewerbungen (pruefe_termin_nicht_begonnen).
+function _jdIstBegonnen(datum, uhrzeitVon) {
+  if (!datum) return false;
+  const start = new Date(`${datum}T${(uhrzeitVon || '00:00').slice(0, 5)}:00`);
+  return start <= new Date();
+}
 
 // Exaktes Alter an einem bestimmten Datum (Jahr/Monat/Tag) - für die
 // Mindestalter-Prüfung zählt das Alter AM EINSATZTAG, nicht heute.
@@ -487,6 +497,22 @@ function showPreviewPlaceholder() {
       <h2>Noch nicht verfügbar</h2>
       <p>Dieses Inserat ist erst zum Start der Plattform sichtbar.<br>Registriere dich jetzt und vervollständige dein Profil, dann kannst du dich ab dem ersten Tag bewerben.</p>
       <a href="login.html" class="btn btn-accent">Jetzt registrieren</a>
+    </div>`;
+}
+
+function showAbgelaufenPlaceholder() {
+  document.getElementById('jd-hero-inner').innerHTML = `
+    <a href="jobs.html" class="jd-back">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Alle Jobs
+    </a>
+    <h1 style="margin-top:24px">Inserat nicht mehr verfügbar</h1>
+  `;
+  document.getElementById('jd-main').innerHTML = `
+    <div class="jd-error">
+      <h2>Dieses Inserat ist nicht mehr verfügbar</h2>
+      <p>Der Einsatz hat bereits begonnen, es sind keine weiteren Bewerbungen mehr möglich.</p>
+      <a href="jobs.html" class="btn btn-accent">Weitere Jobs finden</a>
     </div>`;
 }
 
@@ -536,10 +562,19 @@ async function initJobDetail() {
 
   // Termine laden (nur bei Mehrtages-Jobs vorhanden). Vergangene Termine werden
   // ausgeblendet, außer der Jobber hat sich bereits dafür beworben.
-  const heuteDatum = new Date().toISOString().split('T')[0];
   const { data: termine } = await odojSb.from('job_termine').select('*').eq('job_id', jobId).order('datum');
-  _jdTermine = (termine || []).filter(t => t.datum >= heuteDatum || _jdAppliedTerminIds.has(t.id));
+  // Block "Rechnung getrennt": begonnene Termine (exakte Uhrzeit, nicht nur
+  // das Datum) gelten als abgelaufen, außer der Jobber hat sich schon dafür
+  // beworben (dann bleibt der Termin zur Einsicht sichtbar, nur nicht mehr bewerbbar).
+  _jdTermine = (termine || []).filter(t => !_jdIstBegonnen(t.datum, t.uhrzeit_von || job.uhrzeit_von) || _jdAppliedTerminIds.has(t.id));
   _jdIsMultiTermin = _jdTermine.length > 0;
+
+  // Direktlink auf ein komplett abgelaufenes Inserat (alle Termine vorbei,
+  // nichts beworben) zeigt einen freundlichen Hinweis statt der normalen Details.
+  const komplettAbgelaufen = (termine && termine.length > 0)
+    ? _jdTermine.length === 0
+    : _jdIstBegonnen(job.datum, job.uhrzeit_von);
+  if (komplettAbgelaufen) { showAbgelaufenPlaceholder(); return; }
 
   if (_jdIsMultiTermin) {
     const terminIds = _jdTermine.map(t => t.id);
@@ -590,6 +625,13 @@ async function initJobDetail() {
     } else {
       _jdZuJung = _berechneAlterAm(_jdProfile.geburtsdatum, job.datum) < job.mindestalter;
     }
+  }
+
+  // Block "Rechnung getrennt": begonnene Termine sind nicht mehr bewerbbar.
+  if (_jdIsMultiTermin) {
+    _jdTermine.forEach(t => { t._begonnen = _jdIstBegonnen(t.datum, t.uhrzeit_von || job.uhrzeit_von); });
+  } else {
+    _jdBegonnen = _jdIstBegonnen(job.datum, job.uhrzeit_von);
   }
 
   // AG-Profil + Bewertungen parallel laden
@@ -749,6 +791,12 @@ function renderMain(job) {
       <button class="jd-apply-btn" style="background:#FDE8E8;color:#c0392b;cursor:default" disabled>
         Ausgebucht
       </button>`;
+  } else if (!_jdIsMultiTermin && _jdBegonnen) {
+    applyBtn = `
+      <button class="jd-apply-btn" style="background:#E8EDF5;color:#7A8FA8;cursor:default" disabled>
+        Bewerbung nicht mehr möglich
+      </button>
+      <div class="jd-login-hint">Dieser Einsatz hat bereits begonnen.</div>`;
   } else if (!_jdIsMultiTermin && _jdKeinGeburtsdatum) {
     applyBtn = `
       <button class="jd-apply-btn" style="background:#E8EDF5;color:#7A8FA8;cursor:default" disabled>
@@ -788,13 +836,14 @@ function renderMain(job) {
         ${_jdTermine.map(t => {
           const already = _jdAppliedTerminIds.has(t.id);
           const checked = already || t.id === _jdClickedTerminId;
-          const disabled = already || t._voll || t._zuJung;
+          const disabled = already || t._voll || t._zuJung || t._begonnen;
           const ownBew = _jdOwnBews[t.id];
           const withdrawable = already && ownBew && (ownBew.status === 'ausstehend' || ownBew.status === 'angenommen');
           const badge = already
             ? '<span class="jd-termin-badge">✓ beworben</span>'
-            : (t._zuJung ? '<span class="jd-termin-badge jd-termin-badge-full">Mindestalter nicht erfüllt</span>'
-              : (t._voll ? '<span class="jd-termin-badge jd-termin-badge-full">Ausgebucht</span>' : ''));
+            : (t._begonnen ? '<span class="jd-termin-badge jd-termin-badge-full">Bereits begonnen</span>'
+              : (t._zuJung ? '<span class="jd-termin-badge jd-termin-badge-full">Mindestalter nicht erfüllt</span>'
+                : (t._voll ? '<span class="jd-termin-badge jd-termin-badge-full">Ausgebucht</span>' : '')));
           const zeitVon = (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5);
           const zeitBis = (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5);
           const zeitHtml = (zeitVon && zeitBis) ? `<span class="jd-termin-zeit">${esc(zeitVon)} – ${esc(zeitBis)} Uhr</span>` : '';
