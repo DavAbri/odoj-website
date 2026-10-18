@@ -179,7 +179,16 @@
   margin-bottom: 20px; font-size: 14px; color: #7A4A00;
   line-height: 1.5;
 }
-.ins-ablauf-banner strong { display: block; font-weight: 700; margin-bottom: 4px; }
+.ins-ablauf-banner strong { font-weight: 700; }
+.ins-ablauf-banner div > strong:first-child { display: block; margin-bottom: 4px; }
+.ins-ablauf-banner > div { flex: 1; }
+.ins-ablauf-close {
+  flex-shrink: 0; width: 44px; height: 44px; margin: -10px -12px -10px 0;
+  border: none; background: transparent; border-radius: var(--r-sm);
+  font-size: 22px; line-height: 1; color: #7A4A00; cursor: pointer;
+}
+.ins-ablauf-close:hover { background: rgba(232,160,32,.18); }
+.ins-ablauf-close:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
 .inserat-card {
   background: var(--white);
   border: 1.5px solid var(--gray-lt);
@@ -1167,17 +1176,26 @@ async function pruefeAbgelaufeneInserate() {
     .eq('arbeitgeber_id', _agSession.user.id)
     .eq('datum', gestern);
 
-  if (!abgelaufene?.length) return;
+  // Bereits weggeklickte Hinweise (pro Inserat, nur in diesem Browser) nicht erneut zeigen
+  let weg = [];
+  try { weg = JSON.parse(localStorage.getItem('odoj_ablauf_weg') || '[]'); } catch (_) {}
+  const offen = (abgelaufene || []).filter(j => !weg.includes(j.id));
+  if (!offen.length) return;
 
   const grid = document.getElementById('inserate-grid');
   if (!grid) return;
 
-  const namen = abgelaufene.map(j => `„${j.titel}"`).join(', ');
+  const namen = offen.map(j => `„${j.titel}"`).join(', ');
   const banner = document.createElement('div');
   banner.className = 'ins-ablauf-banner';
   banner.innerHTML = `<span style="display:flex;align-items:center;color:var(--accent)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
-    <div><strong>${abgelaufene.length === 1 ? 'Inserat abgelaufen' : abgelaufene.length + ' Inserate abgelaufen'}</strong>
-    ${namen} ${abgelaufene.length === 1 ? 'ist' : 'sind'} gestern abgelaufen und nicht mehr öffentlich sichtbar. Du findest ${abgelaufene.length === 1 ? 'es' : 'sie'} unter <strong>„Vergangene Inserate"</strong>.</div>`;
+    <div><strong>${offen.length === 1 ? 'Inserat abgelaufen' : offen.length + ' Inserate abgelaufen'}</strong>
+    ${namen} ${offen.length === 1 ? 'ist' : 'sind'} gestern abgelaufen und nicht mehr öffentlich sichtbar. Du findest ${offen.length === 1 ? 'es' : 'sie'} unter <strong>„Vergangene Inserate"</strong>.</div>
+    <button type="button" class="ins-ablauf-close" aria-label="Hinweis schließen">×</button>`;
+  banner.querySelector('.ins-ablauf-close').addEventListener('click', () => {
+    try { localStorage.setItem('odoj_ablauf_weg', JSON.stringify(weg.concat(offen.map(j => j.id)).slice(-200))); } catch (_) {}
+    banner.remove();
+  });
   grid.parentElement.insertBefore(banner, grid);
 }
 
