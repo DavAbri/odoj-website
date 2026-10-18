@@ -1301,7 +1301,7 @@ async function loadInserate() {
 
   const jobIds = jobs.map(j => j.id);
   const { data: bews } = await odojSb.from('bewerbungen').select('id, job_id, status, termin_id').in('job_id', jobIds);
-  const { data: alleTermine } = await odojSb.from('job_termine').select('id, job_id, datum, stundensatz').in('job_id', jobIds);
+  const { data: alleTermine } = await odojSb.from('job_termine').select('id, job_id, datum, uhrzeit_von, uhrzeit_bis, stundensatz').in('job_id', jobIds);
 
   // Ungesehene neue Bewerbungen pro Inserat (für das "neu"-Badge auf der Karte):
   // Bewerbungen dieses Arbeitgebers mit mind. einer ungelesenen Nachricht.
@@ -1321,7 +1321,7 @@ async function loadInserate() {
   }
 
   const termineByJob = {};
-  (alleTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push({ id: t.id, datum: t.datum, stundensatz: t.stundensatz }));
+  (alleTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push({ id: t.id, datum: t.datum, uhrzeit_von: t.uhrzeit_von, uhrzeit_bis: t.uhrzeit_bis, stundensatz: t.stundensatz }));
   Object.values(termineByJob).forEach(list => list.sort((a, b) => a.datum.localeCompare(b.datum)));
   const countMap        = {};
   const acceptedMap     = {};
@@ -1353,12 +1353,22 @@ async function loadInserate() {
     }
   }
 
-  const heute = new Date().toISOString().split('T')[0];
-
-  // Ein Mehrtages-Job gilt als "aktuell", solange MINDESTENS ein Termin noch
-  // aussteht - auch wenn sein frühester Termin (= jobs.datum) schon vorbei ist.
-  const hatZukunftsTermin = j => (termineByJob[j.id] || []).some(t => t.datum >= heute);
-  const istAktuell = j => (!j.datum || j.datum >= heute) || hatZukunftsTermin(j);
+  // Ein Inserat gilt als "aktuell", bis das ENDE seines letzten Termins
+  // vorbei ist (Datum + Uhrzeit bis, nach Wiener Zeit; Ende vor Beginn =
+  // über Mitternacht, also erst am Folgetag). Danach "Vergangene Inserate".
+  const jetztWien = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Vienna' }).replace(' ', 'T').slice(0, 16);
+  const terminEnde = (datum, von, bis) => {
+    if (!datum) return null;
+    const b = (bis || '').slice(0, 5), v = (von || '').slice(0, 5);
+    if (!b) return datum + 'T23:59';
+    const tag = (v && b <= v) ? new Date(Date.parse(datum + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10) : datum;
+    return tag + 'T' + b;
+  };
+  const istAktuell = j => {
+    const termine = termineByJob[j.id] || [];
+    if (termine.length) return termine.some(t => terminEnde(t.datum, t.uhrzeit_von || j.uhrzeit_von, t.uhrzeit_bis || j.uhrzeit_bis) > jetztWien);
+    return !j.datum || terminEnde(j.datum, j.uhrzeit_von, j.uhrzeit_bis) > jetztWien;
+  };
 
   // Sortierung: aktuelle aufsteigend, vergangene absteigend nach Datum
   const aktuelle  = jobs
