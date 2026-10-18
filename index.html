@@ -87,6 +87,39 @@
   box-shadow: 0 16px 40px rgba(0,0,0,.3);
 }
 .role-btn:active { transform: scale(.99); }
+
+/* Desktop: kleiner, mit Rahmen statt voller Farbfläche - wirkt ruhiger */
+@media (min-width: 901px) {
+  .role-split {
+    padding: calc(var(--nav-h) + 40px) max(60px, calc((100% - 1000px) / 2)) 24px;
+    gap: 24px;
+  }
+  .role-btn {
+    min-height: 220px;
+    height: calc((100vh - var(--nav-h)) * .42);
+    height: calc((100svh - var(--nav-h)) * .42);
+    font-size: clamp(30px, 3vw, 48px);
+    border-radius: var(--r-lg);
+  }
+  .role-btn-an {
+    background: rgba(232,160,32,.10);
+    color: var(--accent);
+    border: 2px solid var(--accent);
+  }
+  .role-btn-an:hover {
+    background: var(--accent);
+    color: var(--navy);
+  }
+  .role-btn-ag {
+    background: rgba(255,255,255,.04);
+    color: var(--white);
+    border: 2px solid rgba(255,255,255,.35);
+  }
+  .role-btn-ag:hover {
+    background: rgba(255,255,255,.10);
+    border-color: rgba(255,255,255,.7);
+  }
+}
 .role-btn:focus-visible {
   outline: 3px solid var(--white);
   outline-offset: 4px;
