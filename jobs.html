@@ -708,10 +708,10 @@ function renderJobCard(job, locked) {
     ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long' })
     : '–';
   const gehalt  = Number(job.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  // Neue Inserate: Stundensatz dieses Termins (eine Karte = ein Termin) + berechneter Tageslohn
+  // Neue Inserate: berechneter Tageslohn dieses Termins (Stundensatz x Stunden, eine Karte = ein Termin)
   const lohn    = odojLohn(job, job._termin || null);
   const payHtml = lohn.satz
-    ? `€ ${odojEuro(lohn.satz, 0)} <span>/ Std. · ${odojEuro(lohn.betrag)} € pro Tag</span>`
+    ? `€ ${odojEuro(lohn.betrag, 0)} <span>/ Tag</span>`
     : `€ ${gehalt} <span>/ Tag</span>`;
   const stdAnzeige = lohn.satz ? lohn.stunden : job.stundenanzahl;
   const lockedAttr = locked ? ' data-locked="true"' : '';
