@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<!-- Google tag (gtag.js) -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', { 'analytics_storage': 'denied' });
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9QVCL1B7T0"></script>
+<script>
+  gtag('js', new Date());
+  gtag('config', 'G-9QVCL1B7T0');
+</script>
+
+<meta charset="UTF-8">
+<script src="auth-check.js"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Überblick Inserate | ODOJ</title>
+<meta name="description" content="Alle Bewerbungen und besetzten Plätze deiner Inserate auf einen Blick.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="author" content="ODOJ – One Day One Job">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1b3e">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── LADEN / FALSCHE ROLLE (wie Meine Inserate) ── */
+.mi-loading {
+  min-height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px; color: var(--text-lt);
+}
+.mi-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--gray-lt);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.wrong-role-banner {
+  display: none; background: var(--navy);
+  min-height: calc(100vh - var(--nav-h)); margin-top: var(--nav-h);
+  align-items: center; justify-content: center; padding: 48px 24px;
+}
+.wrong-role-card {
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 48px 44px; max-width: 480px; width: 100%;
+  text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.32);
+}
+.wrong-role-card h2 {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800;
+  color: var(--navy); margin-bottom: 10px;
+}
+.wrong-role-card p { font-size: 14px; color: var(--text-lt); line-height: 1.6; margin-bottom: 28px; }
+
+/* ── KOPF + TAB-LEISTE (wie Meine Inserate) ── */
+.mi-page-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-lt);
+  padding: calc(var(--nav-h) + 24px) 60px 24px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;
+  flex-wrap: wrap;
+}
+.ub-back {
+  display: inline-block; margin-bottom: 10px;
+  color: var(--text-lt); font-size: 13px; font-weight: 600; text-decoration: none;
+}
+.ub-back:hover { color: var(--navy); }
+.mi-page-title {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800;
+  color: var(--navy); margin: 0;
+}
+.mi-page-sub { font-size: 14px; color: var(--text-lt); margin: 4px 0 0; }
+.ub-refresh {
+  min-height: 44px; padding: 0 18px;
+  border-radius: var(--r-sm); border: 1.5px solid var(--gray-lt); background: var(--white);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--text-mid);
+  cursor: pointer; transition: all .2s;
+}
+.ub-refresh:hover { border-color: var(--navy); color: var(--navy); }
+.dash-area { background: var(--off); min-height: calc(100vh - var(--nav-h)); }
+.dash-tabs-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-lt);
+  padding: 14px 60px;
+  display: flex; align-items: center; gap: 8px;
+  position: sticky; top: var(--nav-h); z-index: 50;
+  box-shadow: var(--sh-sm);
+}
+.dash-tab {
+  padding: 9px 22px;
+  border-radius: 100px;
+  border: 1.5px solid var(--gray-lt);
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.dash-tab:hover, .dash-tab.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.ub-main { padding: 32px 60px 80px; max-width: 1100px; }
+
+/* ── KENNZAHLEN ── */
+.ub-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.ub-stat {
+  background: var(--white); border: 1px solid var(--gray-lt); border-radius: var(--r-md);
+  padding: 18px 20px 16px; position: relative; overflow: hidden;
+}
+.ub-stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--c); }
+.ub-stat-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 32px; font-weight: 800; color: var(--navy); line-height: 1.1; }
+.ub-stat-lbl { font-size: 13px; color: var(--text-mid); margin-top: 4px; }
+.ub-c-neu   { --c: var(--accent); }
+.ub-c-offen { --c: var(--navy); }
+.ub-c-voll  { --c: #1A9A5C; }
+.ub-c-best  { --c: #A8B5C6; }
+
+/* ── FILTER ── */
+.ub-filters { display: flex; gap: 8px; margin-bottom: 22px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.ub-filters::-webkit-scrollbar { display: none; }
+.ub-filter {
+  flex-shrink: 0; min-height: 44px; padding: 0 18px;
+  border-radius: 100px; border: 1.5px solid var(--gray-lt); background: var(--white);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-mid);
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.ub-filter:hover { border-color: var(--navy); color: var(--navy); }
+.ub-filter.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.ub-filter:focus-visible, .ub-btn:focus-visible, .ub-refresh:focus-visible, .dash-tab:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 2px;
+}
+
+/* ── KARTEN ── */
+.ub-card {
+  background: var(--white); border: 1px solid var(--gray-lt); border-radius: var(--r-md);
+  margin-bottom: 16px; overflow: hidden;
+}
+.ub-card-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: 18px 22px; border-bottom: 1px solid var(--gray-lt);
+}
+.ub-card-titel { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 800; color: var(--navy); overflow-wrap: anywhere; }
+.ub-card-meta { font-size: 13px; color: var(--text-lt); margin-top: 3px; }
+.ub-pill {
+  flex-shrink: 0; display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 100px; white-space: nowrap;
+}
+.ub-pill-neu   { background: var(--accent-pale); color: #9A6200; }
+.ub-pill-voll  { background: #E6F5EE; color: #17794A; }
+.ub-pill-leer  { background: var(--off); color: var(--text-mid); box-shadow: inset 0 0 0 1px var(--gray-lt); }
+.ub-pill .kurz { display: none; }
+
+.ub-termin {
+  display: grid; grid-template-columns: 76px 1fr auto; align-items: center; gap: 18px;
+  padding: 16px 22px;
+}
+.ub-termin + .ub-termin { border-top: 1px solid var(--gray-lt); }
+.ub-datum { text-align: center; }
+.ub-wtag { font-size: 12px; font-weight: 700; color: var(--text-lt); text-transform: uppercase; letter-spacing: .5px; }
+.ub-tag  { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: var(--navy); white-space: nowrap; }
+.ub-zeit { font-size: 13px; color: var(--text-mid); margin-bottom: 8px; }
+.ub-slots { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.ub-slot { width: 22px; height: 10px; border-radius: 3px; background: var(--gray-lt); }
+.ub-slot.besetzt { background: var(--navy); }
+.ub-voll .ub-slot.besetzt { background: #1A9A5C; }
+.ub-bar { height: 10px; border-radius: 5px; background: var(--gray-lt); overflow: hidden; margin-bottom: 6px; max-width: 260px; }
+.ub-bar-fill { height: 100%; background: var(--navy); }
+.ub-voll .ub-bar-fill { background: #1A9A5C; }
+.ub-plaetze { font-size: 13px; color: var(--text-mid); }
+.ub-plaetze b { color: var(--navy); }
+
+.ub-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 18px; border-radius: var(--r-sm);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700;
+  text-decoration: none; white-space: nowrap; transition: all .2s;
+}
+.ub-btn-navy { background: var(--navy); color: var(--white); border: 1.5px solid var(--navy); }
+.ub-btn-navy:hover { background: var(--navy-soft); border-color: var(--navy-soft); }
+.ub-btn-weiss { background: var(--white); color: var(--navy); border: 1.5px solid var(--gray-lt); }
+.ub-btn-weiss:hover { border-color: var(--navy); }
+
+.ub-leer {
+  background: var(--white); border: 1px solid var(--gray-lt); border-radius: var(--r-md);
+  padding: 40px 24px; text-align: center; color: var(--text-mid); font-size: 15px; line-height: 1.6;
+}
+.ub-leer h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.ub-leer .btn { margin-top: 18px; }
+
+/* ── HANDY ── */
+@media (max-width: 900px) {
+  .mi-page-header { padding: calc(var(--nav-h) + 16px) 24px 18px; }
+  .dash-tabs-bar { padding: 12px 24px; }
+  .ub-main { padding: 24px 24px 60px; }
+  .ub-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+@media (max-width: 640px) {
+  .mi-page-header { padding: calc(var(--nav-h) + 16px) 16px 16px; }
+  .dash-tabs-bar { padding: 10px 16px; overflow-x: auto; }
+  .ub-main { padding: 20px 16px 48px; }
+  .ub-stat { padding: 14px 14px 12px; }
+  .ub-stat-num { font-size: 26px; }
+  /* Pro Termin eine eigene Karte untereinander */
+  .ub-card { background: transparent; border: none; border-radius: 0; overflow: visible; margin-bottom: 22px; }
+  .ub-card-head { padding: 0 2px 10px; border-bottom: none; }
+  .ub-pill .lang { display: none; }
+  .ub-pill .kurz { display: inline; }
+  .ub-termin {
+    grid-template-columns: 56px 1fr; gap: 12px 14px;
+    background: var(--white); border: 1px solid var(--gray-lt); border-radius: var(--r-md);
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .ub-termin + .ub-termin { border-top: 1px solid var(--gray-lt); }
+  .ub-termin .ub-btn { grid-column: 1 / -1; width: 100%; }
+  .ub-slot { width: 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">O<span>D</span>O<span>J</span><em>One Day One Job</em></a>
+  <ul class="nav-links">
+    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="arbeitnehmer.html">Für Arbeitnehmer</a></li>
+    <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
+    <li><a href="ueber-uns.html">Über uns</a></li>
+    <li id="nav-auth"><a href="login.html" class="nav-cta">Anmelden</a></li>
+  </ul>
+  <button class="nav-burger" aria-label="Menü öffnen" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-mobile" id="navMobile">
+  <a href="jobs.html">Jobs finden</a>
+  <a href="arbeitnehmer.html">Für Arbeitnehmer</a>
+  <a href="arbeitgeber.html">Für Arbeitgeber</a>
+  <a href="ueber-uns.html">Über uns</a>
+  <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
+</div>
+
+<!-- LADEN -->
+<div id="ub-loading" class="mi-loading">
+  <div class="mi-spinner"></div>
+  <p>Wird geladen…</p>
+</div>
+
+<!-- FALSCHE ROLLE -->
+<div id="ub-wrong-role" class="wrong-role-banner">
+  <div class="wrong-role-card">
+    <h2>Nur für Arbeitgeber</h2>
+    <p>Diese Seite ist ausschließlich für registrierte Arbeitgeber zugänglich. Dein Konto ist als Jobber registriert.</p>
+    <a href="jobs.html" class="btn btn-accent" style="display:inline-block;text-decoration:none">Zur Jobsuche</a>
+  </div>
+</div>
+
+<!-- SEITE -->
+<div id="ub-dashboard" style="display:none">
+  <div class="mi-page-header">
+    <div>
+      <a href="meine-inserate.html" class="ub-back">← Meine Inserate</a>
+      <h1 class="mi-page-title">Überblick Inserate</h1>
+      <p class="mi-page-sub">Alle Bewerbungen und besetzten Plätze deiner Inserate auf einen Blick.</p>
+    </div>
+    <button type="button" class="ub-refresh" id="ub-refresh">Aktualisieren</button>
+  </div>
+
+  <div class="dash-area">
+    <div class="dash-tabs-bar">
+      <a href="meine-inserate.html" class="dash-tab">Meine Inserate</a>
+      <a href="ueberblick-inserate.html" class="dash-tab active" aria-current="page">Überblick Inserate</a>
+    </div>
+
+    <div class="ub-main">
+      <div class="ub-stats" id="ub-stats"></div>
+      <div class="ub-filters" id="ub-filters" role="group" aria-label="Termine filtern"></div>
+      <div id="ub-list"><div class="ub-leer">Lade Übersicht…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="footer-logo">O<span>D</span>O<span>J</span></a>
+      <p class="footer-tagline">One Day One Job – flexible Tagesjobvermittlung in Vorarlberg.</p>
+    </div>
+    <div class="footer-col"><h4>Für Jobsuchende</h4><ul><li><a href="jobs.html">Jobs ansehen</a></li></ul></div>
+    <div class="footer-col"><h4>Für Unternehmen</h4><ul><li><a href="arbeitgeber.html">Für Arbeitgeber</a></li><li><a href="meine-inserate.html">Meine Inserate</a></li></ul></div>
+    <div class="footer-col"><h4>Rechtliches</h4><ul><li><a href="impressum.html">Impressum</a></li><li><a href="datenschutz.html">Datenschutz</a></li><li><a href="agb.html">AGB</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 ODOJ – One Day One Job.</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script src="support-mode.js"></script>
+<script src="notifications.js"></script>
+<script>
+function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
+
+// Datensparsam: die ganze Seite lädt mit EINEM Aufruf der Datenbankfunktion
+// ueberblick_inserate (zählt serverseitig, keine Bewerber-Personendaten).
+// Kein automatisches Neuladen - nur beim Öffnen bzw. über "Aktualisieren".
+let _ubArbeitgeberId = null;
+let _ubTermine = [];
+let _ubFilter = 'alle';
+
+const UB_FILTER = {
+  alle:       { label: 'Alle',             test: () => true },
+  neu:        { label: 'Neue Bewerbungen', test: t => t.neu > 0 },
+  offen:      { label: 'Plätze offen',     test: t => t.angenommen < t.plaetze },
+  ausgebucht: { label: 'Ausgebucht',       test: t => t.angenommen >= t.plaetze },
+};
+
+function ubEsc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function ubLaden() {
+  const list = document.getElementById('ub-list');
+  const btn = document.getElementById('ub-refresh');
+  btn.disabled = true;
+  const { data, error } = await odojSb.rpc('ueberblick_inserate', { p_arbeitgeber_id: _ubArbeitgeberId });
+  btn.disabled = false;
+  if (error) {
+    list.innerHTML = '<div class="ub-leer" style="color:#c0392b">Die Übersicht konnte gerade nicht geladen werden. Bitte versuche es später noch einmal.</div>';
+    console.warn('ueberblick_inserate:', error.message);
+    return;
+  }
+  _ubTermine = (data || []).map(t => ({ ...t, plaetze: t.plaetze || 1, neu: t.neu || 0, angenommen: t.angenommen || 0 }));
+  ubRender();
+}
+
+function ubRender() {
+  const t = _ubTermine;
+  const summe = f => t.reduce((s, x) => s + f(x), 0);
+  const stats = [
+    ['ub-c-neu',   summe(x => x.neu),                                   'neue Bewerbungen'],
+    ['ub-c-offen', summe(x => Math.max(x.plaetze - x.angenommen, 0)),   'Plätze noch offen'],
+    ['ub-c-voll',  t.filter(UB_FILTER.ausgebucht.test).length,          'Termine ausgebucht'],
+    ['ub-c-best',  summe(x => x.angenommen),                            'Aushilfskräfte bestätigt'],
+  ];
+  document.getElementById('ub-stats').innerHTML = stats.map(([cls, n, lbl]) =>
+    `<div class="ub-stat ${cls}"><div class="ub-stat-num">${n}</div><div class="ub-stat-lbl">${lbl}</div></div>`).join('');
+
+  document.getElementById('ub-filters').innerHTML = Object.entries(UB_FILTER).map(([key, f]) =>
+    `<button type="button" class="ub-filter${key === _ubFilter ? ' active' : ''}" aria-pressed="${key === _ubFilter}" data-filter="${key}">${f.label} · ${t.filter(f.test).length}</button>`).join('');
+
+  const list = document.getElementById('ub-list');
+  if (t.length === 0) {
+    list.innerHTML = `<div class="ub-leer">
+      <h3>Noch keine anstehenden Termine</h3>
+      Sobald du ein Inserat mit einem zukünftigen Termin hast, siehst du hier alle Bewerbungen und besetzten Plätze auf einen Blick.
+      <br><a href="meine-inserate.html?tab=inserieren" class="btn btn-accent">Jetzt inserieren</a>
+    </div>`;
+    return;
+  }
+
+  // Nach Inserat gruppieren - Reihenfolge = frühester Termin (Daten kommen bereits sortiert)
+  const jobs = new Map();
+  t.forEach(x => {
+    if (!jobs.has(x.job_id)) jobs.set(x.job_id, { id: x.job_id, titel: x.titel, ort: x.ort, termine: [] });
+    jobs.get(x.job_id).termine.push(x);
+  });
+
+  const test = UB_FILTER[_ubFilter].test;
+  let html = '';
+  jobs.forEach(j => {
+    const sichtbar = j.termine.filter(test);
+    if (!sichtbar.length) return;
+    html += ubKarte(j, sichtbar);
+  });
+  list.innerHTML = html || '<div class="ub-leer">Keine Termine in dieser Auswahl</div>';
+}
+
+function ubPill(j) {
+  const neu = j.termine.reduce((s, x) => s + x.neu, 0);
+  const angenommen = j.termine.reduce((s, x) => s + x.angenommen, 0);
+  if (neu > 0) return `<span class="ub-pill ub-pill-neu"><span class="lang">${neu} neue Bewerbung${neu !== 1 ? 'en' : ''}</span><span class="kurz">${neu} neu</span></span>`;
+  if (j.termine.every(UB_FILTER.ausgebucht.test)) return `<span class="ub-pill ub-pill-voll"><span class="lang">✓ Ausgebucht</span><span class="kurz">✓ voll</span></span>`;
+  if (angenommen === 0) return `<span class="ub-pill ub-pill-leer"><span class="lang">Noch keine Bewerbung</span><span class="kurz">offen</span></span>`;
+  return `<span class="ub-pill ub-pill-leer"><span class="lang">Plätze offen</span><span class="kurz">offen</span></span>`;
+}
+
+function ubKarte(j, termine) {
+  const n = j.termine.length;
+  const meta = [j.ort, `${n} Termin${n !== 1 ? 'e' : ''}`].filter(Boolean).map(ubEsc).join(' · ');
+  return `<div class="ub-card">
+    <div class="ub-card-head">
+      <div><div class="ub-card-titel">${ubEsc(j.titel)}</div><div class="ub-card-meta">${meta}</div></div>
+      ${ubPill(j)}
+    </div>
+    ${termine.map(x => ubTermin(x)).join('')}
+  </div>`;
+}
+
+function ubTermin(x) {
+  const d = new Date(x.datum + 'T12:00:00');
+  const wtag = d.toLocaleDateString('de-AT', { weekday: 'short' }).replace('.', '');
+  const tag = d.toLocaleDateString('de-AT', { day: 'numeric', month: 'short' }).replace(/\.$/, '');
+  const zeit = x.uhrzeit_von ? `${ubEsc(x.uhrzeit_von)}${x.uhrzeit_bis ? ' – ' + ubEsc(x.uhrzeit_bis) : ''} Uhr` : '';
+  const besetzt = Math.min(x.angenommen, x.plaetze);
+  const voll = x.angenommen >= x.plaetze;
+
+  let balken;
+  if (x.plaetze <= 10) {
+    balken = '<div class="ub-slots" aria-hidden="true">' +
+      Array.from({ length: x.plaetze }, (_, i) => `<span class="ub-slot${i < besetzt ? ' besetzt' : ''}"></span>`).join('') + '</div>';
+  } else {
+    balken = `<div class="ub-bar" aria-hidden="true"><div class="ub-bar-fill" style="width:${Math.round(besetzt / x.plaetze * 100)}%"></div></div>`;
+  }
+
+  const href = 'meine-inserate.html?job=' + encodeURIComponent(x.job_id);
+  let button;
+  if (x.neu > 0)      button = `<a href="${href}" class="ub-btn ub-btn-navy">${x.neu} Bewerbung${x.neu !== 1 ? 'en' : ''} ansehen</a>`;
+  else if (voll)      button = `<a href="${href}" class="ub-btn ub-btn-weiss">Team ansehen</a>`;
+  else                button = `<a href="${href}" class="ub-btn ub-btn-weiss">Inserat ansehen</a>`;
+
+  return `<div class="ub-termin${voll ? ' ub-voll' : ''}">
+    <div class="ub-datum"><div class="ub-wtag">${wtag}</div><div class="ub-tag">${tag}</div></div>
+    <div>
+      ${zeit ? `<div class="ub-zeit">${zeit}</div>` : ''}
+      ${balken}
+      <div class="ub-plaetze"><b>${x.angenommen}</b> von <b>${x.plaetze}</b> Plätzen besetzt</div>
+    </div>
+    ${button}
+  </div>`;
+}
+
+document.getElementById('ub-filters').addEventListener('click', e => {
+  const b = e.target.closest('[data-filter]');
+  if (!b) return;
+  _ubFilter = b.dataset.filter;
+  ubRender();
+});
+document.getElementById('ub-refresh').addEventListener('click', ubLaden);
+
+// ── ZUGRIFF (gleiches Muster wie Meine Inserate, inkl. Support-Zugriff) ──
+(async function ubStart() {
+  const session = await odojGetSession();
+  document.getElementById('ub-loading').style.display = 'none';
+  if (!session) {
+    window.location.href = 'login.html?redirect=ueberblick-inserate.html';
+    return;
+  }
+  if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) {
+    // Admin sieht im Support-Zugriff die Inserate des Ziel-Arbeitgebers
+    // (die Datenbankfunktion lässt das nur für Admins zu).
+    _ubArbeitgeberId = window.ODOJ_SUPPORT.targetUserId;
+  } else {
+    const rolle = localStorage.getItem('odoj_rolle') || session.user.user_metadata?.rolle;
+    if (rolle !== 'arbeitgeber') {
+      document.getElementById('ub-wrong-role').style.display = 'flex';
+      return;
+    }
+    _ubArbeitgeberId = session.user.id;
+  }
+  document.getElementById('ub-dashboard').style.display = 'block';
+  ubLaden();
+})();
+</script>
+<script src="cookies.js"></script>
+</body>
+</html>
