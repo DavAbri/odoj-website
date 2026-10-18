@@ -828,6 +828,7 @@
                 <button type="button" class="if-chip-add-btn" onclick="addTerminChip()">+ Hinzufügen</button>
               </div>
               <div id="ins-termin-chips" class="if-chip-list"></div>
+              <div id="ins-termin-fehler" role="alert" style="display:none;margin-top:10px;padding:12px 14px;border-radius:var(--r-sm);background:#FDECEC;border:1.5px solid #F1B5B5;color:#A12A2A;font-size:14px;line-height:1.5"></div>
               <div class="if-hint">Alle anderen Angaben (Titel, Ort, Lohn, Beschreibung) gelten für jeden Termin gleichermaßen.</div>
             </div>
             <div class="if-field" id="ins-mindest-termine-wrap" style="display:none">
@@ -1019,6 +1020,15 @@ let _agFirmenname = '';
 let _agUidNummer  = '';
 let _odojVorschauModus = false; // true solange jobs_sichtbar = false
 let _odojLaunchKw      = null;
+// Termine können erst ab diesem Tag eingestellt werden (Plattform für Arbeitnehmer erst dann verfügbar).
+const ODOJ_TERMINE_AB = '2026-11-20';
+function zeigeTerminFehler(text) {
+  const el = document.getElementById('ins-termin-fehler');
+  if (!el) return;
+  el.textContent = text || '';
+  el.style.display = text ? 'block' : 'none';
+}
+const ODOJ_TERMINE_AB_TEXT = 'Termine sind erst ab dem 20.11.2026 möglich. ODOJ ist für Arbeitnehmer erst ab dem 20. November verfügbar – bitte wähle ein Datum ab dem 20.11.2026.';
 let _odojLaunchMinDatum = null; // Montag der Launch-KW (YYYY-MM-DD) - Termine davor sind gesperrt
 
 // Montag einer ISO-Kalenderwoche im angegebenen Jahr (bzw. dem aktuellen,
@@ -2230,6 +2240,8 @@ function addTerminChip() {
   if (!val) return;
   const heute = new Date().toISOString().split('T')[0];
   if (val < heute) { alert('Bitte ein Datum in der Zukunft wählen.'); return; }
+  if (val < ODOJ_TERMINE_AB) { zeigeTerminFehler(ODOJ_TERMINE_AB_TEXT); picker.value = ''; return; }
+  zeigeTerminFehler('');
   if (_odojLaunchMinDatum && val < _odojLaunchMinDatum) { alert('Dieser Termin liegt vor dem Start der Plattform – Jobber können sich dafür nicht bewerben.'); return; }
   if (_terminChips.some(c => c.datum === val)) { picker.value = ''; return; }
   _terminChips.push({
@@ -2294,6 +2306,7 @@ function renderTerminChips() {
 }
 
 function _resetTerminUI() {
+  zeigeTerminFehler('');
   _terminChips = [];
   _terminChipsLocked = false;
   _zeitFuerAlle = true;
@@ -2335,6 +2348,9 @@ function _insValidateRequired() {
 
   if (!_terminChipsLocked && _terminChips.length < 1) {
     problems.push({ id: 'ins-datum-mehrere-wrap', label: 'Termine', msg: 'Bitte mindestens einen Termin hinzufügen' });
+  }
+  if (!_editJobId && _terminChips.some(c => c.datum < ODOJ_TERMINE_AB)) {
+    problems.push({ id: 'ins-datum-mehrere-wrap', label: 'Termine', msg: 'Termine erst ab dem 20.11.2026 möglich (ODOJ ist für Arbeitnehmer erst ab 20. November verfügbar)' });
   }
 
   const mindestTermineRaw = document.getElementById('ins-mindest-termine').value;
