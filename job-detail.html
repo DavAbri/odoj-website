@@ -695,13 +695,13 @@ async function initJobDetail() {
         "addressCountry": "AT"
       }
     },
-    "baseSalary": job.tagesgehalt ? {
+    "baseSalary": (job.stundensatz || job.tagesgehalt) ? {
       "@type": "MonetaryAmount",
       "currency": "EUR",
       "value": {
         "@type": "QuantitativeValue",
-        "value": parseFloat(job.tagesgehalt),
-        "unitText": "DAY"
+        "value": parseFloat(job.stundensatz || job.tagesgehalt),
+        "unitText": job.stundensatz ? "HOUR" : "DAY"
       }
     } : undefined,
     "url": canonUrl
@@ -745,6 +745,17 @@ function renderHero(job) {
       </span>
     </div>
   `;
+}
+
+// Lohn pro Termin (Stundensatz-Inserate); verschiedene Sätze -> Termine zeigen ihren eigenen Satz
+function jdLohnZeile(job, termin) {
+  const l = odojLohn(job, termin);
+  return l.satz ? `${odojEuro(l.satz, 0)} €/Std. = ${odojEuro(l.betrag)} €` : '';
+}
+function jdSaetzeVerschieden(job) {
+  if (!job.stundensatz || !_jdIsMultiTermin) return false;
+  const s = _jdTermine.map(t => Number(t.stundensatz ?? job.stundensatz));
+  return s.some(x => x !== s[0]);
 }
 
 function renderMain(job) {
@@ -846,7 +857,8 @@ function renderMain(job) {
                 : (t._voll ? '<span class="jd-termin-badge jd-termin-badge-full">Ausgebucht</span>' : '')));
           const zeitVon = (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5);
           const zeitBis = (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5);
-          const zeitHtml = (zeitVon && zeitBis) ? `<span class="jd-termin-zeit">${esc(zeitVon)} – ${esc(zeitBis)} Uhr</span>` : '';
+          const zeitHtml = ((zeitVon && zeitBis) ? `<span class="jd-termin-zeit">${esc(zeitVon)} – ${esc(zeitBis)} Uhr</span>` : '')
+            + (jdSaetzeVerschieden(job) ? `<span class="jd-termin-zeit">${esc(jdLohnZeile(job, t))}</span>` : '');
           return `<label class="jd-termin-check${already ? ' jd-termin-applied' : ''}${(t._voll || t._zuJung) ? ' jd-termin-full' : ''}">
             <input type="checkbox" value="${t.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="updateBewerbenGate()">
             <span class="jd-termin-label">${formatDate(t.datum)}${zeitHtml}</span>
@@ -941,8 +953,13 @@ function renderMain(job) {
     <!-- RECHTE SPALTE -->
     <div class="jd-right">
       <div class="jd-apply-box">
-        <div class="jd-pay-big">€ ${gehalt} <span>/ Tag</span></div>
-        <div class="jd-pay-sub">Tagesgehalt (brutto)
+        ${job.stundensatz
+          ? `<div class="jd-pay-big">${(odojSatzKurz(job, _jdIsMultiTermin ? _jdTermine : null) || '').replace(' €/Std.', '').replace(/^(ab )?/, '$1€ ')} <span>/ Std.</span></div>`
+          : `<div class="jd-pay-big">€ ${gehalt} <span>/ Tag</span></div>`}
+        ${job.stundensatz ? `<div class="jd-pay-sub" style="margin-bottom:2px">${_jdIsMultiTermin
+          ? (jdSaetzeVerschieden(job) ? 'Lohn pro Termin siehe Terminauswahl' : 'Lohn pro Tag: Stundensatz × Stunden des Termins')
+          : 'Lohn für diesen Tag: ' + jdLohnZeile(job, null).replace(/^.*= /, '')}</div>` : ''}
+        <div class="jd-pay-sub">${job.stundensatz ? 'Stundensatz (brutto)' : 'Tagesgehalt (brutto)'}
           <span class="odoj-tip">
             <button type="button" class="odoj-tip-btn" aria-label="Info zu Brutto/Netto">i</button>
             <span class="odoj-tip-pop">
@@ -1078,6 +1095,10 @@ async function handleApply() {
       firma:  _jdAgProfile?.firmenname || _jdJob.firmenname || 'Unbekannter Betrieb',
       datumList,
       gehalt: _jdJob.tagesgehalt,
+      lohnZeilen: _jdJob.stundensatz
+        ? checkedIds.map(id => _jdTermine.find(t => t.id === id)).filter(Boolean)
+            .map(t => `${formatDate(t.datum)}: ${jdLohnZeile(_jdJob, t)}`)
+        : null,
       onConfirm: () => doApply(checkedIds)
     });
     return;
@@ -1092,6 +1113,7 @@ async function handleApply() {
     firma:  _jdAgProfile?.firmenname || _jdJob.firmenname || 'Unbekannter Betrieb',
     datum,
     gehalt: _jdJob.tagesgehalt,
+    lohnZeilen: _jdJob.stundensatz ? [jdLohnZeile(_jdJob, null) + ' pro Tag'] : null,
     onConfirm: () => doApply(null)
   });
 }

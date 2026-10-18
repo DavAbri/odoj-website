@@ -15,6 +15,47 @@ const ODOJ_SUPABASE_KEY = ODOJ_IS_LIVE
 
 window.odojSb = supabase.createClient(ODOJ_SUPABASE_URL, ODOJ_SUPABASE_KEY);
 
+// ── Lohn: Stundensatz x Stunden ────────────────────────────────────────────
+// Neue Inserate speichern einen Stundensatz (jobs.stundensatz, optional pro
+// Termin job_termine.stundensatz). Der Tageslohn wird immer berechnet:
+// Satz x Stunden aus Beginn/Ende (über Mitternacht korrekt). Alte Inserate
+// ohne Stundensatz behalten ihr bisheriges jobs.tagesgehalt.
+// Gleiche Logik serverseitig in supabase/functions/_shared/lohn.ts.
+function odojStundenAus(von, bis) {
+  if (!von || !bis) return null;
+  const [h1, m1] = String(von).slice(0, 5).split(':').map(Number);
+  const [h2, m2] = String(bis).slice(0, 5).split(':').map(Number);
+  if ([h1, m1, h2, m2].some(Number.isNaN)) return null;
+  let min = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (min <= 0) min += 24 * 60;
+  return Math.round(min / 60 * 100) / 100;
+}
+
+// termin = job_termine-Zeile (oder null bei Einzeltag-Inseraten)
+// -> { satz, stunden, betrag }; satz = null bei alten Tagesgehalt-Inseraten
+function odojLohn(job, termin) {
+  const satz = Number(termin?.stundensatz ?? job?.stundensatz) || null;
+  if (satz) {
+    const stunden = odojStundenAus(termin?.uhrzeit_von || job?.uhrzeit_von, termin?.uhrzeit_bis || job?.uhrzeit_bis);
+    if (stunden) return { satz, stunden, betrag: Math.round(satz * stunden * 100) / 100 };
+  }
+  return { satz: null, stunden: Number(job?.stundenanzahl) || null, betrag: Number(job?.tagesgehalt) || 0 };
+}
+
+function odojEuro(n, nachkomma = 2) {
+  return Number(n || 0).toLocaleString('de-AT', { minimumFractionDigits: nachkomma, maximumFractionDigits: 2 });
+}
+
+// Stundensätze eines Inserats über die übergebenen Termine (leer = Inserat-Satz)
+// -> Text für Kurzansichten: "15 €/Std.", "ab 15 €/Std." oder bei alten
+// Inseraten null (dann bisherige Tagesgehalt-Anzeige verwenden).
+function odojSatzKurz(job, termine) {
+  if (!job?.stundensatz) return null;
+  const saetze = (termine && termine.length ? termine : [null]).map(t => Number(t?.stundensatz ?? job.stundensatz));
+  const min = Math.min(...saetze);
+  return (saetze.some(s => s !== min) ? 'ab ' : '') + odojEuro(min, 0) + ' €/Std.';
+}
+
 // ── Block E1: zentrale Anzeige-Texte für bewerbungen.status ──────────────
 // Der gespeicherte DB-Wert bleibt "abgelehnt" (keine Migration nötig, siehe
 // Prompt-Antwort 1) - für Menschen sichtbar heißt es überall "Nicht

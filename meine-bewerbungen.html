@@ -407,7 +407,7 @@
 <script>
 function toggleMenu() { document.getElementById('navMobile').classList.toggle('open'); }
 
-let _bewMap = {}, _jobMap = {}, _terminDatumMap = {};
+let _bewMap = {}, _jobMap = {}, _terminDatumMap = {}, _terminRowMap = {};
 
 const BRANCHEN = {
   gastro:       { label: 'Gastronomie',              cls: 'tag-gastro' },
@@ -434,6 +434,8 @@ function renderCard(b, job, opts = {}) {
   const gehalt = job?.tagesgehalt
     ? Number(job.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     : null;
+  // Stundensatz-Inserate: Satz + Lohn DIESES Termins
+  const lohn = job ? odojLohn(job, b.termin_id ? _terminRowMap[b.termin_id] : null) : null;
   const jobDetailHref = job?.id ? `job-detail.html?id=${job.id}` : '#';
   const chatHref      = `chat.html?bew=${b.id}`;
 
@@ -456,7 +458,9 @@ function renderCard(b, job, opts = {}) {
         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         ${job.uhrzeit_von} – ${job.uhrzeit_bis || '–'}${job.stundenanzahl ? ` · ${job.stundenanzahl} Std.` : ''}
       </div>` : ''}
-      ${gehalt ? `<div class="mj-card-pay">€ ${gehalt} <span>/ Tag</span></div>` : ''}
+      ${lohn?.satz
+        ? `<div class="mj-card-pay">€ ${odojEuro(lohn.betrag)} <span>/ Tag (${odojEuro(lohn.satz, 0)} €/Std.)</span></div>`
+        : (gehalt ? `<div class="mj-card-pay">€ ${gehalt} <span>/ Tag</span></div>` : '')}
       ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">
         <div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Job erledigt</div>
         <span class="mj-zahlung-badge ${b.zahlung_status === 'bestaetigt' ? 'mj-zahlung-badge-ok' : 'mj-zahlung-badge-pending'}">${b.zahlung_status === 'bestaetigt' ? 'Zahlung bestätigt' : 'Zahlung ausstehend'}</span>
@@ -541,7 +545,7 @@ async function loadMeineBewerbungen() {
   if (jobIds.length) {
     const { data: jobs } = await odojSb
       .from('jobs')
-      .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,uhrzeit_von,uhrzeit_bis,stundenanzahl,plaetze,mindestalter,arbeitgeber_id')
+      .select('id,titel,firmenname,datum,ort,branche,tagesgehalt,stundensatz,uhrzeit_von,uhrzeit_bis,stundenanzahl,plaetze,mindestalter,arbeitgeber_id')
       .in('id', jobIds);
     jobs?.forEach(j => { jobMap[j.id] = j; });
     _jobMap = jobMap;
@@ -550,9 +554,10 @@ async function loadMeineBewerbungen() {
   // Termin-Daten laden (Mehrtages-Jobs): jede Bewerbung zeigt ihr EIGENES Datum
   const terminIds = [...new Set(bewerbungen.map(b => b.termin_id).filter(Boolean))];
   _terminDatumMap = {};
+  _terminRowMap = {};
   if (terminIds.length) {
-    const { data: termine } = await odojSb.from('job_termine').select('id, datum').in('id', terminIds);
-    termine?.forEach(t => { _terminDatumMap[t.id] = t.datum; });
+    const { data: termine } = await odojSb.from('job_termine').select('id, datum, uhrzeit_von, uhrzeit_bis, stundensatz').in('id', terminIds);
+    termine?.forEach(t => { _terminDatumMap[t.id] = t.datum; _terminRowMap[t.id] = t; });
   }
 
   // Echte Firmennamen aus Profile laden (Jobber sieht Firmenname des Arbeitgebers)

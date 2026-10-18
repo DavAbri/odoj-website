@@ -2,6 +2,7 @@
 // Wird sowohl von send-email (E-Mail-Anhang bei Annahme) als auch von
 // generate-datenblatt (Download-Button) verwendet - eine einzige Quelle für Layout/Inhalt.
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+import { berechneLohn, euro } from "./lohn.ts";
 
 const NAVY = rgb(0x0B / 255, 0x1F / 255, 0x3A / 255);
 const ORANGE = rgb(0xE8 / 255, 0xA0 / 255, 0x20 / 255);
@@ -28,6 +29,8 @@ export interface DatenblattData {
     titel: string | null;
     ort: string | null;
     tagesgehalt: number | null;
+    stundensatz?: number | null; // Satz dieses Termins (nur Stundensatz-Inserate)
+    stunden?: number | null;
   };
   einsatzDatum: string | null;
   einsatzVon: string | null;
@@ -48,19 +51,21 @@ export async function fetchDatenblattData(
 
   const { data: job } = await admin
     .from("jobs")
-    .select("titel, ort, tagesgehalt, datum, uhrzeit_von, uhrzeit_bis, arbeitgeber_id")
+    .select("titel, ort, tagesgehalt, stundensatz, stundenanzahl, datum, uhrzeit_von, uhrzeit_bis, arbeitgeber_id")
     .eq("id", bew.job_id)
     .single();
 
   let einsatzDatum = job?.datum || null;
   let einsatzVon = job?.uhrzeit_von || null;
   let einsatzBis = job?.uhrzeit_bis || null;
+  let terminRow: any = null;
   if (bew.termin_id) {
     const { data: termin } = await admin
       .from("job_termine")
-      .select("datum, uhrzeit_von, uhrzeit_bis")
+      .select("datum, uhrzeit_von, uhrzeit_bis, stundensatz")
       .eq("id", bew.termin_id)
       .single();
+    terminRow = termin;
     if (termin) {
       einsatzDatum = termin.datum || einsatzDatum;
       einsatzVon = termin.uhrzeit_von || einsatzVon;
@@ -106,7 +111,13 @@ export async function fetchDatenblattData(
       job: {
         titel: job?.titel || null,
         ort: job?.ort || null,
-        tagesgehalt: job?.tagesgehalt ?? null,
+        // Lohn DIESES Termins: Stundensatz x Stunden (alte Inserate: Tagesgehalt)
+        ...(() => {
+          const l = berechneLohn(job, terminRow);
+          return l.satz
+            ? { tagesgehalt: l.betrag, stundensatz: l.satz, stunden: l.stunden }
+            : { tagesgehalt: job?.tagesgehalt ?? null, stundensatz: null, stunden: null };
+        })(),
       },
       einsatzDatum,
       einsatzVon,
@@ -185,7 +196,9 @@ export async function buildDatenblattPdf(d: DatenblattData): Promise<{ bytes: Ui
     ? `${d.jobber.adresse}, ${nv(d.jobber.adresse_plz)} ${nv(d.jobber.adresse_ort)}`
     : "nicht angegeben";
   const zeitStr = d.einsatzVon && d.einsatzBis ? `${fmtZeit(d.einsatzVon)} – ${fmtZeit(d.einsatzBis)} Uhr` : "nicht angegeben";
-  const lohnStr = d.job.tagesgehalt != null
+  const lohnStr = d.job.stundensatz && d.job.stunden && d.job.tagesgehalt != null
+    ? `€ ${euro(Number(d.job.tagesgehalt))} (€ ${euro(d.job.stundensatz)}/Std. x ${String(d.job.stunden).replace(".", ",")} Std. laut Inserat)`
+    : d.job.tagesgehalt != null
     ? `€ ${Number(d.job.tagesgehalt).toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Tagesgehalt laut Inserat)`
     : "nicht angegeben";
 

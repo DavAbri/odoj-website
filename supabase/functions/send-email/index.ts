@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchDatenblattData, buildDatenblattPdf } from "../_shared/datenblatt.ts";
 import { fetchRechnungData, buildRechnungPdf } from "../_shared/rechnung.ts";
+import { berechneLohn, lohnRechnung } from "../_shared/lohn.ts";
 
 const RESEND_API_KEY      = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
@@ -275,6 +276,7 @@ function waitlistTemplate(email: string): string {
 interface ZahlungshinweisJobber {
   name: string;
   betrag: number;
+  rechnung: string; // "7 Std. × 15,00 € = 105,00 €" (leer bei alten Tagesgehalt-Inseraten)
   iban: string;
   bewId: string;
 }
@@ -292,7 +294,8 @@ function paymentRequestTemplate(
   const jobberBoxen = jobber.map((j) => `
     <div style="background:#f4f7fb;border-radius:10px;padding:20px 22px;margin:0 0 16px">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#7a8fa8;text-transform:uppercase;letter-spacing:.5px">Lohn an ${esc(j.name)}</p>
-      <p style="margin:0 0 10px;font-size:24px;font-weight:800;color:#0f1f3d">€ ${fmt(j.betrag)}</p>
+      <p style="margin:0 0 ${j.rechnung ? "2" : "10"}px;font-size:24px;font-weight:800;color:#0f1f3d">€ ${fmt(j.betrag)}</p>
+      ${j.rechnung ? `<p style="margin:0 0 10px;font-size:13px;color:#7a8fa8">${esc(j.rechnung)}</p>` : ""}
       <p style="margin:0 0 4px;font-size:14px;color:#444"><strong>IBAN:</strong> ${esc(j.iban || "– noch nicht hinterlegt, bitte Jobber kontaktieren –")}</p>
       <p style="margin:0 0 10px;font-size:14px;color:#444"><strong>Empfänger:</strong> ${esc(j.name)}</p>
       <p style="margin:0;font-size:12px;color:#C0392B;line-height:1.6">
@@ -503,17 +506,20 @@ async function fetchZahlungshinweisData(admin: any, bewId: string) {
   if (!bew) return null;
 
   const [{ data: job }, { data: termin }, { data: jobberProfil }] = await Promise.all([
-    admin.from("jobs").select("titel, tagesgehalt, datum").eq("id", bew.job_id).maybeSingle(),
-    bew.termin_id ? admin.from("job_termine").select("datum").eq("id", bew.termin_id).maybeSingle() : Promise.resolve({ data: null }),
+    admin.from("jobs").select("titel, tagesgehalt, stundensatz, stundenanzahl, uhrzeit_von, uhrzeit_bis, datum").eq("id", bew.job_id).maybeSingle(),
+    bew.termin_id ? admin.from("job_termine").select("datum, uhrzeit_von, uhrzeit_bis, stundensatz").eq("id", bew.termin_id).maybeSingle() : Promise.resolve({ data: null }),
     admin.from("Profile").select("vorname, nachname, iban").eq("user_id", bew.jobber_id).maybeSingle(),
   ]);
 
   const effDatum = (termin as any)?.datum || (job as any)?.datum || "";
+  // Lohn DIESES Termins: Stundensatz x Stunden (alte Inserate: Tagesgehalt)
+  const lohn = berechneLohn(job as any, termin as any);
 
   return {
     jobTitel: (job as any)?.titel || "Tagesjob",
     datum: effDatum ? new Date(effDatum + "T00:00:00").toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" }) : "",
-    lohnBetrag: Number((job as any)?.tagesgehalt || 0),
+    lohnBetrag: lohn.betrag,
+    lohnRechnung: lohnRechnung(lohn),
     jobberIban: (jobberProfil as any)?.iban || "",
     jobberName: `${(jobberProfil as any)?.vorname || ""} ${(jobberProfil as any)?.nachname || ""}`.trim() || "der Jobber",
   };
@@ -647,7 +653,7 @@ serve(async (req) => {
 
       const alleDaten = await Promise.all(idList.map((id: string) => fetchZahlungshinweisData(admin, id)));
       const jobberListe = idList
-        .map((id: string, i: number) => alleDaten[i] ? { name: alleDaten[i]!.jobberName, betrag: alleDaten[i]!.lohnBetrag, iban: alleDaten[i]!.jobberIban, bewId: id } : null)
+        .map((id: string, i: number) => alleDaten[i] ? { name: alleDaten[i]!.jobberName, betrag: alleDaten[i]!.lohnBetrag, rechnung: alleDaten[i]!.lohnRechnung, iban: alleDaten[i]!.jobberIban, bewId: id } : null)
         .filter((j): j is ZahlungshinweisJobber => j !== null);
       if (!jobberListe.length) return new Response(JSON.stringify({ error: "Keine Bewerbung gefunden" }), { status: 404, headers: cors });
 

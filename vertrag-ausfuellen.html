@@ -423,7 +423,7 @@ let _vfBewEmail = '';
           .eq('user_id', _vfJobberId).maybeSingle()
       : Promise.resolve({ data: null }),
     odojSb.from('jobs')
-      .select('titel, beschreibung, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundenanzahl, adresse, ort')
+      .select('titel, beschreibung, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundensatz, stundenanzahl, adresse, ort')
       .eq('id', _vfJobId).maybeSingle()
   ]);
 
@@ -438,11 +438,14 @@ let _vfBewEmail = '';
   // abweichende Uhrzeit) dieser Bewerbung verwenden statt des repräsentativen
   // (frühesten) jobs.datum bzw. der Job-Standardzeit.
   if (bew.termin_id && _vfJobData) {
-    const { data: termin } = await odojSb.from('job_termine').select('datum, uhrzeit_von, uhrzeit_bis').eq('id', bew.termin_id).maybeSingle();
+    const { data: termin } = await odojSb.from('job_termine').select('datum, uhrzeit_von, uhrzeit_bis, stundensatz').eq('id', bew.termin_id).maybeSingle();
     if (termin?.datum) _vfJobData.datum = termin.datum;
     if (termin?.uhrzeit_von) _vfJobData.uhrzeit_von = termin.uhrzeit_von.slice(0, 5);
     if (termin?.uhrzeit_bis) _vfJobData.uhrzeit_bis = termin.uhrzeit_bis.slice(0, 5);
+    if (termin?.stundensatz) _vfJobData.stundensatz = termin.stundensatz; // Satz dieses Termins
   }
+  // Stundensatz-Inserate: Lohn dieses Termins = Satz x Stunden (Zeiten oben schon auf den Termin gesetzt)
+  if (_vfJobData) _vfJobData._lohn = odojLohn(_vfJobData, null);
 
   // Jobber-Profil: zuerst localStorage-Snapshot (von meine-inserate.html gesetzt),
   // dann DB-Ergebnis, dann leeres Objekt
@@ -489,6 +492,15 @@ function fillForm() {
   document.getElementById('vf-stunden').value = job.stundenanzahl || '';
 
   // ── Entgelt ──
+  // Neue Inserate: Stundensatz laut Inserat/Termin, Tageslohn = Satz x Stunden
+  if (job._lohn?.satz) {
+    document.getElementById('vf-stunden').value     = job._lohn.stunden;
+    document.getElementById('vf-tagesgehalt').value = job._lohn.betrag.toFixed(2);
+    document.getElementById('vf-stundenlohn').value = job._lohn.satz.toFixed(2);
+    document.getElementById('vf-calc-hint').textContent =
+      `Laut Inserat: € ${job._lohn.satz.toFixed(2)}/Std. × ${job._lohn.stunden} Std. = € ${job._lohn.betrag.toFixed(2)} pro Tag`;
+    return;
+  }
   const tagesgehalt = parseFloat(job.tagesgehalt)   || 0;
   const stunden     = parseFloat(job.stundenanzahl)  || 0;
   document.getElementById('vf-tagesgehalt').value = tagesgehalt > 0 ? tagesgehalt : '';

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { berechneLohn } from "../_shared/lohn.ts";
 
 const RESEND_API_KEY       = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
@@ -105,21 +106,23 @@ serve(async (req) => {
     // bedingt zwischen "jobs" und "job_termine" umschalten.
     const { data: bews } = await admin
       .from("bewerbungen")
-      .select("termin_id, jobs!inner(tagesgehalt, datum)")
+      .select("termin_id, jobs!inner(tagesgehalt, stundensatz, stundenanzahl, uhrzeit_von, uhrzeit_bis, datum)")
       .eq("jobber_id", record.jobber_id)
       .eq("anwesenheit_bestaetigt", true);
 
     const terminIds = [...new Set((bews || []).map((b: any) => b.termin_id).filter(Boolean))];
     const terminDatumMap: Record<string, string> = {};
+    const terminRowMap: Record<string, any> = {};
     if (terminIds.length) {
-      const { data: termine } = await admin.from("job_termine").select("id, datum").in("id", terminIds);
-      (termine || []).forEach((t: any) => { terminDatumMap[t.id] = t.datum; });
+      const { data: termine } = await admin.from("job_termine").select("id, datum, uhrzeit_von, uhrzeit_bis, stundensatz").in("id", terminIds);
+      (termine || []).forEach((t: any) => { terminDatumMap[t.id] = t.datum; terminRowMap[t.id] = t; });
     }
 
     const summe = (bews || []).reduce((s: number, b: any) => {
       const effDatum = b.termin_id ? terminDatumMap[b.termin_id] : b.jobs?.datum;
       if (effDatum && effDatum >= monatStart && effDatum <= monatEnde) {
-        return s + Number(b.jobs?.tagesgehalt || 0);
+        // Lohn DIESES Termins (Stundensatz x Stunden; alte Inserate: Tagesgehalt)
+        return s + berechneLohn(b.jobs, b.termin_id ? terminRowMap[b.termin_id] : null).betrag;
       }
       return s;
     }, 0);

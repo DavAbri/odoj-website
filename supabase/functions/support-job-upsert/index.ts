@@ -7,7 +7,7 @@ import { requireAdmin, requireActiveSession, logAktion, corsHeaders, json } from
 const ALLOWED_JOB_FIELDS = [
   "titel", "branche", "datum", "uhrzeit_von", "uhrzeit_bis", "stundenanzahl",
   "tagesgehalt", "adresse", "ort", "plaetze", "mindestalter", "beschreibung",
-  "status", "mindest_termine",
+  "status", "mindest_termine", "stundensatz",
 ] as const;
 
 function pickAllowed(src: Record<string, unknown>, allowed: readonly string[]) {
@@ -80,6 +80,7 @@ serve(async (req) => {
             datum: t.datum,
             uhrzeit_von: t.uhrzeit_von || null,
             uhrzeit_bis: t.uhrzeit_bis || null,
+            stundensatz: Number(t.stundensatz) > 0 ? Number(t.stundensatz) : null,
           }));
         if (rows.length > 0) {
           const { error: termErr } = await adminClient.from("job_termine").insert(rows);

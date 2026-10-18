@@ -708,6 +708,12 @@ function renderJobCard(job, locked) {
     ? new Date(job.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long' })
     : '–';
   const gehalt  = Number(job.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  // Neue Inserate: Stundensatz dieses Termins (eine Karte = ein Termin) + berechneter Tageslohn
+  const lohn    = odojLohn(job, job._termin || null);
+  const payHtml = lohn.satz
+    ? `€ ${odojEuro(lohn.satz, 0)} <span>/ Std. · ${odojEuro(lohn.betrag)} € pro Tag</span>`
+    : `€ ${gehalt} <span>/ Tag</span>`;
+  const stdAnzeige = lohn.satz ? lohn.stunden : job.stundenanzahl;
   const lockedAttr = locked ? ' data-locked="true"' : '';
   const terminAttr = job._terminId ? ` data-termin-id="${job._terminId}"` : '';
   const plaetze = job.plaetze === 1 ? '1 Platz frei' : (job.plaetze + ' Plätze frei');
@@ -735,7 +741,7 @@ function renderJobCard(job, locked) {
         </span>
         <span class="job-meta">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          ${job.uhrzeit_von || '–'} – ${job.uhrzeit_bis || '–'}${job.stundenanzahl ? ` · ${job.stundenanzahl} Std.` : ''}
+          ${job.uhrzeit_von || '–'} – ${job.uhrzeit_bis || '–'}${stdAnzeige ? ` · ${String(stdAnzeige).replace('.', ',')} Std.` : ''}
         </span>
         <span class="job-meta">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -749,7 +755,7 @@ function renderJobCard(job, locked) {
       ${altersHinweis}
       <div class="job-footer">
         <div style="display:flex;flex-direction:column;gap:4px">
-          <div class="job-pay">€ ${gehalt} <span>/ Tag</span></div>
+          <div class="job-pay">${payHtml}</div>
           <div class="job-spots">${plaetze}</div>
           <a href="job-detail.html?id=${job.id}${job._terminId ? '&termin=' + job._terminId : ''}" class="job-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
         </div>
@@ -907,6 +913,7 @@ async function checkJobsAuth() {
           uhrzeit_von: (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5) || null,
           uhrzeit_bis: (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5) || null,
           _terminId: t.id,
+          _termin: t,
           _isMultiTermin: true
         }));
     } else if ((!job.datum || !_jobsIstBegonnen(job.datum, job.uhrzeit_von)) && (acceptedCountByJob[job.id] || 0) < job.plaetze) {

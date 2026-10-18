@@ -1,6 +1,8 @@
 // ── ODOJ Bestätigungs-Modal ──────────────────────────────
 // Verwendung:
-//   showBewerbungsModal({ titel, firma, datum, gehalt, onConfirm })
+//   showBewerbungsModal({ titel, firma, datum, gehalt, lohnZeilen, onConfirm })
+//   lohnZeilen (optional): Lohn pro Termin bei Stundensatz-Inseraten, z.B.
+//   ["Sa 24. Okt: 15 €/Std. = 105,00 €"] - ersetzt dann die Tagesgehalt-Zeile.
 
 (function () {
   // CSS einmalig in den <head> injizieren
@@ -86,7 +88,7 @@
     document.head.appendChild(style);
   }
 
-  window.showBewerbungsModal = function ({ titel, firma, datum, datumList, gehalt, onConfirm }) {
+  window.showBewerbungsModal = function ({ titel, firma, datum, datumList, gehalt, lohnZeilen, onConfirm }) {
     // Altes Modal entfernen
     const old = document.getElementById('odoj-modal-overlay');
     if (old) old.remove();
@@ -124,10 +126,13 @@
             <span class="odoj-modal-row-value">${escModal(firma)}</span>
           </div>
           ${datumRowHtml}
-          ${gehaltStr ? `<div class="odoj-modal-row">
+          ${Array.isArray(lohnZeilen) && lohnZeilen.length ? `<div class="odoj-modal-row" style="align-items:flex-start">
+            <span class="odoj-modal-row-label">Lohn (brutto)</span>
+            <span class="odoj-modal-row-value">${lohnZeilen.map(escModal).join('<br>')}</span>
+          </div>` : (gehaltStr ? `<div class="odoj-modal-row">
             <span class="odoj-modal-row-label">Tagesgehalt</span>
             <span class="odoj-modal-row-value odoj-modal-gehalt">${gehaltStr} <span>/ Tag</span></span>
-          </div>` : ''}
+          </div>` : '')}
           <p style="margin:0 0 12px;font-size:12.5px;color:#8a8f99;line-height:1.5">
             Bei Annahme werden deine Daten (Name, Geburtsdatum, SV-Nummer, Adresse, IBAN) automatisch
             per Datenblatt an den Arbeitgeber übermittelt.

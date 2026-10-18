@@ -356,6 +356,23 @@
   font-size: 14px; line-height: 1; padding: 0; flex-shrink: 0;
 }
 .if-termin-row button:hover { background: var(--gray-lt); color: var(--navy); }
+/* Stundensatz pro Termin */
+.if-termin-satz { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-mid); }
+.if-field .if-termin-satz input {
+  width: 84px; min-height: 44px; box-sizing: border-box; padding: 7px 10px;
+  border: 1.5px solid var(--gray-lt); border-radius: 8px; background: var(--off);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; color: var(--text); outline: none;
+}
+.if-field .if-termin-satz input:focus { border-color: var(--accent); background: var(--white); }
+.if-termin-row input[type="time"] { min-height: 44px; box-sizing: border-box; width: auto; }
+.if-termin-lohn { flex-basis: 100%; font-size: 12px; color: var(--text-lt); }
+.if-termin-lohn b { color: var(--text-mid); }
+.if-satz-alle-btn {
+  min-height: 44px; padding: 0 16px; margin-bottom: 10px;
+  border-radius: var(--r-sm); border: 1.5px solid var(--gray-lt); background: var(--white);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--navy); cursor: pointer;
+}
+.if-satz-alle-btn:hover { border-color: var(--navy); }
 .if-submit {
   width: 100%; background: var(--accent); color: var(--navy);
   font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
@@ -824,12 +841,12 @@
             <div class="if-field" id="ins-datum-mehrere-wrap">
               <label>Termine *</label>
               <div style="display:flex;gap:10px">
-                <input type="date" id="ins-termin-picker" style="flex:1" onchange="terminPickerGeaendert()">
+                <input type="date" id="ins-termin-picker" style="flex:1;min-width:0" onchange="terminPickerGeaendert()">
                 <button type="button" class="if-chip-add-btn" onclick="addTerminChip()">+ Hinzufügen</button>
               </div>
               <div id="ins-termin-chips" class="if-chip-list"></div>
               <div id="ins-termin-fehler" role="alert" style="display:none;margin-top:10px;padding:12px 14px;border-radius:var(--r-sm);background:#FDECEC;border:1.5px solid #F1B5B5;color:#A12A2A;font-size:14px;line-height:1.5"></div>
-              <div class="if-hint">Alle anderen Angaben (Titel, Ort, Lohn, Beschreibung) gelten für jeden Termin gleichermaßen.</div>
+              <div class="if-hint">Titel, Ort und Beschreibung gelten für jeden Termin gleichermaßen. Den Stundensatz kannst du ab 2 Terminen pro Termin festlegen.</div>
             </div>
             <div class="if-field" id="ins-mindest-termine-wrap" style="display:none">
               <label>Mindestanzahl an Terminen für die Bewerbung <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></label>
@@ -860,9 +877,9 @@
             </div>
             <div class="if-row">
               <div class="if-field">
-                <label>Tagesgehalt in € *</label>
-                <input type="number" id="ins-gehalt" min="0" step="0.01" placeholder="z.B. 120" required>
-                <div class="if-hint">Gesamtlohn für den ganzen Tag</div>
+                <label for="ins-gehalt">Stundensatz in € *</label>
+                <input type="text" inputmode="decimal" id="ins-gehalt" placeholder="z.B. 15" autocomplete="off" required oninput="satzGeaendert()">
+                <div class="if-hint" id="ins-lohn-hinweis">Der Lohn pro Tag wird automatisch berechnet (Stundensatz × Stunden).</div>
               </div>
               <div class="if-field">
                 <label>Anzahl Plätze *</label>
@@ -1284,7 +1301,7 @@ async function loadInserate() {
 
   const jobIds = jobs.map(j => j.id);
   const { data: bews } = await odojSb.from('bewerbungen').select('id, job_id, status, termin_id').in('job_id', jobIds);
-  const { data: alleTermine } = await odojSb.from('job_termine').select('id, job_id, datum').in('job_id', jobIds);
+  const { data: alleTermine } = await odojSb.from('job_termine').select('id, job_id, datum, stundensatz').in('job_id', jobIds);
 
   // Ungesehene neue Bewerbungen pro Inserat (für das "neu"-Badge auf der Karte):
   // Bewerbungen dieses Arbeitgebers mit mind. einer ungelesenen Nachricht.
@@ -1304,7 +1321,7 @@ async function loadInserate() {
   }
 
   const termineByJob = {};
-  (alleTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push({ id: t.id, datum: t.datum }));
+  (alleTermine || []).forEach(t => (termineByJob[t.job_id] ||= []).push({ id: t.id, datum: t.datum, stundensatz: t.stundensatz }));
   Object.values(termineByJob).forEach(list => list.sort((a, b) => a.datum.localeCompare(b.datum)));
   const countMap        = {};
   const acceptedMap     = {};
@@ -1420,6 +1437,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
   const statusCls = j.status === 'aktiv' ? 'status-aktiv' : 'status-inaktiv';
   const stunden   = j.stundenanzahl ? j.stundenanzahl + ' Std.' : '';
   const gehalt    = Number(j.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const satzKurz  = odojSatzKurz(j, termine); // neue Inserate: "15 €/Std." bzw. "ab 15 €/Std."; alte: null
   const titelEsc  = (j.titel || '').replace(/"/g, '&quot;');
 
   const vergebenBadge = acceptedCount > 0
@@ -1465,7 +1483,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
       </div>
       <div class="inserat-footer">
         <div>
-          <div class="inserat-gehalt">€ ${gehalt} <span>/ Tag</span></div>
+          <div class="inserat-gehalt">${satzKurz ? satzKurz.replace(' €/Std.', '') + ' € <span>/ Std.</span>' : `€ ${gehalt} <span>/ Tag</span>`}</div>
           <div class="inserat-stunden">${stunden}</div>
         </div>
         <div class="inserat-card-footer-actions">
@@ -1591,17 +1609,18 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
     return;
   }
 
-  const { data: jobRow } = await odojSb.from('jobs').select('tagesgehalt, uhrzeit_von').eq('id', jobId).single();
+  const { data: jobRow } = await odojSb.from('jobs').select('tagesgehalt, stundensatz, stundenanzahl, uhrzeit_von, uhrzeit_bis').eq('id', jobId).single();
   const tagesgehalt = jobRow?.tagesgehalt || 0;
   const odojConfig = await getOdojBankConfig();
 
   // Termine dieses Jobs laden (nur bei Mehrtages-Jobs vorhanden), damit jede
   // Bewerbungszeile ihr EIGENES Termin-Datum (und ggf. eigene Uhrzeit) zeigt
   // statt des einen jobDatum - nötig für die Einsatzbeginn-Zeitsperre (A1).
-  const { data: termine } = await odojSb.from('job_termine').select('id, datum, uhrzeit_von').eq('job_id', jobId);
+  const { data: termine } = await odojSb.from('job_termine').select('id, datum, uhrzeit_von, uhrzeit_bis, stundensatz').eq('job_id', jobId);
   const terminMap = {};
   const terminUhrzeitMap = {};
-  (termine || []).forEach(t => { terminMap[t.id] = t.datum; terminUhrzeitMap[t.id] = t.uhrzeit_von; });
+  const terminRowMap = {};
+  (termine || []).forEach(t => { terminMap[t.id] = t.datum; terminUhrzeitMap[t.id] = t.uhrzeit_von; terminRowMap[t.id] = t; });
 
   const jobberIds = [...new Set(bewerbungen.map(b => b.jobber_id).filter(Boolean))];
   const acceptedBewIds = bewerbungen.filter(b => b.status === 'angenommen').map(b => b.id);
@@ -1638,6 +1657,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   bewerbungen.forEach(b => {
     b._effDatum = b.termin_id ? (terminMap[b.termin_id] || jobDatum) : jobDatum;
     b._effUhrzeit = b.termin_id ? (terminUhrzeitMap[b.termin_id] || jobRow?.uhrzeit_von) : jobRow?.uhrzeit_von;
+    b._lohn = odojLohn(jobRow, b.termin_id ? terminRowMap[b.termin_id] : null); // Lohn dieses Termins
   });
 
   // Nach Person (jobber_id) gruppieren: mehrere Termine derselben Person für
@@ -1695,7 +1715,7 @@ function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invo
         <span class="bew-zahlung-toggle">Zahlungsdetails ▾</span>
       </div>
       <div class="bew-zahlung-details">
-        <div class="bew-zahlung-row"><span>Lohn an Jobber</span><strong>€ ${fmt(tagesgehalt)}</strong></div>
+        <div class="bew-zahlung-row"><span>Lohn an Jobber</span><strong>€ ${fmt(b._lohn ? b._lohn.betrag : tagesgehalt)}</strong></div>
         <div class="bew-zahlung-row"><span>IBAN Jobber</span><strong>${escJ(profile?.iban || 'noch nicht hinterlegt')}</strong></div>
         <div class="bew-zahlung-fee">
           <div class="bew-zahlung-row"><span>Vermittlungsgebühr (separat)</span><strong>€ 15,00</strong></div>
@@ -2173,6 +2193,96 @@ async function confirmDeleteInserat() {
   }
 }
 
+// ── STUNDENSATZ ──
+// Es gibt nur einen Stundensatz (kein Tagessatz). Tageslohn = Satz x Stunden
+// aus Beginn/Ende (odojLohn/odojStundenAus in auth.js). Bei mehreren Terminen
+// hat jeder Termin seinen eigenen Satz (vorbelegt mit dem Satz oben).
+let _altesTagesgehalt = null; // beim Bearbeiten eines alten Tagesgehalt-Inserats
+let _editSatzStart = '';      // Stundensätze beim Öffnen zum Bearbeiten (für Hinweis)
+
+// "15" / "15,5" / "15.50" -> Zahl; leer -> null; ungültig -> NaN
+function parseSatz(raw) {
+  const t = String(raw ?? '').trim().replace(/\s/g, '');
+  if (!t) return null;
+  if (!/^\d+([.,]\d{1,2})?$/.test(t)) return NaN;
+  const n = Number(t.replace(',', '.'));
+  return n > 0 ? n : NaN;
+}
+function satzAnzeige(n) { return n == null ? '' : String(Math.round(n * 100) / 100).replace('.', ','); }
+
+function lohnText(satz, von, bis) {
+  const std = odojStundenAus(von, bis);
+  if (!(satz > 0) || !std) return '';
+  return `${odojEuro(satz * std)} € (${String(std).replace('.', ',')} Std. × ${odojEuro(satz, 0)} €)`;
+}
+
+function terminZeiten(c) {
+  return _zeitFuerAlle || !c
+    ? [document.getElementById('ins-von').value, document.getElementById('ins-bis').value]
+    : [c.von, c.bis];
+}
+
+function updateLohnHinweis() {
+  const el = document.getElementById('ins-lohn-hinweis');
+  if (!el) return;
+  const satz = parseSatz(document.getElementById('ins-gehalt').value);
+  let text;
+  if (Number.isNaN(satz)) {
+    text = 'Bitte nur Zahlen eingeben, z.B. 15 oder 15,50 (höchstens 2 Nachkommastellen).';
+  } else if (_terminChips.length > 1) {
+    text = 'Standard-Stundensatz für alle Termine – unten kannst du ihn pro Termin ändern.';
+  } else {
+    const [von, bis] = terminZeiten(null);
+    const lt = lohnText(satz, von, bis);
+    text = lt ? 'Lohn für diesen Tag: ' + lt : 'Der Lohn pro Tag wird automatisch berechnet (Stundensatz × Stunden).';
+  }
+  if (_altesTagesgehalt) text += ` Bisher: Tagesgehalt ${odojEuro(_altesTagesgehalt)} € – Stundensatz daraus umgerechnet, bitte prüfen.`;
+  el.textContent = text;
+}
+
+function terminLohnHtml(c) {
+  const satz = parseSatz(c.satz);
+  if (Number.isNaN(satz)) return '<span style="color:#c0392b">Bitte gültigen Betrag eingeben (z.B. 15 oder 15,50)</span>';
+  const [von, bis] = terminZeiten(c);
+  const lt = lohnText(satz, von, bis);
+  return lt ? 'Lohn für diesen Tag: <b>' + lt + '</b>' : '';
+}
+function updateTerminLohn(datum) {
+  const c = _terminChips.find(x => x.datum === datum);
+  const el = document.getElementById('ins-lohn-' + datum);
+  if (c && el) el.innerHTML = terminLohnHtml(c);
+}
+function updateAlleTerminLoehne() { _terminChips.forEach(c => updateTerminLohn(c.datum)); }
+
+// Satz oben geändert: Termine ohne eigenen (manuell geänderten) Satz übernehmen ihn
+function satzGeaendert() {
+  const wert = document.getElementById('ins-gehalt').value;
+  _terminChips.forEach(c => {
+    if (c.satzManuell) return;
+    c.satz = wert;
+    const inp = document.getElementById('ins-satz-' + c.datum);
+    if (inp) inp.value = wert;
+  });
+  updateLohnHinweis();
+  updateAlleTerminLoehne();
+}
+function updateTerminSatz(datum, wert) {
+  const c = _terminChips.find(x => x.datum === datum);
+  if (!c) return;
+  c.satz = wert;
+  c.satzManuell = true;
+  updateTerminLohn(datum);
+}
+function satzFuerAlleUebernehmen() {
+  const wert = document.getElementById('ins-gehalt').value;
+  _terminChips.forEach(c => { c.satz = wert; c.satzManuell = false; });
+  renderTerminChips();
+}
+// Aktuelle Sätze als Vergleichswert (Hinweis bei Änderung)
+function satzSchluessel() {
+  return [document.getElementById('ins-gehalt').value, ..._terminChips.map(c => c.satz)].map(v => String(parseSatz(v))).join('|');
+}
+
 // ── STUNDEN AUTO-BERECHNUNG ──
 function calcStunden() {
   const von = document.getElementById('ins-von').value;
@@ -2185,10 +2295,9 @@ function calcStunden() {
   // Auf 0.5 Schritte runden
   document.getElementById('ins-stunden').value = Math.round(brutto / 60 * 2) / 2;
   updatePauseHinweis();
+  updateLohnHinweis();
+  updateAlleTerminLoehne();
 }
-
-// Beim ersten Laden: Stunden zur vorbelegten Uhrzeit 14:00–20:00 berechnen
-calcStunden();
 
 // ── HINWEIS AUF GESETZLICHE PAUSENPFLICHT ──
 function updatePauseHinweis() {
@@ -2202,6 +2311,10 @@ function updatePauseHinweis() {
 let _terminChips = [];       // [{ datum, von, bis, id }, ...] aufsteigend sortiert nach datum
 let _terminChipsLocked = false; // true beim Bearbeiten eines bestehenden Mehrtages-Jobs (Daten fix, Zeiten editierbar)
 let _zeitFuerAlle = true;    // true = eine gemeinsame Uhrzeit für alle Termine, false = pro Termin individuell
+
+// Beim ersten Laden: Stunden + Lohn zur vorbelegten Uhrzeit 14:00–20:00 berechnen
+// (erst hier, weil dafür _terminChips schon existieren muss)
+calcStunden();
 
 // "Mindestanzahl Termine" und "Arbeitszeiten anpassen" ergeben nur ab zwei
 // Terminen Sinn - bei genau einem Termin verhält sich das Inserat technisch
@@ -2248,6 +2361,8 @@ function addTerminChip() {
     datum: val,
     von: _zeitFuerAlle ? null : document.getElementById('ins-von').value,
     bis: _zeitFuerAlle ? null : document.getElementById('ins-bis').value,
+    satz: document.getElementById('ins-gehalt').value,
+    satzManuell: false,
     id: null
   });
   _terminChips.sort((a, b) => a.datum.localeCompare(b.datum));
@@ -2279,34 +2394,36 @@ function removeTerminChip(datum) {
 function updateTerminZeit(datum, feld, value) {
   const chip = _terminChips.find(c => c.datum === datum);
   if (chip) chip[feld] = value;
+  updateTerminLohn(datum);
 }
 
 function renderTerminChips() {
   const wrap = document.getElementById('ins-termin-chips');
-  if (_zeitFuerAlle) {
-    wrap.innerHTML = _terminChips.map(c => {
-      const label = new Date(c.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-      const removeBtn = _terminChipsLocked ? '' : `<button type="button" onclick="removeTerminChip('${c.datum}')" aria-label="Termin entfernen">✕</button>`;
-      return `<span class="if-chip">${label}${removeBtn}</span>`;
-    }).join('');
+  const label = c => new Date(c.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const removeBtn = c => _terminChipsLocked ? '' : `<button type="button" onclick="removeTerminChip('${c.datum}')" aria-label="Termin entfernen">✕</button>`;
+  if (_terminChips.length < 2) {
+    // Ein Termin: Satz und Lohn stehen oben beim Feld "Stundensatz"
+    wrap.innerHTML = _terminChips.map(c => `<span class="if-chip">${label(c)}${removeBtn(c)}</span>`).join('');
   } else {
-    wrap.innerHTML = _terminChips.map(c => {
-      const label = new Date(c.datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-      const removeBtn = _terminChipsLocked ? '' : `<button type="button" onclick="removeTerminChip('${c.datum}')" aria-label="Termin entfernen">✕</button>`;
-      return `<div class="if-termin-row">
-        <span class="if-termin-row-datum">${label}</span>
-        <input type="time" value="${c.von || ''}" onchange="updateTerminZeit('${c.datum}','von',this.value)" required>
+    // Mehrere Termine: pro Termin eigener Stundensatz (+ Uhrzeit, falls individuell)
+    wrap.innerHTML = `<button type="button" class="if-satz-alle-btn" onclick="satzFuerAlleUebernehmen()">Stundensatz von oben für alle Termine übernehmen</button>` +
+      _terminChips.map(c => `<div class="if-termin-row">
+        <span class="if-termin-row-datum">${label(c)}</span>
+        ${_zeitFuerAlle ? '' : `<input type="time" value="${c.von || ''}" onchange="updateTerminZeit('${c.datum}','von',this.value)" required aria-label="Beginn ${label(c)}">
         <span class="if-termin-row-sep">–</span>
-        <input type="time" value="${c.bis || ''}" onchange="updateTerminZeit('${c.datum}','bis',this.value)" required>
-        ${removeBtn}
-      </div>`;
-    }).join('');
+        <input type="time" value="${c.bis || ''}" onchange="updateTerminZeit('${c.datum}','bis',this.value)" required aria-label="Ende ${label(c)}">`}
+        <span class="if-termin-satz"><input type="text" inputmode="decimal" id="ins-satz-${c.datum}" value="${c.satz ?? ''}" placeholder="z.B. 15" autocomplete="off" oninput="updateTerminSatz('${c.datum}', this.value)" aria-label="Stundensatz in € für ${label(c)}"> €/Std.</span>
+        ${removeBtn(c)}
+        <div class="if-termin-lohn" id="ins-lohn-${c.datum}">${terminLohnHtml(c)}</div>
+      </div>`).join('');
   }
+  updateLohnHinweis();
   _insRevalidateIfShown();
 }
 
 function _resetTerminUI() {
   zeigeTerminFehler('');
+  _altesTagesgehalt = null;
   _terminChips = [];
   _terminChipsLocked = false;
   _zeitFuerAlle = true;
@@ -2370,10 +2487,12 @@ function _insValidateRequired() {
   if (!document.getElementById('ins-von').value) problems.push({ id: 'ins-von', label: 'Uhrzeit von', msg: 'Bitte ausfüllen' });
   if (!document.getElementById('ins-bis').value) problems.push({ id: 'ins-bis', label: 'Uhrzeit bis', msg: 'Bitte ausfüllen' });
 
-  const gehaltRaw = document.getElementById('ins-gehalt').value;
-  const gehaltNum = parseFloat(gehaltRaw);
-  if (!gehaltRaw || isNaN(gehaltNum) || gehaltNum <= 0) {
-    problems.push({ id: 'ins-gehalt', label: 'Tagesgehalt in €', msg: 'Bitte einen gültigen Betrag größer 0 eingeben' });
+  const satzNum = parseSatz(document.getElementById('ins-gehalt').value);
+  if (!(satzNum > 0)) {
+    problems.push({ id: 'ins-gehalt', label: 'Stundensatz in €', msg: 'Bitte einen Betrag größer 0 eingeben – nur Zahlen, Komma oder Punkt, höchstens 2 Nachkommastellen (z.B. 15 oder 15,50)' });
+  }
+  if (_terminChips.length > 1 && _terminChips.some(c => !(parseSatz(c.satz) > 0))) {
+    problems.push({ id: 'ins-termin-chips', label: 'Stundensatz pro Termin', msg: 'Bitte für jeden Termin einen gültigen Stundensatz größer 0 eingeben (z.B. 15 oder 15,50)' });
   }
 
   const plaetzeRaw = document.getElementById('ins-plaetze').value;
@@ -2511,7 +2630,12 @@ async function submitInserat(e) {
   const von     = document.getElementById('ins-von').value;
   const bis     = document.getElementById('ins-bis').value;
   const stunden = parseFloat(document.getElementById('ins-stunden').value) || null;
-  const gehalt  = parseFloat(document.getElementById('ins-gehalt').value);
+  const stundensatz = parseSatz(document.getElementById('ins-gehalt').value);
+  // Tagesgehalt wird nur noch berechnet (Satz x Stunden) und für bisherige
+  // Anzeigen mitgespeichert - eingegeben wird ausschließlich der Stundensatz.
+  const gehalt  = odojLohn({ stundensatz, uhrzeit_von: von, uhrzeit_bis: bis }, null).betrag || null;
+  const terminSatz = c => (_terminChips.length > 1 ? parseSatz(c.satz) : null) || stundensatz;
+  const lohnKurz = odojSatzKurz({ stundensatz }, _terminChips.length > 1 ? _terminChips.map(c => ({ stundensatz: terminSatz(c) })) : null);
   const adresse = document.getElementById('ins-adresse').value.trim();
   const ort     = document.getElementById('ins-ort').value.trim();
   const plaetze      = parseInt(document.getElementById('ins-plaetze').value, 10);
@@ -2523,7 +2647,7 @@ async function submitInserat(e) {
 
   // ── BEARBEITEN MODUS: UPDATE statt INSERT ──
   if (_editJobId) {
-    const formData = { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, beschr, mindestTermine };
+    const formData = { titel, branche, datum, von, bis, stunden, gehalt, stundensatz, terminSatz, lohnKurz, adresse, ort, plaetze, mindestalter, beschr, mindestTermine };
     await _startEditFlow(formData, btn, errEl, successEl);
     return;
   }
@@ -2534,13 +2658,14 @@ async function submitInserat(e) {
     uhrzeit_bis:   bis,
     stundenanzahl: stunden,
     tagesgehalt:   gehalt,
+    stundensatz,
     adresse, ort, plaetze, mindestalter,
     beschreibung:  beschr,
     status:        'aktiv',
     mindest_termine: mindestTermine
   };
   const terminRows = _terminChips.length > 1
-    ? _terminChips.map(c => ({ datum: c.datum, uhrzeit_von: _zeitFuerAlle ? null : c.von, uhrzeit_bis: _zeitFuerAlle ? null : c.bis }))
+    ? _terminChips.map(c => ({ datum: c.datum, uhrzeit_von: _zeitFuerAlle ? null : c.von, uhrzeit_bis: _zeitFuerAlle ? null : c.bis, stundensatz: terminSatz(c) }))
     : null;
 
   let newJob, error;
@@ -2573,7 +2698,8 @@ async function submitInserat(e) {
         job_id: newJob.id,
         datum: c.datum,
         uhrzeit_von: _zeitFuerAlle ? null : c.von,
-        uhrzeit_bis: _zeitFuerAlle ? null : c.bis
+        uhrzeit_bis: _zeitFuerAlle ? null : c.bis,
+        stundensatz: terminSatz(c)
       }))
     );
     if (termineError) {
@@ -2596,7 +2722,7 @@ async function submitInserat(e) {
   successEl.style.display = 'block';
 
   // Stammkräfte laden und Modal anzeigen
-  _neuesJobData = { titel, datum, ort, gehalt, jobId: newJob?.id };
+  _neuesJobData = { titel, datum, ort, gehalt, lohnKurz, jobId: newJob?.id };
   const stammkraefte = await ladeStammkraefte();
   successEl.style.display = 'none';
   await openStammkraefteModal(stammkraefte);
@@ -2987,7 +3113,7 @@ async function sendStammkraefteNachrichten() {
   const j = _neuesJobData || {};
   const jobTitel = j.titel || 'Neuer Job';
   const datum    = j.datum ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-  const nachricht = `⭐ Neues Inserat – Sie wurden als Stammkraft ausgewählt!\n\nJob: ${jobTitel}\nDatum: ${datum}\nOrt: ${j.ort || ''}\nTagesgehalt: € ${j.gehalt || ''}\n\nJetzt bewerben auf odoj.at/jobs.html`;
+  const nachricht = `⭐ Neues Inserat – Sie wurden als Stammkraft ausgewählt!\n\nJob: ${jobTitel}\nDatum: ${datum}\nOrt: ${j.ort || ''}\nLohn: ${j.lohnKurz || ('€ ' + (j.gehalt || ''))}\n\nJetzt bewerben auf odoj.at/jobs.html`;
 
   const jetzt = new Date().toISOString();
   for (const empfaengerId of checked) {
@@ -3024,7 +3150,7 @@ async function editInserat(jobId) {
   // Job-Daten laden
   const { data: job, error } = await odojSb.from('jobs').select('*').eq('id', jobId).single();
   if (error || !job) { alert('Inserat konnte nicht geladen werden.'); return; }
-  const { data: termine } = await odojSb.from('job_termine').select('id, datum, uhrzeit_von, uhrzeit_bis').eq('job_id', jobId).order('datum');
+  const { data: termine } = await odojSb.from('job_termine').select('id, datum, uhrzeit_von, uhrzeit_bis, stundensatz').eq('job_id', jobId).order('datum');
 
   // Zum Tab "inserieren" wechseln
   showTab('inserieren');
@@ -3044,7 +3170,15 @@ async function editInserat(jobId) {
   document.getElementById('ins-bis').value       = job.uhrzeit_bis || '';
   document.getElementById('ins-stunden').value   = job.stundenanzahl || '';
   updatePauseHinweis();
-  document.getElementById('ins-gehalt').value    = job.tagesgehalt || '';
+  // Stundensatz; alte Inserate (nur Tagesgehalt) werden umgerechnet: Tagesgehalt / Stunden
+  let satzStart = Number(job.stundensatz) || null;
+  _altesTagesgehalt = null;
+  if (!satzStart && job.tagesgehalt) {
+    const std = odojStundenAus(job.uhrzeit_von, job.uhrzeit_bis) || Number(job.stundenanzahl) || null;
+    if (std) satzStart = Math.round(Number(job.tagesgehalt) / std * 100) / 100;
+    _altesTagesgehalt = Number(job.tagesgehalt);
+  }
+  document.getElementById('ins-gehalt').value    = satzAnzeige(satzStart);
   // Auswahl geht bis 20 - ältere Inserate mit mehr Plätzen behalten ihren Wert
   const plaetzeSel = document.getElementById('ins-plaetze');
   if (job.plaetze && !plaetzeSel.querySelector('option[value="' + job.plaetze + '"]')) {
@@ -3066,7 +3200,9 @@ async function editInserat(jobId) {
       id: t.id,
       datum: t.datum,
       von: (t.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5),
-      bis: (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5)
+      bis: (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5),
+      satz: satzAnzeige(Number(t.stundensatz) || satzStart),
+      satzManuell: !!t.stundensatz && Number(t.stundensatz) !== satzStart
     }));
     _terminChipsLocked = true;
     document.getElementById('ins-mindest-termine').value = job.mindest_termine || '';
@@ -3080,12 +3216,13 @@ async function editInserat(jobId) {
     // Bisheriges Einzeltag-Inserat: als ein einzelner, frei editierbarer
     // Termin-Chip dargestellt - passt zur vereinheitlichten Ansicht, ohne
     // dass dafür bereits eine job_termine-Zeile existieren muss.
-    _terminChips = [{ id: null, datum: job.datum || '', von: '', bis: '' }];
+    _terminChips = [{ id: null, datum: job.datum || '', von: '', bis: '', satz: satzAnzeige(satzStart), satzManuell: false }];
     _terminChipsLocked = false;
     document.getElementById('ins-mindest-termine').value = '';
   }
   renderTerminChips();
   updateTerminExtrasVisibility();
+  _editSatzStart = satzSchluessel();
 
   // Bearbeiten-Modus aktivieren
   _editJobId = jobId;
@@ -3127,8 +3264,9 @@ async function _startEditFlow(formData, btn, errEl, successEl) {
     _pendingEditData = formData;
     _pendingBewerber = aktiveBew;
     const anzahl = aktiveBew.length;
+    const satzGeaendertHinweis = satzSchluessel() !== _editSatzStart ? ' Bereits angenommene Personen sehen den neuen Lohn.' : '';
     document.getElementById('edit-confirm-text').textContent =
-      `Für dieses Inserat gibt es bereits ${anzahl} Bewerbung${anzahl !== 1 ? 'en' : ''}. Alle Bewerber werden über die Änderung benachrichtigt und können ihre Bewerbung bestätigen oder zurückziehen.`;
+      `Für dieses Inserat gibt es bereits ${anzahl} Bewerbung${anzahl !== 1 ? 'en' : ''}. Alle Bewerber werden über die Änderung benachrichtigt und können ihre Bewerbung bestätigen oder zurückziehen.${satzGeaendertHinweis}`;
     document.getElementById('edit-confirm-overlay').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     btn.textContent = 'Änderungen speichern';
@@ -3156,13 +3294,14 @@ async function confirmEditUpdate() {
 }
 
 async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
-  const { titel, branche, datum, von, bis, stunden, gehalt, adresse, ort, plaetze, mindestalter, beschr, mindestTermine } = formData;
+  const { titel, branche, datum, von, bis, stunden, gehalt, stundensatz, terminSatz, lohnKurz, adresse, ort, plaetze, mindestalter, beschr, mindestTermine } = formData;
   const updateFields = {
     titel, branche, datum,
     uhrzeit_von:   von,
     uhrzeit_bis:   bis,
     stundenanzahl: stunden,
     tagesgehalt:   gehalt,
+    stundensatz,
     adresse, ort, plaetze, mindestalter,
     beschreibung:  beschr,
     mindest_termine: mindestTermine ?? null
@@ -3173,7 +3312,7 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
     // Support-Modus: Termine werden hier komplett ersetzt (einfacher, sicherer
     // Ersatz statt der feingranularen Chip-für-Chip-Logik unten).
     const terminRows = _terminChips.length > 1
-      ? _terminChips.map(c => ({ datum: c.datum, uhrzeit_von: _zeitFuerAlle ? null : (c.von || null), uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null) }))
+      ? _terminChips.map(c => ({ datum: c.datum, uhrzeit_von: _zeitFuerAlle ? null : (c.von || null), uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null), stundensatz: terminSatz(c) }))
       : null;
     const { data, error: fnErr } = await odojSb.functions.invoke('support-job-upsert', {
       body: { sessionId: window.ODOJ_SUPPORT.sessionId, jobId: _editJobId, fields: updateFields, termine: terminRows }
@@ -3213,13 +3352,15 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
     await Promise.all([
       ...bestehende.map(c => odojSb.from('job_termine').update({
         uhrzeit_von: _zeitFuerAlle ? null : (c.von || null),
-        uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null)
+        uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null),
+        stundensatz: terminSatz(c)
       }).eq('id', c.id)),
       ...(neue.length ? [odojSb.from('job_termine').insert(neue.map(c => ({
         job_id: _editJobId,
         datum: c.datum,
         uhrzeit_von: _zeitFuerAlle ? null : (c.von || null),
-        uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null)
+        uhrzeit_bis: _zeitFuerAlle ? null : (c.bis || null),
+        stundensatz: terminSatz(c)
       })))] : [])
     ]);
   }
@@ -3227,7 +3368,7 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
   // Bewerber benachrichtigen
   if (bewerber.length) {
     const datumFormatiert = datum ? new Date(datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-    const nachricht = `⚠️ Änderung an Ihrem gebuchten Job\n\nDer Arbeitgeber hat das Inserat "${titel}" geändert.\n\nNeue Details:\n📅 Datum: ${datumFormatiert}\n⏰ Uhrzeit: ${von} - ${bis}\n💰 Tagesgehalt: € ${gehalt}\n📍 Ort: ${ort}\n\nMöchten Sie Ihre Bewerbung aufrechterhalten?\n✅ Tippen Sie 'JA' um Ihre Bewerbung zu bestätigen\n❌ Tippen Sie 'NEIN' um Ihre Bewerbung zurückzuziehen`;
+    const nachricht = `⚠️ Änderung an Ihrem gebuchten Job\n\nDer Arbeitgeber hat das Inserat "${titel}" geändert.\n\nNeue Details:\n📅 Datum: ${datumFormatiert}\n⏰ Uhrzeit: ${von} - ${bis}\n💰 Lohn: ${lohnKurz || ('€ ' + gehalt)}${_terminChips.length < 2 && gehalt ? ' (' + odojEuro(gehalt) + ' € pro Tag)' : ''}\n📍 Ort: ${ort}\n\nMöchten Sie Ihre Bewerbung aufrechterhalten?\n✅ Tippen Sie 'JA' um Ihre Bewerbung zu bestätigen\n❌ Tippen Sie 'NEIN' um Ihre Bewerbung zurückzuziehen`;
     const jetzt = new Date().toISOString();
     for (const b of bewerber) {
       try {

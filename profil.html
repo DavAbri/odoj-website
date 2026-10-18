@@ -825,7 +825,7 @@ async function loadAuszahlungen(jobberId) {
   // vermeidet doppelt gespeicherte Job-/Namensdaten (siehe invoices-System).
   const { data: bews, error } = await odojSb
     .from('bewerbungen')
-    .select('id, job_id, arbeitgeber_id, bestaetigt_am')
+    .select('id, job_id, arbeitgeber_id, bestaetigt_am, termin_id, job_termine(datum, uhrzeit_von, uhrzeit_bis, stundensatz)')
     .eq('jobber_id', jobberId)
     .eq('status', 'abgeschlossen')
     .order('bestaetigt_am', { ascending: false });
@@ -835,15 +835,15 @@ async function loadAuszahlungen(jobberId) {
   const jobIds = [...new Set((bews || []).map(b => b.job_id).filter(Boolean))];
   let jobMap = {};
   if (jobIds.length) {
-    const { data: jobs } = await odojSb.from('jobs').select('id, titel, tagesgehalt, datum').in('id', jobIds);
+    const { data: jobs } = await odojSb.from('jobs').select('id, titel, tagesgehalt, stundensatz, stundenanzahl, uhrzeit_von, uhrzeit_bis, datum').in('id', jobIds);
     jobs?.forEach(j => { jobMap[j.id] = j; });
   }
 
   const auszahlungen = (bews || []).map(b => {
     const job = jobMap[b.job_id] || {};
     return {
-      datum:          b.bestaetigt_am ? b.bestaetigt_am.split('T')[0] : (job.datum || null),
-      lohn_betrag:    job.tagesgehalt || 0,
+      datum:          b.bestaetigt_am ? b.bestaetigt_am.split('T')[0] : (b.job_termine?.datum || job.datum || null),
+      lohn_betrag:    odojLohn(job, b.job_termine || null).betrag, // Lohn dieses Termins
       arbeitgeber_id: b.arbeitgeber_id,
       job_titel:      job.titel || '–',
       jobber_id:      jobberId
@@ -930,7 +930,7 @@ async function loadEinkommensuebersicht(jobberId) {
 
   const { data: bews, error } = await odojSb
     .from('bewerbungen')
-    .select('jobs(tagesgehalt, datum)')
+    .select('jobs(tagesgehalt, stundensatz, stundenanzahl, uhrzeit_von, uhrzeit_bis, datum), job_termine(datum, uhrzeit_von, uhrzeit_bis, stundensatz)')
     .eq('jobber_id', jobberId)
     .eq('anwesenheit_bestaetigt', true);
 
@@ -948,8 +948,9 @@ async function loadEinkommensuebersicht(jobberId) {
   // Nach Kalendermonat gruppieren (Schlüssel "YYYY-MM")
   const monatSummen = {};
   (bews || []).forEach(b => {
-    const datum  = b.jobs?.datum;
-    const betrag = Number(b.jobs?.tagesgehalt || 0);
+    // Datum + Lohn des jeweiligen Termins (Mehrtages-Jobs), sonst des Inserats
+    const datum  = b.job_termine?.datum || b.jobs?.datum;
+    const betrag = odojLohn(b.jobs, b.job_termine || null).betrag;
     if (!datum) return;
     const key = datum.substring(0, 7);
     monatSummen[key] = (monatSummen[key] || 0) + betrag;
