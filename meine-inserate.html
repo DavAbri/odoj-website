@@ -824,7 +824,7 @@
             <div class="if-field" id="ins-datum-mehrere-wrap">
               <label>Termine *</label>
               <div style="display:flex;gap:10px">
-                <input type="date" id="ins-termin-picker" style="flex:1">
+                <input type="date" id="ins-termin-picker" style="flex:1" onchange="terminPickerGeaendert()">
                 <button type="button" class="if-chip-add-btn" onclick="addTerminChip()">+ Hinzufügen</button>
               </div>
               <div id="ins-termin-chips" class="if-chip-list"></div>
@@ -2242,6 +2242,19 @@ function addTerminChip() {
   picker.value = '';
   renderTerminChips();
   updateTerminExtrasVisibility();
+}
+
+// Termin direkt beim Auswählen im Kalender hinzufügen (ohne extra Klick auf
+// "+ Hinzufügen"). Kurze Verzögerung + nur Daten ab heute: beim Eintippen
+// per Tastatur entstehen sonst Zwischenwerte (z.B. Jahr "0202"), die nicht
+// als Termin übernommen werden sollen. Der Button bleibt als Alternative.
+let _terminPickerTimer = null;
+function terminPickerGeaendert() {
+  clearTimeout(_terminPickerTimer);
+  const val = document.getElementById('ins-termin-picker').value;
+  const heute = new Date().toISOString().split('T')[0];
+  if (!val || val < heute) return;
+  _terminPickerTimer = setTimeout(addTerminChip, 400);
 }
 
 function removeTerminChip(datum) {
