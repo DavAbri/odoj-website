@@ -43,16 +43,80 @@
 <meta name="theme-color" content="#0d1b3e">
 <link rel="stylesheet" href="shared.css">
 <style>
+/* ── ROLLEN-AUSWAHL (zwei große Buttons ganz oben) ── */
+.role-split {
+  background: var(--navy);
+  padding: calc(var(--nav-h) + 16px) 16px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.role-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  height: calc((100vh - var(--nav-h)) * .72);
+  height: calc((100svh - var(--nav-h)) * .72);
+  border-radius: var(--r-lg);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(36px, 4.2vw, 72px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  text-decoration: none;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.role-btn-an {
+  background: var(--accent);
+  color: var(--navy);
+}
+.role-btn-an:hover {
+  background: var(--accent-lt);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(232,160,32,.3);
+}
+.role-btn-ag {
+  background: var(--navy-light);
+  color: var(--white);
+  border: 1.5px solid rgba(255,255,255,.16);
+}
+.role-btn-ag:hover {
+  background: var(--navy-soft);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.3);
+}
+.role-btn:active { transform: scale(.99); }
+.role-btn:focus-visible {
+  outline: 3px solid var(--white);
+  outline-offset: 4px;
+}
+
+/* Hinweis bei falscher Rolle */
+#role-hint-modal {
+  position: fixed; inset: 0; z-index: 10001;
+  background: rgba(11,31,58,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+}
+#role-hint-modal.open { display: flex; }
+.role-hint-abmelden {
+  flex: 1; padding: 12px; border-radius: 10px; border: none; background: var(--accent);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; color: var(--navy); cursor: pointer; transition: background .2s;
+}
+.role-hint-abmelden:hover { background: var(--accent-lt); }
+#role-hint-modal button:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+
 /* ── HERO ── */
 .hero {
-  min-height: 100vh;
+  min-height: auto;
   background: var(--navy);
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: calc(var(--nav-h) + 40px) 60px 80px;
+  padding: 88px 60px 80px;
 }
 .hero-grid {
   position: absolute; inset: 0;
@@ -423,8 +487,24 @@
 
 /* ── 900px: Vollständiges Mobile-Layout ── */
 @media (max-width: 900px) {
+  /* Rollen-Auswahl: übereinander, zusammen genau ein sichtbarer Bildschirm */
+  .role-split {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    padding: calc(var(--nav-h) + 12px) 12px 12px;
+    box-sizing: border-box;
+    height: 100vh;
+    height: 100svh;
+  }
+  .role-btn {
+    min-height: 0;
+    height: auto;
+    font-size: clamp(34px, 9.5vw, 56px);
+  }
+
   /* Hero */
-  .hero { padding: calc(var(--nav-h) + 32px) 24px 40px; }
+  .hero { padding: 56px 24px 40px; }
   .hero-badge { margin-bottom: 20px; font-size: 12px; }
   .hero h1 {
     font-size: clamp(38px, 10vw, 58px);
@@ -526,6 +606,23 @@
   <div id="nav-mobile-auth"><a href="login.html" style="color:var(--accent);font-weight:600">Anmelden →</a></div>
 </div>
 
+<!-- ROLLEN-AUSWAHL -->
+<section class="role-split">
+  <a href="jobs.html" class="role-btn role-btn-an" id="role-btn-an">Arbeitnehmer</a>
+  <a href="meine-inserate.html" class="role-btn role-btn-ag" id="role-btn-ag">Arbeitgeber</a>
+</section>
+
+<div id="role-hint-modal" role="dialog" aria-modal="true" aria-labelledby="role-hint-title">
+  <div class="odoj-logout-box">
+    <h3 id="role-hint-title"></h3>
+    <p id="role-hint-text"></p>
+    <div class="odoj-logout-btns">
+      <button type="button" class="odoj-logout-cancel" id="role-hint-close">Schließen</button>
+      <button type="button" class="role-hint-abmelden" id="role-hint-logout">Abmelden</button>
+    </div>
+  </div>
+</div>
+
 <!-- HERO -->
 <section class="hero">
   <div class="hero-grid"></div>
@@ -537,13 +634,6 @@
       <div class="hero-badge">Vorarlberg</div>
       <h1>Dein Tag.<br><em>Dein Job.</em><br>Dein Geld.</h1>
       <p class="hero-sub">ODOJ vermittelt flexible Tagesjobs in Gastronomie, Hotellerie, Events und mehr – schnell, unkompliziert und fair bezahlt.</p>
-      <div class="hero-btns">
-        <a href="jobs.html" class="btn btn-accent">
-          Jobs ansehen
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-        <a href="arbeitgeber.html" class="btn btn-outline">Ich bin Arbeitgeber</a>
-      </div>
     </div>
 
     <!-- RECHTE SEITE: gestapelte Job-Card-Vorschau -->
@@ -773,6 +863,58 @@ const obs = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+// Rollen-Auswahl ganz oben: Rolle kommt aus der bestehenden Anmeldung
+// (lokal gespeicherte Sitzung + die von odojInitNav ohnehin geladene Rolle),
+// dafür entsteht keine zusätzliche Datenbank-Abfrage.
+(function () {
+  const modal = document.getElementById('role-hint-modal');
+
+  function openHint(angemeldetAls, gewuenscht) {
+    document.getElementById('role-hint-title').textContent =
+      'Du bist als ' + angemeldetAls + ' angemeldet.';
+    document.getElementById('role-hint-text').textContent =
+      'Um diesen Bereich als ' + gewuenscht + ' zu nutzen, melde dich bitte ab und mit einem ' +
+      gewuenscht + '-Konto an.';
+    modal.classList.add('open');
+    document.getElementById('role-hint-close').focus();
+  }
+  function closeHint() { modal.classList.remove('open'); }
+
+  document.getElementById('role-hint-close').addEventListener('click', closeHint);
+  document.getElementById('role-hint-logout').addEventListener('click', () => { closeHint(); odojLogout(); });
+  modal.addEventListener('click', e => { if (e.target === modal) closeHint(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHint(); });
+
+  async function aktuelleRolle() {
+    const session = await odojGetSession();
+    if (!session) return { session: null, rolle: null };
+    const rolle = localStorage.getItem('odoj_rolle') || session.user.user_metadata?.rolle || null;
+    return { session, rolle };
+  }
+
+  // Ctrl-/Cmd-Klick bzw. mittlere Maustaste (neuer Tab) dem Browser überlassen.
+  function istNormalerKlick(e) {
+    return e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey;
+  }
+
+  document.getElementById('role-btn-an').addEventListener('click', async (e) => {
+    if (!istNormalerKlick(e)) return;
+    e.preventDefault();
+    const { rolle } = await aktuelleRolle();
+    if (rolle === 'arbeitgeber') openHint('Arbeitgeber', 'Arbeitnehmer');
+    else window.location.href = 'jobs.html';
+  });
+
+  document.getElementById('role-btn-ag').addEventListener('click', async (e) => {
+    if (!istNormalerKlick(e)) return;
+    e.preventDefault();
+    const { session, rolle } = await aktuelleRolle();
+    if (!session) window.location.href = 'login.html?rolle=arbeitgeber&redirect=meine-inserate.html';
+    else if (rolle === 'jobber') openHint('Arbeitnehmer', 'Arbeitgeber');
+    else window.location.href = 'meine-inserate.html';
+  });
+})();
 
 // Vorschau-Modus: solange Jobs noch nicht freigegeben sind, Registrierungs-
 // Aufruf zeigen und die dekorativen Beispiel-Job-Karten im Hero ausblenden.
