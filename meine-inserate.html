@@ -838,6 +838,11 @@
                 <option value="sonstige">Sonstige</option>
               </select>
             </div>
+            <div class="if-field" id="ins-satz-wrap">
+              <label for="ins-gehalt">Stundensatz in € *</label>
+              <input type="text" inputmode="decimal" id="ins-gehalt" placeholder="z.B. 15" autocomplete="off" required oninput="satzGeaendert()">
+              <div class="if-hint" id="ins-lohn-hinweis">Der Lohn pro Tag wird automatisch berechnet (Stundensatz × Stunden).</div>
+            </div>
             <div class="if-field" id="ins-datum-mehrere-wrap">
               <label>Termine *</label>
               <div style="display:flex;gap:10px">
@@ -847,11 +852,6 @@
               <div id="ins-termin-chips" class="if-chip-list"></div>
               <div id="ins-termin-fehler" role="alert" style="display:none;margin-top:10px;padding:12px 14px;border-radius:var(--r-sm);background:#FDECEC;border:1.5px solid #F1B5B5;color:#A12A2A;font-size:14px;line-height:1.5"></div>
               <div class="if-hint">Titel, Ort und Beschreibung gelten für jeden Termin gleichermaßen. Den Stundensatz kannst du ab 2 Terminen pro Termin festlegen.</div>
-            </div>
-            <div class="if-field" id="ins-satz-wrap">
-              <label for="ins-gehalt">Stundensatz in € *</label>
-              <input type="text" inputmode="decimal" id="ins-gehalt" placeholder="z.B. 15" autocomplete="off" required oninput="satzGeaendert()">
-              <div class="if-hint" id="ins-lohn-hinweis">Der Lohn pro Tag wird automatisch berechnet (Stundensatz × Stunden).</div>
             </div>
             <div class="if-field" id="ins-mindest-termine-wrap" style="display:none">
               <label>Mindestanzahl an Terminen für die Bewerbung <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></label>
@@ -2230,7 +2230,7 @@ function updateLohnHinweis() {
   if (Number.isNaN(satz)) {
     text = 'Bitte nur Zahlen eingeben, z.B. 15 oder 15,50 (höchstens 2 Nachkommastellen).';
   } else if (_terminChips.length > 1) {
-    text = 'Standard-Stundensatz für alle Termine – oben bei den Terminen kannst du ihn pro Termin ändern.';
+    text = 'Standard-Stundensatz für alle Termine – unten bei den Terminen kannst du ihn pro Termin ändern.';
   } else {
     const [von, bis] = terminZeiten(null);
     const lt = lohnText(satz, von, bis);
@@ -2406,7 +2406,7 @@ function renderTerminChips() {
     wrap.innerHTML = _terminChips.map(c => `<span class="if-chip">${label(c)}${removeBtn(c)}</span>`).join('');
   } else {
     // Mehrere Termine: pro Termin eigener Stundensatz (+ Uhrzeit, falls individuell)
-    wrap.innerHTML = `<button type="button" class="if-satz-alle-btn" onclick="satzFuerAlleUebernehmen()">Stundensatz von unten für alle Termine übernehmen</button>` +
+    wrap.innerHTML = `<button type="button" class="if-satz-alle-btn" onclick="satzFuerAlleUebernehmen()">Stundensatz von oben für alle Termine übernehmen</button>` +
       _terminChips.map(c => `<div class="if-termin-row">
         <span class="if-termin-row-datum">${label(c)}</span>
         ${_zeitFuerAlle ? '' : `<input type="time" value="${c.von || ''}" onchange="updateTerminZeit('${c.datum}','von',this.value)" required aria-label="Beginn ${label(c)}">
