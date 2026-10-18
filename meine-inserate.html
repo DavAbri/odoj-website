@@ -838,11 +838,11 @@
             <div class="if-row-3">
               <div class="if-field">
                 <label>Uhrzeit von *</label>
-                <input type="time" id="ins-von" required onchange="calcStunden()">
+                <input type="time" id="ins-von" value="14:00" required onchange="calcStunden()">
               </div>
               <div class="if-field">
                 <label>Uhrzeit bis *</label>
-                <input type="time" id="ins-bis" required onchange="calcStunden()">
+                <input type="time" id="ins-bis" value="20:00" required onchange="calcStunden()">
               </div>
               <div class="if-field">
                 <label>Stundenanzahl</label>
@@ -1168,18 +1168,33 @@ async function submitAgBewertung() {
 // ── ABGELAUFENE INSERATE PRÜFEN ──
 async function pruefeAbgelaufeneInserate() {
   if (!_agSession) return;
-  const gestern = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  // "Gestern" nach Wiener Zeit (nicht UTC), sonst stimmt der Tag kurz nach Mitternacht nicht.
+  const heuteWien = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' });
+  const gestern = new Date(Date.parse(heuteWien + 'T00:00:00Z') - 86400000).toISOString().split('T')[0];
 
-  const { data: abgelaufene } = await odojSb
-    .from('jobs')
-    .select('id, titel, datum')
-    .eq('arbeitgeber_id', _agSession.user.id)
-    .eq('datum', gestern);
+  // Einzeltag-Inserate: Datum war gestern. Mehrtages-Inserate: erst wenn der
+  // LETZTE Termin gestern war (jobs.datum ist dort nur der erste Termin).
+  const [{ data: jobsGestern }, { data: termineAb }] = await Promise.all([
+    odojSb.from('jobs').select('id, titel, datum')
+      .eq('arbeitgeber_id', _agSession.user.id).eq('datum', gestern),
+    odojSb.from('job_termine').select('job_id, datum, jobs!inner(titel, arbeitgeber_id)')
+      .eq('jobs.arbeitgeber_id', _agSession.user.id).gte('datum', gestern),
+  ]);
+  const letzterTermin = {};
+  const titelVon = {};
+  (termineAb || []).forEach(t => {
+    if (!letzterTermin[t.job_id] || t.datum > letzterTermin[t.job_id]) letzterTermin[t.job_id] = t.datum;
+    titelVon[t.job_id] = t.jobs?.titel || '';
+  });
+  const abgelaufene = (jobsGestern || []).filter(j => !letzterTermin[j.id]);
+  Object.entries(letzterTermin).forEach(([id, datum]) => {
+    if (datum === gestern) abgelaufene.push({ id, titel: titelVon[id], datum });
+  });
 
   // Bereits weggeklickte Hinweise (pro Inserat, nur in diesem Browser) nicht erneut zeigen
   let weg = [];
   try { weg = JSON.parse(localStorage.getItem('odoj_ablauf_weg') || '[]'); } catch (_) {}
-  const offen = (abgelaufene || []).filter(j => !weg.includes(j.id));
+  const offen = abgelaufene.filter(j => !weg.includes(j.id));
   if (!offen.length) return;
 
   const grid = document.getElementById('inserate-grid');
@@ -2162,6 +2177,9 @@ function calcStunden() {
   updatePauseHinweis();
 }
 
+// Beim ersten Laden: Stunden zur vorbelegten Uhrzeit 14:00–20:00 berechnen
+calcStunden();
+
 // ── HINWEIS AUF GESETZLICHE PAUSENPFLICHT ──
 function updatePauseHinweis() {
   const stunden = parseFloat(document.getElementById('ins-stunden').value) || 0;
@@ -2277,6 +2295,8 @@ function _resetTerminUI() {
   // dies anschließend mit dem gespeicherten Wert, falls ein bestehender Job
   // bearbeitet wird (siehe dort).
   document.getElementById('ins-mindest-termine').value = '1';
+  // Stundenanzahl zur Standard-Uhrzeit (14:00–20:00) passend vorbelegen
+  calcStunden();
   renderTerminChips();
   updateTerminExtrasVisibility();
   _insClearAllInvalid();
