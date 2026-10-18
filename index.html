@@ -67,28 +67,30 @@
   transition: background .2s, transform .15s, box-shadow .2s;
   -webkit-tap-highlight-color: transparent;
 }
+/* Rahmen statt voller Farbfläche - wirkt ruhiger (Desktop + Handy) */
 .role-btn-an {
+  background: rgba(232,160,32,.10);
+  color: var(--accent);
+  border: 2px solid var(--accent);
+}
+.role-btn-an:hover, .role-btn-an:active {
   background: var(--accent);
   color: var(--navy);
-}
-.role-btn-an:hover {
-  background: var(--accent-lt);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(232,160,32,.3);
+  box-shadow: 0 16px 40px rgba(232,160,32,.25);
 }
 .role-btn-ag {
-  background: var(--navy-light);
+  background: rgba(255,255,255,.04);
   color: var(--white);
-  border: 1.5px solid rgba(255,255,255,.16);
+  border: 2px solid rgba(255,255,255,.35);
 }
-.role-btn-ag:hover {
-  background: var(--navy-soft);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(0,0,0,.3);
+.role-btn-ag:hover, .role-btn-ag:active {
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.7);
 }
+.role-btn:hover { transform: translateY(-3px); }
 .role-btn:active { transform: scale(.99); }
 
-/* Desktop: kleiner, mit Rahmen statt voller Farbfläche - wirkt ruhiger */
+/* Desktop: kleiner */
 @media (min-width: 901px) {
   .role-split {
     padding: calc(var(--nav-h) + 40px) max(60px, calc((100% - 1000px) / 2)) 24px;
@@ -99,25 +101,6 @@
     height: calc((100vh - var(--nav-h)) * .42);
     height: calc((100svh - var(--nav-h)) * .42);
     font-size: clamp(30px, 3vw, 48px);
-    border-radius: var(--r-lg);
-  }
-  .role-btn-an {
-    background: rgba(232,160,32,.10);
-    color: var(--accent);
-    border: 2px solid var(--accent);
-  }
-  .role-btn-an:hover {
-    background: var(--accent);
-    color: var(--navy);
-  }
-  .role-btn-ag {
-    background: rgba(255,255,255,.04);
-    color: var(--white);
-    border: 2px solid rgba(255,255,255,.35);
-  }
-  .role-btn-ag:hover {
-    background: rgba(255,255,255,.10);
-    border-color: rgba(255,255,255,.7);
   }
 }
 .role-btn:focus-visible {
