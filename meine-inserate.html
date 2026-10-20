@@ -164,6 +164,17 @@
   transition: all .2s;
 }
 .ins-section-toggle:hover { border-color: var(--navy); color: var(--navy); }
+/* "Vergangene Inserate": ganze Zeile ist ein Knopf, Pfeil dreht sich beim Aufklappen */
+.ins-verg-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  background: none; border: none; padding: 0 4px; margin-left: -4px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: #888;
+  border-radius: var(--r-sm);
+}
+.ins-verg-btn:hover { color: var(--navy); }
+.ins-verg-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ins-verg-pfeil { transition: transform .2s; }
+.ins-verg-btn[aria-expanded="true"] .ins-verg-pfeil { transform: rotate(180deg); }
 .ins-sub-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -768,9 +779,8 @@
 
   <!-- Page Header -->
   <div class="mi-page-header">
-    <a href="arbeitgeber.html" class="mi-back-btn">← Arbeitgeber-Info</a>
     <div>
-      <h1 class="mi-page-title">Meine Inserate</h1>
+      <h1 class="mi-page-title">Überblick</h1>
       <p class="mi-page-sub" id="mi-firmenname"></p>
     </div>
   </div>
@@ -778,16 +788,22 @@
   <div class="dash-area">
     <!-- Tab-Leiste -->
     <div class="dash-tabs-bar">
-      <button class="dash-tab active" data-tab="inserate" onclick="showTab('inserate')">Meine Inserate</button>
-      <button class="dash-tab" onclick="location.href='ueberblick-inserate.html'">Überblick Inserate</button>
+      <button class="dash-tab active" data-tab="inserate" onclick="showTab('inserate')">Überblick</button>
+      <button class="dash-tab" onclick="location.href='ueberblick-inserate.html'">Details</button>
     </div>
 
     <!-- Panel: Meine Inserate -->
     <div id="panel-inserate" class="dash-panel active">
       <div class="inserate-header">
-        <h2>Meine Inserate</h2>
+        <h2>Überblick</h2>
         <button class="dash-tab" id="btn-neuer-job" style="background:var(--navy);border-color:var(--navy);color:var(--white)" onclick="showTab('inserieren')">+ Neuer Job</button>
       </div>
+      <!-- LAUNCH-HINWEIS (To-do 18.10.) - nach dem Launch einfach diesen ganzen Block löschen -->
+      <div role="note" style="display:flex;align-items:flex-start;gap:8px;background:#EAF3FC;border:1px solid #CFE2F5;color:#1E4E7A;border-radius:var(--r-sm);padding:10px 14px;margin:0 0 18px;font-size:13px;line-height:1.5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Ihre Inserate sind gespeichert, aber noch nicht für Jobber sichtbar. Bis zum Launch in KW 47 sind alle Jobs gesperrt.</span>
+      </div>
+      <!-- /LAUNCH-HINWEIS -->
       <div id="ins-vorschau-banner-list"></div>
       <div class="inserate-grid" id="inserate-grid">
         <div class="dash-loading">Lade Inserate…</div>
@@ -1079,8 +1095,8 @@ async function initVorschauModusUi() {
   const bannerHtml = `<div class="ins-vorschau-banner">⏳ Ihre Inserate sind gespeichert, aber noch nicht für Jobber sichtbar. Bis zum Launch in KW ${_odojLaunchKw} sind alle Jobs gesperrt.</div>`;
   const formBanner = document.getElementById('ins-vorschau-banner-form');
   if (formBanner) formBanner.outerHTML = bannerHtml.replace('class="ins-vorschau-banner"', 'class="ins-vorschau-banner" id="ins-vorschau-banner-form"');
-  const listBanner = document.getElementById('ins-vorschau-banner-list');
-  if (listBanner) listBanner.outerHTML = bannerHtml.replace('class="ins-vorschau-banner"', 'class="ins-vorschau-banner" id="ins-vorschau-banner-list"');
+  // In der Liste steht bis zum Launch der feste LAUNCH-HINWEIS (siehe HTML) -
+  // der automatische Hinweis hier würde ihn nur doppeln.
 }
 let _editJobId    = null; // null = neues Inserat, sonst Job-ID die bearbeitet wird
 let _pendingEditData  = null; // zwischengespeicherte Formulardaten für Bearbeiten-Bestätigung
@@ -1403,9 +1419,11 @@ async function loadInserate() {
   if (vergangene.length > 0) {
     html += `<div class="ins-section ins-section-vergangen">
       <hr style="border:none;border-top:1.5px solid var(--gray-lt);margin:0 0 24px">
-      <div class="ins-section-hdr" style="cursor:pointer" onclick="toggleVergangene(document.getElementById('ins-verg-toggle'))">
-        <span class="ins-section-label" style="color:#888">Vergangene Inserate (${vergangene.length})</span>
-        <button class="ins-section-toggle" id="ins-verg-toggle" onclick="event.stopPropagation();toggleVergangene(this)">Anzeigen ▾</button>
+      <div class="ins-section-hdr">
+        <button type="button" class="ins-verg-btn" id="ins-verg-toggle" aria-expanded="false" aria-controls="ins-verg-body" onclick="toggleVergangene(this)">
+          Vergangene Inserate (${vergangene.length})
+          <svg class="ins-verg-pfeil" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
       </div>
       <div id="ins-verg-body" style="display:none;overflow:hidden;transition:opacity .25s">
         ${renderSubGrid(vergangene)}
@@ -1421,7 +1439,7 @@ function toggleVergangene(btn) {
   if (!body) return;
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
-  btn.textContent = open ? 'Anzeigen ▾' : 'Ausblenden ▴';
+  btn.setAttribute('aria-expanded', String(!open));
 }
 
 function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine, acceptedByTermin, unseenCount) {
@@ -3072,7 +3090,7 @@ async function openStammkraefteModal(vorgeladeneList) {
           Sie haben noch keine Stammkräfte.<br>
           <span style="font-size:13px">Jobber mit 3 oder mehr Sternen Bewertung werden hier angezeigt.</span>
         </div>
-        <button onclick="closeStammkraefteModal()" style="width:100%;padding:13px;border-radius:10px;background:var(--navy);color:#fff;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:4px">Weiter zu Meine Inserate</button>`;
+        <button onclick="closeStammkraefteModal()" style="width:100%;padding:13px;border-radius:10px;background:var(--navy);color:#fff;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:4px">Weiter zum Überblick</button>`;
       return;
     }
 
