@@ -524,6 +524,77 @@
 }
 
 /* ══════════════════════════════════════════
+   STARTSEITE NEU (To-do 18.10.): Neueste Inserate,
+   "Tagesjobs in Vorarlberg. Denn ODOJ.", "Wie funktioniert ODOJ?"
+══════════════════════════════════════════ */
+/* Neueste Inserate (Karten wie auf der Jobs-Seite) */
+.neueste { background: var(--off); padding: 64px 60px; }
+.neueste-inner { max-width: 1180px; margin: 0 auto; }
+.neueste h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(26px, 3vw, 36px); font-weight: 800; color: var(--navy); margin: 0 0 24px; letter-spacing: -.5px; }
+.neueste-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+.nj-card {
+  background: var(--white); border: 1.5px solid var(--gray-lt); border-radius: var(--r-md);
+  padding: 24px; display: flex; flex-direction: column; text-decoration: none; color: inherit;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.nj-card:hover { box-shadow: var(--sh-md); transform: translateY(-3px); }
+.nj-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.nj-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
+.nj-top .tag { min-width: 0; }
+.nj-mehr { display: inline-block; flex-shrink: 0; margin-left: auto; text-align: right; line-height: 1.35; border-radius: 10px; }
+.nj-card h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); margin: 0 0 4px; overflow-wrap: anywhere; }
+.nj-firma { font-size: 13px; color: var(--text-lt); margin-bottom: 14px; font-weight: 300; }
+.nj-metas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-bottom: 16px; }
+.nj-meta { display: flex; align-items: flex-start; gap: 5px; font-size: 13px; color: var(--text-mid); font-weight: 300; }
+.nj-meta svg { opacity: .5; flex-shrink: 0; margin-top: 2px; }
+.nj-meta-sub { display: block; }
+.nj-footer { padding-top: 16px; border-top: 1px solid var(--gray-lt); margin-top: auto; }
+.nj-pay { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy); }
+.nj-pay span { font-size: 12px; font-weight: 300; color: var(--text-lt); }
+.nj-details { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--text-lt); }
+.neueste-alle { display: inline-flex; align-items: center; min-height: 44px; margin-top: 18px; font-weight: 700; font-size: 15px; color: var(--navy); text-decoration: none; }
+.neueste-alle:hover { color: var(--accent); }
+.neueste-alle:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* "Tagesjobs in Vorarlberg. Denn ODOJ." */
+.denn { background: var(--off); padding: 8px 24px 64px; }
+.denn-box { max-width: 780px; margin: 0 auto; background: var(--navy); border-radius: var(--r-lg); padding: 32px 36px 12px; color: var(--white); }
+.denn-box h2 { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(22px, 2.6vw, 28px); font-weight: 800; margin: 0; color: var(--white); }
+.denn-box h2 span { display: block; color: var(--accent); font-size: .78em; margin-top: 4px; }
+.denn-liste { list-style: none; margin: 24px 0 0; padding: 0; }
+.denn-liste li { border-top: 1px solid rgba(255,255,255,.14); padding: 22px 0; }
+.denn-liste svg { color: var(--accent); display: block; margin-bottom: 10px; }
+.denn-liste h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: var(--white); margin: 0 0 6px; }
+.denn-liste p { font-size: 15px; color: rgba(255,255,255,.72); line-height: 1.6; margin: 0; }
+
+/* "Wie funktioniert ODOJ?" */
+.wie { background: var(--navy); padding: 72px 60px; text-align: center; }
+.wie-inner { max-width: 1000px; margin: 0 auto; }
+.wie-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.wie h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.4vw, 40px); font-weight: 800; color: var(--white); margin: 0 0 12px; letter-spacing: -.5px; }
+.wie-sub { font-size: 16px; color: rgba(255,255,255,.72); margin: 0 auto 36px; max-width: 640px; line-height: 1.6; }
+.wie-karten { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; text-align: left; }
+.wie-karte { background: var(--navy-mid); border: 1px solid rgba(255,255,255,.08); border-radius: var(--r-md); padding: 26px 26px 22px; display: flex; flex-direction: column; }
+.wie-karte svg { color: var(--accent); margin-bottom: 14px; }
+.wie-karte h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: var(--white); margin: 0 0 10px; }
+.wie-karte p { font-size: 14px; color: rgba(255,255,255,.75); line-height: 1.6; margin: 0 0 18px; }
+.wie-link { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--accent); font-weight: 700; font-size: 14px; text-decoration: none; }
+.wie-link:hover { color: var(--accent-lt); }
+.wie-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+@media (max-width: 900px) {
+  .neueste { padding: 48px 24px; }
+  .wie { padding: 56px 24px; }
+  .wie-karten { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .neueste { padding: 40px 16px; }
+  .denn { padding: 8px 16px 48px; }
+  .denn-box { padding: 26px 20px 6px; }
+  .wie { padding: 48px 16px; }
+}
+
+/* ══════════════════════════════════════════
    MOBILE RESPONSIVE – index.html
 ══════════════════════════════════════════ */
 
@@ -707,6 +778,40 @@
   </div>
 </div>
 
+<!-- NEUESTE INSERATE (nur sichtbar, wenn Inserate für Jobber sichtbar sind) -->
+<section class="neueste" id="neueste-section" hidden aria-labelledby="neueste-titel">
+  <div class="neueste-inner">
+    <h2 id="neueste-titel">Neueste Inserate</h2>
+    <div class="neueste-grid" id="neueste-grid"></div>
+    <a href="jobs.html" class="neueste-alle">Alle Jobs ansehen →</a>
+  </div>
+</section>
+
+<!-- TAGESJOBS IN VORARLBERG. DENN ODOJ. -->
+<section class="denn" aria-labelledby="denn-titel">
+  <div class="denn-box">
+    <h2 id="denn-titel">Tagesjobs in Vorarlberg.<span>Denn ODOJ.</span></h2>
+    <ul class="denn-liste">
+      <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><h3>Regional verbunden.</h3><p>Wir bringen Menschen und Unternehmen in Vorarlberg zusammen.</p></li>
+      <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg><h3>Arbeiten, wie es zu dir passt.</h3><p>Einzelne Einsätze ermöglichen dir, Arbeit flexibel in deinen Alltag zu integrieren.</p></li>
+      <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Verstärkung finden, wenn du sie brauchst.</h3><p>Finde unkompliziert Unterstützung für einzelne Tage und arbeite flexibel mit deinem Team.</p></li>
+    </ul>
+  </div>
+</section>
+
+<!-- WIE FUNKTIONIERT ODOJ? (ersetzt "In 3 Schritten zum Tagesjob") -->
+<section class="wie" aria-labelledby="wie-titel">
+  <div class="wie-inner">
+    <span class="wie-label">Dein Weg mit ODOJ</span>
+    <h2 id="wie-titel">Wie funktioniert ODOJ?</h2>
+    <p class="wie-sub">Ob du einen Job suchst oder Mitarbeiter brauchst – hier erfährst du alles Wichtige.</p>
+    <div class="wie-karten">
+      <div class="wie-karte"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><h3>Für Arbeitnehmer</h3><p>Erfahre, wie du Tagesjobs findest, dich bewirbst und mit ODOJ arbeitest.</p><a href="arbeitnehmer.html" class="wie-link">Mehr erfahren →</a></div>
+      <div class="wie-karte"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="12" height="18" rx="1"/><path d="M16 9h3a1 1 0 0 1 1 1v11h-4"/><line x1="8" y1="7" x2="8" y2="7.01"/><line x1="12" y1="7" x2="12" y2="7.01"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><path d="M9 21v-4h2v4"/></svg><h3>Für Arbeitgeber</h3><p>Erfahre, wie du Jobs inserierst und passende Unterstützung findest.</p><a href="arbeitgeber.html" class="wie-link">Mehr erfahren →</a></div>
+    </div>
+  </div>
+</section>
+
 <!-- TEASER CARDS -->
 <div class="teasers">
   <a href="jobs.html" class="teaser fade-in">
@@ -740,42 +845,6 @@
     <div class="jr-vorschau-btns">
       <a href="login.html?rolle=jobber" class="btn btn-accent">Ich suche Jobs</a>
       <a href="login.html?rolle=arbeitgeber" class="btn btn-outline">Ich biete Jobs</a>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="how">
-  <div class="how-header fade-in">
-    <div>
-      <span class="section-label">So einfach geht's</span>
-      <h2 class="section-title">In 3 Schritten<br>zum Tagesjob</h2>
-      <p class="section-sub"></p>
-    </div>
-    <a href="jobs.html" class="btn btn-outline-dark">Alle Jobs ansehen</a>
-  </div>
-
-  <div class="steps">
-    <div class="step fade-in">
-      <span class="step-num">01</span>
-      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
-      <h3>Profil erstellen</h3>
-      <p>In wenigen Minuten Profil anlegen und direkt starten.</p>
-      <div class="step-line"></div>
-    </div>
-    <div class="step fade-in">
-      <span class="step-num">02</span>
-      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-      <h3>Passender Job auswählen</h3>
-      <p>Wähle Branche und Datum, dann bewirb dich mit einem Klick.</p>
-      <div class="step-line"></div>
-    </div>
-    <div class="step fade-in">
-      <span class="step-num">03</span>
-      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
-      <h3>Loslegen und Geld verdienen</h3>
-      <p>Einsatz annehmen, vor Ort arbeiten - dein Geld zeitnah erhalten.</p>
-      <div class="step-line"></div>
     </div>
   </div>
 </section>
@@ -927,6 +996,61 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 
 // Vorschau-Modus: solange Jobs noch nicht freigegeben sind, Registrierungs-
 // Aufruf zeigen und die dekorativen Beispiel-Job-Karten im Hero ausblenden.
+// ── NEUESTE INSERATE ──
+// EINE Abfrage (max. 4 Inserate, nur beim Laden). Solange Inserate für Jobber
+// nicht sichtbar sind (z.B. bis zum Launch) oder nichts kommt, bleibt der
+// ganze Bereich ausgeblendet. Die Sicherheitsregeln der Datenbank gelten.
+const NJ_BRANCHEN = {
+  gastro: { label: 'Gastronomie', cls: 'tag-gastro' }, events: { label: 'Veranstaltungen & Events', cls: 'tag-events' },
+  hotel: { label: 'Hotellerie', cls: 'tag-hotel' }, einzelhandel: { label: 'Einzelhandel', cls: 'tag-einzelhandel' },
+  sonstige: { label: 'Sonstige', cls: 'tag-sonstige' },
+};
+function njEsc(t) { return String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+async function ladeNeuesteInserate() {
+  try {
+    const settings = await odojGetAppSettings();
+    if (!settings.jobs_sichtbar) return;
+    const { data, error } = await odojSb.from('jobs')
+      .select('id, titel, firmenname, branche, datum, uhrzeit_von, uhrzeit_bis, stundenanzahl, tagesgehalt, stundensatz, ort, mindestalter, job_termine(id, datum, uhrzeit_von, uhrzeit_bis, stundensatz)')
+      .eq('status', 'aktiv')
+      .order('erstellt_am', { ascending: false })
+      .limit(4);
+    if (error || !data || !data.length) return;
+    const jetzt = new Date();
+    const begonnen = (datum, von) => new Date(`${datum}T${(von || '00:00').slice(0, 5)}:00`) <= jetzt;
+    const karten = data.map(j => {
+      const kommende = (j.job_termine || []).filter(t => !begonnen(t.datum, t.uhrzeit_von || j.uhrzeit_von)).sort((a, b) => a.datum.localeCompare(b.datum));
+      if ((j.job_termine || []).length) return kommende.length ? { job: j, termin: kommende[0], mehr: kommende.length > 1 } : null;
+      return j.datum && !begonnen(j.datum, j.uhrzeit_von) ? { job: j, termin: null, mehr: false } : null;
+    }).filter(Boolean);
+    if (!karten.length) return;
+    document.getElementById('neueste-grid').innerHTML = karten.map(({ job, termin, mehr }) => {
+      const b = NJ_BRANCHEN[job.branche] || { label: job.branche || '', cls: '' };
+      const datum = termin?.datum || job.datum;
+      const von = (termin?.uhrzeit_von || job.uhrzeit_von || '').slice(0, 5);
+      const bis = (termin?.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5);
+      const lohn = odojLohn(job, termin);
+      const std = lohn.satz ? lohn.stunden : job.stundenanzahl;
+      const datumTxt = new Date(datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long' });
+      const href = 'job-detail.html?id=' + job.id + (termin ? '&termin=' + termin.id : '');
+      return `<a class="nj-card" href="${href}">
+        <div class="nj-top">${b.label ? `<span class="tag ${b.cls}">${njEsc(b.label)}</span>` : '<span></span>'}${mehr ? '<span class="tag tag-mehrtermine nj-mehr">Mehrere Termine<br>verfügbar</span>' : ''}</div>
+        <h3>${njEsc(job.titel)}</h3>
+        ${job.firmenname ? `<div class="nj-firma">${njEsc(job.firmenname)}</div>` : ''}
+        <div class="nj-metas">
+          <span class="nj-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${njEsc(datumTxt)}</span>
+          <span class="nj-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>${njEsc(von || '–')} – ${njEsc(bis || '–')}${std ? `<span class="nj-meta-sub">${String(std).replace('.', ',')} Std.</span>` : ''}</span></span>
+          <span class="nj-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Ab ${job.mindestalter || 18} Jahren</span>
+          <span class="nj-meta"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${njEsc(job.ort || '')}</span>
+        </div>
+        <div class="nj-footer"><div class="nj-pay">€ ${odojEuro(lohn.betrag, 0)} <span>/ Tag</span></div><span class="nj-details">Details ansehen →</span></div>
+      </a>`;
+    }).join('');
+    document.getElementById('neueste-section').hidden = false;
+  } catch (_) { /* Bereich bleibt einfach ausgeblendet */ }
+}
+ladeNeuesteInserate();
+
 odojGetAppSettings().then((settings) => {
   if (settings.jobs_sichtbar) return;
   const jrSection = document.getElementById('jr-vorschau-section');
