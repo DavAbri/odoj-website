@@ -1266,29 +1266,6 @@ function renderJobber(session, profile) {
       💡 <strong>Tipp:</strong> Je mehr du über dich angibst, desto besser stehen deine Chancen, bei einem Job angenommen zu werden – Arbeitgeber entscheiden sich lieber für ein vollständiges Profil.
     </div>
 
-    <!-- Lebenslauf / Dokument -->
-    <div class="profil-card">
-      <h2 class="profil-section-title">Lebenslauf <span style="font-weight:300;text-transform:none;letter-spacing:0;color:var(--text-lt)">(optional)</span></h2>
-      <div class="profil-field-group">
-        <div class="profil-field-group-head">
-          <div style="flex:1;min-width:0">
-            <div class="profil-field-group-title">Lebenslauf, Zeugnis o.ä.</div>
-            <div class="profil-field-value" id="doc-display">${lebenslaufPfad ? escH(lebenslaufDateiname || 'Dokument hochgeladen') : empty}</div>
-          </div>
-        </div>
-        <div id="doc-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${_renderDocActions(lebenslaufPfad, session.user.id)}</div>
-        <div id="doc-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px;margin-top:10px"></div>
-        <div id="doc-progress" style="display:none;font-size:13px;color:var(--text-lt);margin-top:10px">Wird hochgeladen…</div>
-        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" onchange="uploadDokument('${session.user.id}')">
-      </div>
-    </div>
-
-    <!-- Meine Bewertungen -->
-    <div class="profil-card" id="jb-bew-card">
-      <h2 class="bew-section-title">Meine Bewertungen</h2>
-      <div id="jb-bew-body"><div class="bew-empty">Lade Bewertungen…</div></div>
-    </div>
-
     <!-- Wohnadresse -->
     <div class="profil-card">
       <h2 class="profil-section-title">Wohnadresse</h2>
@@ -1383,6 +1360,29 @@ function renderJobber(session, profile) {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Lebenslauf / Dokument -->
+    <div class="profil-card">
+      <h2 class="profil-section-title">Lebenslauf <span style="font-weight:300;text-transform:none;letter-spacing:0;color:var(--text-lt)">(optional)</span></h2>
+      <div class="profil-field-group">
+        <div class="profil-field-group-head">
+          <div style="flex:1;min-width:0">
+            <div class="profil-field-group-title">Lebenslauf, Zeugnis o.ä.</div>
+            <div class="profil-field-value" id="doc-display">${lebenslaufPfad ? escH(lebenslaufDateiname || 'Dokument hochgeladen') : empty}</div>
+          </div>
+        </div>
+        <div id="doc-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${_renderDocActions(lebenslaufPfad, session.user.id)}</div>
+        <div id="doc-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px;margin-top:10px"></div>
+        <div id="doc-progress" style="display:none;font-size:13px;color:var(--text-lt);margin-top:10px">Wird hochgeladen…</div>
+        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" onchange="uploadDokument('${session.user.id}')">
+      </div>
+    </div>
+
+    <!-- Meine Bewertungen -->
+    <div class="profil-card" id="jb-bew-card">
+      <h2 class="bew-section-title">Meine Bewertungen</h2>
+      <div id="jb-bew-body"><div class="bew-empty">Lade Bewertungen…</div></div>
     </div>
 
     <!-- Meine Einkommensübersicht -->
