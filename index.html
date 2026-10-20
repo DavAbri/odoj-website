@@ -997,7 +997,8 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 // Vorschau-Modus: solange Jobs noch nicht freigegeben sind, Registrierungs-
 // Aufruf zeigen und die dekorativen Beispiel-Job-Karten im Hero ausblenden.
 // ── NEUESTE INSERATE ──
-// EINE Abfrage (max. 4 Inserate, nur beim Laden). Solange Inserate für Jobber
+// Gezeigt werden die 4 Inserate, deren NÄCHSTER Termin am nächsten liegt.
+// EINE Abfrage (begrenzt, nur beim Laden). Solange Inserate für Jobber
 // nicht sichtbar sind (z.B. bis zum Launch) oder nichts kommt, bleibt der
 // ganze Bereich ausgeblendet. Die Sicherheitsregeln der Datenbank gelten.
 const NJ_BRANCHEN = {
@@ -1010,11 +1011,16 @@ async function ladeNeuesteInserate() {
   try {
     const settings = await odojGetAppSettings();
     if (!settings.jobs_sichtbar) return;
+    // jobs.datum = erster Termin; Mehrtages-Inserate können einen vergangenen
+    // ersten Termin, aber noch kommende Termine haben -> 30 Tage Puffer.
+    const heuteWien = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' });
+    const abDatum = new Date(Date.parse(heuteWien + 'T00:00:00Z') - 30 * 86400000).toISOString().slice(0, 10);
     const { data, error } = await odojSb.from('jobs')
       .select('id, titel, firmenname, branche, datum, uhrzeit_von, uhrzeit_bis, stundenanzahl, tagesgehalt, stundensatz, ort, mindestalter, job_termine(id, datum, uhrzeit_von, uhrzeit_bis, stundensatz)')
       .eq('status', 'aktiv')
-      .order('erstellt_am', { ascending: false })
-      .limit(4);
+      .gte('datum', abDatum)
+      .order('datum', { ascending: true })
+      .limit(20);
     if (error || !data || !data.length) return;
     const jetzt = new Date();
     const begonnen = (datum, von) => new Date(`${datum}T${(von || '00:00').slice(0, 5)}:00`) <= jetzt;
@@ -1022,7 +1028,13 @@ async function ladeNeuesteInserate() {
       const kommende = (j.job_termine || []).filter(t => !begonnen(t.datum, t.uhrzeit_von || j.uhrzeit_von)).sort((a, b) => a.datum.localeCompare(b.datum));
       if ((j.job_termine || []).length) return kommende.length ? { job: j, termin: kommende[0], mehr: kommende.length > 1 } : null;
       return j.datum && !begonnen(j.datum, j.uhrzeit_von) ? { job: j, termin: null, mehr: false } : null;
-    }).filter(Boolean);
+    }).filter(Boolean)
+      // nach dem nächsten Termin sortieren (Datum + Beginn), die 4 nächsten zeigen
+      .sort((a, b) => {
+        const k = x => (x.termin?.datum || x.job.datum) + ' ' + (x.termin?.uhrzeit_von || x.job.uhrzeit_von || '00:00').slice(0, 5);
+        return k(a).localeCompare(k(b));
+      })
+      .slice(0, 4);
     if (!karten.length) return;
     document.getElementById('neueste-grid').innerHTML = karten.map(({ job, termin, mehr }) => {
       const b = NJ_BRANCHEN[job.branche] || { label: job.branche || '', cls: '' };
