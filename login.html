@@ -703,7 +703,8 @@ function redirectAfterAuth(rolle) {
   const params = new URLSearchParams(location.search);
   const redirect = params.get('redirect');
   if (redirect) { window.location.href = redirect; return; }
-  window.location.href = rolle === 'arbeitgeber' ? 'arbeitgeber.html' : 'jobs.html';
+  // Arbeitgeber landen nach Login/Registrierung direkt auf ihren Inseraten
+  window.location.href = rolle === 'arbeitgeber' ? 'meine-inserate.html' : 'jobs.html';
 }
 
 // Mindestschwierigkeit: 8+ Zeichen, Groß-/Kleinbuchstabe, Zahl, Sonderzeichen
@@ -1035,9 +1036,12 @@ async function doRegister(e) {
 // Direkter Registrierungs-Link mit Rollen-Vorauswahl (z.B. von der Startseite
 // im Vorschau-Modus: login.html?rolle=jobber bzw. ?rolle=arbeitgeber).
 (function() {
-  const rolleParam = new URLSearchParams(location.search).get('rolle');
+  const params = new URLSearchParams(location.search);
+  const rolleParam = params.get('rolle');
   if (rolleParam === 'jobber' || rolleParam === 'arbeitgeber') {
-    setMode('register');
+    // ?modus=login (Startseite): Anmelden-Formular zeigen, Rolle trotzdem
+    // vorauswählen - wer noch kein Konto hat, wechselt auf "Registrieren".
+    setMode(params.get('modus') === 'login' ? 'login' : 'register');
     setRole(rolleParam);
   }
 })();

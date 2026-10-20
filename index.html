@@ -909,8 +909,9 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
   document.getElementById('role-btn-an').addEventListener('click', async (e) => {
     if (!istNormalerKlick(e)) return;
     e.preventDefault();
-    const { rolle } = await aktuelleRolle();
-    if (rolle === 'arbeitgeber') openHint('Arbeitgeber', 'Arbeitnehmer');
+    const { session, rolle } = await aktuelleRolle();
+    if (!session) window.location.href = 'login.html?rolle=jobber&modus=login&redirect=jobs.html';
+    else if (rolle === 'arbeitgeber') openHint('Arbeitgeber', 'Arbeitnehmer');
     else window.location.href = 'jobs.html';
   });
 
@@ -918,7 +919,7 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
     if (!istNormalerKlick(e)) return;
     e.preventDefault();
     const { session, rolle } = await aktuelleRolle();
-    if (!session) window.location.href = 'login.html?rolle=arbeitgeber&redirect=meine-inserate.html';
+    if (!session) window.location.href = 'login.html?rolle=arbeitgeber&modus=login&redirect=meine-inserate.html';
     else if (rolle === 'jobber') openHint('Arbeitnehmer', 'Arbeitgeber');
     else window.location.href = 'meine-inserate.html';
   });
