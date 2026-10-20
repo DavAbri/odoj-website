@@ -87,6 +87,11 @@
   border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 700;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
+#ablauf { scroll-margin-top: calc(var(--nav-h) + 16px); }
+.acht-schritt-vermittler {
+  margin-top: 14px; background: #EAF3FC; border: 1px solid #CFE2F5; color: #1E4E7A;
+  border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6;
+}
 .info-card-note {
   margin-top: 12px; background: #FFF8E8;
   border: 1px solid rgba(232,160,32,.3); border-radius: 6px;
@@ -130,7 +135,7 @@
 <nav>
   <a href="index.html" class="nav-logo">O<span>D</span>O<span>J</span><em>One Day One Job</em></a>
   <ul class="nav-links">
-    <li><a href="jobs.html">Jobs finden</a></li>
+    <li><a href="jobs.html">Jobbörse</a></li>
     <li><a href="arbeitnehmer.html" class="active">Für Arbeitnehmer</a></li>
     <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
     <li><a href="ueber-uns.html">Über uns</a></li>
@@ -141,7 +146,7 @@
   </button>
 </nav>
 <div class="nav-mobile" id="navMobile">
-  <a href="jobs.html">Jobs finden</a>
+  <a href="jobs.html">Jobbörse</a>
   <a href="arbeitnehmer.html" class="active">Für Arbeitnehmer</a>
   <a href="arbeitgeber.html">Für Arbeitgeber</a>
   <a href="ueber-uns.html">Über uns</a>
@@ -175,7 +180,7 @@
 </section>
 
 <!-- IN 7 SCHRITTEN ZU DEINEM TAGESJOB -->
-<section class="acht-schritte">
+<section class="acht-schritte" id="ablauf">
   <div class="fade-in">
     <span class="section-label">So einfach geht's</span>
     <h2 class="section-title">In 7 Schritten zu<br>deinem Tagesjob</h2>
@@ -244,6 +249,7 @@
         <h4>Abschluss bestätigen &amp; Entgelt erhalten</h4>
         <p>Nach dem Einsatz bestätigen Arbeitgeber und Arbeitnehmer den Abschluss sowie die tatsächlich geleistete Arbeitszeit. Anschließend erfolgt die Abrechnung und Auszahlung des vereinbarten Entgelts durch den Arbeitgeber bzw. über den vorgesehenen Zahlungsprozess.</p>
         <div class="acht-schritt-done">Geschafft – dein Tagesjob ist abgeschlossen. ✓</div>
+        <div class="acht-schritt-vermittler" role="note">Hinweis: ODOJ ist Vermittler. Der Vertrag über die Arbeit kommt direkt zwischen dir und dem Arbeitgeber zustande, ODOJ ist nicht dein Arbeitgeber.</div>
       </div>
     </div>
   </div>

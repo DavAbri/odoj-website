@@ -224,7 +224,7 @@ function bewerbungZurueckgezogenBestaetigungTemplate(recipientName: string, jobT
     </p>
     <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
       <a href="${SITE_URL}/jobs.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
-        Weitere Jobs finden &rarr;
+        Zur Jobbörse &rarr;
       </a>
     </td></tr></table>
   </td></tr>`);
@@ -250,7 +250,7 @@ function jobGeloeschtTemplate(recipientName: string, jobTitel: string, datumStr:
     </div>
     <table cellpadding="0" cellspacing="0"><tr><td style="background:#0f1f3d;border-radius:8px">
       <a href="${SITE_URL}/jobs.html" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
-        Weitere Jobs finden &rarr;
+        Zur Jobbörse &rarr;
       </a>
     </td></tr></table>
   </td></tr>`);

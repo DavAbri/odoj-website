@@ -117,7 +117,19 @@
   align-self: center;
 }
 .job-details-link:hover { color: var(--navy); }
-.job-card-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.job-card-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: nowrap; gap: 8px; margin-bottom: 14px; }
+.job-card-top .tag { min-width: 0; }
+/* "Mehrere Termine / verfügbar": zweizeilig, rechtsbündig im rechten oberen Eck */
+.job-mehrtermine { display: inline-block; flex-shrink: 0; margin-left: auto; text-align: right; line-height: 1.35; border-radius: 10px; }
+/* Stundenanzahl in eigener Zeile unter der Uhrzeit */
+.job-meta-zeit { align-items: flex-start; }
+.job-meta-zeit svg { margin-top: 2px; }
+.job-meta-sub { display: block; }
+/* Hinweis "Fragen zum Ablauf?" (ersetzt "In 3 Schritten zum Tagesjob") */
+.ablauf-hinweis { background: var(--off); padding: 48px 24px 56px; text-align: center; }
+.ablauf-hinweis p { font-size: 15px; color: var(--text-mid); margin: 0 0 12px; }
+.ablauf-btn { min-height: 44px; border-radius: 100px; justify-content: center; }
+.ablauf-btn:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
 .job-card h3 {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 17px;
@@ -425,7 +437,7 @@
 <nav>
   <a href="index.html" class="nav-logo">O<span>D</span>O<span>J</span><em>One Day One Job</em></a>
   <ul class="nav-links">
-    <li><a href="jobs.html" class="active">Jobs finden</a></li>
+    <li><a href="jobs.html" class="active">Jobbörse</a></li>
     <li><a href="arbeitnehmer.html">Für Arbeitnehmer</a></li>
     <li><a href="arbeitgeber.html">Für Arbeitgeber</a></li>
     <li><a href="ueber-uns.html">Über uns</a></li>
@@ -436,7 +448,7 @@
   </button>
 </nav>
 <div class="nav-mobile" id="navMobile">
-  <a href="jobs.html" class="active">Jobs finden</a>
+  <a href="jobs.html" class="active">Jobbörse</a>
   <a href="arbeitnehmer.html">Für Arbeitnehmer</a>
   <a href="arbeitgeber.html">Für Arbeitgeber</a>
   <a href="ueber-uns.html">Über uns</a>
@@ -448,7 +460,7 @@
   <div class="page-hero-grid"></div>
   <div class="page-hero-glow"></div>
   <div class="page-hero-inner">
-    <span class="page-hero-label">Stellenbörse</span>
+    <span class="page-hero-label">Jobbörse</span>
     <h1>Aktuelle Jobs<br>in <em>Vorarlberg</em></h1>
     <p>Entdecke verfügbare Stellen und bewirb dich direkt online - schnell und unkompliziert.</p>
   </div>
@@ -512,45 +524,10 @@
   </div>
 </div>
 
-<!-- SO GEHT'S -->
-<section class="how-jobs" id="so-gehts">
-  <div class="how-jobs-header fade-in">
-    <div>
-      <span class="section-label">So einfach geht's</span>
-      <h2 class="section-title">In 3 Schritten<br>zum Tagesjob</h2>
-    </div>
-  </div>
-
-  <div class="steps">
-    <div class="step fade-in">
-      <span class="step-num">01</span>
-      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
-      <h3>Profil erstellen</h3>
-      <p>In wenigen Minuten Profil anlegen und direkt starten.</p>
-      <div class="step-line"></div>
-    </div>
-    <div class="step fade-in">
-      <span class="step-num">02</span>
-      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-      <h3>Passender Job auswählen</h3>
-      <p>Wähle Branche und Datum, dann bewirb dich mit einem Klick.</p>
-      <div class="step-line"></div>
-    </div>
-    <div class="step fade-in">
-      <span class="step-num">03</span>
-      <div class="step-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
-      <h3>Loslegen und Geld verdienen</h3>
-      <p>Einsatz annehmen, vor Ort arbeiten - dein Geld zeitnah erhalten.</p>
-      <div class="step-line"></div>
-    </div>
-  </div>
-
-  <div class="how-jobs-cta" id="cta-register">
-    <a href="login.html" class="btn btn-accent">
-      Jetzt kostenlos registrieren
-      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </a>
-  </div>
+<!-- FRAGEN ZUM ABLAUF -->
+<section class="ablauf-hinweis">
+  <p>Fragen zum Ablauf?</p>
+  <a href="arbeitnehmer.html#ablauf" class="btn btn-accent ablauf-btn">So läuft's ab</a>
 </section>
 
 <!-- FOOTER -->
@@ -717,7 +694,7 @@ function renderJobCard(job, locked) {
   const lockedAttr = locked ? ' data-locked="true"' : '';
   const terminAttr = job._terminId ? ` data-termin-id="${job._terminId}"` : '';
   const plaetze = job.plaetze === 1 ? '1 Platz frei' : (job.plaetze + ' Plätze frei');
-  const mehrtermineTag = job._isMultiTermin ? '<span class="tag tag-mehrtermine">📅 Mehrere Termine verfügbar</span>' : '';
+  const mehrtermineTag = job._isMultiTermin ? '<span class="tag tag-mehrtermine job-mehrtermine">Mehrere Termine<br>verfügbar</span>' : '';
 
   // Dezenter Hinweis statt Ausblenden: nur wenn eindeutig feststeht (Geburtsdatum
   // bekannt), dass der Jobber am Einsatzdatum dieser Karte zu jung ist.
@@ -739,9 +716,9 @@ function renderJobCard(job, locked) {
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           ${datum}
         </span>
-        <span class="job-meta">
+        <span class="job-meta job-meta-zeit">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          ${job.uhrzeit_von || '–'} – ${job.uhrzeit_bis || '–'}${stdAnzeige ? ` · ${String(stdAnzeige).replace('.', ',')} Std.` : ''}
+          <span>${job.uhrzeit_von || '–'} – ${job.uhrzeit_bis || '–'}${stdAnzeige ? `<span class="job-meta-sub">${String(stdAnzeige).replace('.', ',')} Std.</span>` : ''}</span>
         </span>
         <span class="job-meta">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
