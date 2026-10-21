@@ -59,10 +59,24 @@ export async function fetchRechnungData(admin: any, invoiceId: string): Promise<
     admin.from("invoice_items").select("beschreibung, einsatzdatum, betrag").eq("invoice_id", invoice.id).order("einsatzdatum"),
   ]);
 
-  const positionen: RechnungPosition[] = (items || []).map((it: any) => ({
-    beschreibung: it.beschreibung,
-    einsatzdatum: it.einsatzdatum,
-    betrag: Number(it.betrag),
+  // Eine Zeile pro Termin (Einsatzdatum): Anzahl Personen + Summe. Bei 4 oder
+  // mehr Personen an einem Termin gilt die Pauschale von 50 € (die Einzelzeilen
+  // in invoice_items teilen den Betrag nur auf, siehe rechnung_erstellen_fuer_job).
+  const gruppen = new Map<string, { titel: string; anzahl: number; summe: number; pauschale: boolean; datum: string | null }>();
+  for (const it of (items || []) as any[]) {
+    const key = it.einsatzdatum || "-";
+    const g = gruppen.get(key) || { titel: String(it.beschreibung || "").replace(/ \(Pauschale ab 4 Arbeitskräften\)$/, ""), anzahl: 0, summe: 0, pauschale: false, datum: it.einsatzdatum };
+    g.anzahl += 1;
+    g.summe = Math.round((g.summe + Number(it.betrag)) * 100) / 100;
+    g.pauschale = g.pauschale || /Pauschale/.test(String(it.beschreibung || ""));
+    gruppen.set(key, g);
+  }
+  const positionen: RechnungPosition[] = [...gruppen.values()].map((g) => ({
+    beschreibung: g.pauschale
+      ? `${g.titel} (${g.anzahl} Arbeitskräfte, Pauschale)`
+      : `${g.titel} (${g.anzahl} ${g.anzahl === 1 ? "Arbeitskraft" : "Arbeitskräfte"} à 15 €)`,
+    einsatzdatum: g.datum,
+    betrag: g.summe,
   }));
 
   const { data: agProfile } = await admin

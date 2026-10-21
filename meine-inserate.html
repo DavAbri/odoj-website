@@ -921,7 +921,7 @@
               <textarea id="ins-beschr" placeholder="Aufgaben, Anforderungen, besondere Hinweise…"></textarea>
             </div>
             <p style="font-size:12px;color:var(--text-lt);background:var(--off);border-radius:8px;padding:10px 14px;margin-top:4px;">
-              Das Inserieren ist kostenlos. Pro erfolgreich abgeschlossenem Einsatz wird eine Vermittlungsgebühr von <strong>€ 15,00</strong> fällig – erst nach Ihrer Bestätigung der Anwesenheit.
+              Das Inserieren ist kostenlos. Pro vermittelter Arbeitskraft wird eine Vermittlungsgebühr von <strong>€ 15,00</strong> fällig, ab 4 Arbeitskräften an einem Termin pauschal <strong>€ 50,00</strong> – erst nach Ihrer Bestätigung der Anwesenheit.
             </p>
             <div style="display:flex;gap:10px">
               <button type="submit" class="if-submit" id="ins-btn" style="flex:1">Job speichern</button>
@@ -1746,7 +1746,7 @@ function renderZahlungsBlock(b, profile, tagesgehalt, jobTitel, odojConfig, invo
         <div class="bew-zahlung-row"><span>Lohn an Jobber</span><strong>€ ${fmt(b._lohn ? b._lohn.betrag : tagesgehalt)}</strong></div>
         <div class="bew-zahlung-row"><span>IBAN Jobber</span><strong>${escJ(profile?.iban || 'noch nicht hinterlegt')}</strong></div>
         <div class="bew-zahlung-fee">
-          <div class="bew-zahlung-row"><span>Vermittlungsgebühr (separat)</span><strong>€ 15,00</strong></div>
+          <div class="bew-zahlung-row"><span>Vermittlungsgebühr (separat)</span><strong>laut ODOJ-Rechnung</strong></div>
           <div class="bew-zahlung-row"><span>IBAN ODOJ</span><strong>${escJ(odojConfig?.iban || '–')}</strong></div>
           <div class="bew-zahlung-row"><span>Empfänger</span><strong>${escJ(odojConfig?.kontoinhaber || 'ODOJ')}</strong></div>
           <div class="bew-zahlung-row"><span>Verwendungszweck</span><strong>${escJ(verwendungszweckGebuehr)}</strong></div>
