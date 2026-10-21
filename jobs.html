@@ -490,11 +490,6 @@
     <button class="fbtn" onclick="filterAlter(18, this)">Ich bin 18+</button>
     <button class="fbtn" onclick="filterAlter(21, this)">Ich bin 21+</button>
     <div class="filter-divider"></div>
-    <span class="filter-lbl">Sortieren:</span>
-    <select class="sort-select" id="sortSelect" onchange="handleSortChange(this.value)">
-      <option value="datum">Nächster Termin zuerst</option>
-      <option value="neu">Neueste Inserate zuerst</option>
-    </select>
     <span class="filter-count" id="jobCount">– Jobs gefunden</span>
   </div>
 </div>
@@ -598,25 +593,15 @@ function buildBranchenFilter(usedBranchen) {
 // ── FILTER STATE ──
 let _activeBranche = 'alle';
 let _activeAlter   = null;   // null = alle, 16 / 18 / 21
-let _currentSort   = 'datum'; // 'datum' = nächster Termin zuerst, 'neu' = neueste Inserate zuerst
 
 // ── SORTIER-STATE (für erneutes Rendern beim Wechsel der Sortierung) ──
 let _allJobsGlobal    = [];
 let _unlockedGlobal   = false;
 
-function _sortJobs(jobs, mode) {
-  const arr = [...jobs];
-  if (mode === 'neu') {
-    arr.sort((a, b) => new Date(b.erstellt_am || 0) - new Date(a.erstellt_am || 0));
-  } else {
-    arr.sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
-  }
-  return arr;
-}
-
-function handleSortChange(value) {
-  _currentSort = value;
-  renderJobs(_sortJobs(_allJobsGlobal, _currentSort), _unlockedGlobal);
+// Immer der nächste Termin zuerst (Datum + Beginn), weiter entfernte weiter unten.
+function _sortJobs(jobs) {
+  const key = j => (j.datum || '9999-12-31') + ' ' + (j.uhrzeit_von || '00:00').slice(0, 5);
+  return [...jobs].sort((a, b) => key(a).localeCompare(key(b)));
 }
 
 function toggleFilters() {
@@ -742,6 +727,7 @@ function renderJobCard(job, locked) {
 
 // ── JOBS RENDERN ──
 function renderJobs(jobs, unlocked) {
+  jobs = _sortJobs(jobs || []);
   window._odojJobsUnlocked = unlocked;
   _allJobsGlobal   = jobs;
   _unlockedGlobal  = unlocked;
