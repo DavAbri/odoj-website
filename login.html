@@ -990,8 +990,8 @@ async function doRegister(e) {
   let kernsatz = 'Der Start von ODOJ steht kurz bevor – wir benachrichtigen dich, sobald es losgeht.';
   if (!appSettings.jobs_sichtbar) {
     kernsatz = _currentRole === 'arbeitgeber'
-      ? `Du bist dabei! Du kannst jetzt schon Inserate erstellen – sie werden automatisch sichtbar, sobald die Plattform in ${ODOJ_LAUNCH_ZEITRAHMEN} startet.`
-      : `Du bist dabei! Die Jobs sind in ${ODOJ_LAUNCH_ZEITRAHMEN} sichtbar. Vervollständige jetzt dein Profil, damit du dich ab dem ersten Tag sofort bewerben kannst.`;
+      ? `Du bist dabei! Du kannst jetzt schon Inserate erstellen – sie werden automatisch sichtbar, sobald die Plattform startet.`
+      : `Du bist dabei! Die Jobs sind bald sichtbar. Vervollständige jetzt dein Profil, damit du dich ab dem ersten Tag sofort bewerben kannst.`;
   }
   document.getElementById('auth-success-msg').textContent = data.session
     ? `Deine Registrierung war erfolgreich. ${kernsatz}`

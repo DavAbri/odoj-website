@@ -552,6 +552,15 @@
 .nj-pay { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy); }
 .nj-pay span { font-size: 12px; font-weight: 300; color: var(--text-lt); }
 .nj-details { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--text-lt); }
+/* Vor dem Launch: Balken "Bald verfügbar" statt der Karten */
+.neueste-bald {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--navy); color: var(--white); border-radius: var(--r-md);
+  padding: 22px 26px;
+}
+.neueste-bald svg { color: var(--accent); flex-shrink: 0; }
+.neueste-bald strong { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; }
+.neueste-bald span { display: block; font-size: 14px; color: rgba(255,255,255,.72); margin-top: 2px; line-height: 1.5; }
 .neueste-alle { display: inline-flex; align-items: center; min-height: 44px; margin-top: 18px; font-weight: 700; font-size: 15px; color: var(--navy); text-decoration: none; }
 .neueste-alle:hover { color: var(--accent); }
 .neueste-alle:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
@@ -778,7 +787,7 @@
   </div>
 </div>
 
-<!-- NEUESTE INSERATE (nur sichtbar, wenn Inserate für Jobber sichtbar sind) -->
+<!-- NEUESTE INSERATE (vor dem Launch: Balken "Bald verfügbar"; danach Karten, ohne Treffer ausgeblendet) -->
 <section class="neueste" id="neueste-section" hidden aria-labelledby="neueste-titel">
   <div class="neueste-inner">
     <h2 id="neueste-titel">Neueste Inserate</h2>
@@ -1010,7 +1019,16 @@ function njEsc(t) { return String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&am
 async function ladeNeuesteInserate() {
   try {
     const settings = await odojGetAppSettings();
-    if (!settings.jobs_sichtbar) return;
+    if (!settings.jobs_sichtbar) {
+      // Bis die Inserate veröffentlicht sind: Balken "Bald verfügbar" (keine Abfrage)
+      document.getElementById('neueste-grid').outerHTML = `<div class="neueste-bald" role="status">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <div><strong>Bald verfügbar</strong><span>Hier erscheinen die nächsten Tagesjobs, sobald die Plattform startet.</span></div>
+      </div>`;
+      document.querySelector('.neueste-alle').style.display = 'none';
+      document.getElementById('neueste-section').hidden = false;
+      return;
+    }
     // jobs.datum = erster Termin; Mehrtages-Inserate können einen vergangenen
     // ersten Termin, aber noch kommende Termine haben -> 30 Tage Puffer.
     const heuteWien = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' });
