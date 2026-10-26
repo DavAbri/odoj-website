@@ -525,7 +525,7 @@
 
 /* ══════════════════════════════════════════
    STARTSEITE NEU (To-do 18.10.): Neueste Inserate,
-   "Tagesjobs in Vorarlberg. Denn ODOJ.", "Wie funktioniert ODOJ?"
+   "Tagesjobs in Vorarlberg. Dann ODOJ.", "Wie funktioniert ODOJ?"
 ══════════════════════════════════════════ */
 /* Neueste Inserate (Karten wie auf der Jobs-Seite) */
 .neueste { background: var(--off); padding: 64px 60px; }
@@ -552,20 +552,35 @@
 .nj-pay { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 700; color: var(--navy); }
 .nj-pay span { font-size: 12px; font-weight: 300; color: var(--text-lt); }
 .nj-details { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--text-lt); }
-/* Vor dem Launch: Balken "Bald verfügbar" statt der Karten */
-.neueste-bald {
-  display: flex; align-items: center; gap: 16px;
-  background: var(--navy); color: var(--white); border-radius: var(--r-md);
-  padding: 22px 26px;
+/* Vor dem Launch: Banner mit angedeuteten Job-Karten, darüber "Bald verfügbar" */
+.neueste-banner { position: relative; overflow: hidden; border-radius: var(--r-md); padding: 4px 0; }
+.neueste-banner-reihe { display: flex; gap: 18px; width: max-content; filter: blur(1px); opacity: .95; }
+.nb-karte {
+  width: 260px; flex-shrink: 0; background: var(--white); border: 1.5px solid var(--gray-lt);
+  border-radius: var(--r-md); padding: 22px; box-sizing: border-box;
 }
-.neueste-bald svg { color: var(--accent); flex-shrink: 0; }
-.neueste-bald strong { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; }
-.neueste-bald span { display: block; font-size: 14px; color: rgba(255,255,255,.72); margin-top: 2px; line-height: 1.5; }
+.nb-zeile { height: 10px; border-radius: 6px; background: var(--gray-lt); margin-bottom: 12px; }
+.nb-tag { width: 38%; height: 18px; border-radius: 100px; background: #FEF3E8; margin-bottom: 18px; }
+.nb-titel { width: 72%; height: 14px; background: #D6DEEA; }
+.nb-kurz { width: 45%; }
+.nb-preis { width: 30%; height: 16px; background: #D6DEEA; margin: 22px 0 0; }
+.neueste-bald {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: linear-gradient(90deg, rgba(244,247,251,.7), rgba(244,247,251,.1) 25%, rgba(244,247,251,.1) 75%, rgba(244,247,251,.7));
+}
+.neueste-bald-box {
+  display: flex; align-items: center; gap: 14px; max-width: 460px;
+  background: var(--navy); color: var(--white); border-radius: var(--r-md);
+  padding: 18px 22px; box-shadow: 0 14px 40px rgba(11,31,58,.25);
+}
+.neueste-bald-box svg { color: var(--accent); flex-shrink: 0; }
+.neueste-bald-box strong { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 800; }
+.neueste-bald-box span { display: block; font-size: 13.5px; color: rgba(255,255,255,.75); margin-top: 2px; line-height: 1.5; }
 .neueste-alle { display: inline-flex; align-items: center; min-height: 44px; margin-top: 18px; font-weight: 700; font-size: 15px; color: var(--navy); text-decoration: none; }
 .neueste-alle:hover { color: var(--accent); }
 .neueste-alle:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
-/* "Tagesjobs in Vorarlberg. Denn ODOJ." */
+/* "Tagesjobs in Vorarlberg. Dann ODOJ." */
 .denn { background: var(--off); padding: 8px 24px 64px; }
 .denn-box { max-width: 780px; margin: 0 auto; background: var(--navy); border-radius: var(--r-lg); padding: 32px 36px 12px; color: var(--white); }
 .denn-box h2 { text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(22px, 2.6vw, 28px); font-weight: 800; margin: 0; color: var(--white); }
@@ -598,6 +613,11 @@
 }
 @media (max-width: 480px) {
   .neueste { padding: 40px 16px; }
+  .neueste-banner { padding: 18px 0; }
+  .nb-karte { width: 220px; }
+  .neueste-bald-box { padding: 12px 16px; gap: 10px; }
+  .neueste-bald-box strong { font-size: 16px; }
+  .neueste-bald-box span { font-size: 12.5px; }
   .denn { padding: 8px 16px 48px; }
   .denn-box { padding: 26px 20px 6px; }
   .wie { padding: 48px 16px; }
@@ -799,7 +819,7 @@
 <!-- TAGESJOBS IN VORARLBERG. DENN ODOJ. -->
 <section class="denn" aria-labelledby="denn-titel">
   <div class="denn-box">
-    <h2 id="denn-titel">Tagesjobs in Vorarlberg.<span>Denn ODOJ.</span></h2>
+    <h2 id="denn-titel">Tagesjobs in Vorarlberg.<span>Dann ODOJ.</span></h2>
     <ul class="denn-liste">
       <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><h3>Regional verbunden.</h3><p>Wir bringen Menschen und Unternehmen in Vorarlberg zusammen.</p></li>
       <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg><h3>Arbeiten, wie es zu dir passt.</h3><p>Einzelne Einsätze ermöglichen dir, Arbeit flexibel in deinen Alltag zu integrieren.</p></li>
@@ -941,10 +961,15 @@ async function ladeNeuesteInserate() {
   try {
     const settings = await odojGetAppSettings();
     if (!settings.jobs_sichtbar) {
-      // Bis die Inserate veröffentlicht sind: Balken "Bald verfügbar" (keine Abfrage)
-      document.getElementById('neueste-grid').outerHTML = `<div class="neueste-bald" role="status">
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <div><strong>Bald verfügbar</strong><span>Hier erscheinen die nächsten Tagesjobs, sobald die Plattform startet.</span></div>
+      // Bis die Inserate veröffentlicht sind: Banner mit angedeuteten Karten +
+      // "Bald verfügbar" (reine Darstellung, keine Abfrage)
+      const karte = '<div class="nb-karte" aria-hidden="true"><div class="nb-tag"></div><div class="nb-zeile nb-titel"></div><div class="nb-zeile nb-kurz"></div><div class="nb-zeile"></div><div class="nb-zeile nb-kurz"></div><div class="nb-zeile nb-preis"></div></div>';
+      document.getElementById('neueste-grid').outerHTML = `<div class="neueste-banner">
+        <div class="neueste-banner-reihe">${karte.repeat(5)}</div>
+        <div class="neueste-bald" role="status"><div class="neueste-bald-box">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <div><strong>Bald verfügbar</strong><span>Hier erscheinen die nächsten Tagesjobs, sobald die Plattform startet.</span></div>
+        </div></div>
       </div>`;
       document.querySelector('.neueste-alle').style.display = 'none';
       document.getElementById('neueste-section').hidden = false;
