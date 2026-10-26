@@ -126,10 +126,11 @@
 .job-meta-zeit svg { margin-top: 2px; }
 .job-meta-sub { display: block; }
 /* Hinweis "Fragen zum Ablauf?" (ersetzt "In 3 Schritten zum Tagesjob") */
-.ablauf-hinweis { background: var(--off); padding: 48px 24px 56px; text-align: center; }
-.ablauf-hinweis p { font-size: 15px; color: var(--text-mid); margin: 0 0 12px; }
-.ablauf-btn { min-height: 44px; border-radius: 100px; justify-content: center; }
-.ablauf-btn:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+/* Auffälliger, blauer Streifen über die ganze Breite */
+.ablauf-hinweis { background: var(--navy); padding: 56px 24px 64px; text-align: center; }
+.ablauf-hinweis p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; color: var(--white); margin: 0 0 18px; }
+.ablauf-btn { min-height: 52px; padding: 0 32px; font-size: 16px; border-radius: 100px; justify-content: center; }
+.ablauf-btn:focus-visible { outline: 3px solid var(--white); outline-offset: 3px; }
 .job-card h3 {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 17px;
