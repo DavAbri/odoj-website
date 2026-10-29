@@ -56,23 +56,32 @@ export async function fetchRechnungData(admin: any, invoiceId: string): Promise<
 
   const [{ data: job }, { data: items }] = await Promise.all([
     admin.from("jobs").select("titel").eq("id", invoice.job_id).maybeSingle(),
-    admin.from("invoice_items").select("beschreibung, einsatzdatum, betrag").eq("invoice_id", invoice.id).order("einsatzdatum"),
+    admin.from("invoice_items").select("beschreibung, einsatzdatum, betrag, bewerbungen(jobber_id)").eq("invoice_id", invoice.id).order("einsatzdatum"),
   ]);
 
-  // Eine Zeile pro Termin (Einsatzdatum): Anzahl Personen + Summe. Bei 4 oder
-  // mehr Personen an einem Termin gilt die Pauschale von 50 € (die Einzelzeilen
-  // in invoice_items teilen den Betrag nur auf, siehe rechnung_erstellen_fuer_job).
-  const gruppen = new Map<string, { titel: string; anzahl: number; summe: number; pauschale: boolean; datum: string | null }>();
+  // Zusammenfassen: eine Zeile pro Termin (Einsatzdatum) mit Anzahl + Summe;
+  // bei der Mehrtages-Pauschale eine Zeile pro Arbeitskraft (ohne Namen).
+  // Die Einzelzeilen in invoice_items teilen Pauschalen nur auf, siehe
+  // rechnung_erstellen_fuer_job.
+  type Gruppe = { titel: string; anzahl: number; summe: number; art: "termin" | "pauschale" | "mehrtag"; datum: string | null };
+  const gruppen = new Map<string, Gruppe>();
+  const basisTitel = (b: string) => String(b || "").replace(/ \((Pauschale ab 4 Arbeitskräften|Mehrtages-Pauschale)\)$/, "");
   for (const it of (items || []) as any[]) {
-    const key = it.einsatzdatum || "-";
-    const g = gruppen.get(key) || { titel: String(it.beschreibung || "").replace(/ \(Pauschale ab 4 Arbeitskräften\)$/, ""), anzahl: 0, summe: 0, pauschale: false, datum: it.einsatzdatum };
+    const beschr = String(it.beschreibung || "");
+    const mehrtag = /Mehrtages-Pauschale/.test(beschr);
+    const key = mehrtag ? "mp:" + (it.bewerbungen?.jobber_id || it.einsatzdatum) : "t:" + (it.einsatzdatum || "-");
+    const g = gruppen.get(key) || { titel: basisTitel(beschr), anzahl: 0, summe: 0, art: mehrtag ? "mehrtag" : "termin", datum: it.einsatzdatum };
     g.anzahl += 1;
     g.summe = Math.round((g.summe + Number(it.betrag)) * 100) / 100;
-    g.pauschale = g.pauschale || /Pauschale/.test(String(it.beschreibung || ""));
+    if (!mehrtag && /Pauschale/.test(beschr)) g.art = "pauschale";
+    if (it.einsatzdatum && (!g.datum || it.einsatzdatum < g.datum)) g.datum = it.einsatzdatum;
     gruppen.set(key, g);
   }
+  let nr = 0;
   const positionen: RechnungPosition[] = [...gruppen.values()].map((g) => ({
-    beschreibung: g.pauschale
+    beschreibung: g.art === "mehrtag"
+      ? `${g.titel} – Arbeitskraft ${++nr}, Mehrtages-Pauschale (${g.anzahl} ${g.anzahl === 1 ? "Termin" : "Termine"})`
+      : g.art === "pauschale"
       ? `${g.titel} (${g.anzahl} Arbeitskräfte, Pauschale)`
       : `${g.titel} (${g.anzahl} ${g.anzahl === 1 ? "Arbeitskraft" : "Arbeitskräfte"} à 15 €)`,
     einsatzdatum: g.datum,

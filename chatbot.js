@@ -25,13 +25,13 @@ FÜR ARBEITGEBER:
 - Bewerbungen verwalten: Auf arbeitgeber.html im Tab 'Meine Inserate' Bewerbungen ansehen, annehmen oder ablehnen
 - Anwesenheit bestätigen: Nach dem Einsatz Anwesenheit bestätigen - erst dann wird bezahlt
 - Stammkräfte: Beim Inserieren können bereits bewährte Jobber benachrichtigt werden
-- Kosten: € 15,00 Vermittlungsgebühr pro vermittelter Arbeitskraft, ab 4 Arbeitskräften an einem Termin pauschal € 50,00
+- Kosten: € 15,00 Vermittlungsgebühr pro vermittelter Arbeitskraft, pauschal € 50,00 ab 4 Arbeitskräften an einem Termin oder pro Arbeitskraft bei Inseraten mit mindestens 4 Pflicht-Terminen
 - Nachrichten: Auf chat.html mit Jobbern kommunizieren
 - Rechnungen: Auf profil.html alle Rechnungen einsehen
 
 ALLGEMEINE INFOS:
 - ODOJ ist kostenlos für Jobber
-- Für Arbeitgeber: € 15,00 Vermittlungsgebühr pro vermittelter Arbeitskraft, ab 4 Arbeitskräften an einem Termin pauschal € 50,00
+- Für Arbeitgeber: € 15,00 Vermittlungsgebühr pro vermittelter Arbeitskraft, pauschal € 50,00 ab 4 Arbeitskräften an einem Termin oder pro Arbeitskraft bei Inseraten mit mindestens 4 Pflicht-Terminen
 - Zahlung läuft automatisch über Stripe
 - Cookie-Einstellungen: Unten links auf der Seite beim Cookie-Symbol
 - Bei technischen Problemen oder Fragen die du nicht beantworten kannst: Verweis auf hallo@odoj.at

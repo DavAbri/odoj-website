@@ -226,7 +226,7 @@ export async function buildDatenblattPdf(d: DatenblattData): Promise<{ bytes: Ui
     "Die Anmeldung des Arbeitnehmers bei der ÖGK (z. B. über ELDA) muss vor Arbeitsantritt erfolgen.",
     "Der Lohn muss mindestens dem geltenden kollektivvertraglichen Mindestlohn entsprechen.",
     "ODOJ ist reiner Vermittler und nicht Arbeitgeber. Die Lohnverrechnung, Anmeldung und Abgaben liegen beim Arbeitgeber.",
-    "Für erfolgreich vermittelte Einsätze fällt eine Vermittlungsgebühr an ODOJ an: € 15 pro Arbeitskraft, ab 4 Arbeitskräften an einem Termin pauschal € 50.",
+    "Für erfolgreich vermittelte Einsätze fällt eine Vermittlungsgebühr an ODOJ an: € 15 pro Arbeitskraft, pauschal € 50 ab 4 Arbeitskräften an einem Termin oder pro Arbeitskraft bei Inseraten mit mindestens 4 Pflicht-Terminen.",
   ];
   const hintBoxTop = y;
   const hintBoxHeight = 16 + hintTexts.length * 14;
