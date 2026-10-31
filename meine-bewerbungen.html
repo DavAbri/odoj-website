@@ -459,7 +459,7 @@ function renderCard(b, job, opts = {}) {
         ${job.uhrzeit_von} – ${job.uhrzeit_bis || '–'}${job.stundenanzahl ? ` · ${job.stundenanzahl} Std.` : ''}
       </div>` : ''}
       ${lohn?.satz
-        ? `<div class="mj-card-pay">€ ${odojEuro(lohn.betrag)} <span>/ Tag (${odojEuro(lohn.satz, 0)} €/Std.)</span></div>`
+        ? `<div class="mj-card-pay">€ ${odojEuro(lohn.betrag)} <span>/ Tag</span></div>`
         : (gehalt ? `<div class="mj-card-pay">€ ${gehalt} <span>/ Tag</span></div>` : '')}
       ${(b.anwesenheit_bestaetigt || b.status === 'abgeschlossen') ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">
         <div style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Job erledigt</div>
