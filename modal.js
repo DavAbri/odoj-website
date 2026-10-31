@@ -2,7 +2,7 @@
 // Verwendung:
 //   showBewerbungsModal({ titel, firma, datum, gehalt, lohnZeilen, onConfirm })
 //   lohnZeilen (optional): Lohn pro Termin bei Stundensatz-Inseraten, z.B.
-//   ["Sa 24. Okt: 15 €/Std. = 105,00 €"] - ersetzt dann die Tagesgehalt-Zeile.
+//   ["Sa 24. Okt: 105,00 € pro Tag"] - ersetzt dann die Tagesgehalt-Zeile.
 
 (function () {
   // CSS einmalig in den <head> injizieren

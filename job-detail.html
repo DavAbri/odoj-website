@@ -761,15 +761,20 @@ function renderHero(job) {
   `;
 }
 
-// Lohn pro Termin (Stundensatz-Inserate); verschiedene Sätze -> Termine zeigen ihren eigenen Satz
+// Angezeigt wird immer der Lohn für den ganzen Tag (Stundensatz x Stunden,
+// alte Inserate: Tagesgehalt) - der Stundensatz selbst erscheint hier nicht.
 function jdLohnZeile(job, termin) {
   const l = odojLohn(job, termin);
-  return l.satz ? `${odojEuro(l.satz, 0)} €/Std. = ${odojEuro(l.betrag)} €` : '';
+  return l.satz ? `${odojEuro(l.betrag)} € pro Tag` : '';
 }
+function jdTageslohne(job) {
+  return (_jdIsMultiTermin ? _jdTermine : [null]).map(t => odojLohn(job, t).betrag);
+}
+// Unterschiedlicher Tageslohn je Termin -> jeder Termin zeigt seinen eigenen
 function jdSaetzeVerschieden(job) {
   if (!job.stundensatz || !_jdIsMultiTermin) return false;
-  const s = _jdTermine.map(t => Number(t.stundensatz ?? job.stundensatz));
-  return s.some(x => x !== s[0]);
+  const l = jdTageslohne(job);
+  return l.some(x => x !== l[0]);
 }
 
 // "Mehr anzeigen" nur, wenn die Beschreibung länger als 5 Zeilen ist
@@ -987,12 +992,10 @@ function renderMain(job) {
     <div class="jd-right">
       <div class="jd-apply-box">
         ${job.stundensatz
-          ? `<div class="jd-pay-big">${(odojSatzKurz(job, _jdIsMultiTermin ? _jdTermine : null) || '').replace(' €/Std.', '').replace(/^(ab )?/, '$1€ ')} <span>/ Std.</span></div>`
+          ? `<div class="jd-pay-big">${jdSaetzeVerschieden(job) ? 'ab ' : ''}€ ${odojEuro(Math.min(...jdTageslohne(job)), 0)} <span>/ Tag</span></div>`
           : `<div class="jd-pay-big">€ ${gehalt} <span>/ Tag</span></div>`}
-        ${job.stundensatz ? `<div class="jd-pay-sub" style="margin-bottom:2px">${_jdIsMultiTermin
-          ? (jdSaetzeVerschieden(job) ? 'Lohn pro Termin siehe Terminauswahl' : 'Lohn pro Tag: Stundensatz × Stunden des Termins')
-          : 'Lohn für diesen Tag: ' + jdLohnZeile(job, null).replace(/^.*= /, '')}</div>` : ''}
-        <div class="jd-pay-sub">${job.stundensatz ? 'Stundensatz (brutto)' : 'Tagesgehalt (brutto)'}
+        ${jdSaetzeVerschieden(job) ? `<div class="jd-pay-sub" style="margin-bottom:2px">Lohn pro Termin siehe Terminauswahl</div>` : ''}
+        <div class="jd-pay-sub">Tageslohn (brutto)
           <span class="odoj-tip">
             <button type="button" class="odoj-tip-btn" aria-label="Info zu Brutto/Netto">i</button>
             <span class="odoj-tip-pop">
@@ -1147,7 +1150,7 @@ async function handleApply() {
     firma:  _jdAgProfile?.firmenname || _jdJob.firmenname || 'Unbekannter Betrieb',
     datum,
     gehalt: _jdJob.tagesgehalt,
-    lohnZeilen: _jdJob.stundensatz ? [jdLohnZeile(_jdJob, null) + ' pro Tag'] : null,
+    lohnZeilen: _jdJob.stundensatz ? [jdLohnZeile(_jdJob, null)] : null,
     onConfirm: () => doApply(null)
   });
 }
