@@ -745,7 +745,8 @@ function renderJobs(jobs, unlocked) {
   // Kein automatischer Ausschluss nach Mindestalter mehr: Inserate bleiben
   // für alle sichtbar, renderJobCard zeigt pro Karte nur einen dezenten
   // Hinweis, falls der eingeloggte Jobber am Einsatzdatum zu jung ist.
-  grid.innerHTML = jobs.map((job, i) => renderJobCard(job, !unlocked && i >= 3)).join('');
+  // Nicht angemeldet: nur die ersten 4 Inserate, für alle weiteren anmelden
+  grid.innerHTML = jobs.map((job, i) => renderJobCard(job, !unlocked && i >= 4)).join('');
 
   // Filter anwenden (behält aktive Branche + Alter)
   _applyFilters();

@@ -927,9 +927,9 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
   document.getElementById('role-btn-an').addEventListener('click', async (e) => {
     if (!istNormalerKlick(e)) return;
     e.preventDefault();
-    const { session, rolle } = await aktuelleRolle();
-    if (!session) window.location.href = 'login.html?rolle=jobber&modus=login&redirect=jobs.html';
-    else if (rolle === 'arbeitgeber') openHint('Arbeitgeber', 'Arbeitnehmer');
+    // Nicht angemeldet: direkt zur Jobbörse (dort sind die ersten 4 Inserate offen)
+    const { rolle } = await aktuelleRolle();
+    if (rolle === 'arbeitgeber') openHint('Arbeitgeber', 'Arbeitnehmer');
     else window.location.href = 'jobs.html';
   });
 
