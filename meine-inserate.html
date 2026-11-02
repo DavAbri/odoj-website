@@ -2663,7 +2663,15 @@ async function submitInserat(e) {
   // Anzeigen mitgespeichert - eingegeben wird ausschließlich der Stundensatz.
   const gehalt  = odojLohn({ stundensatz, uhrzeit_von: von, uhrzeit_bis: bis }, null).betrag || null;
   const terminSatz = c => (_terminChips.length > 1 ? parseSatz(c.satz) : null) || stundensatz;
-  const lohnKurz = odojSatzKurz({ stundensatz }, _terminChips.length > 1 ? _terminChips.map(c => ({ stundensatz: terminSatz(c) })) : null);
+  // Für Jobber sichtbare Lohnangabe (Nachrichten): nur der Tageslohn,
+  // bei unterschiedlichen Tageslöhnen je Termin "ab …"
+  const tageslohne = (_terminChips.length > 1 ? _terminChips : [null]).map(c => {
+    const [tv, tb] = terminZeiten(c);
+    return odojLohn({ stundensatz: c ? terminSatz(c) : stundensatz, uhrzeit_von: tv, uhrzeit_bis: tb }, null).betrag;
+  }).filter(x => x > 0);
+  const lohnKurz = tageslohne.length
+    ? (tageslohne.some(x => x !== tageslohne[0]) ? 'ab ' : '') + '€ ' + odojEuro(Math.min(...tageslohne)) + ' pro Tag'
+    : null;
   const adresse = document.getElementById('ins-adresse').value.trim();
   const ort     = document.getElementById('ins-ort').value.trim();
   const plaetze      = parseInt(document.getElementById('ins-plaetze').value, 10);
@@ -3141,7 +3149,7 @@ async function sendStammkraefteNachrichten() {
   const j = _neuesJobData || {};
   const jobTitel = j.titel || 'Neuer Job';
   const datum    = j.datum ? new Date(j.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-  const nachricht = `⭐ Neues Inserat – Sie wurden als Stammkraft ausgewählt!\n\nJob: ${jobTitel}\nDatum: ${datum}\nOrt: ${j.ort || ''}\nLohn: ${j.lohnKurz || ('€ ' + (j.gehalt || ''))}\n\nJetzt bewerben auf odoj.at/jobs.html`;
+  const nachricht = `⭐ Neues Inserat – Sie wurden als Stammkraft ausgewählt!\n\nJob: ${jobTitel}\nDatum: ${datum}\nOrt: ${j.ort || ''}\nLohn: ${j.lohnKurz || ('€ ' + (j.gehalt || '') + ' pro Tag')}\n\nJetzt bewerben auf odoj.at/jobs.html`;
 
   const jetzt = new Date().toISOString();
   for (const empfaengerId of checked) {
@@ -3396,7 +3404,7 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
   // Bewerber benachrichtigen
   if (bewerber.length) {
     const datumFormatiert = datum ? new Date(datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-    const nachricht = `⚠️ Änderung an Ihrem gebuchten Job\n\nDer Arbeitgeber hat das Inserat "${titel}" geändert.\n\nNeue Details:\n📅 Datum: ${datumFormatiert}\n⏰ Uhrzeit: ${von} - ${bis}\n💰 Lohn: ${lohnKurz || ('€ ' + gehalt)}${_terminChips.length < 2 && gehalt ? ' (' + odojEuro(gehalt) + ' € pro Tag)' : ''}\n📍 Ort: ${ort}\n\nMöchten Sie Ihre Bewerbung aufrechterhalten?\n✅ Tippen Sie 'JA' um Ihre Bewerbung zu bestätigen\n❌ Tippen Sie 'NEIN' um Ihre Bewerbung zurückzuziehen`;
+    const nachricht = `⚠️ Änderung an Ihrem gebuchten Job\n\nDer Arbeitgeber hat das Inserat "${titel}" geändert.\n\nNeue Details:\n📅 Datum: ${datumFormatiert}\n⏰ Uhrzeit: ${von} - ${bis}\n💰 Lohn: ${lohnKurz || ('€ ' + gehalt + ' pro Tag')}\n📍 Ort: ${ort}\n\nMöchten Sie Ihre Bewerbung aufrechterhalten?\n✅ Tippen Sie 'JA' um Ihre Bewerbung zu bestätigen\n❌ Tippen Sie 'NEIN' um Ihre Bewerbung zurückzuziehen`;
     const jetzt = new Date().toISOString();
     for (const b of bewerber) {
       try {
