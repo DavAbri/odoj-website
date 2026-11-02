@@ -730,6 +730,7 @@ async function initJobDetail() {
   renderHero(job);
   renderMain(job);
   jdDescPruefen();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(jdDescPruefen);
 }
 
 function renderHero(job) {
@@ -783,13 +784,21 @@ function jdSaetzeVerschieden(job) {
   return l.some(x => x !== l[0]);
 }
 
+// Leere Zeilen am Anfang/Ende entfernen und mehrere Leerzeilen hintereinander
+// auf eine kürzen - sonst zählen unsichtbare Leerzeilen für "Mehr anzeigen" mit
+function jdDescText(t) {
+  return String(t || '').replace(/\r\n?/g, '\n').replace(/[ \t]+\n/g, '\n').trim().replace(/\n{3,}/g, '\n\n');
+}
+
 // "Mehr anzeigen" nur, wenn die Beschreibung länger als 5 Zeilen ist
 function jdDescPruefen() {
   const p = document.getElementById('jd-desc');
   const btn = document.getElementById('jd-desc-mehr');
   if (!p || !btn) return;
-  if (p.scrollHeight > p.clientHeight + 2) btn.hidden = false;
-  else p.classList.remove('jd-desc-zu');
+  p.classList.add('jd-desc-zu');
+  const lang = p.scrollHeight > p.clientHeight + 2;
+  btn.hidden = !lang;
+  if (!lang) p.classList.remove('jd-desc-zu');
 }
 function jdDescUmschalten(btn) {
   const p = document.getElementById('jd-desc');
@@ -948,7 +957,7 @@ function renderMain(job) {
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Jobbeschreibung
         </div>
-        <p class="jd-desc jd-desc-zu" id="jd-desc">${esc(job.beschreibung)}</p>
+        <p class="jd-desc jd-desc-zu" id="jd-desc">${esc(jdDescText(job.beschreibung))}</p>
         <button type="button" class="jd-desc-mehr" id="jd-desc-mehr" aria-controls="jd-desc" aria-expanded="false" hidden onclick="jdDescUmschalten(this)">
           <span>Mehr anzeigen</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
