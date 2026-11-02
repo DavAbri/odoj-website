@@ -927,10 +927,8 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
   document.getElementById('role-btn-an').addEventListener('click', async (e) => {
     if (!istNormalerKlick(e)) return;
     e.preventDefault();
-    // Nicht angemeldet: direkt zur Jobbörse (dort sind die ersten 4 Inserate offen)
-    const { rolle } = await aktuelleRolle();
-    if (rolle === 'arbeitgeber') openHint('Arbeitgeber', 'Arbeitnehmer');
-    else window.location.href = 'jobs.html';
+    // Die Jobbörse ist für alle erreichbar (auch nicht angemeldet und Arbeitgeber)
+    window.location.href = 'jobs.html';
   });
 
   document.getElementById('role-btn-ag').addEventListener('click', async (e) => {

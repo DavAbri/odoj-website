@@ -656,12 +656,14 @@ function filter(b, btn) { filterBranche(b, btn); }
 
 // ── CARD KLICK → DETAIL-SEITE ──
 function goToJobDetail(jobId, cardEl) {
-  if (cardEl.dataset.locked === 'true') {
-    window.location.href = 'login.html';
+  const terminId = cardEl.dataset.terminId;
+  const ziel = 'job-detail.html?id=' + jobId + (terminId ? '&termin=' + terminId : '');
+  // Detailseite nur angemeldet - sonst zur Anmeldung, danach direkt zum Inserat
+  if (cardEl.dataset.locked === 'true' || !_odojJobsSession) {
+    window.location.href = 'login.html?modus=login&redirect=' + encodeURIComponent(ziel);
     return;
   }
-  const terminId = cardEl.dataset.terminId;
-  window.location.href = 'job-detail.html?id=' + jobId + (terminId ? '&termin=' + terminId : '');
+  window.location.href = ziel;
 }
 
 // ── JOB CARD HTML ──

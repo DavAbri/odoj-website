@@ -530,6 +530,12 @@ function showAbgelaufenPlaceholder() {
 }
 
 async function initJobDetail() {
+  // Inserat-Details nur für angemeldete Nutzer - sonst zur Anmeldung und
+  // danach automatisch zurück zu genau diesem Inserat
+  if (!(await odojGetSession())) {
+    window.location.replace('login.html?modus=login&redirect=' + encodeURIComponent(location.pathname.split('/').pop() + location.search));
+    return;
+  }
   const appSettings = await odojGetAppSettings();
   if (!appSettings.jobs_sichtbar) {
     // Einzelne freigeschaltete Konten (Profile.vorschau_zugriff) dürfen
