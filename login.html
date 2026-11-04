@@ -789,6 +789,11 @@ async function doLogin(e) {
   // Tatsächliche Rolle ermitteln (user_metadata → Profile-Tabelle → Fallback)
   let tatsaechlicheRolle = data.user.user_metadata?.rolle || profile?.rolle || 'jobber';
 
+  // Konten mit beiden Sichten (Admin-Umschalter): einfach auf die gewählte Rolle umstellen
+  if (tatsaechlicheRolle !== _currentRole && odojDarfRolleWechseln(data.user)) {
+    if (await odojRolleWechseln(_currentRole, false)) tatsaechlicheRolle = _currentRole;
+  }
+
   // Rollen-Mismatch: erst ausloggen, dann Fehlermeldung zeigen
   if (tatsaechlicheRolle !== _currentRole) {
     await odojSb.auth.signOut();

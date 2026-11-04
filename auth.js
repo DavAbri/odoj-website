@@ -383,6 +383,27 @@ function odojCloseLogoutConfirm() {
   document.body.style.overflow = '';
 }
 
+// ── Rollen-Umschalter (nur diese Admin-Konten) ─────────────────────────────
+// Diese Konten haben Arbeitgeber- UND Arbeitnehmer-Sicht: im Profil-Menü
+// (und beim Anmelden über die gewählte Rolle) lässt sich umschalten.
+// Abgesichert in der Datenbank: Profile.rolle darf nur ein Admin ändern
+// (Trigger profil_rolle_schuetzen, Datei 36).
+const ODOJ_ROLLEN_WECHSEL_EMAILS = ['david.aberer@odoj.at', 'sebastian.wimmer@odoj.at'];
+function odojDarfRolleWechseln(user) {
+  return ODOJ_ROLLEN_WECHSEL_EMAILS.includes(String(user?.email || '').toLowerCase());
+}
+// ziel: Seite nach dem Umschalten (Standard: Meine Inserate bzw. Jobbörse), false = nicht weiterleiten
+async function odojRolleWechseln(neueRolle, ziel) {
+  const { data: { session } } = await odojSb.auth.getSession();
+  if (!session || !odojDarfRolleWechseln(session.user)) return false;
+  const { error } = await odojSb.from('Profile').update({ rolle: neueRolle }).eq('user_id', session.user.id);
+  if (error) { alert('Umschalten nicht möglich: ' + error.message); return false; }
+  await odojSb.auth.updateUser({ data: { rolle: neueRolle } });
+  odojSaveRolle(neueRolle);
+  if (ziel !== false) window.location.href = ziel || (neueRolle === 'arbeitgeber' ? 'meine-inserate.html' : 'jobs.html');
+  return true;
+}
+
 async function odojInitNav() {
   const session = await odojGetSession();
   const authEl   = document.getElementById('nav-auth');
@@ -415,6 +436,12 @@ async function odojInitNav() {
       ? `<a href="meine-inserate.html" class="nav-dd-item" id="nav-dd-role"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Meine Inserate</a>`
       : `<a href="meine-bewerbungen.html" class="nav-dd-item" id="nav-dd-role"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Meine Bewerbungen</a>`;
 
+    const andereRolle = rolle === 'arbeitgeber' ? 'jobber' : 'arbeitgeber';
+    const wechselText = rolle === 'arbeitgeber' ? 'Zur Arbeitnehmer-Ansicht wechseln' : 'Zur Arbeitgeber-Ansicht wechseln';
+    const wechselItem = odojDarfRolleWechseln(session.user)
+      ? `<button class="nav-dd-item" id="nav-dd-rollenwechsel" onclick="odojRolleWechseln('${andereRolle}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>${wechselText}</button>`
+      : '';
+
     // ── Desktop: Profil-Dropdown ──
     if (authEl) {
       authEl.innerHTML = `
@@ -429,6 +456,7 @@ async function odojInitNav() {
             Nachrichten
           </a>
           ${roleItem}
+          ${wechselItem}
           <a href="profil.html" class="nav-dd-item">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             Profileinstellungen
@@ -452,6 +480,7 @@ async function odojInitNav() {
     // ── Mobile: Profil-Bereich (wie ursprünglich) ──
     if (mobileEl) mobileEl.innerHTML =
       '<a href="profil.html" class="nav-user-name-mobile" id="nav-mobile-profil">✓ ' + displayName + '</a>' +
+      (odojDarfRolleWechseln(session.user) ? `<a href="#" onclick="odojRolleWechseln('${andereRolle}');return false;" class="nav-logout-mobile" id="nav-mobile-rollenwechsel">⇄ ${wechselText}</a>` : '') +
       '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen →</a>';
 
     // ── Mobile: Statische Links je nach Rolle ausblenden ──
