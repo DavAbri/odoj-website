@@ -149,7 +149,11 @@
     .btn-secondary:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
     .btn-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
     .btn-danger:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
-    .btn-danger:disabled { opacity: .6; cursor: wait; }
+    .btn-danger:disabled, .btn-sperren:disabled { opacity: .6; cursor: wait; }
+    .btn-sperren { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+    .btn-sperren:hover { background: #ea580c; color: #fff; border-color: #ea580c; }
+    .nd-loeschen-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nd-gesperrt-badge { display: inline-block; margin-bottom: 10px; font-size: 12px; font-weight: 700; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 100px; padding: 3px 10px; }
     .nd-loeschen { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
     .nd-loeschen .btn-sm { padding: 10px 16px; font-size: 13px; min-height: 40px; }
     .nd-loeschen-hinweis { font-size: 12px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
@@ -996,8 +1000,12 @@
     // Nutzer mit Aktivität werden dort serverseitig abgelehnt)
     if (!ADMIN_EMAILS.includes(String(n.email || '').toLowerCase())) {
       html += `<div class="nd-loeschen">
-        <button type="button" class="btn-sm btn-danger" id="nd-loeschen-btn" onclick="nutzerLoeschen('${userId}')">Nutzer löschen</button>
-        <div class="nd-loeschen-hinweis">Löscht das Konto endgültig. Nur möglich, solange der Nutzer noch keine Inserate, Bewerbungen, Rechnungen, Verträge, Nachrichten oder Bewertungen hat.</div>
+        ${n.gesperrt ? '<div class="nd-gesperrt-badge">🔒 Gesperrt</div>' : ''}
+        <div class="nd-loeschen-btns">
+          <button type="button" class="btn-sm btn-sperren" id="nd-sperren-btn" onclick="nutzerSperren('${userId}', ${n.gesperrt ? 'false' : 'true'})">${n.gesperrt ? 'Sperre aufheben' : 'Nutzer sperren'}</button>
+          <button type="button" class="btn-sm btn-danger" id="nd-loeschen-btn" onclick="nutzerLoeschen('${userId}')">Nutzer löschen</button>
+        </div>
+        <div class="nd-loeschen-hinweis"><strong>Sperren:</strong> Der Nutzer kann sich nicht mehr anmelden und wird bei der nächsten Seite abgemeldet; alle Daten bleiben erhalten und die Sperre lässt sich jederzeit aufheben.<br><strong>Löschen:</strong> Entfernt das Konto endgültig – nur möglich, solange der Nutzer noch keine Inserate, Bewerbungen, Rechnungen, Verträge, Nachrichten oder Bewertungen hat.</div>
         <div class="nd-loeschen-fehler" id="nd-loeschen-fehler" hidden></div>
       </div>`;
     }
@@ -1005,6 +1013,27 @@
     document.getElementById('nutzer-detail-modal-content').innerHTML = html;
     openModal('nutzer-detail-modal');
     loadNutzerAuthInfo(userId);
+  }
+
+  async function nutzerSperren(userId, sperren) {
+    const n = findNutzer(userId) || {};
+    const name = [n.vorname, n.nachname].filter(Boolean).join(' ') || n.firmenname || n.email || 'diesen Nutzer';
+    if (!confirm(sperren
+      ? `${name} (${n.email || ''}) sperren?\n\nDer Nutzer kann sich dann nicht mehr anmelden. Alle Daten bleiben erhalten.`
+      : `Sperre für ${name} (${n.email || ''}) aufheben?`)) return;
+    const btn = document.getElementById('nd-sperren-btn');
+    const fehlerEl = document.getElementById('nd-loeschen-fehler');
+    btn.disabled = true; fehlerEl.hidden = true;
+    const { error } = await odojSb.from('Profile').update({ gesperrt: sperren }).eq('user_id', userId);
+    if (error) {
+      btn.disabled = false;
+      fehlerEl.textContent = 'Sperren nicht möglich: ' + error.message; fehlerEl.hidden = false;
+      return;
+    }
+    n.gesperrt = sperren;
+    showToast(sperren ? 'Nutzer gesperrt.' : 'Sperre aufgehoben.', 'success');
+    openNutzerDetail(userId); // Fenster mit neuem Stand neu aufbauen
+    filterNutzerQuelle();
   }
 
   async function nutzerLoeschen(userId) {

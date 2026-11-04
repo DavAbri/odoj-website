@@ -412,6 +412,13 @@ async function odojInitNav() {
   if (session) {
     await odojRecoverPendingProfile(session.user.id);
     const profile = await odojGetProfile(session.user.id);
+    if (profile?.gesperrt) {
+      // Vom Admin gesperrt: sofort abmelden (Login verweigert gesperrte Konten ohnehin)
+      await odojSb.auth.signOut();
+      localStorage.removeItem('odoj_rolle');
+      window.location.href = 'login.html?msg=gesperrt';
+      return;
+    }
     const rolle   = profile?.rolle
                     || session.user.user_metadata?.rolle
                     || localStorage.getItem('odoj_rolle')

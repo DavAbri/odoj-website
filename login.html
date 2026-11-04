@@ -1016,6 +1016,11 @@ async function doRegister(e) {
   const params = new URLSearchParams(location.search);
   const msg    = params.get('msg');
   const msgEl  = document.getElementById('login-msg');
+  if (msg === 'gesperrt') {
+    msgEl.textContent   = 'Dein Konto wurde gesperrt. Bitte kontaktiere den Support.';
+    msgEl.className     = 'login-msg error';
+    msgEl.style.display = 'block';
+  }
   if (msg === 'restricted') {
     msgEl.textContent   = '⚠️ Diese Seite ist nur für Arbeitgeber. Bitte wähle „Ich bin Arbeitgeber" und melde dich mit deinem Arbeitgeber-Konto an.';
     msgEl.className     = 'login-msg error';
