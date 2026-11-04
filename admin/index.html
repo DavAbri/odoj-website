@@ -147,6 +147,13 @@
     .btn-success:hover { background: var(--success); color: #fff; }
     .btn-secondary { background: var(--bg); color: var(--text2); border-color: var(--border); }
     .btn-secondary:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .btn-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .btn-danger:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+    .btn-danger:disabled { opacity: .6; cursor: wait; }
+    .nd-loeschen { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .nd-loeschen .btn-sm { padding: 10px 16px; font-size: 13px; min-height: 40px; }
+    .nd-loeschen-hinweis { font-size: 12px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+    .nd-loeschen-fehler { font-size: 13px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; margin-top: 10px; line-height: 1.5; }
 
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(11,31,58,.6); backdrop-filter: blur(2px);
@@ -985,9 +992,44 @@
       ? bewertungen.map(bw => `<div class="nd-list-item"><span>${'★'.repeat(bw.sterne || 0)}${'☆'.repeat(5 - (bw.sterne || 0))} ${escHtml(bw.kommentar) || ''}</span><span style="color:var(--text2)">${fmtDate(bw.created_at)}</span></div>`).join('')
       : '<div class="table-empty">Keine Bewertungen</div>';
 
+    // Nutzer löschen (über die Edge Function admin-delete-user: Admin-Konten und
+    // Nutzer mit Aktivität werden dort serverseitig abgelehnt)
+    if (!ADMIN_EMAILS.includes(String(n.email || '').toLowerCase())) {
+      html += `<div class="nd-loeschen">
+        <button type="button" class="btn-sm btn-danger" id="nd-loeschen-btn" onclick="nutzerLoeschen('${userId}')">Nutzer löschen</button>
+        <div class="nd-loeschen-hinweis">Löscht das Konto endgültig. Nur möglich, solange der Nutzer noch keine Inserate, Bewerbungen, Rechnungen, Verträge, Nachrichten oder Bewertungen hat.</div>
+        <div class="nd-loeschen-fehler" id="nd-loeschen-fehler" hidden></div>
+      </div>`;
+    }
+
     document.getElementById('nutzer-detail-modal-content').innerHTML = html;
     openModal('nutzer-detail-modal');
     loadNutzerAuthInfo(userId);
+  }
+
+  async function nutzerLoeschen(userId) {
+    const n = findNutzer(userId) || {};
+    const name = [n.vorname, n.nachname].filter(Boolean).join(' ') || n.firmenname || n.email || 'diesen Nutzer';
+    if (!confirm(`${name} (${n.email || ''}) wirklich endgültig löschen?\n\nDas kann nicht rückgängig gemacht werden.`)) return;
+    const btn = document.getElementById('nd-loeschen-btn');
+    const fehlerEl = document.getElementById('nd-loeschen-fehler');
+    btn.disabled = true; btn.textContent = 'Wird gelöscht…'; fehlerEl.hidden = true;
+    const { data, error } = await odojSb.functions.invoke('admin-delete-user', { body: { userId } });
+    let meldung = data?.error || null;
+    if (!meldung && error) {
+      try { meldung = (await error.context?.json())?.error; } catch (_) {}
+      meldung = meldung || error.message;
+    }
+    if (meldung) {
+      btn.disabled = false; btn.textContent = 'Nutzer löschen';
+      fehlerEl.textContent = meldung; fehlerEl.hidden = false;
+      return;
+    }
+    allNutzer = allNutzer.filter(x => x.user_id !== userId);
+    closeModal('nutzer-detail-modal');
+    renderNutzerStats();
+    filterNutzerQuelle();
+    showToast('Nutzer gelöscht.', 'success');
   }
 
   async function loadNutzerAuthInfo(userId) {
