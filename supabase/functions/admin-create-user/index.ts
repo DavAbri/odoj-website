@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 // Muss mit der Liste in admin/index.html und admin/login.html übereinstimmen.
-const ADMIN_EMAILS = ["mail4david85@gmail.com", "admin@odoj.at"]
+const ADMIN_EMAILS = ["mail4david85@gmail.com", "admin@odoj.at", "david.aberer@odoj.at", "sebastian.wimmer@odoj.at"]
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!

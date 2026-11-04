@@ -11,7 +11,7 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Gleiche Admin-Erkennung wie admin-delete-user - Admin-Zugang läuft über
 // eine feste E-Mail-Allowlist, nicht über Profile.rolle.
-const ADMIN_EMAILS = ["mail4david85@gmail.com", "admin@odoj.at"];
+const ADMIN_EMAILS = ["mail4david85@gmail.com", "admin@odoj.at", "david.aberer@odoj.at", "sebastian.wimmer@odoj.at"];
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Muss mit der Liste in admin/index.html und admin/login.html übereinstimmen.
-export const ADMIN_EMAILS = ["mail4david85@gmail.com", "admin@odoj.at"];
+export const ADMIN_EMAILS = ["mail4david85@gmail.com", "admin@odoj.at", "david.aberer@odoj.at", "sebastian.wimmer@odoj.at"];
 
 export const SUPPORT_SESSION_MINUTES = 30;
 
