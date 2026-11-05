@@ -103,6 +103,14 @@
 .profil-sterne       { color: #e6a01e; font-size: 18px; }
 .profil-durchschnitt { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--navy); }
 .profil-anzahl-bewertungen { font-size: 12px; color: #999; margin-bottom: 10px; }
+.profil-anzahl-klammer { font-size: 14px; color: var(--text-lt); font-weight: 600; }
+.bew-branchen { border: 1px solid var(--gray-lt); border-radius: var(--r-sm); padding: 4px 14px; }
+.bew-branchen-titel { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-lt); margin: 6px 0 8px; }
+.bew-branche-zeile { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--gray-lt); font-size: 14px; }
+.bew-branchen .bew-branchen-titel + .bew-branche-zeile { border-top: none; }
+.bew-branche-name { font-weight: 700; color: var(--navy); }
+.bew-branche-info { color: var(--text-mid); }
+.bew-branche-sterne { color: #e6a01e; font-weight: 700; }
 .profil-branche-badges {
   display: flex; flex-wrap: wrap; gap: 6px;
   justify-content: flex-end;
@@ -1828,94 +1836,86 @@ function renderSterneStatic(n) {
 async function loadJobberBewertungen(userId) {
   const el = document.getElementById('jb-bew-body');
   if (!el) return;
-
-  const { data: bews } = await odojSb
-    .from('bewertungen')
-    .select('sterne, kommentar, created_at, bewerter_id')
-    .eq('bewertet_id', userId)
-    .eq('rolle_bewerter', 'arbeitgeber')
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  // Branchenstatistik aus Jobs
-  const { data: jobs } = await odojSb
-    .from('bewerbungen')
-    .select('job_id')
-    .eq('jobber_id', userId)
-    .eq('anwesenheit_bestaetigt', true);
-
-  let branchenMap = {};
-  if (jobs?.length) {
-    const jobIds = jobs.map(j => j.job_id).filter(Boolean);
-    const { data: jobData } = await odojSb.from('jobs').select('branche').in('id', jobIds);
-    jobData?.forEach(j => {
-      if (j.branche) branchenMap[j.branche] = (branchenMap[j.branche] || 0) + 1;
-    });
-  }
-
+  const fmtAvg = n => n.toLocaleString('de-AT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const BRANCHEN_LABEL = { gastro:'Gastronomie', events:'Veranstaltungen & Events', hotel:'Hotellerie', einzelhandel:'Einzelhandel', sonstige:'Sonstige' };
-  const totalEinsaetze = Object.values(branchenMap).reduce((a, b) => a + b, 0);
 
+  // ALLE Bewertungen von Arbeitgebern (mit Job: Titel, Branche, Datum)
+  const [{ data: bews }, { data: einsaetze }] = await Promise.all([
+    odojSb.from('bewertungen')
+      .select('sterne, kommentar, created_at, bewerter_id, jobs(titel, branche, datum)')
+      .eq('bewertet_id', userId)
+      .eq('rolle_bewerter', 'arbeitgeber')
+      .order('created_at', { ascending: false })
+      .limit(500),
+    // Abgeschlossene Einsätze je Branche
+    odojSb.from('bewerbungen')
+      .select('job_id, jobs(branche)')
+      .eq('jobber_id', userId)
+      .or('status.eq.abgeschlossen,anwesenheit_bestaetigt.eq.true')
+      .limit(1000),
+  ]);
+  const liste = bews || [];
+  const avgAlle = liste.length ? liste.reduce((s, b) => s + b.sterne, 0) / liste.length : null;
+
+  // ── Oben rechts neben dem Namen: nur Sterne, Durchschnitt aller, Anzahl ──
   const rechtsEl = document.getElementById('profil-bewertung-rechts');
-
-  const avg = bews?.length
-    ? (bews.reduce((s, b) => s + b.sterne, 0) / bews.length).toFixed(1)
-    : null;
-
-  // ── Rechte Profilkarte: kompakte Kurzansicht ──
   if (rechtsEl) {
-    const sternAnzahl = avg ? Math.round(parseFloat(avg)) : 0;
-    const sterneHtml  = '★'.repeat(sternAnzahl) + '☆'.repeat(5 - sternAnzahl);
-    const badgesHtml  = totalEinsaetze
-      ? `<div class="profil-branche-badges">
-           ${Object.entries(branchenMap).map(([k, v]) =>
-             `<span class="profil-branche-badge">${BRANCHEN_LABEL[k] || k}: ${v} Einsatz${v !== 1 ? 'e' : ''}</span>`
-           ).join('')}
+    rechtsEl.innerHTML = avgAlle !== null
+      ? `<div class="profil-sterne-zeile" title="Durchschnitt aller ${liste.length} Bewertungen">
+           <span class="profil-sterne">${renderSterneStatic(Math.round(avgAlle))}</span>
+           <span class="profil-durchschnitt">${fmtAvg(avgAlle)}</span>
+           <span class="profil-anzahl-klammer">(${liste.length})</span>
          </div>`
-      : '';
-    rechtsEl.innerHTML = avg
-      ? `<div class="profil-sterne-zeile">
-           <span class="profil-sterne">${sterneHtml}</span>
-           <span class="profil-durchschnitt">${avg}</span>
-         </div>
-         <div class="profil-anzahl-bewertungen">${bews.length} Bewertung${bews.length !== 1 ? 'en' : ''}</div>
-         ${badgesHtml}`
-      : badgesHtml || '<div class="profil-no-bew">Noch keine Bewertungen</div>';
+      : '<div class="profil-no-bew">Noch keine Bewertungen</div>';
   }
 
-  // ── Bewertungs-Karte: volle Ansicht mit Sterne + Badges + Kommentare ──
-  if (!bews?.length && !totalEinsaetze) {
+  // ── Unten "Meine Bewertungen": alles im Detail ──
+  const branchen = {}; // key -> { einsaetze, summe, anzahl }
+  const b = k => (branchen[k || 'ohne'] ||= { einsaetze: 0, summe: 0, anzahl: 0 });
+  (einsaetze || []).forEach(e => { if (e.jobs?.branche) b(e.jobs.branche).einsaetze++; });
+  liste.forEach(x => { const g = b(x.jobs?.branche); g.summe += x.sterne; g.anzahl++; });
+
+  if (!liste.length && !Object.keys(branchen).length) {
     el.innerHTML = '<div class="bew-empty">Noch keine Bewertungen vorhanden.</div>';
     return;
   }
 
-  const bewerterIds = [...new Set((bews || []).map(b => b.bewerter_id).filter(Boolean))];
-  let firmaMap = {};
+  const bewerterIds = [...new Set(liste.map(x => x.bewerter_id).filter(Boolean))];
+  const firmaMap = {};
   if (bewerterIds.length) {
     const { data: profiles } = await odojSb.from('Profile').select('user_id,firmenname').in('user_id', bewerterIds);
     profiles?.forEach(p => { firmaMap[p.user_id] = p.firmenname || 'Arbeitgeber'; });
   }
 
-  const sternAnzahlFull = avg ? Math.round(parseFloat(avg)) : 0;
+  const branchenZeilen = Object.entries(branchen)
+    .filter(([k]) => k !== 'ohne')
+    .sort((x, y) => (y[1].einsaetze + y[1].anzahl) - (x[1].einsaetze + x[1].anzahl))
+    .map(([k, g]) => `<div class="bew-branche-zeile">
+        <span class="bew-branche-name">${escH(BRANCHEN_LABEL[k] || k)}</span>
+        <span class="bew-branche-info">${g.einsaetze} ${g.einsaetze !== 1 ? 'Einsätze' : 'Einsatz'}${g.anzahl ? ` · <span class="bew-branche-sterne">★ ${fmtAvg(g.summe / g.anzahl)}</span> (${g.anzahl} Bewertung${g.anzahl !== 1 ? 'en' : ''})` : ' · noch keine Bewertung'}</span>
+      </div>`).join('');
+
   el.innerHTML = `
     <div class="bew-avg" style="margin-bottom:16px">
-      <div class="bew-avg-stars">${'★'.repeat(sternAnzahlFull) + '☆'.repeat(5 - sternAnzahlFull)}</div>
-      <div class="bew-avg-num">${avg || '–'}</div>
-      <div class="bew-avg-count">${bews?.length || 0} Bewertung${(bews?.length || 0) !== 1 ? 'en' : ''}</div>
+      <div class="bew-avg-stars">${renderSterneStatic(avgAlle !== null ? Math.round(avgAlle) : 0)}</div>
+      <div class="bew-avg-num">${avgAlle !== null ? fmtAvg(avgAlle) : '–'}</div>
+      <div class="bew-avg-count">${liste.length} Bewertung${liste.length !== 1 ? 'en' : ''} insgesamt</div>
     </div>
-    ${totalEinsaetze ? `<div class="bew-stats-grid" style="margin-bottom:20px">
-      ${Object.entries(branchenMap).map(([k, v]) =>
-        `<span class="bew-stat-pill">${BRANCHEN_LABEL[k] || k}: ${v} Einsatz${v !== 1 ? 'e' : ''}</span>`
-      ).join('')}
-    </div>` : ''}
-    ${bews?.length ? `<div class="bew-list">
-      ${bews.map(b => {
-        const dat   = new Date(b.created_at).toLocaleDateString('de-AT', { month: 'long', year: 'numeric' });
-        const firma = escH(firmaMap[b.bewerter_id] || 'Arbeitgeber');
+    ${branchenZeilen ? `<div class="bew-branchen"><div class="bew-branchen-titel">Nach Branche</div>${branchenZeilen}</div>` : ''}
+    ${liste.length ? `<div class="bew-branchen-titel" style="margin-top:20px">Alle Bewertungen</div>
+    <div class="bew-list">
+      ${liste.map(x => {
+        const dat = new Date(x.created_at).toLocaleDateString('de-AT', { day: 'numeric', month: 'long', year: 'numeric' });
+        const teile = [
+          escH(firmaMap[x.bewerter_id] || 'Arbeitgeber'),
+          x.jobs?.branche ? escH(BRANCHEN_LABEL[x.jobs.branche] || x.jobs.branche) : null,
+          x.jobs?.titel ? escH(x.jobs.titel) : null,
+          dat,
+        ].filter(Boolean);
         return `<div class="bew-item">
-          <div class="bew-item-stars">${renderSterneStatic(b.sterne)}</div>
-          ${b.kommentar ? `<div class="bew-item-text">"${escH(b.kommentar)}"</div>` : ''}
-          <div class="bew-item-meta">${firma} · ${dat}</div>
+          <div class="bew-item-stars">${renderSterneStatic(x.sterne)}</div>
+          ${x.kommentar ? `<div class="bew-item-text">"${escH(x.kommentar)}"</div>` : ''}
+          <div class="bew-item-meta">${teile.join(' · ')}</div>
         </div>`;
       }).join('')}
     </div>` : ''}`;
