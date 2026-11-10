@@ -86,6 +86,34 @@
     .btn-refresh:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
 
     .admin-section { padding: 28px; display: none; }
+    /* Inserate als Karten (wie Jobbörse) */
+    .ai-gruppe-titel { font-size: 15px; font-weight: 800; color: var(--navy); margin: 8px 0 14px; }
+    .ai-verg-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; font: inherit; font-size: 15px; font-weight: 800; color: var(--text2); padding: 6px 0; margin: 24px 0 14px; }
+    .ai-verg-btn svg { transition: transform .2s; }
+    .ai-verg-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .ai-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .ai-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .ai-card.ai-vergangen { opacity: .8; }
+    .ai-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+    .ai-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ai-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; padding: 3px 9px; border-radius: 100px; background: #FEF3E8; color: #A85500; }
+    .ai-tag-voll { background: #E6F5EE; color: #17794A; }
+    .ai-tag-multi { background: #EAF1FB; color: #1A5FA0; }
+    .ai-titel { font-size: 17px; font-weight: 800; color: var(--navy); overflow-wrap: anywhere; }
+    .ai-firma { font-size: 13px; color: var(--text2); margin-top: -6px; }
+    .ai-metas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 13px; color: var(--text); }
+    .ai-metas span { color: var(--text2); }
+    .ai-bew { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+    .ai-bew-zahlen { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+    .ai-bew-zahl b { font-size: 16px; color: var(--navy); }
+    .ai-termine { font-size: 12px; color: var(--text2); line-height: 1.7; }
+    .ai-termine .ai-voll { color: #17794A; font-weight: 700; }
+    .ai-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; }
+    .ai-lohn { font-size: 18px; font-weight: 800; color: var(--navy); }
+    .ai-lohn small { font-size: 12px; font-weight: 400; color: var(--text2); }
+    .ai-link { font-size: 12px; font-weight: 700; color: var(--navy); text-decoration: none; }
+    .ai-link:hover { color: var(--accent); }
+    .ai-leer { padding: 28px; text-align: center; color: var(--text2); background: var(--card); border: 1.5px dashed var(--border); border-radius: 14px; }
     .admin-section.visible { display: block; }
     .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
     .section-title { font-size: 20px; font-weight: 800; color: var(--navy); }
@@ -374,18 +402,12 @@
         <select class="filter-select" id="inserate-status-filter" onchange="filterInserate()">
           <option value="">Alle Status</option>
           <option value="aktiv">Aktiv</option>
-          <option value="inaktiv">Inaktiv</option>
-          <option value="erledigt">Erledigt</option>
+          <option value="inaktiv">Pausiert / inaktiv</option>
+          <option value="ausgebucht">Ausgebucht</option>
+          <option value="neu">Mit offenen Bewerbungen</option>
         </select>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Titel</th><th>Arbeitgeber</th><th>Datum</th><th>Bewerbungen</th><th>Status</th></tr></thead>
-          <tbody id="inserate-tbody">
-            <tr><td colspan="5" class="table-empty">Wird geladen…</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <div id="inserate-karten"><div class="ai-leer">Wird geladen…</div></div>
     </div>
 
     <!-- 4. RECHNUNGEN PRO ARBEITGEBER -->
@@ -567,7 +589,7 @@
 
   // ── Data Loading ──
   async function loadAllData() {
-    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadEinstellungen(), loadAppSettings(), loadBewertungen()]);
+    await Promise.all([loadNutzer(), loadJobs(), loadBewerbungen(), loadRechnungen(), loadWaitlist(), loadEinstellungen(), loadAppSettings(), loadBewertungen(), loadTermine()]);
     renderNutzerStats();
     populateNutzerQuelleFilter();
     filterNutzerQuelle();
@@ -783,6 +805,15 @@
       const { data } = await odojSb.from('jobs').select('*').order('erstellt_am', { ascending: false }).limit(ADMIN_LOAD_LIMIT);
       allJobs = data || [];
     } catch (_) { allJobs = []; }
+  }
+
+  // Termine der Mehrtages-Inserate (für Termin-Anzeige, Besetzung und Lohn pro Tag)
+  let allTermine = [];
+  async function loadTermine() {
+    try {
+      const { data } = await odojSb.from('job_termine').select('id, job_id, datum, uhrzeit_von, uhrzeit_bis, stundensatz').order('datum').limit(5000);
+      allTermine = data || [];
+    } catch (_) { allTermine = []; }
   }
 
   async function loadBewerbungen() {
@@ -1132,31 +1163,116 @@
     btn.textContent = show ? 'Liste ausblenden' : 'Liste anzeigen';
   }
 
-  // ── 3. Inserate ──
+  // ── 3. Inserate (Karten wie Jobbörse, mit Bewerbungszahlen) ──
+  // Ein Inserat bleibt unter "Aktuell", auch wenn es voll besetzt ist - erst
+  // wenn das Ende seines letzten Termins vorbei ist, kommt es zu "Vergangene".
+  const AI_BRANCHEN = { gastro: 'Gastronomie', events: 'Veranstaltungen & Events', hotel: 'Hotellerie', einzelhandel: 'Einzelhandel', sonstige: 'Sonstige' };
+  let _aiVergOffen = false;
+
+  function aiDaten(j) {
+    const termine = allTermine.filter(t => t.job_id === j.id);
+    const zeiten = (termine.length ? termine : [null]).map(t => ({
+      t, datum: t?.datum || j.datum,
+      von: (t?.uhrzeit_von || j.uhrzeit_von || '').slice(0, 5),
+      bis: (t?.uhrzeit_bis || j.uhrzeit_bis || '').slice(0, 5),
+    })).filter(z => z.datum);
+    const ende = z => {
+      if (!z.bis) return z.datum + 'T23:59';
+      const tag = (z.von && z.bis <= z.von) ? new Date(Date.parse(z.datum + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10) : z.datum;
+      return tag + 'T' + z.bis;
+    };
+    const jetzt = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Vienna' }).replace(' ', 'T').slice(0, 16);
+    const bews = allBewerbungen.filter(x => x.job_id === j.id);
+    const angenommen = bews.filter(x => x.status === 'angenommen' || x.status === 'abgeschlossen');
+    const plaetze = j.plaetze || 1;
+    const besetzung = zeiten.map(z => ({ ...z, besetzt: angenommen.filter(x => termine.length ? x.termin_id === z.t?.id : !x.termin_id).length }));
+    return {
+      termine, zeiten: besetzung, plaetze,
+      vergangen: zeiten.length > 0 && zeiten.every(z => ende(z) <= jetzt),
+      naechstes: (zeiten.find(z => ende(z) > jetzt) || zeiten[zeiten.length - 1] || {}).datum || j.datum || '',
+      gesamt: bews.length,
+      offen: bews.filter(x => x.status === 'ausstehend').length,
+      angenommen: angenommen.length,
+      abgelehnt: bews.filter(x => x.status === 'abgelehnt').length,
+      ausgebucht: besetzung.length > 0 && besetzung.every(z => z.besetzt >= plaetze),
+    };
+  }
+
   function filterInserate() {
     const q      = document.getElementById('inserate-search').value.toLowerCase();
     const status = document.getElementById('inserate-status-filter').value;
-    const list = allJobs.filter(j => {
-      if (q && !(j.titel || '').toLowerCase().includes(q) && !(j.firmenname || '').toLowerCase().includes(q)) return false;
-      if (status && j.status !== status) return false;
+    const liste = allJobs.map(j => ({ j, d: aiDaten(j) })).filter(({ j, d }) => {
+      const firma = (findNutzer(j.arbeitgeber_id)?.firmenname || j.firmenname || '').toLowerCase();
+      if (q && !(j.titel || '').toLowerCase().includes(q) && !firma.includes(q) && !(j.ort || '').toLowerCase().includes(q)) return false;
+      if (status === 'aktiv' && j.status !== 'aktiv') return false;
+      if (status === 'inaktiv' && j.status === 'aktiv') return false;
+      if (status === 'ausgebucht' && !d.ausgebucht) return false;
+      if (status === 'neu' && !d.offen) return false;
       return true;
     });
-    renderInserateTable(list);
+    renderInserateKarten(liste);
   }
 
-  function renderInserateTable(list) {
-    const tbody = document.getElementById('inserate-tbody');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Keine Inserate gefunden</td></tr>'; return; }
-    tbody.innerHTML = list.map(j => {
-      const bew = allBewerbungen.filter(b => b.job_id === j.id).length;
-      return `<tr>
-        <td style="font-weight:600;max-width:220px;word-break:break-word">${j.titel || '–'}</td>
-        <td style="font-size:12px">${j.firmenname || '–'}</td>
-        <td style="font-size:12px;white-space:nowrap">${fmtDate(j.datum || j.erstellt_am)}</td>
-        <td style="text-align:center">${bew}</td>
-        <td>${statusBadge(j.status)}</td>
-      </tr>`;
-    }).join('');
+  function aiKarte({ j, d }) {
+    const fd = s => new Date(s + 'T12:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'short' });
+    const firma = findNutzer(j.arbeitgeber_id)?.firmenname || j.firmenname || '–';
+    const erste = d.zeiten[0], letzte = d.zeiten[d.zeiten.length - 1];
+    const datumTxt = !erste ? '–' : (d.zeiten.length > 1 ? `${fd(erste.datum)} – ${fd(letzte.datum)}` : fd(erste.datum));
+    const zeitTxt = erste && erste.von ? `${erste.von} – ${erste.bis || '–'}` : '–';
+    const loehne = (d.termine.length ? d.termine : [null]).map(t => odojLohn(j, t).betrag);
+    const minLohn = Math.min(...loehne), lohnVerschieden = loehne.some(x => x !== loehne[0]);
+    const terminListe = d.zeiten.length > 1
+      ? `<div class="ai-termine">${d.zeiten.map(z => `${fd(z.datum)}${z.von ? ' ' + z.von + '–' + z.bis : ''}: <span class="${z.besetzt >= d.plaetze ? 'ai-voll' : ''}">${z.besetzt}/${d.plaetze} besetzt</span>`).join('<br>')}</div>`
+      : '';
+    return `<div class="ai-card${d.vergangen ? ' ai-vergangen' : ''}">
+      <div class="ai-top">
+        <div class="ai-tags">
+          <span class="ai-tag">${escHtml(AI_BRANCHEN[j.branche] || j.branche || '–')}</span>
+          ${d.zeiten.length > 1 ? `<span class="ai-tag ai-tag-multi">${d.zeiten.length} Termine</span>` : ''}
+          ${d.ausgebucht ? '<span class="ai-tag ai-tag-voll">✓ Ausgebucht</span>' : ''}
+        </div>
+        ${statusBadge(j.status)}
+      </div>
+      <div class="ai-titel">${escHtml(j.titel || '–')}</div>
+      <div class="ai-firma">${escHtml(firma)}</div>
+      <div class="ai-metas">
+        <div><span>Datum:</span> ${datumTxt}</div>
+        <div><span>Zeit:</span> ${zeitTxt}</div>
+        <div><span>Ort:</span> ${escHtml(j.ort || '–')}</div>
+        <div><span>Plätze:</span> ${d.plaetze}${d.zeiten.length > 1 ? ' pro Termin' : ''}</div>
+        <div><span>Ab:</span> ${j.mindestalter || 18} Jahren</div>
+        <div><span>Erstellt:</span> ${fmtDate(j.erstellt_am)}</div>
+      </div>
+      <div class="ai-bew">
+        <strong>Bewerbungen</strong>
+        <div class="ai-bew-zahlen">
+          <span class="ai-bew-zahl"><b>${d.gesamt}</b> gesamt</span>
+          <span class="ai-bew-zahl"><b>${d.angenommen}</b> angenommen</span>
+          <span class="ai-bew-zahl"><b>${d.offen}</b> offen</span>
+          <span class="ai-bew-zahl"><b>${d.abgelehnt}</b> abgelehnt</span>
+        </div>
+        ${d.zeiten.length <= 1 ? `<div class="ai-termine" style="margin-top:4px"><span class="${d.ausgebucht ? 'ai-voll' : ''}">${d.zeiten[0]?.besetzt || 0}/${d.plaetze} Plätze besetzt</span></div>` : ''}
+      </div>
+      ${terminListe}
+      <div class="ai-footer">
+        <div class="ai-lohn">${lohnVerschieden ? 'ab ' : ''}€ ${odojEuro(minLohn, 0)} <small>/ Tag</small></div>
+        <a class="ai-link" href="/job-detail.html?id=${j.id}" target="_blank" rel="noopener">Details ansehen →</a>
+      </div>
+    </div>`;
+  }
+
+  function renderInserateKarten(liste) {
+    const el = document.getElementById('inserate-karten');
+    const aktuell = liste.filter(x => !x.d.vergangen).sort((a, b) => a.d.naechstes.localeCompare(b.d.naechstes));
+    const vergangen = liste.filter(x => x.d.vergangen).sort((a, b) => b.d.naechstes.localeCompare(a.d.naechstes));
+    el.innerHTML = `
+      <div class="ai-gruppe-titel">Aktuelle Inserate (${aktuell.length})</div>
+      ${aktuell.length ? `<div class="ai-grid">${aktuell.map(aiKarte).join('')}</div>` : '<div class="ai-leer">Keine aktuellen Inserate</div>'}
+      <button type="button" class="ai-verg-btn" aria-expanded="${_aiVergOffen}" onclick="_aiVergOffen = !_aiVergOffen; filterInserate()">
+        Vergangene Inserate (${vergangen.length})
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      ${_aiVergOffen ? (vergangen.length ? `<div class="ai-grid">${vergangen.map(aiKarte).join('')}</div>` : '<div class="ai-leer">Keine vergangenen Inserate</div>') : ''}`;
   }
 
   // ── 4. Rechnungen pro Arbeitgeber ──
