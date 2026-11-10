@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passwort zurücksetzen – ODOJ</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F7FB;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+<!-- Vorlage für Supabase → Authentication → Emails → Templates → "Reset Password".
+     Betreff: Dein neues Passwort für ODOJ
+     Gleiches Design wie confirmation.html (Registrierungs-Bestätigung). -->
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F7FB;padding:40px 16px;">
+  <tr>
+    <td align="center">
+
+      <!-- Container -->
+      <table width="600" cellpadding="0" cellspacing="0"
+             style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(11,31,58,0.12);">
+
+        <!-- HEADER -->
+        <tr>
+          <td style="background:#0B1F3A;padding:28px 40px;text-align:center;">
+            <div style="font-size:36px;font-weight:800;letter-spacing:-1px;line-height:1;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+              <span style="color:#ffffff;">O</span><span style="color:#E8A020;">D</span><span style="color:#ffffff;">O</span><span style="color:#E8A020;">J</span>
+            </div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E8A020;margin-top:6px;">
+              ONE DAY ONE JOB
+            </div>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:44px 40px 36px;">
+
+            <!-- Symbol -->
+            <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+              <tr>
+                <td style="width:56px;height:56px;background:#FDF3DC;border-radius:50%;text-align:center;vertical-align:middle;font-size:26px;line-height:56px;">
+                  🔑
+                </td>
+              </tr>
+            </table>
+
+            <!-- Headline -->
+            <h1 style="margin:0 0 16px;font-size:26px;font-weight:800;color:#0B1F3A;line-height:1.2;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+              Neues Passwort festlegen
+            </h1>
+
+            <!-- Intro Text -->
+            <p style="margin:0 0 32px;font-size:16px;color:#3A5070;line-height:1.7;">
+              Hallo,<br>
+              für dein ODOJ-Konto wurde ein neues Passwort angefordert.
+              Klicke auf den Button, um dir jetzt ein neues Passwort zu vergeben.
+            </p>
+
+            <!-- CTA Button -->
+            <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="background:#E8A020;border-radius:10px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block;padding:16px 36px;color:#0B1F3A;font-size:16px;font-weight:700;text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:0.2px;">
+                    Neues Passwort festlegen →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback Text -->
+            <p style="margin:0 0 28px;font-size:13px;color:#8A9AB5;line-height:1.6;">
+              Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:<br>
+              <span style="color:#4A8FC1;word-break:break-all;">{{ .ConfirmationURL }}</span>
+            </p>
+
+            <!-- Hinweis-Box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+              <tr>
+                <td style="background:#F4F7FB;border-left:4px solid #E8A020;border-radius:8px;padding:16px 18px;">
+                  <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#0B1F3A;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+                    Du hast kein neues Passwort angefordert?
+                  </p>
+                  <p style="margin:0;font-size:13px;color:#3A5070;line-height:1.6;">
+                    Dann kannst du diese E-Mail einfach ignorieren – dein bisheriges Passwort bleibt gültig.
+                    Der Link ist aus Sicherheitsgründen nur kurze Zeit gültig und kann nur einmal verwendet werden.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="background:#F4F7FB;border-top:1px solid #E8EDF5;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 8px;font-size:13px;color:#8A9AB5;line-height:1.6;">
+              © 2026 ODOJ – One Day One Job | Vorarlberg, Österreich
+            </p>
+            <p style="margin:0 0 10px;font-size:13px;">
+              <a href="https://odoj.at" style="color:#E8A020;text-decoration:none;font-weight:600;">odoj.at</a>
+              &nbsp;·&nbsp;
+              <a href="mailto:info@odoj.at" style="color:#E8A020;text-decoration:none;font-weight:600;">info@odoj.at</a>
+            </p>
+            <p style="margin:0;font-size:11px;color:#A8CBE5;">
+              Du erhältst diese E-Mail, weil für dein ODOJ-Konto ein neues Passwort angefordert wurde.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+      <!-- /Container -->
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
