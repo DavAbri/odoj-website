@@ -155,6 +155,9 @@
     .nd-loeschen-btns { display: flex; gap: 10px; flex-wrap: wrap; }
     .nd-gesperrt-badge { display: inline-block; margin-bottom: 10px; font-size: 12px; font-weight: 700; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 100px; padding: 3px 10px; }
     .nd-loeschen { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .nd-pwreset { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .nd-pwreset .btn-sm { padding: 10px 16px; font-size: 13px; min-height: 40px; }
+    .nd-pwreset-status { font-size: 13px; margin-top: 8px; line-height: 1.5; }
     .nd-loeschen .btn-sm { padding: 10px 16px; font-size: 13px; min-height: 40px; }
     .nd-loeschen-hinweis { font-size: 12px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
     .nd-loeschen-fehler { font-size: 13px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; margin-top: 10px; line-height: 1.5; }
@@ -996,6 +999,15 @@
       ? bewertungen.map(bw => `<div class="nd-list-item"><span>${'★'.repeat(bw.sterne || 0)}${'☆'.repeat(5 - (bw.sterne || 0))} ${escHtml(bw.kommentar) || ''}</span><span style="color:var(--text2)">${fmtDate(bw.created_at)}</span></div>`).join('')
       : '<div class="table-empty">Keine Bewertungen</div>';
 
+    // Passwort-Reset-Mail an diesen Nutzer (gleiche Mail wie "Passwort vergessen")
+    if (n.email) {
+      html += `<div class="nd-pwreset">
+        <button type="button" class="btn-sm btn-secondary" id="nd-pwreset-btn" onclick="pwResetSenden('${userId}')">Passwort-Reset-Mail senden</button>
+        <div class="nd-loeschen-hinweis">Schickt dem Nutzer dieselbe Mail wie „Passwort vergessen“ an ${escHtml(n.email)}. Das Passwort ändert sich erst, wenn er über den Link ein neues festlegt.</div>
+        <div class="nd-pwreset-status" id="nd-pwreset-status" hidden></div>
+      </div>`;
+    }
+
     // Nutzer löschen (über die Edge Function admin-delete-user: Admin-Konten und
     // Nutzer mit Aktivität werden dort serverseitig abgelehnt)
     if (!ADMIN_EMAILS.includes(String(n.email || '').toLowerCase())) {
@@ -1013,6 +1025,29 @@
     document.getElementById('nutzer-detail-modal-content').innerHTML = html;
     openModal('nutzer-detail-modal');
     loadNutzerAuthInfo(userId);
+  }
+
+  async function pwResetSenden(userId) {
+    const n = findNutzer(userId) || {};
+    if (!n.email) return;
+    if (!confirm(`Passwort-Reset-Mail an ${n.email} senden?`)) return;
+    const btn = document.getElementById('nd-pwreset-btn');
+    const st = document.getElementById('nd-pwreset-status');
+    btn.disabled = true; btn.textContent = 'Wird gesendet…'; st.hidden = true;
+    // Link führt auf die Anmeldeseite, dort erscheint "Neues Passwort setzen"
+    const ziel = (['odoj.at', 'www.odoj.at'].includes(location.hostname) ? 'https://odoj.at' : location.origin) + '/login.html';
+    const { error } = await odojSb.auth.resetPasswordForEmail(n.email, { redirectTo: ziel });
+    btn.disabled = false; btn.textContent = 'Passwort-Reset-Mail senden';
+    st.hidden = false;
+    if (error) {
+      st.style.color = '#991b1b';
+      st.textContent = /rate|limit|seconds/i.test(error.message)
+        ? 'Zu viele Mails in kurzer Zeit – bitte etwas später erneut versuchen. (' + error.message + ')'
+        : 'Senden fehlgeschlagen: ' + error.message;
+      return;
+    }
+    st.style.color = '#065f46';
+    st.textContent = '✓ Mail an ' + n.email + ' wurde verschickt.';
   }
 
   async function nutzerSperren(userId, sperren) {
