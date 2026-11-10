@@ -1169,110 +1169,100 @@
   const AI_BRANCHEN = { gastro: 'Gastronomie', events: 'Veranstaltungen & Events', hotel: 'Hotellerie', einzelhandel: 'Einzelhandel', sonstige: 'Sonstige' };
   let _aiVergOffen = false;
 
-  function aiDaten(j) {
-    const termine = allTermine.filter(t => t.job_id === j.id);
-    const zeiten = (termine.length ? termine : [null]).map(t => ({
-      t, datum: t?.datum || j.datum,
-      von: (t?.uhrzeit_von || j.uhrzeit_von || '').slice(0, 5),
-      bis: (t?.uhrzeit_bis || j.uhrzeit_bis || '').slice(0, 5),
-    })).filter(z => z.datum);
-    const ende = z => {
-      if (!z.bis) return z.datum + 'T23:59';
-      const tag = (z.von && z.bis <= z.von) ? new Date(Date.parse(z.datum + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10) : z.datum;
-      return tag + 'T' + z.bis;
-    };
+  // Eine Karte pro Termin (wie Jobbörse): Inserate mit mehreren Terminen
+  // erscheinen mit jedem Datum einzeln, jeweils mit eigener Besetzung und
+  // eigenen Bewerbungen. Ein Termin kommt erst nach seinem Ende zu "Vergangene".
+  function aiKartenDaten(j) {
+    const termine = allTermine.filter(t => t.job_id === j.id).sort((x, y) => x.datum.localeCompare(y.datum));
     const jetzt = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Vienna' }).replace(' ', 'T').slice(0, 16);
-    const bews = allBewerbungen.filter(x => x.job_id === j.id);
-    const angenommen = bews.filter(x => x.status === 'angenommen' || x.status === 'abgeschlossen');
     const plaetze = j.plaetze || 1;
-    const besetzung = zeiten.map(z => ({ ...z, besetzt: angenommen.filter(x => termine.length ? x.termin_id === z.t?.id : !x.termin_id).length }));
-    return {
-      termine, zeiten: besetzung, plaetze,
-      vergangen: zeiten.length > 0 && zeiten.every(z => ende(z) <= jetzt),
-      naechstes: (zeiten.find(z => ende(z) > jetzt) || zeiten[zeiten.length - 1] || {}).datum || j.datum || '',
-      gesamt: bews.length,
-      offen: bews.filter(x => x.status === 'ausstehend').length,
-      angenommen: angenommen.length,
-      abgelehnt: bews.filter(x => x.status === 'abgelehnt').length,
-      ausgebucht: besetzung.length > 0 && besetzung.every(z => z.besetzt >= plaetze),
-    };
+    const alleBews = allBewerbungen.filter(x => x.job_id === j.id);
+    return (termine.length ? termine : [null]).map((t, i) => {
+      const datum = t?.datum || j.datum || '';
+      const von = (t?.uhrzeit_von || j.uhrzeit_von || '').slice(0, 5);
+      const bis = (t?.uhrzeit_bis || j.uhrzeit_bis || '').slice(0, 5);
+      const tagEnde = (von && bis && bis <= von) ? new Date(Date.parse(datum + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10) : datum;
+      const ende = datum ? tagEnde + 'T' + (bis || '23:59') : '';
+      const bews = termine.length ? alleBews.filter(x => x.termin_id === t.id) : alleBews.filter(x => !x.termin_id);
+      const angenommen = bews.filter(x => x.status === 'angenommen' || x.status === 'abgeschlossen').length;
+      return {
+        j, t, nr: i + 1, anzahl: termine.length || 1, datum, von, bis, plaetze,
+        vergangen: !!ende && ende <= jetzt,
+        gesamt: bews.length, angenommen,
+        offen: bews.filter(x => x.status === 'ausstehend').length,
+        abgelehnt: bews.filter(x => x.status === 'abgelehnt').length,
+        ausgebucht: angenommen >= plaetze,
+        lohn: odojLohn(j, t).betrag,
+      };
+    });
   }
 
   function filterInserate() {
     const q      = document.getElementById('inserate-search').value.toLowerCase();
     const status = document.getElementById('inserate-status-filter').value;
-    const liste = allJobs.map(j => ({ j, d: aiDaten(j) })).filter(({ j, d }) => {
+    const karten = allJobs.flatMap(j => {
       const firma = (findNutzer(j.arbeitgeber_id)?.firmenname || j.firmenname || '').toLowerCase();
-      if (q && !(j.titel || '').toLowerCase().includes(q) && !firma.includes(q) && !(j.ort || '').toLowerCase().includes(q)) return false;
-      if (status === 'aktiv' && j.status !== 'aktiv') return false;
-      if (status === 'inaktiv' && j.status === 'aktiv') return false;
-      if (status === 'ausgebucht' && !d.ausgebucht) return false;
-      if (status === 'neu' && !d.offen) return false;
-      return true;
+      if (q && !(j.titel || '').toLowerCase().includes(q) && !firma.includes(q) && !(j.ort || '').toLowerCase().includes(q)) return [];
+      if (status === 'aktiv' && j.status !== 'aktiv') return [];
+      if (status === 'inaktiv' && j.status === 'aktiv') return [];
+      return aiKartenDaten(j).filter(k => (status !== 'ausgebucht' || k.ausgebucht) && (status !== 'neu' || k.offen));
     });
-    renderInserateKarten(liste);
+    renderInserateKarten(karten);
   }
 
-  function aiKarte({ j, d }) {
-    const fd = s => new Date(s + 'T12:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'short' });
+  function aiKarte(k) {
+    const j = k.j;
+    const datumTxt = k.datum ? new Date(k.datum + 'T12:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' }) : '–';
     const firma = findNutzer(j.arbeitgeber_id)?.firmenname || j.firmenname || '–';
-    const erste = d.zeiten[0], letzte = d.zeiten[d.zeiten.length - 1];
-    const datumTxt = !erste ? '–' : (d.zeiten.length > 1 ? `${fd(erste.datum)} – ${fd(letzte.datum)}` : fd(erste.datum));
-    const zeitTxt = erste && erste.von ? `${erste.von} – ${erste.bis || '–'}` : '–';
-    const loehne = (d.termine.length ? d.termine : [null]).map(t => odojLohn(j, t).betrag);
-    const minLohn = Math.min(...loehne), lohnVerschieden = loehne.some(x => x !== loehne[0]);
-    const terminListe = d.zeiten.length > 1
-      ? `<div class="ai-termine">${d.zeiten.map(z => `${fd(z.datum)}${z.von ? ' ' + z.von + '–' + z.bis : ''}: <span class="${z.besetzt >= d.plaetze ? 'ai-voll' : ''}">${z.besetzt}/${d.plaetze} besetzt</span>`).join('<br>')}</div>`
-      : '';
-    return `<div class="ai-card${d.vergangen ? ' ai-vergangen' : ''}">
+    const std = odojStundenAus(k.von, k.bis);
+    return `<div class="ai-card${k.vergangen ? ' ai-vergangen' : ''}">
       <div class="ai-top">
         <div class="ai-tags">
           <span class="ai-tag">${escHtml(AI_BRANCHEN[j.branche] || j.branche || '–')}</span>
-          ${d.zeiten.length > 1 ? `<span class="ai-tag ai-tag-multi">${d.zeiten.length} Termine</span>` : ''}
-          ${d.ausgebucht ? '<span class="ai-tag ai-tag-voll">✓ Ausgebucht</span>' : ''}
+          ${k.anzahl > 1 ? `<span class="ai-tag ai-tag-multi">Termin ${k.nr} von ${k.anzahl}</span>` : ''}
+          ${k.ausgebucht ? '<span class="ai-tag ai-tag-voll">✓ Ausgebucht</span>' : ''}
         </div>
         ${statusBadge(j.status)}
       </div>
       <div class="ai-titel">${escHtml(j.titel || '–')}</div>
       <div class="ai-firma">${escHtml(firma)}</div>
       <div class="ai-metas">
-        <div><span>Datum:</span> ${datumTxt}</div>
-        <div><span>Zeit:</span> ${zeitTxt}</div>
+        <div style="grid-column:1/-1"><span>Datum:</span> <strong>${datumTxt}</strong></div>
+        <div><span>Zeit:</span> ${k.von ? k.von + ' – ' + (k.bis || '–') : '–'}${std ? ' (' + String(std).replace('.', ',') + ' Std.)' : ''}</div>
         <div><span>Ort:</span> ${escHtml(j.ort || '–')}</div>
-        <div><span>Plätze:</span> ${d.plaetze}${d.zeiten.length > 1 ? ' pro Termin' : ''}</div>
         <div><span>Ab:</span> ${j.mindestalter || 18} Jahren</div>
         <div><span>Erstellt:</span> ${fmtDate(j.erstellt_am)}</div>
       </div>
       <div class="ai-bew">
-        <strong>Bewerbungen</strong>
+        <strong>Bewerbungen${k.anzahl > 1 ? ' für diesen Termin' : ''}</strong>
         <div class="ai-bew-zahlen">
-          <span class="ai-bew-zahl"><b>${d.gesamt}</b> gesamt</span>
-          <span class="ai-bew-zahl"><b>${d.angenommen}</b> angenommen</span>
-          <span class="ai-bew-zahl"><b>${d.offen}</b> offen</span>
-          <span class="ai-bew-zahl"><b>${d.abgelehnt}</b> abgelehnt</span>
+          <span class="ai-bew-zahl"><b>${k.gesamt}</b> gesamt</span>
+          <span class="ai-bew-zahl"><b>${k.angenommen}</b> angenommen</span>
+          <span class="ai-bew-zahl"><b>${k.offen}</b> offen</span>
+          <span class="ai-bew-zahl"><b>${k.abgelehnt}</b> abgelehnt</span>
         </div>
-        ${d.zeiten.length <= 1 ? `<div class="ai-termine" style="margin-top:4px"><span class="${d.ausgebucht ? 'ai-voll' : ''}">${d.zeiten[0]?.besetzt || 0}/${d.plaetze} Plätze besetzt</span></div>` : ''}
+        <div class="ai-termine" style="margin-top:4px"><span class="${k.ausgebucht ? 'ai-voll' : ''}">${k.angenommen}/${k.plaetze} Plätze besetzt</span></div>
       </div>
-      ${terminListe}
       <div class="ai-footer">
-        <div class="ai-lohn">${lohnVerschieden ? 'ab ' : ''}€ ${odojEuro(minLohn, 0)} <small>/ Tag</small></div>
-        <a class="ai-link" href="/job-detail.html?id=${j.id}" target="_blank" rel="noopener">Details ansehen →</a>
+        <div class="ai-lohn">€ ${odojEuro(k.lohn, 0)} <small>/ Tag</small></div>
+        <a class="ai-link" href="/job-detail.html?id=${j.id}${k.t ? '&termin=' + k.t.id : ''}" target="_blank" rel="noopener">Details ansehen →</a>
       </div>
     </div>`;
   }
 
-  function renderInserateKarten(liste) {
+  function renderInserateKarten(karten) {
     const el = document.getElementById('inserate-karten');
-    const aktuell = liste.filter(x => !x.d.vergangen).sort((a, b) => a.d.naechstes.localeCompare(b.d.naechstes));
-    const vergangen = liste.filter(x => x.d.vergangen).sort((a, b) => b.d.naechstes.localeCompare(a.d.naechstes));
+    const key = k => (k.datum || '') + ' ' + (k.von || '');
+    const aktuell = karten.filter(k => !k.vergangen).sort((a, b) => key(a).localeCompare(key(b)));
+    const vergangen = karten.filter(k => k.vergangen).sort((a, b) => key(b).localeCompare(key(a)));
     el.innerHTML = `
-      <div class="ai-gruppe-titel">Aktuelle Inserate (${aktuell.length})</div>
+      <div class="ai-gruppe-titel">Aktuelle Termine (${aktuell.length})</div>
       ${aktuell.length ? `<div class="ai-grid">${aktuell.map(aiKarte).join('')}</div>` : '<div class="ai-leer">Keine aktuellen Inserate</div>'}
       <button type="button" class="ai-verg-btn" aria-expanded="${_aiVergOffen}" onclick="_aiVergOffen = !_aiVergOffen; filterInserate()">
-        Vergangene Inserate (${vergangen.length})
+        Vergangene Termine (${vergangen.length})
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
-      ${_aiVergOffen ? (vergangen.length ? `<div class="ai-grid">${vergangen.map(aiKarte).join('')}</div>` : '<div class="ai-leer">Keine vergangenen Inserate</div>') : ''}`;
+      ${_aiVergOffen ? (vergangen.length ? `<div class="ai-grid">${vergangen.map(aiKarte).join('')}</div>` : '<div class="ai-leer">Keine vergangenen Termine</div>') : ''}`;
   }
 
   // ── 4. Rechnungen pro Arbeitgeber ──
