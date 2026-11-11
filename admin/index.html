@@ -285,6 +285,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Rechnungen
       </a>
+      <a href="#" class="nav-link" data-section="umsatz" onclick="showSection('umsatz');return false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Umsatz
+      </a>
       <a href="#" class="nav-link" data-section="launch" onclick="showSection('launch');return false">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
         Launch
@@ -408,6 +412,23 @@
         </select>
       </div>
       <div id="inserate-karten"><div class="ai-leer">Wird geladen…</div></div>
+    </div>
+
+    <!-- UMSATZ (aus den ODOJ-Rechnungen) -->
+    <div id="section-umsatz" class="admin-section">
+      <div class="section-note">Umsatz = Summe der ODOJ-Rechnungen (Vermittlungsgebühren), nach Rechnungsdatum. Stornierte Rechnungen zählen nicht. „Bezahlt“ = als bezahlt markiert unter „Rechnungen“.</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Umsatz gesamt</div><div class="stat-value" id="ums-gesamt">–</div><div class="stat-sub" id="ums-anzahl">–</div></div>
+        <div class="stat-card green"><div class="stat-label">Davon bezahlt</div><div class="stat-value" id="ums-bezahlt">–</div></div>
+        <div class="stat-card red"><div class="stat-label">Noch offen</div><div class="stat-value" id="ums-offen">–</div></div>
+        <div class="stat-card blue"><div class="stat-label">Aktueller Monat</div><div class="stat-value" id="ums-monat">–</div><div class="stat-sub" id="ums-monat-name">–</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Monat</th><th style="text-align:right">Rechnungen</th><th style="text-align:right">Umsatz</th><th style="text-align:right">Bezahlt</th><th style="text-align:right">Offen</th></tr></thead>
+          <tbody id="ums-tbody"><tr><td colspan="5" class="table-empty">Wird geladen…</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- 4. RECHNUNGEN PRO ARBEITGEBER -->
@@ -567,6 +588,7 @@
     newsletter:  { title: 'Newsletter',  sub: '"Benachrichtigung beim Start"-Anmeldungen' },
     inserate:    { title: 'Inserate',    sub: 'Alle Jobinserate im Überblick' },
     rechnungen:  { title: 'Rechnungen',  sub: 'Vermittlungsgebühren pro Arbeitgeber' },
+    umsatz:      { title: 'Umsatz',      sub: 'Vermittlungsgebühren gesamt und pro Monat' },
     launch:      { title: 'Launch',      sub: 'Vorschau-Modus & Start der Plattform' },
     support:     { title: 'Support-Zugriff', sub: 'Im Namen eines Arbeitgebers handeln' },
   };
@@ -596,6 +618,7 @@
     renderNewsletterStats();
     filterInserate();
     renderRechnungenAgTable();
+    renderUmsatz();
     renderRechnungenBanner();
     renderLaunchSection();
     initSupportSection();
@@ -1265,6 +1288,48 @@
       ${_aiVergOffen ? (vergangen.length ? `<div class="ai-grid">${vergangen.map(aiKarte).join('')}</div>` : '<div class="ai-leer">Keine vergangenen Termine</div>') : ''}`;
   }
 
+  // ── Umsatz (aus allRechnungen, keine zusätzliche Abfrage) ──
+  const UMSATZ_AB = '2026-11'; // Monatsübersicht ab November 2026
+  function renderUmsatz() {
+    const eur = n => '€ ' + Number(n || 0).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rech = allRechnungen.filter(r => r.payment_status !== 'storniert' && !String(r.invoice_number || '').startsWith('TEST'));
+    const bezahlt = r => r.payment_status === 'bezahlt'; // wie unter "Rechnungen"
+    const summe = l => l.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const monatVon = r => String(r.issued_at || r.created_at || '').slice(0, 7);
+
+    document.getElementById('ums-gesamt').textContent = eur(summe(rech));
+    document.getElementById('ums-anzahl').textContent = rech.length + ' Rechnung' + (rech.length !== 1 ? 'en' : '');
+    document.getElementById('ums-bezahlt').textContent = eur(summe(rech.filter(bezahlt)));
+    document.getElementById('ums-offen').textContent = eur(summe(rech.filter(r => !bezahlt(r))));
+
+    // Monate von Nov 2026 bis heute (bzw. bis zur jüngsten Rechnung)
+    const heute = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' }).slice(0, 7);
+    const letzter = [heute, ...rech.map(monatVon)].sort().pop();
+    const monate = [];
+    for (let [y, m] = UMSATZ_AB.split('-').map(Number); `${y}-${String(m).padStart(2, '0')}` <= letzter; m === 12 ? (y++, m = 1) : m++) {
+      monate.push(`${y}-${String(m).padStart(2, '0')}`);
+    }
+    const name = k => new Date(k + '-15T12:00:00').toLocaleDateString('de-AT', { month: 'long', year: 'numeric' });
+    const akt = rech.filter(r => monatVon(r) === heute);
+    document.getElementById('ums-monat').textContent = eur(summe(akt));
+    document.getElementById('ums-monat-name').textContent = name(heute);
+
+    const zeilen = monate.slice().reverse().map(k => {
+      const l = rech.filter(r => monatVon(r) === k);
+      return `<tr${k === heute ? ' style="font-weight:700"' : ''}>
+        <td>${name(k)}</td>
+        <td style="text-align:right">${l.length}</td>
+        <td style="text-align:right">${eur(summe(l))}</td>
+        <td style="text-align:right;color:var(--success)">${eur(summe(l.filter(bezahlt)))}</td>
+        <td style="text-align:right;color:var(--danger)">${eur(summe(l.filter(r => !bezahlt(r))))}</td>
+      </tr>`;
+    });
+    const frueher = rech.filter(r => monatVon(r) < UMSATZ_AB);
+    if (frueher.length) zeilen.push(`<tr style="color:var(--text2)"><td>Vor November 2026</td><td style="text-align:right">${frueher.length}</td><td style="text-align:right">${eur(summe(frueher))}</td><td style="text-align:right">${eur(summe(frueher.filter(bezahlt)))}</td><td style="text-align:right">${eur(summe(frueher.filter(r => !bezahlt(r))))}</td></tr>`);
+    zeilen.push(`<tr style="font-weight:800;border-top:2px solid var(--border)"><td>Gesamt</td><td style="text-align:right">${rech.length}</td><td style="text-align:right">${eur(summe(rech))}</td><td style="text-align:right">${eur(summe(rech.filter(bezahlt)))}</td><td style="text-align:right">${eur(summe(rech.filter(r => !bezahlt(r))))}</td></tr>`);
+    document.getElementById('ums-tbody').innerHTML = zeilen.join('');
+  }
+
   // ── 4. Rechnungen pro Arbeitgeber ──
 
   // Name des Arbeitgebers ermitteln: zuerst über sein Profil, sonst über den
@@ -1352,6 +1417,7 @@
       if (idx !== -1) { allRechnungen[idx].payment_status = status; allRechnungen[idx].payment_received_at = payload.payment_received_at; }
       renderAgRechnungenList(agId);
       renderRechnungenAgTable();
+      renderUmsatz();
       const labels = { bezahlt: 'Als bezahlt markiert', offen: 'Auf offen gesetzt', storniert: 'Storniert' };
       showToast(labels[status] || 'Aktualisiert', 'success');
     } catch (_) { showToast('Fehler', 'error'); }
