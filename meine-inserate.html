@@ -1053,15 +1053,12 @@ let _agFirmenname = '';
 let _agUidNummer  = '';
 let _odojVorschauModus = false; // true solange jobs_sichtbar = false
 let _odojLaunchKw      = null;
-// Termine können erst ab diesem Tag eingestellt werden (Plattform für Arbeitnehmer erst dann verfügbar).
-const ODOJ_TERMINE_AB = '2026-11-20';
 function zeigeTerminFehler(text) {
   const el = document.getElementById('ins-termin-fehler');
   if (!el) return;
   el.textContent = text || '';
   el.style.display = text ? 'block' : 'none';
 }
-const ODOJ_TERMINE_AB_TEXT = 'Termine sind erst ab dem 20.11.2026 möglich. ODOJ ist für Arbeitnehmer erst ab dem 20. November verfügbar – bitte wähle ein Datum ab dem 20.11.2026.';
 let _odojLaunchMinDatum = null; // Montag der Launch-KW (YYYY-MM-DD) - Termine davor sind gesperrt
 
 // Montag einer ISO-Kalenderwoche im angegebenen Jahr (bzw. dem aktuellen,
@@ -2381,9 +2378,7 @@ function addTerminChip() {
   if (!val) return;
   const heute = new Date().toISOString().split('T')[0];
   if (val < heute) { alert('Bitte ein Datum in der Zukunft wählen.'); return; }
-  if (val < ODOJ_TERMINE_AB) { zeigeTerminFehler(ODOJ_TERMINE_AB_TEXT); picker.value = ''; return; }
   zeigeTerminFehler('');
-  if (_odojLaunchMinDatum && val < _odojLaunchMinDatum) { alert('Dieser Termin liegt vor dem Start der Plattform – Jobber können sich dafür nicht bewerben.'); return; }
   if (_terminChips.some(c => c.datum === val)) { picker.value = ''; return; }
   _terminChips.push({
     datum: val,
@@ -2493,9 +2488,6 @@ function _insValidateRequired() {
 
   if (!_terminChipsLocked && _terminChips.length < 1) {
     problems.push({ id: 'ins-datum-mehrere-wrap', label: 'Termine', msg: 'Bitte mindestens einen Termin hinzufügen' });
-  }
-  if (!_editJobId && _terminChips.some(c => c.datum < ODOJ_TERMINE_AB)) {
-    problems.push({ id: 'ins-datum-mehrere-wrap', label: 'Termine', msg: 'Termine erst ab dem 20.11.2026 möglich (ODOJ ist für Arbeitnehmer erst ab 20. November verfügbar)' });
   }
 
   const mindestTermineRaw = document.getElementById('ins-mindest-termine').value;
