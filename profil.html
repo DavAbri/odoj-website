@@ -1199,6 +1199,8 @@ function renderJobber(session, profile) {
       ${!vorname || !nachname ? '<div class="pflicht-badge" id="pers-name-badge">Bitte trage deinen echten Namen ein – er wird Arbeitgebern angezeigt</div>' : ''}
       ${!telefon ? '<div class="pflicht-badge" id="pers-telefon-badge">Telefonnummer fehlt – Pflichtfeld, wird für Bewerbungen benötigt</div>' : ''}
       ${!iban ? '<div class="pflicht-badge" id="pers-iban-badge">IBAN fehlt – Pflichtfeld, wird für Bewerbungen benötigt</div>' : ''}
+      ${!addrFull ? '<div class="pflicht-badge" id="pers-addr-badge">Wohnadresse fehlt – Pflichtfeld, wird für Bewerbungen benötigt</div>' : ''}
+      ${!svn ? '<div class="pflicht-badge" id="pers-svn-badge">SV-Nummer fehlt – Pflichtfeld, wird für Bewerbungen benötigt</div>' : ''}
 
       <div id="jb-pers-view">
         <div class="profil-info-grid">
@@ -1225,6 +1227,14 @@ function renderJobber(session, profile) {
           <div class="profil-info-item">
             <label>IBAN <span style="font-weight:300;text-transform:none;letter-spacing:0">(für Lohnüberweisungen)</span></label>
             <span id="jb-info-iban">${escH(iban) || '–'}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>Wohnadresse</label>
+            <span id="jb-info-adresse">${escH(addrFull) || '–'}</span>
+          </div>
+          <div class="profil-info-item">
+            <label>SV-Nummer</label>
+            <span id="jb-info-svn">${escH(svn) || '–'}</span>
           </div>
         </div>
         <button class="btn-edit" onclick="toggleJbPers(true)">Bearbeiten</button>
@@ -1260,73 +1270,29 @@ function renderJobber(session, profile) {
             <label>IBAN <span style="font-weight:300;text-transform:none;letter-spacing:0">(für Lohnüberweisungen vom Arbeitgeber)</span></label>
             <input type="text" id="jb-edit-iban" value="${escH(iban)}" placeholder="AT00 0000 0000 0000 0000" style="text-transform:uppercase">
           </div>
+          <div class="profil-field">
+            <label>Straße + Hausnummer</label>
+            <input type="text" id="addr-strasse" value="${escH(strasse)}" placeholder="Musterstraße 12">
+          </div>
+          <div class="profil-addr-row">
+            <div class="profil-field">
+              <label>PLZ</label>
+              <input type="text" id="addr-plz" value="${escH(plz)}" placeholder="z.B. 6850" maxlength="10">
+            </div>
+            <div class="profil-field">
+              <label>Ort</label>
+              <input type="text" id="addr-ort" value="${escH(ort)}" placeholder="z.B. Dornbirn">
+            </div>
+          </div>
+          <div class="profil-field">
+            <label>Sozialversicherungsnummer</label>
+            <input type="text" id="svn-input" value="${escH(svn)}" placeholder="1234 010190" maxlength="15">
+            <small>10 Ziffern, z.B. 1234 010190</small>
+          </div>
           <div id="jb-pers-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px"></div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn-save" id="jb-pers-btn" onclick="saveJbPers('${session.user.id}')">Speichern</button>
             <button class="btn-edit" onclick="toggleJbPers(false)">Abbrechen</button>
-          </div>
-        </div>
-      </div>
-      <!-- Wohnadresse -->
-      <div id="addr-group" style="margin-top:18px">
-        ${!addrFull ? '<div class="pflicht-badge">Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
-        <div class="profil-field-group">
-          <div class="profil-field-group-head">
-            <div>
-              <div class="profil-field-group-title">Adresse</div>
-              <div class="profil-field-value" id="addr-display">${addrFull ? escH(addrFull) : empty}</div>
-            </div>
-            <button class="btn-edit" onclick="toggleAddrEdit(true)">Bearbeiten</button>
-          </div>
-          <div id="addr-edit-form" style="display:none" class="profil-field-form">
-            <div class="profil-form">
-              <div class="profil-field">
-                <label>Straße + Hausnummer</label>
-                <input type="text" id="addr-strasse" value="${escH(strasse)}" placeholder="Musterstraße 12">
-              </div>
-              <div class="profil-addr-row">
-                <div class="profil-field">
-                  <label>PLZ</label>
-                  <input type="text" id="addr-plz" value="${escH(plz)}" placeholder="z.B. 6850" maxlength="10">
-                </div>
-                <div class="profil-field">
-                  <label>Ort</label>
-                  <input type="text" id="addr-ort" value="${escH(ort)}" placeholder="z.B. Dornbirn">
-                </div>
-              </div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn-save" onclick="saveAddr('${session.user.id}')">Speichern</button>
-                <button class="btn-edit" onclick="toggleAddrEdit(false)">Abbrechen</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sozialversicherungsnummer -->
-      <div id="svn-group" style="margin-top:12px">
-        ${!svn ? '<div class="pflicht-badge">Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
-        <div class="profil-field-group">
-          <div class="profil-field-group-head">
-            <div>
-              <div class="profil-field-group-title">SV-Nummer</div>
-              <div class="profil-field-value" id="svn-display">${svn ? escH(svn) : empty}</div>
-            </div>
-            <button class="btn-edit" onclick="toggleSvnEdit(true)">Bearbeiten</button>
-          </div>
-          <div id="svn-edit-form" style="display:none" class="profil-field-form">
-            <div class="profil-form">
-              <div class="profil-field">
-                <label>Sozialversicherungsnummer</label>
-                <input type="text" id="svn-input" value="${escH(svn)}" placeholder="1234 010190" maxlength="15">
-                <small>10 Ziffern, z.B. 1234 010190</small>
-                <div id="svn-error" style="display:none;background:#FFF0F0;border:1px solid #FFBBBB;color:#C0392B;font-size:13px;padding:10px 14px;border-radius:8px;margin-top:8px;"></div>
-              </div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn-save" onclick="saveSvn('${session.user.id}')">Speichern</button>
-                <button class="btn-edit" onclick="toggleSvnEdit(false)">Abbrechen</button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -1456,8 +1422,9 @@ async function changePassword() {
   showToast('Passwort erfolgreich geändert');
 }
 
-function toggleSvnEdit(show) {
-  document.getElementById('svn-edit-form').style.display = show ? 'block' : 'none';
+function toggleJbPers(show) {
+  document.getElementById('jb-pers-view').style.display = show ? 'none'  : 'block';
+  document.getElementById('jb-pers-edit').style.display = show ? 'block' : 'none';
   if (show) {
     const svnInput = document.getElementById('svn-input');
     if (svnInput && !svnInput._fmtBound) {
@@ -1468,13 +1435,6 @@ function toggleSvnEdit(show) {
       svnInput._fmtBound = true;
     }
   }
-}
-function toggleAddrEdit(show) {
-  document.getElementById('addr-edit-form').style.display = show ? 'block' : 'none';
-}
-function toggleJbPers(show) {
-  document.getElementById('jb-pers-view').style.display = show ? 'none'  : 'block';
-  document.getElementById('jb-pers-edit').style.display = show ? 'block' : 'none';
 }
 function toggleBioEdit(show) {
   document.getElementById('bio-edit-form').style.display = show ? 'block' : 'none';
@@ -1500,9 +1460,27 @@ async function saveJbPers(userId) {
     errEl.style.display = 'block';
     return;
   }
+  const strasse = document.getElementById('addr-strasse').value.trim();
+  const plz     = document.getElementById('addr-plz').value.trim();
+  const ort     = document.getElementById('addr-ort').value.trim();
+  if ((strasse || plz || ort) && !(strasse && plz && ort)) {
+    errEl.textContent = 'Bitte bei der Wohnadresse alle Felder ausfüllen: Straße, PLZ und Ort.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const svnInput = document.getElementById('svn-input');
+  const svn = svnInput.value.trim();
+  // Nur prüfen, wenn die SV-Nummer geändert wurde (bestehende Einträge blockieren das Speichern nicht)
+  if (svn && svn.replace(/\D/g, '') !== svnInput.defaultValue.replace(/\D/g, '')) {
+    const v = validiereOesterreichischeSVN(svn, geburt || null);
+    if (!v.gueltig) { errEl.textContent = v.fehler; errEl.style.display = 'block'; return; }
+  }
 
   btn.disabled = true; btn.textContent = 'Speichern…';
-  const { error } = await _saveProfileFields(userId, { vorname, nachname, geburtsdatum: geburt || null, telefon, staatsangehoerigkeit: staatsangehoerigkeit || null, iban: iban || null });
+  const { error } = await _saveProfileFields(userId, {
+    vorname, nachname, geburtsdatum: geburt || null, telefon, staatsangehoerigkeit: staatsangehoerigkeit || null, iban: iban || null,
+    adresse: strasse || null, adresse_plz: plz || null, adresse_ort: ort || null, svnummer: svn || null,
+  });
   btn.disabled = false; btn.textContent = 'Speichern';
 
   if (error) { errEl.textContent = 'Fehler: ' + error.message; errEl.style.display = 'block'; return; }
@@ -1515,6 +1493,8 @@ async function saveJbPers(userId) {
   document.getElementById('jb-info-telefon').textContent   = telefon || '–';
   document.getElementById('jb-info-staatsangehoerigkeit').textContent = staatsangehoerigkeit || '–';
   document.getElementById('jb-info-iban').textContent      = iban || '–';
+  document.getElementById('jb-info-adresse').textContent   = strasse ? `${strasse}, ${plz} ${ort}` : '–';
+  document.getElementById('jb-info-svn').textContent       = svn || '–';
   if (geburt) {
     document.getElementById('jb-info-geburt').textContent =
       new Date(geburt + 'T00:00:00').toLocaleDateString('de-AT', { day:'2-digit', month:'2-digit', year:'numeric' });
@@ -1527,6 +1507,8 @@ async function saveJbPers(userId) {
   if (vorname && nachname) document.getElementById('pers-name-badge')?.remove();
   if (telefon) document.getElementById('pers-telefon-badge')?.remove();
   if (iban) document.getElementById('pers-iban-badge')?.remove();
+  if (strasse) document.getElementById('pers-addr-badge')?.remove();
+  if (svn) document.getElementById('pers-svn-badge')?.remove();
   await checkProfilVollstaendig(userId);
 }
 
@@ -1624,68 +1606,6 @@ function validiereOesterreichischeSVN(svn, geburtsdatum) {
   }
 
   return { gueltig: true, fehler: null };
-}
-
-async function saveSvn(userId) {
-  const svn    = document.getElementById('svn-input').value.trim();
-  const errEl  = document.getElementById('svn-error');
-
-  const profil = await _loadProfileRow(userId);
-  const v = validiereOesterreichischeSVN(svn, profil?.geburtsdatum);
-  if (!v.gueltig) {
-    errEl.textContent = v.fehler;
-    errEl.style.display = 'block';
-    return;
-  }
-  errEl.style.display = 'none';
-
-  const { data, error } = await _saveProfileFields(userId, { svnummer: svn });
-
-  if (error) {
-    alert('Fehler beim Speichern der SV-Nummer:\n' + error.message);
-    return;
-  }
-  if (!data || data.length === 0) {
-    alert('Die SV-Nummer konnte nicht gespeichert werden.\n\nMögliche Ursache: Fehlende Schreibberechtigung (RLS-Policy).\nBitte wende dich an den Administrator.');
-    return;
-  }
-
-  document.getElementById('svn-display').textContent = svn;
-  toggleSvnEdit(false);
-  showToast('SV-Nummer erfolgreich gespeichert');
-  await checkProfilVollstaendig(userId);
-  const badge = document.querySelector('#svn-group .pflicht-badge');
-  if (badge) badge.remove();
-}
-
-async function saveAddr(userId) {
-  const strasse = document.getElementById('addr-strasse').value.trim();
-  const plz     = document.getElementById('addr-plz').value.trim();
-  const ort     = document.getElementById('addr-ort').value.trim();
-  if (!strasse || !plz || !ort) {
-    alert('Bitte alle Felder ausfüllen: Straße, PLZ und Ort.');
-    return;
-  }
-
-  const { data, error } = await _saveProfileFields(userId, {
-    adresse: strasse, adresse_plz: plz, adresse_ort: ort
-  });
-
-  if (error) {
-    alert('Fehler beim Speichern der Adresse:\n' + error.message);
-    return;
-  }
-  if (!data || data.length === 0) {
-    alert('Die Adresse konnte nicht gespeichert werden.\n\nMögliche Ursache: Fehlende Schreibberechtigung (RLS-Policy).\nBitte wende dich an den Administrator.');
-    return;
-  }
-
-  document.getElementById('addr-display').textContent = `${strasse}, ${plz} ${ort}`;
-  toggleAddrEdit(false);
-  showToast('Adresse erfolgreich gespeichert');
-  await checkProfilVollstaendig(userId);
-  const badge = document.querySelector('#addr-group .pflicht-badge');
-  if (badge) badge.remove();
 }
 
 async function checkProfilVollstaendig(userId) {
