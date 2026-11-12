@@ -854,11 +854,6 @@
                 <option value="sonstige">Sonstige</option>
               </select>
             </div>
-            <div class="if-field" id="ins-satz-wrap">
-              <label for="ins-gehalt">Stundensatz in € *</label>
-              <input type="text" inputmode="decimal" id="ins-gehalt" placeholder="z.B. 15" autocomplete="off" required oninput="satzGeaendert()">
-              <div class="if-hint" id="ins-lohn-hinweis">Der Lohn pro Tag wird automatisch berechnet (Stundensatz × Stunden).</div>
-            </div>
             <div class="if-field" id="ins-datum-mehrere-wrap">
               <label>Termine *</label>
               <div style="display:flex;gap:10px">
@@ -889,6 +884,11 @@
                 <div class="if-hint">Wird automatisch aus der Arbeitszeit berechnet</div>
                 <div class="if-hint" id="ins-pause-hinweis" style="display:none;color:#7A4A00">Bei einer Arbeitszeit ab 6 Stunden sind die gesetzlichen Pausenzeiten einzuhalten.</div>
               </div>
+            </div>
+            <div class="if-field" id="ins-satz-wrap">
+              <label for="ins-gehalt">Stundensatz in € *</label>
+              <input type="text" inputmode="decimal" id="ins-gehalt" placeholder="z.B. 15" autocomplete="off" required oninput="satzGeaendert()">
+              <div class="if-hint" id="ins-lohn-hinweis">Der Lohn pro Tag wird automatisch berechnet (Stundensatz × Stunden).</div>
             </div>
             <div class="if-field" id="ins-zeit-toggle-wrap" style="display:none">
               <button type="button" class="if-toggle-btn on" id="ins-zeit-fuer-alle-btn" onclick="toggleZeitFuerAlle()" style="width:auto;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px">
@@ -2258,7 +2258,7 @@ function updateLohnHinweis() {
   if (Number.isNaN(satz)) {
     text = 'Bitte nur Zahlen eingeben, z.B. 15 oder 15,50 (höchstens 2 Nachkommastellen).';
   } else if (_terminChips.length > 1) {
-    text = 'Standard-Stundensatz für alle Termine – unten bei den Terminen kannst du ihn pro Termin ändern.';
+    text = 'Standard-Stundensatz für alle Termine – oben bei den Terminen kannst du ihn pro Termin ändern.';
   } else {
     const [von, bis] = terminZeiten(null);
     const lt = lohnText(satz, von, bis);
@@ -2434,7 +2434,7 @@ function renderTerminChips() {
     wrap.innerHTML = _terminChips.map(c => `<span class="if-chip">${label(c)}${removeBtn(c)}</span>`).join('');
   } else {
     // Mehrere Termine: pro Termin eigener Stundensatz (+ Uhrzeit, falls individuell)
-    wrap.innerHTML = `<button type="button" class="if-satz-alle-btn" onclick="satzFuerAlleUebernehmen()">Stundensatz von oben für alle Termine übernehmen</button>` +
+    wrap.innerHTML = `<button type="button" class="if-satz-alle-btn" onclick="satzFuerAlleUebernehmen()">Stundensatz von unten für alle Termine übernehmen</button>` +
       _terminChips.map(c => `<div class="if-termin-row">
         <span class="if-termin-row-datum">${label(c)}</span>
         ${_zeitFuerAlle ? '' : `<input type="time" value="${c.von || ''}" onchange="updateTerminZeit('${c.datum}','von',this.value)" required aria-label="Beginn ${label(c)}">
