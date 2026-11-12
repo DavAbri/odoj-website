@@ -1267,17 +1267,8 @@ function renderJobber(session, profile) {
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Hinweis zur Profilvollständigkeit -->
-    <div style="background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#7a5500;line-height:1.5">
-      💡 <strong>Tipp:</strong> Je mehr du über dich angibst, desto besser stehen deine Chancen, bei einem Job angenommen zu werden – Arbeitgeber entscheiden sich lieber für ein vollständiges Profil.
-    </div>
-
-    <!-- Wohnadresse -->
-    <div class="profil-card">
-      <h2 class="profil-section-title">Wohnadresse</h2>
-      <div id="addr-group">
+      <!-- Wohnadresse -->
+      <div id="addr-group" style="margin-top:18px">
         ${!addrFull ? '<div class="pflicht-badge">Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
         <div class="profil-field-group">
           <div class="profil-field-group-head">
@@ -1311,12 +1302,9 @@ function renderJobber(session, profile) {
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Sozialversicherungsnummer -->
-    <div class="profil-card">
-      <h2 class="profil-section-title">Sozialversicherungsnummer</h2>
-      <div id="svn-group">
+      <!-- Sozialversicherungsnummer -->
+      <div id="svn-group" style="margin-top:12px">
         ${!svn ? '<div class="pflicht-badge">Pflichtfeld – wird für Bewerbungen benötigt</div>' : ''}
         <div class="profil-field-group">
           <div class="profil-field-group-head">
@@ -1342,6 +1330,11 @@ function renderJobber(session, profile) {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Hinweis zur Profilvollständigkeit -->
+    <div style="background:#FDF3DC;border:1.5px solid #E8A020;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#7a5500;line-height:1.5">
+      💡 <strong>Tipp:</strong> Je mehr du über dich angibst, desto besser stehen deine Chancen, bei einem Job angenommen zu werden – Arbeitgeber entscheiden sich lieber für ein vollständiges Profil.
     </div>
 
     <!-- Über mich -->
