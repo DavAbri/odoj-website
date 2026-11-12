@@ -5,6 +5,15 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchDatenblattData, buildDatenblattPdf } from "../_shared/datenblatt.ts";
 
+// Base64 in Blöcken - "String.fromCharCode(...bytes)" auf einmal stürzt ab
+// ca. 100 KB ab ("Maximum call stack size exceeded"), z.B. bei Lebensläufen.
+function bytesToBase64(bytes: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -47,7 +56,7 @@ serve(async (req) => {
     }
 
     const { bytes, filename } = await buildDatenblattPdf(result.data);
-    const pdfBase64 = btoa(String.fromCharCode(...bytes));
+    const pdfBase64 = bytesToBase64(bytes);
 
     return json({ pdfBase64, filename }, 200);
   } catch (error) {

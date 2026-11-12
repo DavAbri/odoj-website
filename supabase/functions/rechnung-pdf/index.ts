@@ -4,7 +4,16 @@
 // Arbeitgeber, dem die Rechnung gehört (oder ein Admin), darf zugreifen.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { fetchRechnungData, buildRechnungPdf, persistRechnungPdf } from "../_shared/rechnung.ts";
+import { fetchRechnungData, buildRechnungPdf, persistRechnungPdf } from "../_shared/rechnung.ts";
+
+// Base64 in Blöcken - "String.fromCharCode(...bytes)" auf einmal stürzt ab
+// ca. 100 KB ab ("Maximum call stack size exceeded"), z.B. bei Lebensläufen.
+function bytesToBase64(bytes: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -59,7 +68,7 @@ serve(async (req) => {
       const { data: stored, error: dlErr } = await admin.storage.from("rechnungen").download(result.pdfPfad);
       if (stored && !dlErr) {
         const bytes = new Uint8Array(await stored.arrayBuffer());
-        const pdfBase64 = btoa(String.fromCharCode(...bytes));
+        const pdfBase64 = bytesToBase64(bytes);
         return json({ pdfBase64, filename }, 200);
       }
       console.error("rechnung-pdf: gespeicherte Datei nicht lesbar, erzeuge neu:", dlErr?.message);
@@ -67,7 +76,7 @@ serve(async (req) => {
 
     const { bytes } = await buildRechnungPdf(result.data);
     await persistRechnungPdf(admin, invoiceId).catch((e: any) => console.error("Nachträgliches Speichern fehlgeschlagen:", e?.message || e));
-    const pdfBase64 = btoa(String.fromCharCode(...bytes));
+    const pdfBase64 = bytesToBase64(bytes);
 
     return json({ pdfBase64, filename }, 200);
   } catch (error) {

@@ -2,7 +2,16 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchDatenblattData, buildDatenblattPdf } from "../_shared/datenblatt.ts";
 import { fetchRechnungData, buildRechnungPdf } from "../_shared/rechnung.ts";
-import { berechneLohn, lohnRechnung } from "../_shared/lohn.ts";
+import { berechneLohn, lohnRechnung } from "../_shared/lohn.ts";
+
+// Base64 in Blöcken - "String.fromCharCode(...bytes)" auf einmal stürzt ab
+// ca. 100 KB ab ("Maximum call stack size exceeded"), z.B. bei Lebensläufen.
+function bytesToBase64(bytes: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
 
 const RESEND_API_KEY      = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
@@ -495,7 +504,7 @@ async function fetchLebenslaufAttachment(
   if (error || !data) return null;
   const bytes = new Uint8Array(await data.arrayBuffer());
   const filename = dateiname || pfad.split("/").pop() || "Lebenslauf";
-  return { filename, content: btoa(String.fromCharCode(...bytes)) };
+  return { filename, content: bytesToBase64(bytes) };
 }
 
 // Lohn-/Zahlungsdaten für die automatische Zahlungshinweis-Mail (Block
@@ -607,7 +616,7 @@ serve(async (req) => {
       subject = `Bewerbung angenommen: ${jobberName} – ${jobTitelStr} am ${datumStr}`;
       html = bewerbungAngenommenDatenblattTemplate(recipientName, jobberName, jobTitelStr, datumStr);
       const { bytes, filename } = await buildDatenblattPdf(result.data);
-      attachments = [{ filename, content: btoa(String.fromCharCode(...bytes)) }];
+      attachments = [{ filename, content: bytesToBase64(bytes) }];
     } else if (type === "rechnung_erstellt") {
       if (!invoiceId) return new Response(JSON.stringify({ error: "invoiceId fehlt" }), { status: 400, headers: cors });
       const result = await fetchRechnungData(admin, invoiceId);
@@ -624,7 +633,7 @@ serve(async (req) => {
         if (stored) rechnungBytes = new Uint8Array(await stored.arrayBuffer());
       }
       if (!rechnungBytes) rechnungBytes = (await buildRechnungPdf(result.data)).bytes;
-      attachments = [{ filename: rechnungFilename, content: btoa(String.fromCharCode(...rechnungBytes)) }];
+      attachments = [{ filename: rechnungFilename, content: bytesToBase64(rechnungBytes) }];
       // B3: jede Rechnungsmail geht zusätzlich als BCC an info@odoj.at.
       bcc = ["info@odoj.at"];
     } else if (type === "new_message") {
@@ -641,7 +650,9 @@ serve(async (req) => {
       const uebersicht = jobberId ? await fetchJobberUebersicht(admin, jobberId) : null;
       html = neueBewerbungArbeitgeberTemplate(recipientName, jobberName || "Ein Jobber", jobTitel || "", terminInfo || "", uebersicht);
       if (uebersicht?.lebenslaufPfad) {
-        const lebenslaufAnhang = await fetchLebenslaufAttachment(admin, uebersicht.lebenslaufPfad, uebersicht.lebenslaufDateiname);
+        // Anhang ist nur Zusatz - schlägt er fehl, geht die Mail trotzdem raus.
+        const lebenslaufAnhang = await fetchLebenslaufAttachment(admin, uebersicht.lebenslaufPfad, uebersicht.lebenslaufDateiname)
+          .catch((e: any) => { console.error("Lebenslauf-Anhang fehlgeschlagen:", e?.message || e); return null; });
         if (lebenslaufAnhang) attachments = [lebenslaufAnhang];
       }
     } else if (type === "payment_request") {
