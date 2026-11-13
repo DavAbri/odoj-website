@@ -1669,10 +1669,6 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   const invoiceMap = {};
   invoiceRes.data?.forEach(i => { invoiceMap[i.bewerbung_id] = i.invoice_number; });
   profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
-  // Profile-Snapshot für Vertrag-Erstellung cachen (bewerbung_id → profile)
-  bewerbungen.forEach(b => {
-    if (profileMap[b.jobber_id]) _bewerbungProfileCache[b.id] = profileMap[b.jobber_id];
-  });
   ratRes.data?.forEach(r => {
     bewMap[r.bewertet_id] = { avg: Number(r.avg_sterne), count: r.anzahl };
   });
@@ -1822,7 +1818,7 @@ function renderBewActions(b, realName, vertragId, effDatum) {
     <button class="bew-btn bew-btn-chat" onclick="startChat('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In Kontakt treten</button>
     ${b.status === 'angenommen' ? (vertragId
       ? `<a href="vertrag-ansehen.html?id=${vertragId}" class="bew-btn" style="background:#E6F5EE;color:#1A7A50;border:1px solid #B3E0CA;text-decoration:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag ansehen</a>`
-      : `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>`)
+      : '')
       : ''}
     ${datenblattBtn}
     ${presenceBtn}`;
@@ -2051,11 +2047,11 @@ async function updateBewStatus(bewId, newStatus) {
     }
   }
 
-  // Wenn angenommen: Vertrags-Modal öffnen + Datenblatt-PDF per E-Mail auslösen
-  // (läuft in beiden Modi - recipientId ist im Support-Modus bereits die
-  // echte Arbeitgeber-ID aus der synthetischen _agSession, siehe oben).
+  // Wenn angenommen: Datenblatt-PDF per E-Mail auslösen (läuft in beiden
+  // Modi - recipientId ist im Support-Modus bereits die echte Arbeitgeber-ID
+  // aus der synthetischen _agSession, siehe oben). Kein Vertrags-Fenster mehr:
+  // alle Arbeitgeber verwenden ihren eigenen Dienstvertrag.
   if (newStatus === 'angenommen') {
-    openVertragModal(bewId);
     odojSb.functions.invoke('send-email', {
       body: { type: 'bewerbung_angenommen_datenblatt', recipientId: _agSession?.user?.id, bewId }
     }).catch(err => console.error('Datenblatt-E-Mail fehlgeschlagen:', err));
@@ -2118,7 +2114,6 @@ async function updateBewStatus(bewId, newStatus) {
       const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, effUhrzeit);
       actEl.innerHTML =
         `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
-        `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="openVertragModal('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Vertrag erstellen</button>` +
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In Kontakt treten</button>` +
         `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>` +
         (jobDatumErreicht
@@ -3484,66 +3479,5 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
   </div>
 </div>
 
-<!-- VERTRAGS-MODAL -->
-<div id="vertrag-modal" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1000;backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--white);border-radius:20px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.3);overflow:hidden">
-    <div style="background:var(--navy);padding:22px 28px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:36px;height:36px;background:rgba(232,160,32,.15);border-radius:8px;display:flex;align-items:center;justify-content:center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
-        </div>
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--white);margin:0">Dienstvertrag ausfüllen</h3>
-      </div>
-      <button onclick="closeVertragModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1;padding:4px">×</button>
-    </div>
-    <div style="padding:28px">
-      <div style="background:#E6F5EE;border:1.5px solid #B3E0CA;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A7A50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span style="font-size:13px;color:#1A7A50;font-weight:600">Bewerbung erfolgreich angenommen!</span>
-      </div>
-      <p style="font-size:14px;color:var(--text-mid);line-height:1.65;margin-bottom:24px">
-        Die Bewerbung wurde angenommen. Füllen Sie jetzt den Dienstvertrag aus –
-        die Daten des Jobbers wurden bereits vorausgefüllt.
-      </p>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <a id="vertrag-modal-link" href="#" class="btn btn-accent" style="text-align:center;justify-content:center;text-decoration:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Vorlage verwenden
-        </a>
-        <button onclick="vertragSelbstErstellen()" style="background:transparent;border:2px solid var(--gray-lt);color:var(--text-mid);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;padding:12px;border-radius:var(--r-sm);cursor:pointer;transition:all .2s">
-          Nicht benötigt
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-let _currentVertragBewId = null;
-let _bewerbungProfileCache = {};
-
-function openVertragModal(bewId) {
-  _currentVertragBewId = bewId;
-  // Jobber-Profil-Snapshot in localStorage sichern, damit vertrag-ausfuellen.html
-  // die Daten zuverlässig bekommt (unabhängig von RLS beim dortigen Query)
-  const cached = _bewerbungProfileCache[bewId];
-  if (cached) localStorage.setItem('odoj_vertrag_jobber_snap', JSON.stringify(cached));
-  const modal = document.getElementById('vertrag-modal');
-  const link  = document.getElementById('vertrag-modal-link');
-  link.href = 'vertrag-ausfuellen.html?bewerbung_id=' + bewId;
-  modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-function closeVertragModal() {
-  document.getElementById('vertrag-modal').style.display = 'none';
-  document.body.style.overflow = '';
-}
-function vertragSelbstErstellen() {
-  // Korrektur 1: keine Chat-Nachricht mehr bei "Vertrag selbst erstellen" -
-  // ein Vertrags-Hinweis im Chat soll nur erscheinen, wenn über "Vorlage
-  // verwenden" tatsächlich ein Plattform-Vertrag angelegt wurde.
-  closeVertragModal();
-}
-</script>
 </body>
 </html>
