@@ -1655,7 +1655,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
   let vertragMap = {};
   const [profRes, ratRes, vertragRes, invoiceRes] = await Promise.all([
     odojSb.from('Profile')
-      .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum, iban')
+      .select('user_id, vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum, iban, lebenslauf_pfad')
       .in('user_id', jobberIds.length ? jobberIds : ['none']),
     // Reputation (Schnitt+Anzahl über ALLE Arbeitgeber) läuft über die
     // security-definer Funktion statt direkt über die Tabelle - liefert nie
@@ -1875,6 +1875,13 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
   const initials = realName.split(' ').map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 2) || '?';
   const nameEsc = realName.replace(/'/g, "\\'");
 
+  // Anhänge des Bewerbers (derzeit nur der Lebenslauf im Profil) - kommt aus
+  // derselben Profil-Abfrage wie Name/Adresse, keine Extra-Abfrage pro Bewerber.
+  const anhaenge = profile?.lebenslauf_pfad ? 1 : 0;
+  const anhangBadge = anhaenge
+    ? `<span title="Lebenslauf vorhanden – unter „Details anzeigen“" style="display:inline-flex;align-items:center;gap:3px;background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3;font-size:12px;font-weight:700;padding:3px 8px;border-radius:100px;white-space:nowrap">📎 ${anhaenge}</span>`
+    : '';
+
   const bewBadge = bew
     ? `<span style="font-size:12px;color:#e6a01e;font-weight:600;margin-left:8px">★ ${bew.avg.toFixed(1)} <span style="color:var(--text-lt);font-weight:300">(${bew.count})</span></span>`
     : '';
@@ -1939,7 +1946,8 @@ function renderBewGroup(group, profile, bew, vertragMap, tagesgehalt, jobTitel, 
             <div class="bew-item-date">Beworben am ${dateStr}</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          ${anhangBadge}
           <button class="bew-btn" style="background:transparent;border:1px solid var(--gray-lt);color:var(--text-mid);padding:5px 12px;font-size:12px" onclick="showJobberProfile('${primary.jobber_id || ''}', '${nameEsc}')">Details anzeigen</button>
           <span class="bew-st-badge ${primarySt.cls}" id="bew-badge-${primary.id}">${primarySt.label}</span>
         </div>
