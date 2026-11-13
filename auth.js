@@ -73,6 +73,7 @@ const ODOJ_BEWERBUNG_STATUS_LABEL = {
 // der status-String (dann gilt immer "Nicht berücksichtigt" für abgelehnt).
 function odojStatusLabel(bew) {
   if (bew && typeof bew === 'object') {
+    if (bew.status === 'abgelehnt' && bew.storniert_am) return 'Storniert';
     if (bew.status === 'abgelehnt' && bew.zurueckgezogen) return 'Zurückgezogen';
     return ODOJ_BEWERBUNG_STATUS_LABEL[bew.status] || bew.status || '';
   }

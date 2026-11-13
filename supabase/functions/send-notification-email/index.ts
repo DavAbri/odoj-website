@@ -82,10 +82,15 @@ serve(async (req) => {
       }
     }
 
-    // Nachricht kürzen für Preview
-    const nachrichtPreview = record.nachricht
-      ? record.nachricht.substring(0, 200) + (record.nachricht.length > 200 ? "..." : "")
-      : ""
+    // Nachricht kürzen für Preview - Stornierungen komplett (inkl. Grund),
+    // HTML-sicher und mit Zeilenumbrüchen.
+    const istStorno = text.startsWith("❌ Einsatz storniert")
+    const escHtml = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    const nachrichtPreview = istStorno
+      ? escHtml(text).split("\n").join("<br>")
+      : record.nachricht
+        ? record.nachricht.substring(0, 200) + (record.nachricht.length > 200 ? "..." : "")
+        : ""
 
     // Betreff: bevorzugt über den expliziten subjectHint vom Aufrufer (robust
     // gegen spätere Textänderungen der Chat-Nachricht), sonst Fallback auf
@@ -103,6 +108,8 @@ serve(async (req) => {
       subject = "Deine Bewerbung wurde angenommen! 🎉"
     } else if (text.startsWith("Vielen Dank für deine Bewerbung")) {
       subject = "Update zu deiner Bewerbung"
+    } else if (istStorno) {
+      subject = "Dein Einsatz wurde storniert"
     } else if (text.startsWith("✅ Vertragsbestätigung")) {
       subject = "Der Dienstvertrag wurde akzeptiert"
     }

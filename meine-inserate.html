@@ -1807,8 +1807,11 @@ function renderBewActions(b, realName, vertragId, effDatum, nurLesen) {
 
   const acceptBtn = (b.status !== 'angenommen' && !jobDatumErreicht && !nurLesen)
     ? `<button class="bew-btn bew-btn-accept" onclick="confirmAnnehmen('${b.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Annehmen</button>` : '';
-  const rejectBtn = (b.status !== 'abgelehnt' && !nurLesen)
-    ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '';
+  const rejectBtn = nurLesen ? ''
+    : b.status === 'angenommen'
+      ? (jobDatumErreicht ? '' : stornoBtnHtml(b.id, realName, effDatum))
+      : (b.status === 'ausstehend'
+          ? `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${b.id}','abgelehnt')">Ablehnen</button>` : '');
 
   // Block "automatische Mails zu Arbeitsbeginn/-ende": Anwesenheit wird jetzt
   // automatisch beim Einsatzende bestätigt, kein manueller Klick mehr nötig.
@@ -2073,6 +2076,15 @@ async function updateBewStatus(bewId, newStatus) {
   }
 
   if (newStatus === 'abgelehnt') {
+    _bewAusListeEntfernen(bewId);
+  } else {
+    _nachAnnahmeAktualisieren(bewId);
+  }
+  loadInserate();
+}
+
+function _bewAusListeEntfernen(bewId) {
+  {
     // itemEl ist der Termin-Block dieser einen Bewerbung (bei Mehrtermine-
     // Gruppen primär oder zusätzlich) - nicht zwingend die ganze Karte, da
     // eine Person noch weitere, nicht abgelehnte Termine haben kann.
@@ -2097,7 +2109,11 @@ async function updateBewStatus(bewId, newStatus) {
         }
       }, 250);
     }
-  } else {
+  }
+}
+
+async function _nachAnnahmeAktualisieren(bewId) {
+  {
     const badge = document.getElementById('bew-badge-' + bewId);
     if (badge) {
       badge.className = 'bew-st-badge bew-st-angenommen';
@@ -2127,8 +2143,10 @@ async function updateBewStatus(bewId, newStatus) {
         if (!effUhrzeit) effUhrzeit = jobD?.uhrzeit_von || null;
       }
       const jobDatumErreicht = _istEinsatzbeginnErreicht(effDatum, effUhrzeit);
+      const nameEl = document.getElementById('bew-item-' + bewId)?.closest('.bew-item')?.querySelector('.bew-item-name');
+      const nameJetzt = nameEl ? nameEl.childNodes[0].textContent.trim() : '';
       actEl.innerHTML =
-        `<button class="bew-btn bew-btn-reject" onclick="updateBewStatus('${bewId}','abgelehnt')">Ablehnen</button>` +
+        (jobDatumErreicht ? '' : stornoBtnHtml(bewId, nameJetzt, effDatum)) +
         `<button class="bew-btn bew-btn-chat" onclick="startChat('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In Kontakt treten</button>` +
         `<button class="bew-btn" style="background:#EAF1FB;color:#1A5FA0;border:1px solid #C7DCF3" onclick="downloadDatenblatt('${bewId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Datenblatt herunterladen</button>` +
         (jobDatumErreicht
@@ -2136,6 +2154,76 @@ async function updateBewStatus(bewId, newStatus) {
           : '');
     }
   }
+}
+
+// ── STORNIEREN (bereits angenommene Person, nur vor Arbeitsbeginn) ──
+// Der Arbeitnehmer bekommt eine Chat-Nachricht mit dem Grund; die Mail dazu
+// verschickt der bestehende Chat-Mail-Automatismus (Betreff "Dein Einsatz
+// wurde storniert"). Zahlungshinweis/Rechnung zählen nur angenommene
+// Personen - Stornierte sind dort automatisch nicht mehr dabei.
+function stornoBtnHtml(bewId, name, datum) {
+  const d = datum ? new Date(datum + 'T00:00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+  return `<button class="bew-btn bew-btn-reject" data-name="${escJ(name || '')}" data-datum="${d}" onclick="openStornoModal('${bewId}', this.dataset.name, this.dataset.datum)">Stornieren</button>`;
+}
+let _stornoBewId = null;
+function openStornoModal(bewId, name, datum) {
+  _stornoBewId = bewId;
+  document.getElementById('storno-frage').textContent =
+    `Möchtest du die Zusage für ${name || 'diese Person'}${datum ? ' am ' + datum : ''} wirklich stornieren?`;
+  document.getElementById('storno-grund-input').value = '';
+  document.getElementById('storno-grund-error').style.display = 'none';
+  document.getElementById('storno-overlay').style.display = 'flex';
+}
+function closeStornoModal() {
+  document.getElementById('storno-overlay').style.display = 'none';
+  _stornoBewId = null;
+}
+async function confirmStorno() {
+  const bewId = _stornoBewId;
+  const grund = document.getElementById('storno-grund-input').value.trim();
+  if (!grund) { document.getElementById('storno-grund-error').style.display = 'block'; return; }
+  if (!bewId) return;
+  if (_bewOverlayNurLesen) { alert(ODOJ_ABGESCHLOSSEN_TEXT); return; }
+  if (window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) { alert('Stornieren ist im Support-Modus nicht möglich.'); return; }
+
+  const btn = document.getElementById('storno-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Wird storniert…';
+  const { error } = await odojSb.from('bewerbungen')
+    .update({ status: 'abgelehnt', storniert_am: new Date().toISOString(), storno_grund: grund })
+    .eq('id', bewId).eq('status', 'angenommen');
+  btn.disabled = false; btn.textContent = 'Stornieren';
+  if (error) { alert('Stornieren nicht möglich: ' + error.message); return; }
+  closeStornoModal();
+
+  // Chat-Nachricht an den Arbeitnehmer (löst automatisch auch die Mail aus)
+  const { data: bew } = await odojSb.from('bewerbungen').select('jobber_id, job_id, termin_id').eq('id', bewId).maybeSingle();
+  if (bew?.jobber_id && _agSession?.user?.id) {
+    const [{ data: job }, { data: termin }] = await Promise.all([
+      odojSb.from('jobs').select('titel, datum').eq('id', bew.job_id).maybeSingle(),
+      bew.termin_id ? odojSb.from('job_termine').select('datum').eq('id', bew.termin_id).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
+    const datum = termin?.datum || job?.datum;
+    const datumTxt = datum ? new Date(datum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+    const nachricht = `❌ Einsatz storniert
+
+${_agFirmenname || 'Der Arbeitgeber'} hat deinen Einsatz „${job?.titel || 'Tagesjob'}"${datumTxt ? ' am ' + datumTxt : ''} storniert.
+
+Grund: ${grund}
+
+Der Termin entfällt für dich – du musst nichts weiter tun.`;
+    const { error: msgErr } = await odojSb.from('nachrichten').insert({
+      bewerbung_id:  bewId,
+      sender_id:     _agSession.user.id,
+      empfaenger_id: bew.jobber_id,
+      nachricht,
+      gelesen:       false,
+      erstellt_am:   new Date().toISOString()
+    });
+    if (msgErr) console.warn('Storno-Nachricht Fehler:', msgErr.message);
+  }
+
+  alert('Zusage storniert – der Arbeitnehmer wurde per Chat und E-Mail benachrichtigt.');
+  _bewAusListeEntfernen(bewId);
   loadInserate();
 }
 
@@ -3475,6 +3563,23 @@ async function _executeJobUpdate(formData, bewerber, btn, errEl, successEl) {
     <div style="display:flex;gap:10px">
       <button onclick="bestaetigeAnnehmen()" style="flex:1;background:var(--accent);color:var(--navy);border:none;border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Eingabe bestätigen</button>
       <button onclick="closeAnnahmeConfirm()" style="flex:1;background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<div id="storno-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,31,58,.72);z-index:1100;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeStornoModal()">
+  <div style="background:var(--white);border-radius:20px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:32px 28px;text-align:center">
+    <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">Zusage stornieren?</h3>
+    <p id="storno-frage" style="font-size:14px;color:var(--text-mid);line-height:1.6;margin-bottom:6px"></p>
+    <p style="font-size:12px;color:var(--text-lt);line-height:1.6;margin-bottom:16px">Der Arbeitnehmer bekommt eine Nachricht im Chat und per E-Mail – mit deinem Grund. Der Platz wird wieder frei.</p>
+    <div style="text-align:left;margin-bottom:20px">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-lt);margin-bottom:6px">Grund für die Stornierung *</label>
+      <textarea id="storno-grund-input" placeholder="z.B. Veranstaltung wurde abgesagt…" style="width:100%;min-height:70px;background:var(--off);border:1.5px solid var(--gray-lt);border-radius:var(--r-sm);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+      <div id="storno-grund-error" style="display:none;color:#c0392b;font-size:12px;margin-top:4px">Bitte einen Grund angeben.</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button id="storno-confirm-btn" onclick="confirmStorno()" style="flex:1;background:#c0392b;color:#fff;border:none;border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Stornieren</button>
+      <button onclick="closeStornoModal()" style="flex:1;background:transparent;border:1.5px solid var(--gray-lt);color:var(--text-mid);border-radius:var(--r-sm);padding:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Abbrechen</button>
     </div>
   </div>
 </div>
