@@ -490,15 +490,29 @@ async function odojInitNav() {
       (odojDarfRolleWechseln(session.user) ? `<a href="#" onclick="odojRolleWechseln('${andereRolle}');return false;" class="nav-logout-mobile" id="nav-mobile-rollenwechsel">⇄ ${wechselText}</a>` : '') +
       '<a href="#" onclick="odojLogout();return false;" class="nav-logout-mobile">Ausloggen →</a>';
 
+    // Seitenname eines Links ohne ".html" - live schreibt Netlify die Links
+    // um ("arbeitgeber.html" -> "/arbeitgeber"), beides muss erkannt werden.
+    const _navSeite = a => (a.getAttribute('href') || '').split(/[?#]/)[0].replace(/^\.?\//, '').replace(/\.html$/, '');
+
+    // ── Desktop: angemeldete Arbeitgeber sehen statt "Für Arbeitgeber" ihre "Meine Inserate" ──
+    if (rolle === 'arbeitgeber') {
+      document.querySelectorAll('.nav-links a').forEach(a => {
+        if (_navSeite(a) !== 'arbeitgeber') return;
+        a.setAttribute('href', 'meine-inserate.html');
+        a.textContent = 'Meine Inserate';
+        if (location.pathname.includes('meine-inserate')) a.style.color = 'var(--accent)';
+      });
+    }
+
     // ── Mobile: Statische Links je nach Rolle ausblenden ──
     const navMobile = document.getElementById('navMobile');
     if (navMobile) {
       navMobile.querySelectorAll('a').forEach(a => {
-        const href = a.getAttribute('href');
+        const seite = _navSeite(a);
         if (rolle === 'jobber') {
-          if (href === 'ueber-uns.html') a.style.display = 'none';
+          if (seite === 'ueber-uns') a.style.display = 'none';
         } else if (rolle === 'arbeitgeber') {
-          if (href === 'arbeitgeber.html' || href === 'ueber-uns.html') a.style.display = 'none';
+          if (seite === 'arbeitgeber' || seite === 'ueber-uns') a.style.display = 'none';
         }
       });
     }
