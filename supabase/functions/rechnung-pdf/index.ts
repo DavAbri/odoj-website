@@ -4,7 +4,7 @@
 // Arbeitgeber, dem die Rechnung gehört (oder ein Admin), darf zugreifen.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { fetchRechnungData, buildRechnungPdf, persistRechnungPdf } from "../_shared/rechnung.ts";
+import { fetchRechnungData, buildRechnungPdf, persistRechnungPdf } from "../_shared/rechnung.ts";
 
 // Base64 in Blöcken - "String.fromCharCode(...bytes)" auf einmal stürzt ab
 // ca. 100 KB ab ("Maximum call stack size exceeded"), z.B. bei Lebensläufen.
@@ -20,7 +20,7 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Gleiche Admin-Erkennung wie admin-delete-user - Admin-Zugang läuft über
 // eine feste E-Mail-Allowlist, nicht über Profile.rolle.
-const ADMIN_EMAILS = ["mail4david85@gmail.com", "admin@odoj.at", "david.aberer@odoj.at", "sebastian.wimmer@odoj.at"];
+const ADMIN_EMAILS = ["admin@odoj.at", "david.aberer@odoj.at", "sebastian.wimmer@odoj.at"];
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
