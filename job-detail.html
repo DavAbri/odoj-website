@@ -656,10 +656,8 @@ async function initJobDetail() {
   // AG-Profil + Bewertungen parallel laden
   if (job.arbeitgeber_id) {
     const [profRes, bewRes] = await Promise.all([
-      odojSb.from('Profile')
-        .select('firmenname, vorname, nachname, adresse, plz, ort, telefon, website')
-        .eq('user_id', job.arbeitgeber_id)
-        .maybeSingle(),
+      // Nur freigegebene Felder über die Server-Funktion (keine sensiblen Daten)
+      odojArbeitgeberOeffentlich([job.arbeitgeber_id]).then(r => ({ data: r.data?.[0] || null })),
       // Reputation (Schnitt+Anzahl über ALLE Jobber) läuft über die
       // security-definer Funktion statt direkt über die Tabelle - diese
       // Seite ist auch ohne Login sichtbar, die Funktion gibt aber nie

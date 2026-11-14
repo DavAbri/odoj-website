@@ -897,10 +897,8 @@ async function checkJobsAuth() {
   if (allJobs?.length) {
     const agIds = [...new Set(allJobs.map(j => j.arbeitgeber_id).filter(Boolean))];
     if (agIds.length) {
-      const { data: profiles } = await odojSb
-        .from('Profile')
-        .select('user_id, firmenname, vorname, nachname')
-        .in('user_id', agIds);
+      // Nur freigegebene Felder über die Server-Funktion (keine sensiblen Daten)
+      const { data: profiles } = await odojArbeitgeberOeffentlich(agIds);
       const agNameMap = {};
       profiles?.forEach(p => {
         agNameMap[p.user_id] = p.firmenname ||
