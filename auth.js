@@ -80,6 +80,16 @@ function odojStatusLabel(bew) {
   return ODOJ_BEWERBUNG_STATUS_LABEL[bew] || bew || '';
 }
 
+// Öffentliche Kontaktdaten von Arbeitgebern (Firmenname, Name, Adresse,
+// Telefon, Website) - nur über die Server-Funktion, die keine sensiblen
+// Felder liefert und nur Arbeitgeber mit sichtbarem Inserat kennt.
+// Fallback auf die direkte Abfrage, falls die Funktion (noch) fehlt.
+async function odojArbeitgeberOeffentlich(ids) {
+  const r = await odojSb.rpc('arbeitgeber_oeffentlich', { p_ids: ids });
+  if (!r.error) return r;
+  return odojSb.from('Profile').select('user_id, firmenname, vorname, nachname, adresse, plz, ort, telefon, website').in('user_id', ids);
+}
+
 // ── Block E9: zentrale Zurückziehen/Stornieren-Logik ─────────────────────
 // Wiederverwendet von meine-bewerbungen.html, job-detail.html und chat.html,
 // damit das Verhalten (insbesondere: KEINE Chat-Nachricht, nur eine direkte
