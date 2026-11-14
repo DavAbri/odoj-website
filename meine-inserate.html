@@ -2206,11 +2206,14 @@ async function confirmDeleteInserat() {
       // Mail statt Chat-Nachricht, die ohnehin gleich gelöscht würde.
       // Wer seine Bewerbung schon selbst zurückgezogen hat, ist nicht mehr
       // beteiligt und bekommt daher keine Mail mehr.
-      bews.filter(bew => bew.jobber_id && !bew.zurueckgezogen).forEach(bew => {
+      // Mails ZUERST verschicken und abwarten: der Server prüft vor dem
+      // Versand, ob die Bewerbung zu diesem Inserat wirklich existiert -
+      // danach werden die Bewerbungen gelöscht.
+      await Promise.allSettled(bews.filter(bew => bew.jobber_id && !bew.zurueckgezogen).map(bew =>
         odojSb.functions.invoke('send-email', {
-          body: { type: 'job_geloescht', recipientId: bew.jobber_id, jobTitel, grund }
-        }).catch(err => console.error('[E-Mail] Inserat-gelöscht-Benachrichtigung fehlgeschlagen:', err));
-      });
+          body: { type: 'job_geloescht', recipientId: bew.jobber_id, jobTitel, grund, jobId }
+        }).catch(err => console.error('[E-Mail] Inserat-gelöscht-Benachrichtigung fehlgeschlagen:', err))
+      ));
 
       // 3. Alle Nachrichten zu diesen Bewerbungen löschen
       await odojSb.from('nachrichten').delete().in('bewerbung_id', bewIds);

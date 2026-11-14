@@ -22,6 +22,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { persistRechnungPdf } from "../_shared/rechnung.ts";
+import { istServiceAufruf } from "../_shared/aufrufer.ts";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -46,6 +47,11 @@ async function sendEmail(admin: any, body: Record<string, unknown>) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  // Sicherheit: nur der 5-Minuten-Zeitplan (Plattform-Schlüssel) darf starten
+  if (!(await istServiceAufruf(req))) {
+    return new Response(JSON.stringify({ error: "Nicht erlaubt." }), { status: 403, headers: cors });
+  }
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
   const heute = todayIso();
