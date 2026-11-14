@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { istServiceAufruf } from "../_shared/aufrufer.ts"
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!
 // Korrektur 3: Das Secret FROM_EMAIL enthält bereits die komplette
@@ -22,6 +23,16 @@ serve(async (req) => {
 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
+  }
+
+  // Sicherheit: nur der Datenbank-Trigger (Plattform-Schlüssel) darf diese
+  // Funktion aufrufen - sonst könnte jeder beliebige "Neue Nachricht"-Mails
+  // mit eigenem Text an beliebige Nutzer verschicken.
+  if (!(await istServiceAufruf(req))) {
+    return new Response(JSON.stringify({ error: "Nicht erlaubt." }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    })
   }
 
   try {

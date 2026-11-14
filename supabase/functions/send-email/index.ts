@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { fetchDatenblattData, buildDatenblattPdf } from "../_shared/datenblatt.ts";
 import { fetchRechnungData, buildRechnungPdf } from "../_shared/rechnung.ts";
-import { berechneLohn, lohnRechnung } from "../_shared/lohn.ts";
+import { berechneLohn, lohnRechnung } from "../_shared/lohn.ts";
+import { istServiceAufruf, angemeldeterNutzer, ADMIN_EMAILS } from "../_shared/aufrufer.ts";
 
 // Base64 in Blöcken - "String.fromCharCode(...bytes)" auf einmal stürzt ab
 // ca. 100 KB ab ("Maximum call stack size exceeded"), z.B. bei Lebensläufen.
@@ -534,6 +535,70 @@ async function fetchZahlungshinweisData(admin: any, bewId: string) {
   };
 }
 
+// ── SICHERHEIT: darf dieser Aufrufer diese Mail auslösen? ────────
+// Ohne diese Prüfung konnte jeder (auch ohne Anmeldung) Mails in ODOJs
+// Namen an beliebige Nutzer bzw. Adressen auslösen. Jetzt gilt:
+// - Plattform-Automatik (5-Minuten-Lauf): alles
+// - Admins (auch im Support-Zugriff): alles außer den Automatik-Mails
+// - sonst nur, wenn eine echte Beziehung zwischen Absender und Empfänger besteht.
+const NUR_AUTOMATIK = new Set(["payment_request", "work_confirmed", "einsatz_erledigt_arbeitgeber", "rechnung_erstellt"]);
+
+async function pruefeMailBerechtigung(req: Request, admin: any, b: any): Promise<string | null> {
+  const NEIN = "Nicht erlaubt.";
+  if (NUR_AUTOMATIK.has(b.type)) return NEIN;
+
+  // Warteliste (ohne Anmeldung): nur direkt nach dem Eintrag dieser Adresse
+  if (b.type === "waitlist") {
+    if (!b.email) return "email fehlt";
+    const seit = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { data } = await admin.from("waitlist").select("id").ilike("email", String(b.email)).gte("created_at", seit).limit(1);
+    return data?.length ? null : NEIN;
+  }
+  // Registrierungs-Info an info@odoj.at: nur für ein gerade angelegtes Konto
+  if (b.type === "neue_registrierung_intern") {
+    if (!b.regEmail) return "regEmail fehlt";
+    const seit = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data } = await admin.from("Profile").select("id").ilike("email", String(b.regEmail)).gte("erstellt_am", seit).limit(1);
+    return data?.length ? null : NEIN;
+  }
+
+  const nutzer = await angemeldeterNutzer(req, admin);
+  if (!nutzer) return "Bitte anmelden.";
+  if (ADMIN_EMAILS.includes(nutzer.email)) return null;
+  const ich = nutzer.id;
+  const an  = b.recipientId;
+  const beziehung = async (jobber: string, ag: string, extra?: (q: any) => any) => {
+    if (!jobber || !ag) return false;
+    let q = admin.from("bewerbungen").select("id").eq("jobber_id", jobber).eq("arbeitgeber_id", ag);
+    if (extra) q = extra(q);
+    const { data } = await q.limit(1);
+    return !!data?.length;
+  };
+
+  switch (b.type) {
+    case "bewerbung_bestaetigt":
+    case "bewerbung_zurueckgezogen_bestaetigung":
+      return an === ich ? null : NEIN;
+    case "neue_bewerbung_arbeitgeber":
+      return (b.jobberId === ich && await beziehung(ich, an)) ? null : NEIN;
+    case "bewerbung_angenommen_datenblatt": {
+      if (an !== ich || !b.bewId) return NEIN;
+      const { data } = await admin.from("bewerbungen").select("id").eq("id", b.bewId).eq("arbeitgeber_id", ich).maybeSingle();
+      return data ? null : NEIN;
+    }
+    case "job_geloescht":
+      return (b.jobId && await beziehung(an, ich, (q) => q.eq("job_id", b.jobId))) ? null : NEIN;
+    case "stammkraft_benachrichtigung":
+      return await beziehung(an, ich, (q) => q.or("anwesenheit_bestaetigt.eq.true,status.eq.abgeschlossen")) ? null : NEIN;
+    case "bewerbung_storniert":
+      return await beziehung(ich, an) ? null : NEIN;
+    case "new_message":
+      return (await beziehung(ich, an) || await beziehung(an, ich)) ? null : NEIN;
+    default:
+      return NEIN;
+  }
+}
+
 // ── MAIN ─────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -545,6 +610,12 @@ serve(async (req) => {
       datum, lohnBetrag, jobberIban, gebuehr, odojIban, odojKontoinhaber, rechnungsnummer, betrag,
       terminInfo, regType, regName, regEmail, regRefCode, invoiceId, grund, warAngenommen, jobberId, jobId, bewIds
     } = await req.json();
+
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+    if (!(await istServiceAufruf(req))) {
+      const fehler = await pruefeMailBerechtigung(req, admin, { type, recipientId, email, regEmail, jobberId, jobId, bewId });
+      if (fehler) return new Response(JSON.stringify({ error: fehler }), { status: 403, headers: cors });
+    }
 
     // Warteliste: kein recipientId nötig, E-Mail direkt
     if (type === 'waitlist') {
@@ -591,7 +662,6 @@ serve(async (req) => {
     if (!recipientId) return new Response(JSON.stringify({ error: "recipientId fehlt" }), { status: 400, headers: cors });
 
     // Empfänger-E-Mail über Admin-API holen (sicher serverseitig)
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
     const { data: { user }, error: userErr } = await admin.auth.admin.getUserById(recipientId);
     if (userErr || !user?.email) return new Response(JSON.stringify({ error: "Benutzer nicht gefunden" }), { status: 404, headers: cors });
 
