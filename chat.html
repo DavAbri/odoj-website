@@ -892,7 +892,7 @@ async function loadConversations() {
 
   if (_chatRolle === 'arbeitgeber') {
     if (otherIds.length) {
-      const { data: jProfiles } = await odojSb.from('Profile').select('user_id,vorname,nachname').in('user_id', otherIds);
+      const { data: jProfiles } = await odojKontaktNamen(otherIds);
       jProfiles?.forEach(p => {
         const n = [p.vorname, p.nachname].filter(Boolean).join(' ');
         if (n) jobberNameMap[p.user_id] = n;
@@ -900,7 +900,7 @@ async function loadConversations() {
     }
   } else {
     if (otherIds.length) {
-      const { data: agProfiles } = await odojSb.from('Profile').select('user_id,firmenname,vorname,nachname').in('user_id', otherIds);
+      const { data: agProfiles } = await odojKontaktNamen(otherIds);
       agProfiles?.forEach(p => {
         const n = p.firmenname || [p.vorname, p.nachname].filter(Boolean).join(' ');
         if (n) agNameMap[p.user_id] = n;
@@ -1013,7 +1013,7 @@ async function openConversation(chatId) {
   // Header setzen – echten Namen aus Profile laden
   let name;
   if (_chatRolle === 'arbeitgeber') {
-    const { data: jp } = await odojSb.from('Profile').select('vorname,nachname').eq('user_id', chat.jobber_id).maybeSingle();
+    const jp = (await odojKontaktNamen([chat.jobber_id])).data?.[0] || null;
     const realName = [jp?.vorname, jp?.nachname].filter(Boolean).join(' ');
     if (realName) {
       name = realName;
@@ -1022,7 +1022,7 @@ async function openConversation(chatId) {
       name = raw.includes('@') ? raw.split('@')[0] : (raw || 'Unbekannt');
     }
   } else {
-    const { data: ap } = await odojSb.from('Profile').select('firmenname,vorname,nachname').eq('user_id', chat.arbeitgeber_id).maybeSingle();
+    const ap = (await odojKontaktNamen([chat.arbeitgeber_id])).data?.[0] || null;
     name = ap?.firmenname
       || [ap?.vorname, ap?.nachname].filter(Boolean).join(' ')
       || job?.firmenname

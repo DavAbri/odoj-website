@@ -563,10 +563,7 @@ async function loadMeineBewerbungen() {
   // Echte Firmennamen aus Profile laden (Jobber sieht Firmenname des Arbeitgebers)
   const agIds = [...new Set(Object.values(jobMap).map(j => j.arbeitgeber_id).filter(Boolean))];
   if (agIds.length) {
-    const { data: profiles } = await odojSb
-      .from('Profile')
-      .select('user_id, firmenname, vorname, nachname')
-      .in('user_id', agIds);
+    const { data: profiles } = await odojKontaktNamen(agIds);
     const agNameMap = {};
     profiles?.forEach(p => {
       agNameMap[p.user_id] = p.firmenname ||
