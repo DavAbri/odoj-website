@@ -105,6 +105,13 @@
     .ai-metas span { color: var(--text2); }
     .ai-bew { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
     .ai-bew-zahlen { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+    .ai-bew-liste { margin-top: 8px; }
+    .ai-bew-liste summary { cursor: pointer; font-weight: 600; color: var(--navy); font-size: 12.5px; }
+    .ai-bew-person { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--border); cursor: pointer; }
+    .ai-bew-person:first-of-type { border-top: none; margin-top: 4px; }
+    .ai-bew-person:hover .ai-bew-name { text-decoration: underline; }
+    .ai-bew-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ai-bew-st { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px; white-space: nowrap; flex-shrink: 0; }
     .ai-bew-zahl b { font-size: 16px; color: var(--navy); }
     .ai-termine { font-size: 12px; color: var(--text2); line-height: 1.7; }
     .ai-termine .ai-voll { color: #17794A; font-weight: 700; }
@@ -1211,7 +1218,7 @@
       return {
         j, t, nr: i + 1, anzahl: termine.length || 1, datum, von, bis, plaetze,
         vergangen: !!ende && ende <= jetzt,
-        gesamt: bews.length, angenommen,
+        bews, gesamt: bews.length, angenommen,
         offen: bews.filter(x => x.status === 'ausstehend').length,
         abgelehnt: bews.filter(x => x.status === 'abgelehnt').length,
         ausgebucht: angenommen >= plaetze,
@@ -1265,12 +1272,39 @@
           <span class="ai-bew-zahl"><b>${k.abgelehnt}</b> abgelehnt</span>
         </div>
         <div class="ai-termine" style="margin-top:4px"><span class="${k.ausgebucht ? 'ai-voll' : ''}">${k.angenommen}/${k.plaetze} Plätze besetzt</span></div>
+        ${aiBewerberListe(k.bews)}
       </div>
       <div class="ai-footer">
         <div class="ai-lohn">€ ${odojEuro(k.lohn, 0)} <small>/ Tag</small></div>
         <a class="ai-link" href="/job-detail.html?id=${j.id}${k.t ? '&termin=' + k.t.id : ''}" target="_blank" rel="noopener">Details ansehen →</a>
       </div>
     </div>`;
+  }
+
+  // Wer hat sich beworben, wer wurde angenommen (aus den bereits geladenen
+  // Daten, keine zusätzliche Abfrage). Klick auf eine Person öffnet ihre Details.
+  function aiBewStatus(b) {
+    if (b.nicht_gekommen) return ['Nicht erschienen', '#FDE8E8', '#c0392b'];
+    if (b.status === 'abgeschlossen' || b.anwesenheit_bestaetigt) return ['Gearbeitet', '#E6F5EE', '#1A7A50'];
+    if (b.status === 'angenommen') return ['Angenommen', '#E6F5EE', '#1A7A50'];
+    if (b.status === 'abgelehnt' && b.storniert_am) return ['Storniert', '#FDE8E8', '#c0392b'];
+    if (b.status === 'abgelehnt' && b.zurueckgezogen) return ['Zurückgezogen', '#F1F3F6', '#6B7A90'];
+    if (b.status === 'abgelehnt') return ['Abgelehnt', '#F1F3F6', '#6B7A90'];
+    return ['Offen', '#FFF4DE', '#A05000'];
+  }
+  function aiBewerberListe(bews) {
+    if (!bews || !bews.length) return '';
+    const rang = b => (b.status === 'angenommen' || b.status === 'abgeschlossen' || b.anwesenheit_bestaetigt) ? 0 : (b.status === 'ausstehend' ? 1 : 2);
+    const zeilen = bews.slice().sort((a, b) => rang(a) - rang(b)).map(b => {
+      const n = findNutzer(b.jobber_id);
+      const name = n ? ([n.vorname, n.nachname].filter(Boolean).join(' ') || n.email || 'Unbekannt') : (b.jobber_name || 'Unbekannt');
+      const [label, bg, fg] = aiBewStatus(b);
+      return `<div class="ai-bew-person" onclick="event.stopPropagation();openNutzerDetail('${b.jobber_id}')">
+        <span class="ai-bew-name">${escHtml(name)}</span>
+        <span class="ai-bew-st" style="background:${bg};color:${fg}">${label}</span>
+      </div>`;
+    }).join('');
+    return `<details class="ai-bew-liste"><summary>Bewerber anzeigen (${bews.length})</summary>${zeilen}</details>`;
   }
 
   function renderInserateKarten(karten) {
