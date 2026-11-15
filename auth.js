@@ -90,6 +90,28 @@ async function odojArbeitgeberOeffentlich(ids) {
   return odojSb.from('Profile').select('user_id, firmenname, vorname, nachname, adresse, plz, ort, telefon, website').in('user_id', ids);
 }
 
+// Namen anderer Nutzer (Vorname, Nachname, Firmenname) - nur von Personen,
+// mit denen man über eine Bewerbung/einen Vertrag verbunden ist.
+// Fallback auf die direkte Abfrage, falls die Server-Funktion (noch) fehlt.
+async function odojKontaktNamen(ids) {
+  ids = [...new Set((ids || []).filter(Boolean))];
+  if (!ids.length) return { data: [] };
+  const r = await odojSb.rpc('kontakt_namen', { p_ids: ids });
+  if (!r.error) return r;
+  return odojSb.from('Profile').select('user_id, vorname, nachname, firmenname').in('user_id', ids);
+}
+
+// Bewerber-Daten für den Arbeitgeber: vor der Annahme nur Name, Alter,
+// Kurzbeschreibung, Lebenslauf; nach der Annahme zusätzlich die Daten für
+// Anmeldung und Lohn (Adresse, Telefon, Geburtsdatum, SV-Nummer, IBAN).
+async function odojBewerberProfile(ids) {
+  ids = [...new Set((ids || []).filter(Boolean))];
+  if (!ids.length) return { data: [] };
+  const r = await odojSb.rpc('bewerber_profile', { p_ids: ids });
+  if (!r.error) return r;
+  return odojSb.from('Profile').select('user_id, vorname, nachname, bio, lebenslauf_pfad, lebenslauf_dateiname, geburtsdatum, adresse, adresse_plz, adresse_ort, telefon, staatsangehoerigkeit, svnummer, iban').in('user_id', ids);
+}
+
 // ── Block E9: zentrale Zurückziehen/Stornieren-Logik ─────────────────────
 // Wiederverwendet von meine-bewerbungen.html, job-detail.html und chat.html,
 // damit das Verhalten (insbesondere: KEINE Chat-Nachricht, nur eine direkte

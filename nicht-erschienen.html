@@ -324,7 +324,7 @@ let _neAgId  = null;
     return;
   }
 
-  const { data: jobberProfil } = await odojSb.from('Profile').select('vorname, nachname').eq('user_id', bew.jobber_id).maybeSingle();
+  const jobberProfil = (await odojKontaktNamen([bew.jobber_id])).data?.[0] || null;
   const effDatum   = bew.job_termine?.datum || bew.jobs?.datum || '';
   const effUhrzeit = bew.job_termine?.uhrzeit_von || bew.jobs?.uhrzeit_von || '';
 

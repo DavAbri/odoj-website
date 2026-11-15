@@ -418,9 +418,7 @@ let _vfBewEmail = '';
       .select('firmenname, vorname, nachname, adresse, adresse_plz, adresse_ort')
       .eq('user_id', _vfArbeitgeberId).maybeSingle(),
     _vfJobberId
-      ? odojSb.from('Profile')
-          .select('vorname, nachname, adresse, adresse_plz, adresse_ort, svnummer, geburtsdatum')
-          .eq('user_id', _vfJobberId).maybeSingle()
+      ? odojBewerberProfile([_vfJobberId]).then(r => ({ data: r.data?.[0] || null }))
       : Promise.resolve({ data: null }),
     odojSb.from('jobs')
       .select('titel, beschreibung, datum, uhrzeit_von, uhrzeit_bis, tagesgehalt, stundensatz, stundenanzahl, adresse, ort')
