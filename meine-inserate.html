@@ -1672,11 +1672,13 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
     odojSb.rpc('bewertung_reputation', { p_bewertet_ids: jobberIds, p_rolle: 'arbeitgeber' }),
     odojSb.from('vertraege').select('bewerbung_id, id')
       .in('bewerbung_id', acceptedBewIds.length ? acceptedBewIds : ['00000000-0000-0000-0000-000000000000']),
-    odojSb.from('invoices').select('bewerbung_id, invoice_number')
-      .in('bewerbung_id', bewIdsAll.length ? bewIdsAll : ['00000000-0000-0000-0000-000000000000'])
+    // Eine ODOJ-Rechnung pro Inserat (nicht pro Bewerbung) - stornierte zählen nicht
+    odojSb.from('invoices').select('invoice_number, payment_status')
+      .eq('job_id', jobId).order('created_at', { ascending: false })
   ]);
   const invoiceMap = {};
-  invoiceRes.data?.forEach(i => { invoiceMap[i.bewerbung_id] = i.invoice_number; });
+  const jobRechnung = (invoiceRes.data || []).find(i => i.payment_status !== 'storniert');
+  if (jobRechnung) bewIdsAll.forEach(id => { invoiceMap[id] = jobRechnung.invoice_number; });
   profRes.data?.forEach(p => { profileMap[p.user_id] = p; });
   ratRes.data?.forEach(r => {
     bewMap[r.bewertet_id] = { avg: Number(r.avg_sterne), count: r.anzahl };
