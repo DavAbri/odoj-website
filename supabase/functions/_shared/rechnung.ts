@@ -16,6 +16,9 @@ const HINT_BG = rgb(0.965, 0.965, 0.97);
 // Änderung, z.B. falls das Firmenbuchgericht noch bestätigt werden muss).
 const ODOJ_FIRMENNAME = "ODOJ OG";
 const ODOJ_ADRESSE = "Rheinfähre 22, 6845 Hohenems";
+// Kleinunternehmer-Hinweis laut WKO-Rechnungsmuster - gilt, solange in den
+// Einstellungen (odoj_ust_hinweis) kein eigener Text hinterlegt ist.
+const ODOJ_UST_HINWEIS_STANDARD = "Umsatzsteuerbefreit – Kleinunternehmer gem. § 6 Abs. 1 Z 27 UStG";
 
 export interface RechnungPosition {
   beschreibung: string;
@@ -258,10 +261,11 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
   page.drawText(`€ ${amountFmt}`, { x: width - marginX - 110, y: y - 14, size: 16, font: fontBold, color: NAVY });
   y -= 60;
 
-  // Optionaler USt-Hinweistext (Standard leer = nichts angezeigt, siehe B4) -
-  // nur gesetzt, falls der Steuerberater das später empfiehlt.
-  if (d.odojUstHinweis && d.odojUstHinweis.trim()) {
-    page.drawText(d.odojUstHinweis.trim(), { x: marginX, y, size: 9, font: fontRegular, color: TEXT_MUTED });
+  // Kleinunternehmer-Hinweis (WKO-Formulierung) - eigener Text über die
+  // Einstellung odoj_ust_hinweis möglich.
+  {
+    const ustHinweis = (d.odojUstHinweis && d.odojUstHinweis.trim()) || ODOJ_UST_HINWEIS_STANDARD;
+    page.drawText(ustHinweis, { x: marginX, y, size: 9, font: fontRegular, color: TEXT_MUTED });
     y -= 20;
   }
 
