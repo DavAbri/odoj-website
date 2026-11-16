@@ -71,8 +71,8 @@ serve(async (req) => {
       .select("schluessel, wert_text")
       .in("schluessel", ["odoj_iban", "odoj_uid_nummer"]);
     const iban = settings?.find((s: any) => s.schluessel === "odoj_iban")?.wert_text || null;
-    const uid = settings?.find((s: any) => s.schluessel === "odoj_uid_nummer")?.wert_text || null;
-    const versandBereit = isRealIban(iban) && isRealUid(uid);
+    // Kleinunternehmer: keine UID-Nummer nötig - versandbereit mit echter IBAN
+    const versandBereit = isRealIban(iban);
 
     return json({
       invoiceId: (invoice as any).id,

@@ -186,8 +186,8 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
   const agAdresse = d.arbeitgeber.adresse
     ? `${d.arbeitgeber.adresse}, ${nv(d.arbeitgeber.adresse_plz)} ${nv(d.arbeitgeber.adresse_ort)}`
     : "nicht angegeben";
-  // Kleinunternehmerregelung: UID-Nummer ist optional und erscheint nur,
-  // wenn sie als Einstellung gepflegt ist - kein Platzhaltertext (B4).
+  // Kleinunternehmerregelung: ODOJ hat keine UID-Nummer - sie wird auf der
+  // Rechnung nicht angezeigt (auch nicht, falls eine Einstellung existiert).
   // Firmenbuchnummer/-gericht kommen jetzt ebenfalls aus den Einstellungen;
   // ein Fallback-Platzhalter macht eine fehlende Pflege sofort sichtbar,
   // statt sie stillschweigend wegzulassen (anders als bei der UID, die laut
@@ -198,7 +198,6 @@ export async function buildRechnungPdf(d: RechnungData): Promise<{ bytes: Uint8A
     nv(d.odojFirmenbuchnummer),
     d.odojFirmenbuchgericht ? `Firmenbuchgericht: ${d.odojFirmenbuchgericht}` : "Firmenbuchgericht: nicht angegeben",
   ];
-  if (d.odojUidNummer && d.odojUidNummer.trim()) stellerLines.push(`UID-Nummer: ${d.odojUidNummer.trim()}`);
   const empfaengerLines = [nv(d.arbeitgeber.firmenname), agAdresse];
 
   const startY = y;

@@ -442,7 +442,7 @@
     <div id="section-rechnungen" class="admin-section">
       <div id="rech-platzhalter-banner" style="display:none;align-items:flex-start;gap:12px;background:#FFF0F0;border:1.5px solid #F5A0A0;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#8a1f1f;line-height:1.5">
         <span style="font-size:18px">⚠️</span>
-        <span><strong>Achtung:</strong> UID-Nummer und/oder IBAN von ODOJ sind noch nicht hinterlegt (Platzhalter). Rechnungen werden intern angelegt und gespeichert, aber <strong>nicht</strong> automatisch per E-Mail an Arbeitgeber versendet, solange das so ist. Bitte unter „einstellungen" (odoj_iban, odoj_uid_nummer) die echten Werte eintragen.</span>
+        <span><strong>Achtung:</strong> Die IBAN von ODOJ ist noch nicht hinterlegt (Platzhalter „ATXX…“). Rechnungen werden trotzdem automatisch an Arbeitgeber verschickt – mit dem Platzhalter statt einer echten Bankverbindung. Bitte die echte IBAN eintragen lassen.</span>
       </div>
       <div class="section-note">Klick auf einen Arbeitgeber öffnet die einzelnen Rechnungen mit der Möglichkeit, den Bezahlt-Status manuell zu setzen.</div>
       <div class="table-controls">
@@ -801,10 +801,9 @@
     const el = document.getElementById('rech-platzhalter-banner');
     if (!el) return;
     const iban = allEinstellungen.find(e => e.schluessel === 'odoj_iban')?.wert_text || '';
-    const uid  = allEinstellungen.find(e => e.schluessel === 'odoj_uid_nummer')?.wert_text || '';
     const ibanOk = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(iban.replace(/\s+/g, '').toUpperCase());
-    const uidOk  = /^ATU\d{8}$/i.test(uid.replace(/\s+/g, ''));
-    el.style.display = (ibanOk && uidOk) ? 'none' : 'flex';
+    // Kleinunternehmer: keine UID-Nummer nötig - nur die IBAN wird geprüft
+    el.style.display = ibanOk ? 'none' : 'flex';
   }
 
   async function refreshData() {
