@@ -1592,7 +1592,9 @@ async function handleDeepLinkBewerbung() {
 }
 
 // ── BEWERBUNGEN OVERLAY ──
+let _bewOverlayArgs = null;
 async function openBewerbungen(jobId, jobTitel, jobDatum) {
+  _bewOverlayArgs = [jobId, jobTitel, jobDatum];
   document.getElementById('bew-overlay-titel').textContent = jobTitel;
   document.getElementById('bew-overlay').style.display = 'block';
   document.body.style.overflow = 'hidden';
@@ -2081,7 +2083,10 @@ async function updateBewStatus(bewId, newStatus) {
   if (newStatus === 'abgelehnt') {
     _bewAusListeEntfernen(bewId);
   } else {
-    _nachAnnahmeAktualisieren(bewId);
+    await _nachAnnahmeAktualisieren(bewId);
+    // Sind jetzt alle Plätze vergeben, sagt die Datenbank den übrigen offenen
+    // Bewerbern automatisch ab - Liste neu laden, damit sie verschwinden.
+    if (_bewOverlayArgs) openBewerbungen(..._bewOverlayArgs);
   }
   loadInserate();
 }
@@ -2226,7 +2231,9 @@ Der Termin entfällt für dich – du musst nichts weiter tun.`;
   }
 
   alert('Zusage storniert – der Arbeitnehmer wurde per Chat und E-Mail benachrichtigt.');
-  _bewAusListeEntfernen(bewId);
+  // Wegen "alle Plätze vergeben" abgesagte Bewerber werden von der Datenbank
+  // automatisch wieder geöffnet - Liste neu laden, damit sie erscheinen.
+  if (_bewOverlayArgs) openBewerbungen(..._bewOverlayArgs); else _bewAusListeEntfernen(bewId);
   loadInserate();
 }
 

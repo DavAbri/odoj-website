@@ -96,8 +96,10 @@ serve(async (req) => {
     // Nachricht kürzen für Preview - Stornierungen komplett (inkl. Grund),
     // HTML-sicher und mit Zeilenumbrüchen.
     const istStorno = text.startsWith("❌ Einsatz storniert")
+    const istPlatzFrei = text.startsWith("🔔 Wieder ein Platz frei")
+    const istPlatzVergeben = text.startsWith("Vielen Dank für deine Bewerbung") && text.includes("alle Plätze vergeben")
     const escHtml = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    const nachrichtPreview = istStorno
+    const nachrichtPreview = (istStorno || istPlatzFrei || istPlatzVergeben)
       ? escHtml(text).split("\n").join("<br>")
       : record.nachricht
         ? record.nachricht.substring(0, 200) + (record.nachricht.length > 200 ? "..." : "")
@@ -121,6 +123,8 @@ serve(async (req) => {
       subject = "Update zu deiner Bewerbung"
     } else if (istStorno) {
       subject = "Dein Einsatz wurde storniert"
+    } else if (istPlatzFrei) {
+      subject = "Wieder ein Platz frei – deine Bewerbung ist wieder offen"
     } else if (text.startsWith("✅ Vertragsbestätigung")) {
       subject = "Der Dienstvertrag wurde akzeptiert"
     }
