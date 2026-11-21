@@ -378,6 +378,17 @@
       </div>
 
       <div class="chart-card" style="margin-top:16px">
+        <div class="chart-title">Wohnort der Arbeitnehmer nach Bezirk</div>
+        <div id="bezirk-uebersicht" style="font-size:13px;color:var(--text2);margin-bottom:10px">–</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bezirk</th><th style="text-align:right">Anzahl</th><th style="text-align:right">Anteil</th><th style="width:40%"></th></tr></thead>
+            <tbody id="bezirk-tbody"><tr><td colspan="4" class="table-empty">Wird geladen…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:16px">
         <div class="chart-title">Registrierungen nach Herkunft (trackbarer Link)</div>
         <div class="table-controls">
           <input type="text" class="search-input" id="nutzer-quelle-search" placeholder="Name oder E-Mail suchen…" oninput="filterNutzerQuelle()">
@@ -926,6 +937,41 @@
 
     renderWeeklyRegChart();
     renderAlterArbeitnehmer();
+    renderBezirkArbeitnehmer();
+  }
+
+  // Bezirk aus der Postleitzahl der Wohnadresse (Vorarlberg):
+  // 67xx Bludenz · 6800–6844 Feldkirch · 6845/6850/6890 Dornbirn
+  // (Hohenems, Dornbirn, Lustenau) · 6858–6889 und 69xx Bregenz.
+  function odojBezirkAusPlz(plzRoh) {
+    const m = String(plzRoh || '').match(/\d{4}/);
+    if (!m) return null;
+    const plz = Number(m[0]);
+    if (plz >= 6700 && plz <= 6799) return 'Bludenz';
+    if (plz >= 6800 && plz <= 6844) return 'Feldkirch';
+    if (plz === 6845 || plz === 6890 || (plz >= 6850 && plz <= 6857)) return 'Dornbirn';
+    if ((plz >= 6858 && plz <= 6889) || (plz >= 6891 && plz <= 6999)) return 'Bregenz';
+    return 'außerhalb Vorarlbergs';
+  }
+  function renderBezirkArbeitnehmer() {
+    const tbody = document.getElementById('bezirk-tbody');
+    if (!tbody) return;
+    const jobber = allNutzer.filter(n => n.rolle === 'jobber');
+    const bezirke = jobber.map(n => odojBezirkAusPlz(n.adresse_plz || n.plz));
+    const reihenfolge = ['Bregenz', 'Dornbirn', 'Feldkirch', 'Bludenz', 'außerhalb Vorarlbergs'];
+    const zeilen = reihenfolge.map(b => [b, bezirke.filter(x => x === b).length]);
+    zeilen.push(['ohne Angabe', bezirke.filter(x => x === null).length]);
+    const gesamt = jobber.length || 1;
+    const max = Math.max(...zeilen.map(z => z[1]), 1);
+    tbody.innerHTML = zeilen.map(([label, n]) => `<tr>
+      <td>${label}</td>
+      <td style="text-align:right;font-weight:700">${n}</td>
+      <td style="text-align:right">${Math.round(n / gesamt * 100)} %</td>
+      <td><div style="height:8px;border-radius:4px;background:var(--accent, #E8A020);width:${Math.round(n / max * 100)}%"></div></td>
+    </tr>`).join('');
+    const mitAngabe = bezirke.filter(x => x !== null).length;
+    document.getElementById('bezirk-uebersicht').textContent =
+      `${jobber.length} Arbeitnehmer, davon ${mitAngabe} mit Wohnadresse (Zuordnung über die Postleitzahl)`;
   }
 
   // Altersverteilung der Arbeitnehmer (aus den bereits geladenen Profilen,
