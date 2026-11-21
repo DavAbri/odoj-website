@@ -367,6 +367,17 @@
       </div>
 
       <div class="chart-card" style="margin-top:16px">
+        <div class="chart-title">Alter der Arbeitnehmer</div>
+        <div id="alter-uebersicht" style="font-size:13px;color:var(--text2);margin-bottom:10px">–</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Alter</th><th style="text-align:right">Anzahl</th><th style="text-align:right">Anteil</th><th style="width:40%"></th></tr></thead>
+            <tbody id="alter-tbody"><tr><td colspan="4" class="table-empty">Wird geladen…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:16px">
         <div class="chart-title">Registrierungen nach Herkunft (trackbarer Link)</div>
         <div class="table-controls">
           <input type="text" class="search-input" id="nutzer-quelle-search" placeholder="Name oder E-Mail suchen…" oninput="filterNutzerQuelle()">
@@ -914,6 +925,45 @@
     document.getElementById('stat-neu-monat').textContent = allNutzer.filter(n => regDate(n) && regDate(n) >= startMonth).length;
 
     renderWeeklyRegChart();
+    renderAlterArbeitnehmer();
+  }
+
+  // Altersverteilung der Arbeitnehmer (aus den bereits geladenen Profilen,
+  // keine zusätzliche Abfrage). Alter = volle Jahre zum heutigen Tag.
+  function renderAlterArbeitnehmer() {
+    const tbody = document.getElementById('alter-tbody');
+    if (!tbody) return;
+    const heute = new Date();
+    const alterVon = d => {
+      const g = new Date(d + 'T00:00:00');
+      if (isNaN(g)) return null;
+      let a = heute.getFullYear() - g.getFullYear();
+      const m = heute.getMonth() - g.getMonth();
+      if (m < 0 || (m === 0 && heute.getDate() < g.getDate())) a--;
+      return a >= 0 && a < 120 ? a : null;
+    };
+    const jobber = allNutzer.filter(n => n.rolle === 'jobber');
+    const alter = jobber.map(n => n.geburtsdatum ? alterVon(n.geburtsdatum) : null);
+    const bekannt = alter.filter(a => a !== null);
+    const gruppen = [
+      ['unter 18', a => a < 18], ['18–20', a => a >= 18 && a <= 20], ['21–25', a => a >= 21 && a <= 25],
+      ['26–30', a => a >= 26 && a <= 30], ['31–40', a => a >= 31 && a <= 40], ['41–50', a => a >= 41 && a <= 50],
+      ['über 50', a => a > 50],
+    ];
+    const zeilen = gruppen.map(([label, f]) => [label, bekannt.filter(f).length]);
+    zeilen.push(['ohne Angabe', alter.length - bekannt.length]);
+    const gesamt = jobber.length || 1;
+    const max = Math.max(...zeilen.map(z => z[1]), 1);
+    tbody.innerHTML = zeilen.map(([label, n]) => `<tr>
+      <td>${label}</td>
+      <td style="text-align:right;font-weight:700">${n}</td>
+      <td style="text-align:right">${Math.round(n / gesamt * 100)} %</td>
+      <td><div style="height:8px;border-radius:4px;background:var(--accent, #E8A020);width:${Math.round(n / max * 100)}%"></div></td>
+    </tr>`).join('');
+    const schnitt = bekannt.length ? (bekannt.reduce((x, y) => x + y, 0) / bekannt.length) : null;
+    document.getElementById('alter-uebersicht').textContent = bekannt.length
+      ? `${jobber.length} Arbeitnehmer, davon ${bekannt.length} mit Geburtsdatum · Durchschnitt ${schnitt.toLocaleString('de-AT', { maximumFractionDigits: 1 })} Jahre · jüngste/r ${Math.min(...bekannt)}, älteste/r ${Math.max(...bekannt)} Jahre`
+      : 'Noch keine Geburtsdaten vorhanden.';
   }
 
   function renderWeeklyRegChart() {
