@@ -455,6 +455,7 @@ let _jdRolle    = null;
 let _jdProfile  = null;
 let _jdJob      = null;
 let _jdApplied  = false;
+let _jdJobBelegt = 0; // angenommene Personen (Einzeltag-Inserat)
 let _jdAgProfile = null;
 let _jdAgBew     = null;   // { avg, count }
 let _jdTermine        = [];          // job_termine-Zeilen (nur bei Mehrtages-Jobs befüllt)
@@ -596,22 +597,20 @@ async function initJobDetail() {
   if (komplettAbgelaufen) { showAbgelaufenPlaceholder(); return; }
 
   if (_jdIsMultiTermin) {
-    const terminIds = _jdTermine.map(t => t.id);
-    const { data: acceptedBews } = await odojSb
-      .from('bewerbungen').select('termin_id').eq('status', 'angenommen').in('termin_id', terminIds);
-    const acceptedCount = {};
-    (acceptedBews || []).forEach(b => { acceptedCount[b.termin_id] = (acceptedCount[b.termin_id] || 0) + 1; });
-    _jdTermine.forEach(t => { t._voll = (acceptedCount[t.id] || 0) >= (job.plaetze || 1); });
+    const { proTermin: acceptedCount } = await odojBelegtePlaetze([jobId]);
+    _jdTermine.forEach(t => {
+      t._belegt = acceptedCount[t.id] || 0;
+      t._voll = t._belegt >= (job.plaetze || 1);
+    });
   } else {
     // H3/H5: auch Einzeltag-Jobs können "ausgebucht" sein (alle Plätze
     // bereits angenommen) - vorher gab es hierfür keine Prüfung, Bewerben
     // auf einen bereits voll besetzten Job war clientseitig uneingeschränkt
     // möglich (serverseitig jetzt zusätzlich über den H5-Annahme-Trigger
     // abgesichert, aber Bewerben selbst soll hier erst gar nicht angeboten werden).
-    const { count: acceptedCount } = await odojSb
-      .from('bewerbungen').select('id', { count: 'exact', head: true })
-      .eq('job_id', jobId).is('termin_id', null).eq('status', 'angenommen');
-    _jdJobVoll = (acceptedCount || 0) >= (job.plaetze || 1);
+    const { proJob } = await odojBelegtePlaetze([jobId]);
+    _jdJobBelegt = proJob[jobId] || 0;
+    _jdJobVoll = _jdJobBelegt >= (job.plaetze || 1);
   }
 
   // Mindestalter-Prüfung (nur für eingeloggte Jobber, nur wenn das Inserat
@@ -811,7 +810,18 @@ function renderMain(job) {
   const gehalt = job.tagesgehalt
     ? Number(job.tagesgehalt).toLocaleString('de-AT', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     : '–';
-  const plaetze = job.plaetze === 1 ? '1 freier Platz' : ((job.plaetze || 0) + ' freie Plätze');
+  // Freie Plätze = Plätze minus bereits angenommene. Bei mehreren Terminen:
+  // für den angeklickten Termin, sonst der Termin mit den meisten freien Plätzen.
+  let frei = job.plaetze || 0;
+  if (_jdIsMultiTermin && _jdTermine.length) {
+    const tKlick = _jdTermine.find(t => t.id === _jdClickedTerminId);
+    frei = tKlick
+      ? Math.max((job.plaetze || 0) - (tKlick._belegt || 0), 0)
+      : Math.max(..._jdTermine.map(t => Math.max((job.plaetze || 0) - (t._belegt || 0), 0)));
+  } else {
+    frei = Math.max((job.plaetze || 0) - _jdJobBelegt, 0);
+  }
+  const plaetze = frei === 1 ? '1 freier Platz' : (frei + ' freie Plätze');
   const stunden = (job.uhrzeit_von && job.uhrzeit_bis)
     ? `${esc(job.uhrzeit_von)} – ${esc(job.uhrzeit_bis)} Uhr`
     : '–';

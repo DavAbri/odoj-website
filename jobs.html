@@ -681,7 +681,9 @@ function renderJobCard(job, locked) {
   const stdAnzeige = lohn.satz ? lohn.stunden : job.stundenanzahl;
   const lockedAttr = locked ? ' data-locked="true"' : '';
   const terminAttr = job._terminId ? ` data-termin-id="${job._terminId}"` : '';
-  const plaetze = job.plaetze === 1 ? '1 Platz frei' : (job.plaetze + ' Plätze frei');
+  // Freie Plätze = Plätze minus bereits angenommene (für diesen Termin)
+  const frei = job._frei ?? job.plaetze;
+  const plaetze = frei === 1 ? '1 Platz frei' : (frei + ' Plätze frei');
   const mehrtermineTag = job._isMultiTermin ? '<span class="tag tag-mehrtermine job-mehrtermine">Mehrere Termine<br>verfügbar</span>' : '';
 
   // Dezenter Hinweis statt Ausblenden: nur wenn eindeutig feststeht (Geburtsdatum
@@ -835,34 +837,13 @@ async function checkJobsAuth() {
 
   // Angenommene Bewerbungen pro Termin zählen (Mehrtages-Jobs) bzw. pro Job
   // (Einzeltag-Jobs), um ausgebuchte Karten zu erkennen.
-  let acceptedCountByTermin = {};
-  const allTerminIds = (rawTermine || []).map(t => t.id);
-  if (allTerminIds.length) {
-    const { data: acceptedBews } = await odojSb
-      .from('bewerbungen')
-      .select('termin_id')
-      .eq('status', 'angenommen')
-      .in('termin_id', allTerminIds);
-    (acceptedBews || []).forEach(b => {
-      acceptedCountByTermin[b.termin_id] = (acceptedCountByTermin[b.termin_id] || 0) + 1;
-    });
-  }
-  // H3: Ausgebuchte Inserate (alle Plätze vergeben) werden in der Jobsuche
-  // NICHT mehr angezeigt (bleiben nur im eigenen Arbeitgeber-Bereich
-  // sichtbar, siehe meine-inserate.html) - hier für Einzeltag-Jobs.
-  let acceptedCountByJob = {};
-  const einzeltagJobIds = (rawJobs || []).filter(j => !(termineByJob[j.id]?.length)).map(j => j.id);
-  if (einzeltagJobIds.length) {
-    const { data: acceptedBewsJob } = await odojSb
-      .from('bewerbungen')
-      .select('job_id')
-      .eq('status', 'angenommen')
-      .is('termin_id', null)
-      .in('job_id', einzeltagJobIds);
-    (acceptedBewsJob || []).forEach(b => {
-      acceptedCountByJob[b.job_id] = (acceptedCountByJob[b.job_id] || 0) + 1;
-    });
-  }
+  // Vergebene Plätze je Termin bzw. Einzeltag-Inserat - über eine Server-
+  // Abfrage, die nur Anzahlen liefert (fremde Bewerbungen selbst sind aus
+  // Datenschutzgründen nicht lesbar, daher zählte das hier früher immer 0).
+  // H3: Ausgebuchte Termine/Inserate werden in der Jobsuche nicht angezeigt.
+  const _belegt = await odojBelegtePlaetze((rawJobs || []).map(j => j.id));
+  const acceptedCountByTermin = _belegt.proTermin;
+  const acceptedCountByJob = _belegt.proJob;
 
   // Jobs mit Terminen -> eine Karte pro zukünftigem, noch nicht ausgebuchtem
   // Termin. Jobs ohne job_termine-Zeilen (heutiger Normalfall) laufen wie
@@ -881,10 +862,11 @@ async function checkJobsAuth() {
           uhrzeit_bis: (t.uhrzeit_bis || job.uhrzeit_bis || '').slice(0, 5) || null,
           _terminId: t.id,
           _termin: t,
-          _isMultiTermin: true
+          _isMultiTermin: true,
+          _frei: Math.max((job.plaetze || 1) - (acceptedCountByTermin[t.id] || 0), 0)
         }));
     } else if ((!job.datum || !_jobsIstBegonnen(job.datum, job.uhrzeit_von)) && (acceptedCountByJob[job.id] || 0) < job.plaetze) {
-      allJobs.push(job);
+      allJobs.push({ ...job, _frei: Math.max((job.plaetze || 1) - (acceptedCountByJob[job.id] || 0), 0) });
     }
   });
   console.log('[ODOJ] Jobs nach Server-Filter:', rawJobs?.length, '→ Karten nach Termin-Expansion:', allJobs.length);

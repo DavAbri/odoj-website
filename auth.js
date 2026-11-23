@@ -112,6 +112,30 @@ async function odojBewerberProfile(ids) {
   return odojSb.from('Profile').select('user_id, vorname, nachname, bio, lebenslauf_pfad, lebenslauf_dateiname, geburtsdatum, adresse, adresse_plz, adresse_ort, telefon, staatsangehoerigkeit, svnummer, iban').in('user_id', ids);
 }
 
+// Vergebene Plätze je Inserat/Termin (nur Anzahlen, keine Personendaten).
+// Liefert { proTermin: {termin_id: n}, proJob: {job_id: n} } - proJob zählt
+// nur Einzeltag-Bewerbungen (ohne Termin). Fallback: direkte Zählung (sieht
+// ohne Server-Funktion nur eigene Bewerbungen).
+async function odojBelegtePlaetze(jobIds) {
+  const proTermin = {}, proJob = {};
+  jobIds = [...new Set((jobIds || []).filter(Boolean))];
+  if (!jobIds.length) return { proTermin, proJob };
+  const r = await odojSb.rpc('belegte_plaetze', { p_job_ids: jobIds });
+  if (!r.error) {
+    (r.data || []).forEach(z => {
+      if (z.termin_id) proTermin[z.termin_id] = (proTermin[z.termin_id] || 0) + z.angenommen;
+      else proJob[z.job_id] = (proJob[z.job_id] || 0) + z.angenommen;
+    });
+    return { proTermin, proJob };
+  }
+  const { data } = await odojSb.from('bewerbungen').select('job_id, termin_id').eq('status', 'angenommen').in('job_id', jobIds);
+  (data || []).forEach(b => {
+    if (b.termin_id) proTermin[b.termin_id] = (proTermin[b.termin_id] || 0) + 1;
+    else proJob[b.job_id] = (proJob[b.job_id] || 0) + 1;
+  });
+  return { proTermin, proJob };
+}
+
 // ── Block E9: zentrale Zurückziehen/Stornieren-Logik ─────────────────────
 // Wiederverwendet von meine-bewerbungen.html, job-detail.html und chat.html,
 // damit das Verhalten (insbesondere: KEINE Chat-Nachricht, nur eine direkte
