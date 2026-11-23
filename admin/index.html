@@ -1101,6 +1101,24 @@
     return `<div class="nd-field"><span class="nd-label">${escHtml(label)}</span><span class="nd-value">${value}</span></div>`;
   }
 
+  // Lebenslauf eines Arbeitnehmers öffnen (nur Admins, über einen 60 Sekunden
+  // gültigen Link der Server-Funktion - der Speicher bleibt sonst gesperrt).
+  async function adminLebenslaufAnsehen(userId, btn) {
+    const vorher = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Lädt…';
+    const fenster = window.open('', '_blank');
+    try {
+      const { data, error } = await odojSb.functions.invoke('admin-user-detail', { body: { userId, lebenslauf: true } });
+      if (error || !data?.lebenslauf_url) throw new Error(data?.error || error?.message || 'Unbekannter Fehler');
+      if (fenster) fenster.location.href = data.lebenslauf_url; else window.location.href = data.lebenslauf_url;
+    } catch (e) {
+      if (fenster) fenster.close();
+      showToast('Lebenslauf konnte nicht geöffnet werden: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = vorher;
+    }
+  }
+
   function openNutzerDetail(userId) {
     const n = findNutzer(userId);
     if (!n) { showToast('Nutzer nicht gefunden', 'error'); return; }
@@ -1125,6 +1143,9 @@
       const alter = n.geburtsdatum ? Math.floor((Date.now() - new Date(n.geburtsdatum)) / 31557600000) : null;
       html += ndField('Geburtsdatum', n.geburtsdatum ? (fmtDate(n.geburtsdatum) + ' (' + alter + ' Jahre)') : '–');
       html += ndField('Adresse / Ort', escHtml([n.adresse, [n.adresse_plz || n.plz, n.adresse_ort || n.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ')) || '–');
+      html += ndField('Lebenslauf', n.lebenslauf_pfad
+        ? `✓ hochgeladen – ${escHtml(n.lebenslauf_dateiname || 'Datei')} <button type="button" class="btn-sm btn-secondary" style="margin-left:6px" onclick="adminLebenslaufAnsehen('${userId}', this)">Ansehen</button>`
+        : '✕ kein Lebenslauf');
     }
     html += ndField('Registriert am', fmtDate(n.erstellt_am));
     html += ndField('Profil vollständig', n.profil_vollstaendig ? '✓ Ja' : '✕ Nein');

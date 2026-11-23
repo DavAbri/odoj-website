@@ -49,6 +49,16 @@ serve(async (req) => {
     const { data: targetUserRes, error: targetErr } = await adminClient.auth.admin.getUserById(targetUserId)
     if (targetErr || !targetUserRes?.user) return json({ error: "Nutzer nicht gefunden." }, 404, corsHeaders)
 
+    // Nur Admins: kurzlebiger Link (60 Sekunden) auf den hochgeladenen
+    // Lebenslauf - der Speicher selbst bleibt für alle anderen gesperrt.
+    if (body?.lebenslauf === true) {
+      const { data: prof } = await adminClient.from("Profile").select("lebenslauf_pfad").eq("user_id", targetUserId).maybeSingle()
+      if (!prof?.lebenslauf_pfad) return json({ error: "Kein Lebenslauf hinterlegt." }, 404, corsHeaders)
+      const { data: signed, error: signErr } = await adminClient.storage.from("lebenslaeufe").createSignedUrl(prof.lebenslauf_pfad, 60)
+      if (signErr || !signed?.signedUrl) return json({ error: "Lebenslauf konnte nicht geladen werden." }, 500, corsHeaders)
+      return json({ lebenslauf_url: signed.signedUrl }, 200, corsHeaders)
+    }
+
     return json({
       email_confirmed_at: targetUserRes.user.email_confirmed_at || null,
       last_sign_in_at: targetUserRes.user.last_sign_in_at || null
