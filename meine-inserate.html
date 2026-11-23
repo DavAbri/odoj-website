@@ -1319,6 +1319,7 @@ async function loadInserate() {
   // Ungesehene neue Bewerbungen pro Inserat (für das "neu"-Badge auf der Karte):
   // Bewerbungen dieses Arbeitgebers mit mind. einer ungelesenen Nachricht.
   const unseenMap = {};
+  const unseenByTermin = {};
   const bewIdsAll = (bews || []).map(b => b.id);
   if (bewIdsAll.length) {
     const { data: unreadMsgs } = await odojSb
@@ -1329,7 +1330,10 @@ async function loadInserate() {
       .in('bewerbung_id', bewIdsAll);
     const unreadBewIds = new Set((unreadMsgs || []).map(m => m.bewerbung_id));
     (bews || []).forEach(b => {
-      if (unreadBewIds.has(b.id)) unseenMap[b.job_id] = (unseenMap[b.job_id] || 0) + 1;
+      if (unreadBewIds.has(b.id)) {
+        unseenMap[b.job_id] = (unseenMap[b.job_id] || 0) + 1;
+        if (b.termin_id) unseenByTermin[b.termin_id] = (unseenByTermin[b.termin_id] || 0) + 1;
+      }
     });
   }
 
@@ -1340,8 +1344,12 @@ async function loadInserate() {
   const acceptedMap     = {};
   const ausstehendMap   = {};
   const acceptedByTermin = {};
+  const countByTermin = {};
+  const ausstehendByTermin = {};
   bews?.forEach(b => {
     if (b.status !== 'abgelehnt') countMap[b.job_id] = (countMap[b.job_id] || 0) + 1;
+    if (b.termin_id && b.status !== 'abgelehnt') countByTermin[b.termin_id] = (countByTermin[b.termin_id] || 0) + 1;
+    if (b.termin_id && b.status === 'ausstehend') ausstehendByTermin[b.termin_id] = (ausstehendByTermin[b.termin_id] || 0) + 1;
     if (b.status === 'angenommen') {
       acceptedMap[b.job_id] = (acceptedMap[b.job_id] || 0) + 1;
       if (b.termin_id) acceptedByTermin[b.termin_id] = (acceptedByTermin[b.termin_id] || 0) + 1;
@@ -1366,19 +1374,44 @@ async function loadInserate() {
     }
   }
 
-  const istAktuell = j => !_jobIstVergangen(j, termineByJob[j.id]);
-  _vergangeneJobIds = new Set(jobs.filter(j => !istAktuell(j)).map(j => j.id));
+  _vergangeneJobIds = new Set(jobs.filter(j => _jobIstVergangen(j, termineByJob[j.id])).map(j => j.id));
+
+  // Wie in der Jobbörse: ein Inserat mit mehreren Terminen erscheint als
+  // eigene Karte pro Termin (mit Bewerbungen/Plätzen nur dieses Termins).
+  const karten = [];
+  jobs.forEach(j => {
+    const ts = termineByJob[j.id] || [];
+    if (ts.length > 1) {
+      ts.forEach((t, i) => {
+        const k = {
+          ...j,
+          datum: t.datum,
+          uhrzeit_von: t.uhrzeit_von || j.uhrzeit_von,
+          uhrzeit_bis: t.uhrzeit_bis || j.uhrzeit_bis,
+          stundensatz: t.stundensatz ?? j.stundensatz,
+          _terminId: t.id, _terminNr: i + 1, _terminAnzahl: ts.length,
+        };
+        k._vergangen = _jobIstVergangen(k, [t]);
+        karten.push(k);
+      });
+    } else {
+      karten.push(j);
+    }
+  });
+  const istAktuell = k => k._terminId ? !k._vergangen : !_vergangeneJobIds.has(k.id);
 
   // Sortierung: aktuelle aufsteigend, vergangene absteigend nach Datum
-  const aktuelle  = jobs
+  const aktuelle  = karten
     .filter(istAktuell)
     .sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
-  const vergangene = jobs
+  const vergangene = karten
     .filter(j => !istAktuell(j))
     .sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
 
   function renderSubGrid(list) {
-    return `<div class="ins-sub-grid">${list.map(j => renderInseratCard(j, countMap[j.id]||0, acceptedMap[j.id]||0, ausstehendMap[j.id]||0, termineByJob[j.id], acceptedByTermin, unseenMap[j.id]||0)).join('')}</div>`;
+    return `<div class="ins-sub-grid">${list.map(j => j._terminId
+      ? renderInseratCard(j, countByTermin[j._terminId]||0, acceptedByTermin[j._terminId]||0, ausstehendByTermin[j._terminId]||0, null, acceptedByTermin, unseenByTermin[j._terminId]||0)
+      : renderInseratCard(j, countMap[j.id]||0, acceptedMap[j.id]||0, ausstehendMap[j.id]||0, termineByJob[j.id], acceptedByTermin, unseenMap[j.id]||0)).join('')}</div>`;
   }
 
   let html = '';
@@ -1456,7 +1489,9 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
   const datum = isMultiTermin
     ? `${fmtKurz(termine[0].datum)} – ${fmtKurz(termine[termine.length - 1].datum)}`
     : (j.datum ? fmtKurz(j.datum) : '–');
-  const terminBadge = isMultiTermin
+  const terminBadge = j._terminId
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#EAF1FB;color:#1A5FA0;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px">📅 Termin ${j._terminNr} von ${j._terminAnzahl}</span>`
+    : isMultiTermin
     ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#EAF1FB;color:#1A5FA0;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px">📅 ${termine.length} Termine</span>`
     : '';
   // Bei Mehrtages-Jobs: Anzahl der bereits voll belegten Termine (nicht die
@@ -1475,7 +1510,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
     : '';
 
   const unseenBadge = unseenCount > 0
-    ? `<span id="unseen-badge-${j.id}" style="display:inline-flex;align-items:center;gap:5px;background:#e74c3c;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">🔔 ${unseenCount} neue Bewerbung${unseenCount !== 1 ? 'en' : ''}</span>`
+    ? `<span id="unseen-badge-${j.id}${j._terminId ? '-' + j._terminId : ''}" style="display:inline-flex;align-items:center;gap:5px;background:#e74c3c;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-left:8px">🔔 ${unseenCount} neue Bewerbung${unseenCount !== 1 ? 'en' : ''}</span>`
     : '';
 
   // Bei Mehrtages-Jobs bezieht sich "Ausgebucht"/"offen" auf einzelne Termine,
@@ -1490,7 +1525,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
     : `<span class="inserat-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#22c55e"><circle cx="12" cy="12" r="10"/></svg> ${remaining > 0 ? remaining + ' Platz/Plätze noch offen' : 'Alle Stellen vergeben'}</span>`;
 
   return `
-    <div class="inserat-card" onclick="openBewerbungen('${j.id}', '${titelEsc}', '${j.datum || ''}')">
+    <div class="inserat-card" onclick="openBewerbungen('${j.id}', '${titelEsc}', '${j.datum || ''}', '${j._terminId || ''}')">
       <div class="inserat-top">
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
           <div class="inserat-titel">${j.titel}</div>
@@ -1520,18 +1555,19 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
           <a href="job-detail.html?id=${j.id}" class="inserat-details-link" onclick="event.stopPropagation()">Details ansehen →</a>
           ${(window.ODOJ_SUPPORT && window.ODOJ_SUPPORT.active) ? `<button class="bew-btn" style="background:#FFF8E8;color:#A05000;border:1px solid rgba(232,160,32,.4)" onclick="event.stopPropagation();supportToggleJobStatus('${j.id}','${j.status === 'aktiv' ? 'inaktiv' : 'aktiv'}')">${j.status === 'aktiv' ? 'Pausieren' : 'Reaktivieren'}</button>` : ''}
           <button class="bew-count-badge"
-            data-job-id="${j.id}" data-job-titel="${titelEsc}" data-job-datum="${j.datum || ''}"
-            onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel, this.dataset.jobDatum)">
+            data-job-id="${j.id}" data-job-titel="${titelEsc}" data-job-datum="${j.datum || ''}" data-termin-id="${j._terminId || ''}"
+            onclick="event.stopPropagation();openBewerbungen(this.dataset.jobId, this.dataset.jobTitel, this.dataset.jobDatum, this.dataset.terminId)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${bewCount} Bewerbung${bewCount !== 1 ? 'en' : ''}
             ${ausstehendCount > 0 ? `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:0 4px;margin-left:4px">${ausstehendCount} neu</span>` : ''}
           </button>
-          ${_vergangeneJobIds.has(j.id)
-            ? `<div style="font-size:12px;color:var(--text-lt);display:flex;align-items:center;gap:5px">🔒 Abgeschlossen – nur ansehen</div>`
+          ${(_vergangeneJobIds.has(j.id) || j._vergangen)
+            ? `<div style="font-size:12px;color:var(--text-lt);display:flex;align-items:center;gap:5px">🔒 ${j._vergangen && !_vergangeneJobIds.has(j.id) ? 'Termin vorbei – nur ansehen' : 'Abgeschlossen – nur ansehen'}</div>`
             : `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
             <div style="display:flex;gap:6px">
               <button class="btn-edit" onclick="event.stopPropagation();editInserat('${j.id}')">Bearbeiten ✏️</button>
               <button class="btn-del" onclick="event.stopPropagation();deleteInserat('${j.id}', '${titelEsc}')">Löschen</button>
             </div>
+            ${j._terminId ? `<div style="font-size:11px;color:var(--text-lt);margin-top:1px">Bearbeiten/Löschen gilt für alle ${j._terminAnzahl} Termine</div>` : ''}
             ${bewCount > 0 ? `<div style="font-size:11px;color:#b07000;margin-top:1px">⚠️ Bewerber werden bei Änderungen benachrichtigt</div>` : ''}
           </div>`}
         </div>
@@ -1593,20 +1629,21 @@ async function handleDeepLinkBewerbung() {
 
 // ── BEWERBUNGEN OVERLAY ──
 let _bewOverlayArgs = null;
-async function openBewerbungen(jobId, jobTitel, jobDatum) {
-  _bewOverlayArgs = [jobId, jobTitel, jobDatum];
-  document.getElementById('bew-overlay-titel').textContent = jobTitel;
+async function openBewerbungen(jobId, jobTitel, jobDatum, terminId) {
+  terminId = terminId || null;
+  _bewOverlayArgs = [jobId, jobTitel, jobDatum, terminId];
+  document.getElementById('bew-overlay-titel').textContent = terminId && jobDatum
+    ? `${jobTitel} – ${new Date(jobDatum + 'T00:00:00').toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}`
+    : jobTitel;
   document.getElementById('bew-overlay').style.display = 'block';
   document.body.style.overflow = 'hidden';
 
   const bodyEl = document.getElementById('bew-overlay-body');
   bodyEl.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-lt)">Lade Bewerbungen…</div>';
 
-  const { data: alle, error } = await odojSb
-    .from('bewerbungen')
-    .select('*')
-    .eq('job_id', jobId)
-    .order('erstellt_am', { ascending: false });
+  let abfrage = odojSb.from('bewerbungen').select('*').eq('job_id', jobId);
+  if (terminId) abfrage = abfrage.eq('termin_id', terminId);
+  const { data: alle, error } = await abfrage.order('erstellt_am', { ascending: false });
 
   if (error) {
     bodyEl.innerHTML = '<p style="color:#c0392b;padding:24px">Fehler: ' + error.message + '</p>';
@@ -1624,7 +1661,7 @@ async function openBewerbungen(jobId, jobTitel, jobDatum) {
       .eq('empfaenger_id', _agSession.user.id)
       .eq('gelesen', false)
       .then(async () => {
-        document.getElementById('unseen-badge-' + jobId)?.remove();
+        document.getElementById('unseen-badge-' + jobId + (terminId ? '-' + terminId : ''))?.remove();
         if (_agSession?.user?.id) {
           odojUpdateUnreadDot(await odojCountUnread(_agSession.user.id));
         }
