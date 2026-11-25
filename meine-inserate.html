@@ -1094,7 +1094,9 @@ let _pendingEditData  = null; // zwischengespeicherte Formulardaten für Bearbei
 let _pendingBewerber  = null; // Bewerber die benachrichtigt werden sollen
 
 function applyUidCheck(uid) {
-  const hasUid = !!(uid && uid.trim());
+  // UID-Nummer ist freiwillig (Kleinunternehmer haben keine) - Inserieren
+  // ist immer möglich, der frühere Hinweis bleibt ausgeblendet.
+  const hasUid = true;
   const warningEl = document.getElementById('uid-warning');
   const insForm   = document.getElementById('ins-form');
   const insBtn    = document.getElementById('ins-btn');
@@ -2775,20 +2777,6 @@ async function submitInserat(e) {
   errEl.style.display = 'none';
   successEl.style.display = 'none';
   _insSummaryActive = false;
-
-  // UID-Nummer serverseitig prüfen
-  if (_agSession) {
-    const { data: uidCheck } = await odojSb
-      .from('Profile').select('uid_nummer').eq('user_id', _agSession.user.id).single();
-    _agUidNummer = uidCheck?.uid_nummer || '';
-  }
-  if (!_agUidNummer || !_agUidNummer.trim()) {
-    applyUidCheck('');
-    showTab('inserieren');
-    errEl.textContent = 'Bitte hinterlege zuerst deine UID-Nummer im Profil.';
-    errEl.style.display = 'block';
-    return;
-  }
 
   const problems = _insValidateRequired();
   if (_insShowValidationSummary(problems)) return;

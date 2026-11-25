@@ -596,7 +596,7 @@
           </div>
         </div>
         <div class="lf-field">
-          <label>UID-Nummer *</label>
+          <label>UID-Nummer (optional)</label>
           <input type="text" id="reg-ag-uid" placeholder="ATU12345678">
         </div>
         <div class="lf-field">
@@ -916,7 +916,6 @@ async function doRegister(e) {
     if (!agAdresse)  { showRegError('Bitte Straße und Hausnummer eingeben.'); return; }
     if (!agPlz)      { showRegError('Bitte PLZ eingeben.'); return; }
     if (!agOrt)      { showRegError('Bitte Ort eingeben.'); return; }
-    if (!agUid)      { showRegError('Bitte UID-Nummer eingeben.'); return; }
 
     profileData.firmenname  = firmenname;
     profileData.vorname     = agVorname;
@@ -925,7 +924,7 @@ async function doRegister(e) {
     profileData.adresse     = agAdresse;
     profileData.plz         = agPlz;
     profileData.ort         = agOrt;
-    profileData.uid_nummer  = agUid;
+    if (agUid) profileData.uid_nummer = agUid;
     if (agWebsite) profileData.website    = agWebsite;
   }
 
