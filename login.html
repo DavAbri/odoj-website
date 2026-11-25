@@ -956,8 +956,12 @@ async function doRegister(e) {
     if (pe) {
       console.error('Profil-Insert fehlgeschlagen (Registrierung):', pe.message, pe, insertData);
       // Falls E-Mail-Bestätigung aktiv → noch kein Session → RLS blockiert INSERT.
-      // Profildaten in localStorage merken; wird beim ersten Login nachgeholt.
+      // Daten sofort über die Server-Funktion ins Profil schreiben (nur für ein
+      // gerade angelegtes Konto, nur leere Felder). Zusätzlich im Browser
+      // merken und beim ersten Login nachholen - falls die Funktion scheitert.
       if (!data.session) {
+        const { error: rpcErr } = await odojSb.rpc('registrierung_profil_nachtragen', { p_user_id: data.user.id, p_daten: profileData });
+        if (rpcErr) console.error('Registrierungsdaten konnten nicht gespeichert werden:', rpcErr.message);
         localStorage.setItem('odoj_pending_profile', JSON.stringify(insertData));
       } else {
         // Session existiert bereits, Profil konnte aber nicht gespeichert werden -
