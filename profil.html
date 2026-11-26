@@ -587,16 +587,16 @@ function renderArbeitgeber(session, profile) {
             <input type="text" id="ag-edit-nachname" value="${escH(profile?.nachname || '')}" placeholder="Nachname">
           </div>
           <div class="profil-field">
-            <label>Adresse / Straße</label>
+            <label>Adresse / Straße *</label>
             <input type="text" id="ag-edit-adresse" value="${escH(profile?.adresse || '')}" placeholder="Musterstraße 12">
           </div>
           <div style="display:grid;grid-template-columns:120px 1fr;gap:10px">
             <div class="profil-field">
-              <label>PLZ</label>
+              <label>PLZ *</label>
               <input type="text" id="ag-edit-plz" value="${escH(profile?.adresse_plz || '')}" placeholder="z.B. 6850">
             </div>
             <div class="profil-field">
-              <label>Ort</label>
+              <label>Ort *</label>
               <input type="text" id="ag-edit-ort" value="${escH(profile?.adresse_ort || '')}" placeholder="z.B. Dornbirn">
             </div>
           </div>
@@ -694,6 +694,16 @@ async function saveAgProfil(userId) {
   const branche     = document.getElementById('ag-edit-branche').value;
   const uid_nummer  = document.getElementById('ag-edit-uid').value.trim();
   const beschreibung= document.getElementById('ag-edit-beschreibung').value.trim();
+
+  // Pflichtfelder wie bei der Registrierung: Firmenname und Adresse
+  const fehlt = [!firma && 'Firmenname', !adresse && 'Straße', !plz && 'PLZ', !ort && 'Ort'].filter(Boolean);
+  if (fehlt.length) {
+    errEl.textContent = 'Bitte ausfüllen: ' + fehlt.join(', ') + '.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Speichern';
+    return;
+  }
 
   const fields = {
     firmenname: firma,
