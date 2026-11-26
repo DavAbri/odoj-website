@@ -1333,11 +1333,9 @@ async function loadMessages(silent) {
 
 // ── NACHRICHT SENDEN ──
 function containsContactInfo(text) {
-  // E-Mail-Adressen
+  // Nur E-Mail-Adressen sind gesperrt - Telefonnummern dürfen geteilt werden.
   const emailRe = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
-  // Telefonnummern: mind. 7 Ziffern, auch mit +, /, -, Leerzeichen, Klammern
-  const phoneRe = /(\+?\d[\s\-./()]?){7,}\d/;
-  return emailRe.test(text) || phoneRe.test(text);
+  return emailRe.test(text);
 }
 
 function showInputWarning(msg) {
@@ -1364,7 +1362,7 @@ async function sendMessage() {
   if (!text || !_activeBewId || !_activeBew) return;
 
   if (containsContactInfo(text)) {
-    showInputWarning('Telefonnummern und E-Mail-Adressen dürfen nicht geteilt werden. Die Kommunikation läuft ausschließlich über ODOJ.');
+    showInputWarning('E-Mail-Adressen dürfen nicht geteilt werden. Die Kommunikation läuft über ODOJ.');
     return;
   }
 
