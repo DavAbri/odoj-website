@@ -1514,7 +1514,7 @@ function renderInseratCard(j, bewCount, acceptedCount, ausstehendCount, termine,
   const remaining = isMultiTermin ? (termine.length - vollTermine) : ((j.plaetze || 0) - acceptedCount);
   const alleVoll  = isMultiTermin ? (vollTermine >= termine.length) : (remaining <= 0);
   const ausgebuchtBadge = alleVoll
-    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#FDE8E8;color:#c0392b;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Ausgebucht</span>`
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E6F5EE;color:#1A7A50;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-left:8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg> Ausgebucht</span>`
     : '';
   const remainingHtml = isMultiTermin
     ? `<span class="inserat-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:#22c55e"><circle cx="12" cy="12" r="10"/></svg> ${remaining > 0 ? remaining + ' von ' + termine.length + ' Terminen noch offen' : 'Alle Termine ausgebucht'}</span>`
